@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
 import { mollie, centenNaarBedrag } from "@/lib/mollie";
+import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { siteUrl } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ interface BestelInvoer {
   factuurgegevens?: Record<string, unknown>;
   voorwaarden_akkoord?: boolean;
   directe_levering_akkoord?: boolean;
+  gratis?: boolean;
 }
 
 function geldigEmail(email: string): boolean {
@@ -45,6 +47,37 @@ export async function POST(request: Request) {
     );
   }
 
+  const valuta = (await leesInstelling("valuta")) || "EUR";
+
+  // Gratis testmodus (env-gated): sla Mollie over, maak direct een betaalde order
+  // met testtoken aan en stuur de gebruiker rechtstreeks naar de test.
+  if (body.gratis === true && process.env.GRATIS_TEST) {
+    const supabase = adminClient();
+    const dagen = Number((await leesInstelling("token_geldigheid_dagen")) || "30");
+    const token = maakTesttoken();
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert({
+        klantnaam: naam,
+        email,
+        factuurgegevens: body.factuurgegevens ?? {},
+        voorwaarden_akkoord: true,
+        directe_levering_akkoord: true,
+        bedrag_cent: 0,
+        valuta,
+        status: "betaald",
+        betaald_op: new Date().toISOString(),
+        testtoken: token,
+        token_verloopt_op: tokenVerlooptOp(dagen),
+      })
+      .select("id")
+      .single();
+    if (error || !order) {
+      return NextResponse.json({ fout: "Testbestelling aanmaken mislukt." }, { status: 500 });
+    }
+    return NextResponse.json({ testUrl: `${siteUrl()}/test/${token}` });
+  }
+
   const prijsCent = await leesPrijsCent();
   if (!prijsCent) {
     return NextResponse.json(
@@ -52,7 +85,6 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-  const valuta = (await leesInstelling("valuta")) || "EUR";
 
   const supabase = adminClient();
   const { data: order, error: e1 } = await supabase

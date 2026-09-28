@@ -5,6 +5,7 @@ import { BestelFormulier } from "./BestelFormulier";
 export const dynamic = "force-dynamic";
 
 export default async function BestellenPage() {
+  const gratisTest = Boolean(process.env.GRATIS_TEST);
   let prijsLabel: string | null = null;
   let prijsBekend = false;
   try {
@@ -38,8 +39,8 @@ export default async function BestellenPage() {
         )}
       </div>
 
-      {prijsBekend ? (
-        <BestelFormulier />
+      {prijsBekend || gratisTest ? (
+        <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} />
       ) : (
         <p className="rounded-lg border border-black/10 px-4 py-3 text-sm text-black/60 dark:border-white/15 dark:text-white/60">
           De prijs is nog niet ingesteld, dus bestellen is nu niet mogelijk. Kom
