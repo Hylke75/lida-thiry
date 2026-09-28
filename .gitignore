@@ -40,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Proprietaire adviescontent (nooit committen)
+/content-bron/
+figuurtypes-advies*/
+*.seed.sql
+
+# Supabase CLI lokaal
+supabase/.temp/
+.branches/
