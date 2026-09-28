@@ -4,6 +4,19 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AdviesPdf, type PdfSectie } from "./document";
 
 const BUCKET = "adviezen-pdf";
+const BEELD_BUCKET = "advies-beelden";
+
+/** Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF). */
+async function beeldDataUri(
+  supabase: ReturnType<typeof adminClient>,
+  pad: string,
+): Promise<string | null> {
+  const { data } = await supabase.storage.from(BEELD_BUCKET).download(pad);
+  if (!data) return null;
+  const mime = pad.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+  const base64 = Buffer.from(await data.arrayBuffer()).toString("base64");
+  return `data:${mime};base64,${base64}`;
+}
 
 /**
  * Genereert de advies-PDF voor een order met een toegekend type, slaat 'm op in
@@ -27,11 +40,22 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     .single();
   if (!type) return null; // Adviesdocument nog niet geïmporteerd.
 
-  const { data: secties } = await supabase
+  const { data: sectieRijen } = await supabase
     .from("adviessecties")
-    .select("kop, tekst")
+    .select("kop, tekst, afbeeldingen")
     .eq("type_sleutel", order.toegekend_type)
     .order("volgorde", { ascending: true });
+
+  const secties: PdfSectie[] = [];
+  for (const s of sectieRijen ?? []) {
+    const paden = (s.afbeeldingen as string[]) ?? [];
+    const beelden: string[] = [];
+    for (const pad of paden) {
+      const uri = await beeldDataUri(supabase, pad);
+      if (uri) beelden.push(uri);
+    }
+    secties.push({ kop: s.kop, tekst: s.tekst, beelden });
+  }
 
   const { data: res } = await supabase
     .from("testresultaten")
@@ -61,7 +85,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
         binnenbeen: res?.binnenbeen ?? null,
         schouder: res?.schouder ?? null,
       }}
-      secties={(secties ?? []) as PdfSectie[]}
+      secties={secties}
     />,
   );
 

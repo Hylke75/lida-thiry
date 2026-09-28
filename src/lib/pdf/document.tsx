@@ -3,6 +3,7 @@ import {
   Page,
   View,
   Text,
+  Image,
   StyleSheet,
 } from "@react-pdf/renderer";
 
@@ -20,6 +21,8 @@ export interface PdfMaten {
 export interface PdfSectie {
   kop: string;
   tekst: string;
+  /** Data-URI's van bijbehorende afbeeldingen. */
+  beelden?: string[];
 }
 
 export interface AdviesPdfProps {
@@ -48,6 +51,8 @@ const styles = StyleSheet.create({
   bullet: { flexDirection: "row", marginBottom: 3 },
   bulletTeken: { width: 12 },
   para: { marginBottom: 6 },
+  beeldenRij: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
+  beeld: { width: 96, marginRight: 6, marginBottom: 6 },
   voettekst: { position: "absolute", bottom: 28, left: 56, right: 56, textAlign: "center", fontSize: 8, color: kleur.grijs, borderTopWidth: 1, borderTopColor: kleur.lijn, paddingTop: 8 },
 });
 
@@ -141,6 +146,15 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties }: 
                   {b.tekst}
                 </Text>
               ),
+            )}
+            {s.beelden && s.beelden.length > 0 && (
+              <View style={styles.beeldenRij}>
+                {s.beelden.map((src, k) => (
+                  // react-pdf Image (geen HTML img); alt bestaat hier niet.
+                  // eslint-disable-next-line jsx-a11y/alt-text
+                  <Image key={k} src={src} style={styles.beeld} />
+                ))}
+              </View>
             )}
           </View>
         ))}

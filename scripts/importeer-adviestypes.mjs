@@ -144,6 +144,50 @@ function metaVanSleutel(sleutel) {
   return { categorie, letter, titel, lengte_label: lengteLabel(categorie), maat_label: maatLabel(categorie) };
 }
 
+const BEELD_BUCKET = "advies-beelden";
+const MIME = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
+
+// Uploadt de png/jpg-beelden van een type naar de bucket en vervangt in de secties
+// de bestandsnamen door hun storage-pad. TIFF e.d. worden overgeslagen (niet in PDF/web).
+async function uploadEnHerkoppelBeelden(sleutel, typeMap, secties) {
+  const mediaMap = join(typeMap, "media", "media");
+  if (!existsSync(mediaMap)) {
+    for (const s of secties) s.afbeeldingen = [];
+    return 0;
+  }
+  const cache = new Map();
+  let aantal = 0;
+  for (const s of secties) {
+    const nieuw = [];
+    for (const naam of s.afbeeldingen) {
+      const ext = (naam.match(/\.[a-z0-9]+$/i)?.[0] || "").toLowerCase();
+      if (!MIME[ext]) continue;
+      if (cache.has(naam)) {
+        if (cache.get(naam)) nieuw.push(cache.get(naam));
+        continue;
+      }
+      const bestand = join(mediaMap, naam);
+      if (!existsSync(bestand)) {
+        cache.set(naam, null);
+        continue;
+      }
+      const pad = `${sleutel}/${naam}`;
+      const { error } = await supabase.storage
+        .from(BEELD_BUCKET)
+        .upload(pad, readFileSync(bestand), { contentType: MIME[ext], upsert: true });
+      if (error) {
+        cache.set(naam, null);
+        continue;
+      }
+      cache.set(naam, pad);
+      nieuw.push(pad);
+      aantal++;
+    }
+    s.afbeeldingen = nieuw;
+  }
+  return aantal;
+}
+
 async function importeerType(sleutel) {
   const map = join(BRONMAP, sleutel);
   const md = join(map, "index.md");
@@ -157,6 +201,7 @@ async function importeerType(sleutel) {
     return false;
   }
   const secties = parseSecties(md);
+  const beelden = await uploadEnHerkoppelBeelden(sleutel, map, secties);
 
   const { error: e1 } = await supabase.from("adviestypes").upsert({
     sleutel,
@@ -180,7 +225,7 @@ async function importeerType(sleutel) {
     const { error: e2 } = await supabase.from("adviessecties").insert(rijen);
     if (e2) throw new Error(`adviessecties ${sleutel}: ${e2.message}`);
   }
-  console.log(`✓ ${sleutel}: ${rijen.length} secties`);
+  console.log(`✓ ${sleutel}: ${rijen.length} secties, ${beelden} beelden geüpload`);
   return true;
 }
 
