@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
+import { productieCheck } from "@/lib/productie-check";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ export default async function AdminPage() {
 
   const alle = (orders ?? []) as OrderRij[];
   const twijfel = alle.filter((o) => o.status === "handmatige_beoordeling");
+  const check = await productieCheck();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-8">
@@ -66,6 +68,21 @@ export default async function AdminPage() {
           </button>
         </form>
       </header>
+
+      <section className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+          Productie-gereedheid — {check.gereed ? "gereed ✅" : "nog niet gereed"}
+        </h2>
+        <ul className="flex flex-col gap-1 text-sm">
+          {check.items.map((i) => (
+            <li key={i.label} className="flex items-center gap-2">
+              <span>{i.ok ? "✅" : "⛔"}</span>
+              <span>{i.label}</span>
+              {i.detail && <span className="text-black/40 dark:text-white/40">— {i.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {twijfel.length > 0 && (
         <section className="flex flex-col gap-3">
