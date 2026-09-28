@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-export function BestelFormulier() {
+export function BestelFormulier({
+  prijsBekend,
+  gratisTest,
+}: {
+  prijsBekend: boolean;
+  gratisTest: boolean;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
 
-  async function verstuur(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function start(gratis: boolean) {
+    const form = formRef.current;
+    if (!form) return;
+    if (!form.reportValidity()) return;
     setFout(null);
     setBezig(true);
-    const f = new FormData(e.currentTarget);
+    const f = new FormData(form);
     const payload = {
       klantnaam: String(f.get("klantnaam") || ""),
       email: String(f.get("email") || ""),
@@ -18,12 +27,12 @@ export function BestelFormulier() {
         adres: String(f.get("adres") || ""),
         postcode: String(f.get("postcode") || ""),
         plaats: String(f.get("plaats") || ""),
-        land: String(f.get("land") || "Nederland"),
+        land: "Nederland",
       },
       voorwaarden_akkoord: f.get("voorwaarden_akkoord") === "on",
       directe_levering_akkoord: f.get("directe_levering_akkoord") === "on",
+      gratis,
     };
-
     try {
       const res = await fetch("/api/bestellen", {
         method: "POST",
@@ -36,15 +45,15 @@ export function BestelFormulier() {
         setBezig(false);
         return;
       }
-      window.location.href = data.checkoutUrl;
+      window.location.href = data.testUrl || data.checkoutUrl;
     } catch {
-      setFout("Kon de betaling niet starten. Probeer het opnieuw.");
+      setFout("Kon niet doorgaan. Probeer het opnieuw.");
       setBezig(false);
     }
   }
 
   return (
-    <form onSubmit={verstuur} className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4">
       <Veld naam="klantnaam" label="Naam" autoComplete="name" verplicht />
       <Veld naam="email" label="E-mailadres" type="email" autoComplete="email" verplicht />
       <Veld naam="adres" label="Adres" autoComplete="street-address" />
@@ -71,13 +80,26 @@ export function BestelFormulier() {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={bezig}
-        className="mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {bezig ? "Bezig…" : "Naar betaling"}
-      </button>
+      {prijsBekend && (
+        <button
+          type="button"
+          onClick={() => start(false)}
+          disabled={bezig}
+          className="mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {bezig ? "Bezig…" : "Naar betaling"}
+        </button>
+      )}
+      {gratisTest && (
+        <button
+          type="button"
+          onClick={() => start(true)}
+          disabled={bezig}
+          className="rounded-full border border-black/20 px-6 py-3 text-sm font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/25 dark:hover:bg-white/10"
+        >
+          {bezig ? "Bezig…" : "Gratis testen (zonder betalen)"}
+        </button>
+      )}
     </form>
   );
 }
