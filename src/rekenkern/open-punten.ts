@@ -12,7 +12,7 @@ export const OPEN_PUNTEN: OpenPunt[] = [
   {
     nr: 1,
     onderwerp: "Zandloper-regel: FFIT-bron of Excel-variant",
-    standaard: "FFIT-bronversie (config/ffit-regels.ts: STANDAARD_ZANDLOPER_VARIANT)",
+    standaard: "BESLOTEN: Excel-variant (config/ffit-regels.ts + instelling zandloper_variant)",
     status: "open",
   },
   {

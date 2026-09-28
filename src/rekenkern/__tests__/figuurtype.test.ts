@@ -41,8 +41,10 @@ describe("B. Figuurtype uit maten (FFIT)", () => {
     }
   });
 
-  it("gebruikt standaard de FFIT-bronvariant", () => {
-    // Geval 1 verschilt tussen de varianten; zonder argument moet FFIT gelden.
-    expect(bepaalFiguurtype(m(100, 75, 90, 105))).toBe("Zandloper");
+  it("gebruikt standaard de Excel-variant (besluit Lida Thiry)", () => {
+    // Geval 1 verschilt tussen de varianten; zonder argument moet Excel gelden.
+    expect(bepaalFiguurtype(m(100, 75, 90, 105))).toBe("Geen type");
+    // Geval 3: onder Excel wordt dit 'Zandloper' i.p.v. 'Bovenste zandloper'.
+    expect(bepaalFiguurtype(m(104, 78, 92, 98))).toBe("Zandloper");
   });
 });
