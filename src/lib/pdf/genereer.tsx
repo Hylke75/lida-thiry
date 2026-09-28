@@ -81,3 +81,11 @@ export async function signedPdfUrl(pad: string, secondenGeldig = 3600): Promise<
   const { data } = await supabase.storage.from(BUCKET).createSignedUrl(pad, secondenGeldig);
   return data?.signedUrl ?? null;
 }
+
+/** Haalt de PDF-bytes op uit de privé-bucket (voor mailbijlage). */
+export async function haalPdfBytes(pad: string): Promise<Buffer | null> {
+  const supabase = adminClient();
+  const { data } = await supabase.storage.from(BUCKET).download(pad);
+  if (!data) return null;
+  return Buffer.from(await data.arrayBuffer());
+}
