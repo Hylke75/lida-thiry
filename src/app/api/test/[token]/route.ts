@@ -3,12 +3,8 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { beoordeelToken } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
-import { genereerAdviesPdf, haalPdfBytes } from "@/lib/pdf/genereer";
-import {
-  stuurAdviesMail,
-  stuurTwijfelKlantMail,
-  stuurTwijfelAdviseurMail,
-} from "@/lib/resend";
+import { leverAdvies } from "@/lib/advies-leveren";
+import { stuurTwijfelKlantMail, stuurTwijfelAdviseurMail } from "@/lib/resend";
 import { siteUrl } from "@/lib/site";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 
@@ -144,25 +140,7 @@ export async function POST(
   // adviesdocument nog niet geïmporteerd is (dan blijft de order 'test_afgerond').
   let pdfKlaar = false;
   try {
-    const pad = await genereerAdviesPdf(order.id);
-    pdfKlaar = pad !== null;
-    if (pad) {
-      const pdf = await haalPdfBytes(pad);
-      if (pdf) {
-        await stuurAdviesMail({
-          naam: order.klantnaam,
-          email: order.email,
-          sleutel: uitkomst.sleutel,
-          downloadUrl: `${siteUrl()}/api/test/${token}/pdf`,
-          pdf,
-        });
-        await supabase
-          .from("orders")
-          .update({ status: "advies_verzonden" })
-          .eq("id", order.id)
-          .eq("status", "test_afgerond");
-      }
-    }
+    pdfKlaar = await leverAdvies(order.id);
   } catch {
     // PDF of mail mislukt: order blijft test_afgerond, kan later opnieuw.
   }
