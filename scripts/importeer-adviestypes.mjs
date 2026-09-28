@@ -11,18 +11,36 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+
+// Laadt sleutels uit .env.local (nooit in de repo). Waarden worden niet gelogd.
+function laadEnvLokaal() {
+  const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const pad = join(projectRoot, ".env.local");
+  if (!existsSync(pad)) return;
+  for (const regel of readFileSync(pad, "utf8").split(/\r?\n/)) {
+    const m = regel.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (m && process.env[m[1]] === undefined) {
+      process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+    }
+  }
+}
+laadEnvLokaal();
 
 const BRONMAP =
   process.env.BRONMAP || join(homedir(), "Desktop", "figuurtypes-advies-md");
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+// Accepteert zowel de legacy service_role-JWT als de moderne sb_secret_-sleutel.
+const SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error(
-    "Ontbrekend: zet SUPABASE_URL en SUPABASE_SERVICE_ROLE_KEY in de omgeving.",
+    "Ontbrekend: zet SUPABASE_SERVICE_ROLE_KEY (of SUPABASE_SECRET_KEY) in .env.local.",
   );
   process.exit(1);
 }
@@ -109,7 +127,18 @@ function metaVanSleutel(sleutel) {
   const categorie = Number(m[1]);
   const letter = m[2];
   const naam = FIGUURNAAM[letter];
-  const titel = [sleutel, naam, `${lengteLabel(categorie)} lengte, ${maatLabel(categorie)} maat`]
+  const lengteOmschrijving = {
+    kort: "korte lengte",
+    gemiddeld: "gemiddelde lengte",
+    lang: "lange lengte",
+  }[lengteLabel(categorie)];
+  const maatOmschrijving = {
+    tenger: "tenger postuur",
+    gemiddeld: "gemiddelde maat",
+    vol: "volle maat",
+    plus: "plus size",
+  }[maatLabel(categorie)];
+  const titel = [sleutel, naam, `${lengteOmschrijving}, ${maatOmschrijving}`]
     .filter(Boolean)
     .join(" · ");
   return { categorie, letter, titel, lengte_label: lengteLabel(categorie), maat_label: maatLabel(categorie) };
