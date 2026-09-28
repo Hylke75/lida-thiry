@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { beoordeelToken } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
+import { genereerAdviesPdf } from "@/lib/pdf/genereer";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 
 export const runtime = "nodejs";
@@ -116,5 +117,13 @@ export async function POST(
     .eq("id", order.id)
     .eq("status", "betaald");
 
-  return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel });
+  // PDF genereren en opslaan (faalt stil als het adviesdocument nog niet geïmporteerd is).
+  let pdfKlaar = false;
+  try {
+    pdfKlaar = (await genereerAdviesPdf(order.id)) !== null;
+  } catch {
+    pdfKlaar = false;
+  }
+
+  return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel, pdfKlaar });
 }

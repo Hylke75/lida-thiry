@@ -97,6 +97,12 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
               Op basis van je antwoorden is jouw type <strong>{resultaat.sleutel}</strong>.
               Je ontvangt je persoonlijke advies-PDF per e-mail.
             </p>
+            <a
+              href={`/api/test/${token}/pdf`}
+              className="mx-auto mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Download je advies (PDF)
+            </a>
           </>
         ) : (
           <>
