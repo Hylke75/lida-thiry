@@ -9,6 +9,7 @@ import { siteUrl } from "@/lib/site";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 function getal(v: unknown): number | undefined {
   const n = Number(v);
