@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MAAT_VELDEN, SILHOUETTEN, PASVORMVRAGEN } from "@/lib/test-config";
+import { MAAT_VELDEN, SILHOUETTEN, PASVORMVRAGEN, MEET_TIP } from "@/lib/test-config";
 
 interface Bevinding {
   code: string;
@@ -160,6 +160,9 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
 
       {stap === 2 && (
         <div className="flex flex-col gap-6">
+          <p className="rounded-lg bg-black/5 px-4 py-3 text-sm text-black/70 dark:bg-white/10 dark:text-white/70">
+            💡 {MEET_TIP}
+          </p>
           {MAAT_VELDEN.map((v) => (
             <div key={v.sleutel} className="flex flex-col gap-2">
               <div className="rounded-lg border border-dashed border-black/15 px-3 py-2 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
