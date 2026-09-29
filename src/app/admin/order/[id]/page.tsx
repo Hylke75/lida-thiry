@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
@@ -31,6 +32,17 @@ async function verstuurOpnieuw(formData: FormData) {
     await leverAdvies(id);
   } catch {}
   revalidatePath(`/admin/order/${id}`);
+}
+
+async function verwijderBestelling(formData: FormData) {
+  "use server";
+  await vereisBeheerder();
+  const id = String(formData.get("id"));
+  const supabase = adminClient();
+  const { data } = await supabase.from("orders").select("pdf_pad").eq("id", id).single();
+  if (data?.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
+  await supabase.from("orders").delete().eq("id", id);
+  redirect("/admin");
 }
 
 function Regel({ label, waarde }: { label: string; waarde: string }) {
@@ -110,6 +122,12 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           <input type="hidden" name="id" value={order.id} />
           <button className="rounded-full border border-black/15 px-5 py-2.5 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5">
             Advies-PDF opnieuw versturen
+          </button>
+        </form>
+        <form action={verwijderBestelling} className="pt-2">
+          <input type="hidden" name="id" value={order.id} />
+          <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">
+            Bestelling verwijderen
           </button>
         </form>
       </section>
