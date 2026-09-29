@@ -19,7 +19,7 @@ export const OPEN_PUNTEN: OpenPunt[] = [
     nr: 2,
     onderwerp: "Volledige tabel FFIT-type -> letter (5 letters: X, A, V, H, 8)",
     standaard:
-      "Alleen Zandloper->X, Driehoek/peer->A, Omgekeerde driehoek->V bekend; rest null",
+      "BESLOTEN 29-9: Zandloper->X, Onderste/Bovenste zandloper->8, Lepel/Driehoek->A, Omgekeerde driehoek->V, Rechthoek->H",
     status: "open",
   },
   {

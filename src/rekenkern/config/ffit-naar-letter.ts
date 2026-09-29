@@ -1,9 +1,7 @@
 // Configuratietabel C: FFIT-type -> figuurletter.
-// OPEN-punt #2: de adviseur vult de volledige tabel in. Uit de prompt zijn alleen
-// deze drie voorbeelden bekend; de rest staat bewust op null en wordt NIET verzonnen.
-// Zolang een reeel FFIT-type geen letter heeft, is de mapping niet productie-gereed.
-//
-// De vijf letters die in de 60 adviesdocumenten voorkomen: X, A, V, H, 8.
+// Vastgesteld met Lida Thiry (29-9-2026). De vijf letters in de 60
+// adviesdocumenten: X (zandloper), A (peer/driehoek), V (omgekeerde driehoek),
+// H (rechthoek), 8 (het curvy 8-figuur).
 
 import type { FfitType } from "../types";
 
@@ -14,10 +12,10 @@ export const FFIT_NAAR_LETTER: Record<
   Figuurletter | null
 > = {
   Zandloper: "X",
-  "Onderste zandloper": null, // OPEN: adviseur
-  "Bovenste zandloper": null, // OPEN: adviseur
-  Lepel: null, // OPEN: adviseur
+  "Onderste zandloper": "8",
+  "Bovenste zandloper": "8",
+  Lepel: "A",
   "Driehoek / peer": "A",
   "Omgekeerde driehoek": "V",
-  Rechthoek: null, // OPEN: adviseur
+  Rechthoek: "H",
 };
