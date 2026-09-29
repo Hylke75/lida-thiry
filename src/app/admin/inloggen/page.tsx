@@ -13,7 +13,7 @@ export default async function InloggenPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Beheer — inloggen</h1>
         <p className="mt-1 text-sm text-black/50 dark:text-white/50">
-          Je ontvangt een inloglink per e-mail.
+          Log in met je e-mailadres en wachtwoord.
         </p>
       </div>
       {geen_toegang && (

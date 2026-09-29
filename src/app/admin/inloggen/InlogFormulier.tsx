@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export function InlogFormulier() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
-  const [verstuurd, setVerstuurd] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
 
   async function verstuur(e: React.FormEvent) {
@@ -14,21 +16,17 @@ export function InlogFormulier() {
     setBezig(true);
     setFout(null);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/admin` },
+      password: wachtwoord,
     });
-    if (error) setFout("Versturen mislukt. Controleer het e-mailadres.");
-    else setVerstuurd(true);
-    setBezig(false);
-  }
-
-  if (verstuurd) {
-    return (
-      <p className="rounded-lg border border-black/10 px-4 py-3 text-sm text-black/70 dark:border-white/15 dark:text-white/70">
-        Check je e-mail: we hebben een inloglink gestuurd naar <strong>{email}</strong>.
-      </p>
-    );
+    if (error) {
+      setFout("Inloggen mislukt. Controleer je e-mailadres en wachtwoord.");
+      setBezig(false);
+      return;
+    }
+    router.push("/admin");
+    router.refresh();
   }
 
   return (
@@ -40,6 +38,18 @@ export function InlogFormulier() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-black/70 dark:text-white/70">Wachtwoord</span>
+        <input
+          type="password"
+          required
+          value={wachtwoord}
+          onChange={(e) => setWachtwoord(e.target.value)}
+          autoComplete="current-password"
           className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20"
         />
       </label>
@@ -49,7 +59,7 @@ export function InlogFormulier() {
         disabled={bezig}
         className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
       >
-        {bezig ? "Bezig…" : "Stuur inloglink"}
+        {bezig ? "Bezig…" : "Inloggen"}
       </button>
     </form>
   );
