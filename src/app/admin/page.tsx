@@ -1,9 +1,57 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { productieCheck } from "@/lib/productie-check";
+import { leesInstelling } from "@/lib/instellingen";
+import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 
 export const dynamic = "force-dynamic";
+
+// Alleen actief in testmodus (env-gated). Maakt een verse betaalde testbestelling
+// met unieke gegevens en opent direct de test.
+async function nieuweTest() {
+  "use server";
+  await vereisBeheerder();
+  if (!process.env.GRATIS_TEST) return;
+  const supabase = adminClient();
+  const dagen = Number((await leesInstelling("token_geldigheid_dagen")) || "30");
+  const token = maakTesttoken();
+  const stempel = new Date().toLocaleString("nl-NL", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  await supabase.from("orders").insert({
+    klantnaam: `Test ${stempel}`,
+    email: `test+${Date.now()}@voorbeeld.nl`,
+    voorwaarden_akkoord: true,
+    directe_levering_akkoord: true,
+    bedrag_cent: 0,
+    valuta: "EUR",
+    status: "betaald",
+    betaald_op: new Date().toISOString(),
+    testtoken: token,
+    token_verloopt_op: tokenVerlooptOp(dagen),
+  });
+  redirect(`/test/${token}`);
+}
+
+// Verwijdert alle bestellingen + hun PDF's (alleen in testmodus).
+async function verwijderAlle() {
+  "use server";
+  await vereisBeheerder();
+  if (!process.env.GRATIS_TEST) return;
+  const supabase = adminClient();
+  const { data } = await supabase.from("orders").select("pdf_pad");
+  const paden = (data ?? []).map((o) => o.pdf_pad).filter(Boolean) as string[];
+  if (paden.length) await supabase.storage.from("adviezen-pdf").remove(paden);
+  await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  revalidatePath("/admin");
+}
 
 const STATUS_LABEL: Record<string, string> = {
   aangemaakt: "Aangemaakt",
@@ -57,6 +105,7 @@ export default async function AdminPage() {
   const alle = (orders ?? []) as OrderRij[];
   const twijfel = alle.filter((o) => o.status === "handmatige_beoordeling");
   const check = await productieCheck();
+  const testmodus = Boolean(process.env.GRATIS_TEST);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-8">
@@ -68,6 +117,24 @@ export default async function AdminPage() {
           </button>
         </form>
       </header>
+
+      {testmodus && (
+        <section className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
+          <span className="text-sm font-medium">Testmodus</span>
+          <form action={nieuweTest}>
+            <button className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90">
+              Nieuwe test starten
+            </button>
+          </form>
+          {alle.length > 0 && (
+            <form action={verwijderAlle}>
+              <button className="rounded-full border border-black/15 px-5 py-2 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5">
+                Alle testbestellingen verwijderen ({alle.length})
+              </button>
+            </form>
+          )}
+        </section>
+      )}
 
       <section className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
