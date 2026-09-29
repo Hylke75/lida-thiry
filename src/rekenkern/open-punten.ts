@@ -25,7 +25,7 @@ export const OPEN_PUNTEN: OpenPunt[] = [
   {
     nr: 3,
     onderwerp: "Schouderomvang of -breedte; gebruik schouder- en binnenbeenmaat",
-    standaard: "Opgeslagen, niet in de formule gebruikt",
+    standaard: "BESLOTEN 29-9: schouder = OMVANG (meetinstructie uit Lida's PDF). Schouder + binnenbeen worden opgeslagen maar (nog) niet in de formule gebruikt.",
     status: "open",
   },
   {
