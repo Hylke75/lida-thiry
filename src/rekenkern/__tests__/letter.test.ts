@@ -17,14 +17,16 @@ describe("C. FFIT-type naar figuurletter", () => {
     expect(bepaalLetter("Geen type")).toBeNull();
   });
 
-  it("geeft null voor nog niet toegewezen FFIT-types (OPEN-punt)", () => {
-    expect(bepaalLetter("Rechthoek")).toBeNull();
-    expect(bepaalLetter("Lepel")).toBeNull();
+  it("mapt de met Lida vastgestelde FFIT-types", () => {
+    expect(bepaalLetter("Rechthoek")).toBe("H");
+    expect(bepaalLetter("Lepel")).toBe("A");
+    expect(bepaalLetter("Onderste zandloper")).toBe("8");
+    expect(bepaalLetter("Bovenste zandloper")).toBe("8");
   });
 
-  it("is niet productie-gereed zolang de mapping incompleet is", () => {
-    expect(isMappingCompleet()).toBe(false);
-    expect(ontbrekendeLetters().length).toBeGreaterThan(0);
+  it("is productie-gereed nu de mapping compleet is", () => {
+    expect(isMappingCompleet()).toBe(true);
+    expect(ontbrekendeLetters().length).toBe(0);
   });
 
   it("vergelijkt gekozen silhouet met de berekende letter", () => {
