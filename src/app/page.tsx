@@ -23,7 +23,7 @@ export default async function Home() {
     <>
       <Link
         href="/admin/inloggen"
-        className="fixed right-5 top-5 z-10 rounded-full border border-black/10 px-4 py-1.5 text-sm text-black/60 transition-colors hover:bg-black/5 hover:text-black/90 dark:border-white/15 dark:text-white/60 dark:hover:bg-white/10"
+        className="fixed right-6 top-6 z-10 rounded-full bg-red-600 px-7 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-red-700"
       >
         Inloggen
       </Link>
