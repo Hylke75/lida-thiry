@@ -20,7 +20,14 @@ export default async function Home() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-10 p-8">
+    <>
+      <Link
+        href="/admin/inloggen"
+        className="fixed right-5 top-5 z-10 rounded-full border border-black/10 px-4 py-1.5 text-sm text-black/60 transition-colors hover:bg-black/5 hover:text-black/90 dark:border-white/15 dark:text-white/60 dark:hover:bg-white/10"
+      >
+        Inloggen
+      </Link>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-10 p-8">
       <header className="flex flex-col gap-4 text-center">
         <span className="mx-auto rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-black/50 dark:border-white/15 dark:text-white/50">
           Lida Thiry · Imago &amp; Kledingadvies
@@ -61,5 +68,6 @@ export default async function Home() {
         )}
       </div>
     </main>
+    </>
   );
 }
