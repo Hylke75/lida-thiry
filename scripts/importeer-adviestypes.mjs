@@ -10,6 +10,7 @@
 // Bronmap standaard: ~/Desktop/figuurtypes-advies-md (te overschrijven met BRONMAP).
 
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -145,10 +146,14 @@ function metaVanSleutel(sleutel) {
 }
 
 const BEELD_BUCKET = "advies-beelden";
-const MIME = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
+const BRON_EXT = new Set([".png", ".jpg", ".jpeg"]);
+// Beelden worden verkleind naar deze breedte en als JPEG opgeslagen: veel kleiner
+// en sneller in de PDF (bron is vaak >1 MB, in de PDF ~96pt breed).
+const MAX_BREEDTE = 480;
+const JPEG_KWALITEIT = 72;
 
-// Uploadt de png/jpg-beelden van een type naar de bucket en vervangt in de secties
-// de bestandsnamen door hun storage-pad. TIFF e.d. worden overgeslagen (niet in PDF/web).
+// Verkleint de png/jpg-beelden van een type, uploadt ze als JPEG naar de bucket en
+// vervangt in de secties de bestandsnamen door hun storage-pad. TIFF e.d. overgeslagen.
 async function uploadEnHerkoppelBeelden(sleutel, typeMap, secties) {
   const mediaMap = join(typeMap, "media", "media");
   if (!existsSync(mediaMap)) {
@@ -161,7 +166,7 @@ async function uploadEnHerkoppelBeelden(sleutel, typeMap, secties) {
     const nieuw = [];
     for (const naam of s.afbeeldingen) {
       const ext = (naam.match(/\.[a-z0-9]+$/i)?.[0] || "").toLowerCase();
-      if (!MIME[ext]) continue;
+      if (!BRON_EXT.has(ext)) continue;
       if (cache.has(naam)) {
         if (cache.get(naam)) nieuw.push(cache.get(naam));
         continue;
@@ -171,10 +176,21 @@ async function uploadEnHerkoppelBeelden(sleutel, typeMap, secties) {
         cache.set(naam, null);
         continue;
       }
-      const pad = `${sleutel}/${naam}`;
+      const pad = `${sleutel}/${naam.replace(/\.[a-z0-9]+$/i, ".jpg")}`;
+      let buffer;
+      try {
+        buffer = await sharp(readFileSync(bestand))
+          .resize({ width: MAX_BREEDTE, withoutEnlargement: true })
+          .flatten({ background: "#ffffff" })
+          .jpeg({ quality: JPEG_KWALITEIT })
+          .toBuffer();
+      } catch {
+        cache.set(naam, null);
+        continue;
+      }
       const { error } = await supabase.storage
         .from(BEELD_BUCKET)
-        .upload(pad, readFileSync(bestand), { contentType: MIME[ext], upsert: true });
+        .upload(pad, buffer, { contentType: "image/jpeg", upsert: true });
       if (error) {
         cache.set(naam, null);
         continue;

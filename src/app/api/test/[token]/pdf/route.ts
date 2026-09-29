@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { genereerAdviesPdf, signedPdfUrl } from "@/lib/pdf/genereer";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 // Download van de advies-PDF via de testlink. Levert een tijdelijke signed URL.
 export async function GET(

@@ -46,16 +46,16 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     .eq("type_sleutel", order.toegekend_type)
     .order("volgorde", { ascending: true });
 
-  const secties: PdfSectie[] = [];
-  for (const s of sectieRijen ?? []) {
-    const paden = (s.afbeeldingen as string[]) ?? [];
-    const beelden: string[] = [];
-    for (const pad of paden) {
-      const uri = await beeldDataUri(supabase, pad);
-      if (uri) beelden.push(uri);
-    }
-    secties.push({ kop: s.kop, tekst: s.tekst, beelden });
-  }
+  // Alle beelden parallel downloaden (veel sneller dan serieel).
+  const secties: PdfSectie[] = await Promise.all(
+    (sectieRijen ?? []).map(async (s) => {
+      const paden = (s.afbeeldingen as string[]) ?? [];
+      const beelden = (
+        await Promise.all(paden.map((pad) => beeldDataUri(supabase, pad)))
+      ).filter((uri): uri is string => uri !== null);
+      return { kop: s.kop, tekst: s.tekst, beelden };
+    }),
+  );
 
   const { data: res } = await supabase
     .from("testresultaten")
