@@ -25,7 +25,7 @@ export default async function Home() {
         href="/admin/inloggen"
         className="fixed right-6 top-6 z-10 rounded-full bg-red-600 px-7 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-red-700"
       >
-        Inloggen
+        Mama hier moet je op klikken!
       </Link>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-10 p-8">
       <header className="flex flex-col gap-4 text-center">
