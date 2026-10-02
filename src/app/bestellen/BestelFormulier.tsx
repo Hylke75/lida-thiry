@@ -32,6 +32,7 @@ export function BestelFormulier({
       voorwaarden_akkoord: f.get("voorwaarden_akkoord") === "on",
       directe_levering_akkoord: f.get("directe_levering_akkoord") === "on",
       gratis,
+      kortingscode: String(f.get("kortingscode") || "").trim(),
     };
     try {
       const res = await fetch("/api/bestellen", {
@@ -61,6 +62,7 @@ export function BestelFormulier({
         <Veld naam="postcode" label="Postcode" autoComplete="postal-code" />
         <Veld naam="plaats" label="Plaats" autoComplete="address-level2" />
       </div>
+      <Veld naam="kortingscode" label="Kortingscode of cadeaubon (optioneel)" autoComplete="off" />
 
       <label className="flex items-start gap-3 text-sm text-black/70 dark:text-white/70">
         <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1" />
