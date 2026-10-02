@@ -57,6 +57,14 @@ export async function beeldUrls(paden: string[]): Promise<Record<string, string>
   return urls;
 }
 
+/** Signed URL (1 uur) die het bestand als download aanbiedt (bijv. het origineel). */
+export async function downloadUrl(pad: string, bestandsnaam: string): Promise<string | null> {
+  const { data } = await adminClient()
+    .storage.from(BEELD_BUCKET)
+    .createSignedUrl(pad, 3600, { download: bestandsnaam });
+  return data?.signedUrl ?? null;
+}
+
 /** Waar wordt een beeld gebruikt (type + sectie)? */
 export async function gebruikVan(beeldId: string): Promise<Gebruik[]> {
   const { data } = await adminClient()
