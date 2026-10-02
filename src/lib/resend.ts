@@ -73,6 +73,7 @@ export async function stuurTestlinkMail(opts: {
         <a href="${link}" style="background:#a4634d;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9999px;font-weight:600">Start de test</a>
       </p>
       <p>Je kunt later verdergaan met dezelfde link; die is ${opts.geldigDagen} dagen geldig.</p>
+      <p style="font-size:13px;color:#555">Bij je bestelling heb je ingestemd met directe levering van de digitale inhoud en erkend dat je daarmee je herroepingsrecht verliest.</p>
       <p style="font-size:13px;color:#555">Werkt de knop niet? Kopieer deze link:<br>${link}</p>`);
 
   const { error } = await resend().emails.send({

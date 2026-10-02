@@ -72,3 +72,5 @@ $$;
 
 revoke all on function public.gebruik_kortingscode(text, boolean) from public, anon, authenticated;
 revoke all on function public.geef_kortingscode_vrij(text) from public, anon, authenticated;
+grant execute on function public.gebruik_kortingscode(text, boolean) to service_role;
+grant execute on function public.geef_kortingscode_vrij(text) to service_role;

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { AdminNav } from "../AdminNav";
 import { adminClient } from "@/lib/supabase/admin";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
 
@@ -155,13 +155,8 @@ export default async function KortingscodesPage({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-8">
+      <AdminNav actief="/admin/kortingscodes" />
       <header className="flex flex-col gap-2">
-        <Link
-          href="/admin"
-          className="text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
-        >
-          ← Terug naar beheer
-        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Kortingscodes &amp; cadeaubonnen</h1>
         <p className="text-sm text-black/60 dark:text-white/60">
           Klanten vullen de code in bij het bestellen. Het gebruik telt pas mee zodra de

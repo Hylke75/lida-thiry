@@ -45,3 +45,4 @@ insert into public.instellingen (sleutel, waarde, omschrijving) values
   ('btw_nummer', null, 'Btw-identificatienummer op de factuur (OPEN).'),
   ('contact_email', null, 'Contact-e-mailadres op de factuur (OPEN).')
 on conflict (sleutel) do nothing;
+grant execute on function public.volgend_factuurvolgnummer(integer) to service_role;

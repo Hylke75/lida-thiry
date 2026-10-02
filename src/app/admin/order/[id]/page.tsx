@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { leverAdvies } from "@/lib/advies-leveren";
+import { signedFactuurUrl } from "@/lib/factuur";
 import { leesInstelling } from "@/lib/instellingen";
 import { stuurTestlinkMail } from "@/lib/resend";
 import { tokenVerlooptOp } from "@/lib/tokens";
@@ -114,7 +115,7 @@ async function verwijderBestelling(formData: FormData) {
   redirect("/admin");
 }
 
-function Regel({ label, waarde }: { label: string; waarde: string }) {
+function Regel({ label, waarde }: { label: string; waarde: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 border-b border-black/5 py-1.5 text-sm dark:border-white/10">
       <span className="text-black/50 dark:text-white/50">{label}</span>
@@ -148,6 +149,7 @@ export default async function OrderDetail({
       </main>
     );
   }
+  const factuurUrl = order.factuur_pad ? await signedFactuurUrl(order.factuur_pad) : null;
   const { data: r } = await supabase.from("testresultaten").select("*").eq("order_id", id).maybeSingle();
   const cm = (v: number | null | undefined) => (v == null ? "–" : `${v} cm`);
   const antwoorden = (r?.pasvormantwoorden ?? {}) as Record<string, string>;
@@ -167,6 +169,21 @@ export default async function OrderDetail({
         <Regel label="Status" waarde={statusLabel(order.status)} />
         <Regel label="Toegekend type" waarde={order.toegekend_type ?? "–"} />
         <Regel label="Bedrag" waarde={order.bedrag_cent ? `€ ${(order.bedrag_cent / 100).toFixed(2)}` : "–"} />
+        {order.kortingscode && (
+          <Regel label="Kortingscode" waarde={`${order.kortingscode} (− € ${((order.korting_cent ?? 0) / 100).toFixed(2)})`} />
+        )}
+        <Regel
+          label="Factuur"
+          waarde={
+            factuurUrl ? (
+              <a href={factuurUrl} className="text-accent underline underline-offset-2">
+                {order.factuurnummer ?? "Download"}
+              </a>
+            ) : (
+              order.factuurnummer ?? "–"
+            )
+          }
+        />
         <Regel
           label="Testlink geldig tot"
           waarde={order.token_verloopt_op ? new Date(order.token_verloopt_op).toLocaleDateString("nl-NL") : "–"}

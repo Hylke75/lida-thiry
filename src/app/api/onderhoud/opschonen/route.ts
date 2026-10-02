@@ -28,6 +28,11 @@ export async function GET(request: Request) {
   const dagen = Number((await leesInstelling("bewaartermijn_maten_dagen")) || "30");
   const supabase = adminClient();
   const { data, error } = await supabase.rpc("anonimiseer_oude_maten", { dagen });
+  // Oude rate-limitvensters opruimen; een fout hier mag de rest niet tegenhouden.
+  await supabase.rpc("opschonen_rate_limits").then(
+    () => undefined,
+    () => undefined,
+  );
   if (error) {
     return NextResponse.json({ fout: error.message }, { status: 500 });
   }
