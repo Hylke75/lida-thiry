@@ -72,12 +72,22 @@ export function BestelFormulier({
         <Veld naam="plaats" label="Plaats" autoComplete="address-level2" />
       </div>
 
-      <label className="flex items-start gap-3 text-sm text-black/70 dark:text-white/70">
-        <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1" />
-        <span>Ik ga akkoord met de voorwaarden en de privacyverklaring.</span>
+      <label className="flex items-start gap-3 text-sm text-foreground/70">
+        <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1 accent-accent" />
+        <span>
+          Ik ga akkoord met de{" "}
+          <a href="/voorwaarden" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">
+            voorwaarden
+          </a>{" "}
+          en de{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">
+            privacyverklaring
+          </a>
+          .
+        </span>
       </label>
-      <label className="flex items-start gap-3 text-sm text-black/70 dark:text-white/70">
-        <input type="checkbox" name="directe_levering_akkoord" required className="mt-1" />
+      <label className="flex items-start gap-3 text-sm text-foreground/70">
+        <input type="checkbox" name="directe_levering_akkoord" required className="mt-1 accent-accent" />
         <span>
           Ik ga ermee akkoord dat de digitale inhoud direct wordt geleverd en dat
           ik daarmee mijn herroepingsrecht verlies.
@@ -95,7 +105,7 @@ export function BestelFormulier({
           type="button"
           onClick={() => start(false)}
           disabled={bezig}
-          className="mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="mt-2 rounded-full bg-accent px-6 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {bezig ? "Bezig…" : "Naar betaling"}
         </button>
@@ -105,7 +115,7 @@ export function BestelFormulier({
           type="button"
           onClick={() => start(true)}
           disabled={bezig}
-          className="rounded-full border border-black/20 px-6 py-3 text-sm font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/25 dark:hover:bg-white/10"
+          className="rounded-full border border-accent/40 px-6 py-3 text-sm font-medium text-accent hover:bg-accent-zacht disabled:opacity-50"
         >
           {bezig ? "Bezig…" : "Gratis testen (zonder betalen)"}
         </button>
@@ -129,16 +139,16 @@ function Veld({
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-black/70 dark:text-white/70">
+      <span className="text-foreground/70">
         {label}
-        {verplicht && <span className="text-red-500"> *</span>}
+        {verplicht && <span className="text-accent"> *</span>}
       </span>
       <input
         name={naam}
         type={type}
         autoComplete={autoComplete}
         required={verplicht}
-        className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+        className="rounded-lg border border-foreground/15 bg-kaart px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
     </label>
   );
