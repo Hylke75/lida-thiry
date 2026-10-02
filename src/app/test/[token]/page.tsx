@@ -8,18 +8,18 @@ function Melding({ titel, tekst, pdfUrl }: { titel: string; tekst: string; pdfUr
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
       <h1 className="text-2xl font-semibold tracking-tight">{titel}</h1>
-      <p className="text-black/60 dark:text-white/60">{tekst}</p>
+      <p className="text-foreground/70">{tekst}</p>
       {pdfUrl && (
         <a
           href={pdfUrl}
-          className="mx-auto rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          className="mx-auto rounded-full bg-accent px-6 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
         >
           Download je advies (PDF)
         </a>
       )}
       <Link
         href="/"
-        className="mx-auto text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
+        className="mx-auto text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
       >
         ← Naar de startpagina
       </Link>
