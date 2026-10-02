@@ -32,6 +32,7 @@ export function BestelFormulier({
       voorwaarden_akkoord: f.get("voorwaarden_akkoord") === "on",
       directe_levering_akkoord: f.get("directe_levering_akkoord") === "on",
       gratis,
+      website: String(f.get("website") || ""),
     };
     try {
       const res = await fetch("/api/bestellen", {
@@ -54,6 +55,15 @@ export function BestelFormulier({
 
   return (
     <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4">
+      {/* Honeypot tegen spambots: onzichtbaar voor mensen en schermlezers. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
+      />
       <Veld naam="klantnaam" label="Naam" autoComplete="name" verplicht />
       <Veld naam="email" label="E-mailadres" type="email" autoComplete="email" verplicht />
       <Veld naam="adres" label="Adres" autoComplete="street-address" />

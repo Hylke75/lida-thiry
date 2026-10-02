@@ -4,6 +4,7 @@ import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
 import { mollie, centenNaarBedrag } from "@/lib/mollie";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { siteUrl } from "@/lib/site";
+import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,7 @@ interface BestelInvoer {
   voorwaarden_akkoord?: boolean;
   directe_levering_akkoord?: boolean;
   gratis?: boolean;
+  website?: string;
 }
 
 function geldigEmail(email: string): boolean {
@@ -21,11 +23,16 @@ function geldigEmail(email: string): boolean {
 }
 
 export async function POST(request: Request) {
+  if (!(await magDoor(request, "bestellen", 10, 600))) return teVeelVerzoeken();
   let body: BestelInvoer;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ fout: "Ongeldige aanvraag." }, { status: 400 });
+  }
+  // Honeypot: alleen bots vullen het verborgen veld 'website'. Doe alsof het lukt.
+  if (typeof body.website === "string" && body.website.trim() !== "") {
+    return NextResponse.json({ checkoutUrl: `${siteUrl()}/` });
   }
 
   const naam = (body.klantnaam ?? "").trim();

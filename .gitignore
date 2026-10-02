@@ -49,3 +49,9 @@ figuurtypes-advies*/
 # Supabase CLI lokaal
 supabase/.temp/
 .branches/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

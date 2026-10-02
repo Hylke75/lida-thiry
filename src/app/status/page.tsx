@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { vereisBeheerder } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function StatusPage() {
+  // Toont configuratie-informatie: alleen voor beheerders.
+  await vereisBeheerder();
+
   const urlSet = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const keySet = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 

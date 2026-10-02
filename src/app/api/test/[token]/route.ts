@@ -9,6 +9,7 @@ import {
   type ZandloperVariant,
 } from "@/rekenkern/config/ffit-regels";
 import { SILHOUETTEN } from "@/lib/test-config";
+import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,6 +25,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  if (!(await magDoor(request, "test", 30, 600))) return teVeelVerzoeken();
   const { token } = await params;
   const beoordeling = await beoordeelToken(token);
   // Al afgerond (bijv. opnieuw verstuurd na een weggevallen verbinding): geef het
