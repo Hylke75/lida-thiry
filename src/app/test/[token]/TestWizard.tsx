@@ -12,13 +12,14 @@ import {
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Lichaam } from "./Lichaam";
+import { TypeOnthulling } from "./TypeOnthulling";
 
 interface Bevinding {
   code: string;
   ernst: string;
   bericht: string;
 }
-type Resultaat = { soort: "type"; sleutel: string };
+type Resultaat = { soort: "type"; sleutel: string; titel: string | null; letter: string };
 
 interface Antwoorden {
   lengte: string;
@@ -93,7 +94,16 @@ function stapFout(stap: Stap, a: Antwoorden): string | null {
   }
 }
 
-export function TestWizard({ token, klantnaam }: { token: string; klantnaam: string }) {
+export function TestWizard({
+  token,
+  klantnaam,
+  meetBeelden = {},
+}: {
+  token: string;
+  klantnaam: string;
+  /** Door de adviseur geüploade meetfoto's per maat (publieke URL); anders de tekening. */
+  meetBeelden?: Record<string, string>;
+}) {
   const opslagSleutel = `lida-test-${token}`;
   const [a, setA] = useState<Antwoorden>(LEEG);
   const [stap, setStap] = useState(0);
@@ -198,8 +208,17 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
       } else if (d.soort === "silhouet_verschil") {
         setHermeting(true);
         gaNaar(EERSTE_MATEN_STAP);
+        // Bijv. "Je heupen zijn duidelijk breder dan je borst (12 cm verschil).
+        // Dat past meer bij Peer / driehoek dan bij Zandloper."
+        const gekozen = SILHOUETTEN.find((x) => x.letter === a.silhouet)?.naam;
+        const berekend = SILHOUETTEN.find((x) => x.letter === d.berekendeLetter)?.naam;
+        const reden: string =
+          d.reden ??
+          (gekozen && berekend
+            ? `Je koos ${gekozen}, maar je maten passen meer bij ${berekend}.`
+            : "Het silhouet dat je koos past niet helemaal bij je maten.");
         setMelding(
-          "Het silhouet dat je koos past niet helemaal bij je maten. Loop je maten nog één keer na (en eventueel je silhouetkeuze) en rond daarna opnieuw af.",
+          `${reden} Loop je maten nog één keer na (en eventueel je silhouetkeuze) en rond daarna opnieuw af. Blijft het verschil bestaan, dan gaan we uit van je maten.`,
         );
       } else {
         try {
@@ -215,22 +234,13 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
 
   if (resultaat) {
     return (
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
-        <p className="text-4xl" aria-hidden>
-          🎉
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight">Klaar, {klantnaam}!</h1>
-        <p className="text-black/60 dark:text-white/60">
-          Op basis van je antwoorden is jouw type <strong>{resultaat.sleutel}</strong>. Je persoonlijke
-          advies kun je hieronder downloaden; we sturen het ook naar je e-mail.
-        </p>
-        <a
-          href={`/api/test/${token}/pdf`}
-          className="mx-auto mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
-        >
-          Download je advies (PDF)
-        </a>
-      </main>
+      <TypeOnthulling
+        token={token}
+        sleutel={resultaat.sleutel}
+        titel={resultaat.titel}
+        kop={`Klaar, ${klantnaam}! Jouw type is`}
+        intro="Op basis van je maten en antwoorden hebben we je figuurtype bepaald. Hieronder lees je wat dat betekent."
+      />
     );
   }
 
@@ -317,6 +327,7 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
               <MaatKaart
                 key={v.sleutel}
                 veld={v}
+                beeld={meetBeelden[v.sleutel]}
                 waarde={a.maten[v.sleutel] ?? ""}
                 controle={a.controle[v.sleutel] ?? ""}
                 zetWaarde={(w) => zet("maten", v.sleutel, w)}
@@ -339,9 +350,9 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
                 return (
                   <label
                     key={s.letter}
-                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-3 text-center text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-500 ${
+                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-3 text-center text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
                       gekozen
-                        ? "border-rose-600 bg-rose-50 dark:bg-rose-950/30"
+                        ? "border-accent bg-accent-zacht"
                         : "border-black/10 hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
                     }`}
                   >
@@ -374,9 +385,9 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
                     return (
                       <label
                         key={optie}
-                        className={`cursor-pointer rounded-full border-2 px-4 py-2 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-500 ${
+                        className={`cursor-pointer rounded-full border-2 px-4 py-2 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
                           gekozen
-                            ? "border-rose-600 bg-rose-50 dark:bg-rose-950/30"
+                            ? "border-accent bg-accent-zacht"
                             : "border-black/10 hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
                         }`}
                       >
@@ -450,7 +461,7 @@ function Voortgang({
     <nav aria-label="Voortgang" className="mt-4">
       <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
         <div
-          className="h-full rounded-full bg-rose-600 transition-[width] duration-500"
+          className="h-full rounded-full bg-accent transition-[width] duration-500"
           style={{ width: `${((stap + 1) / STAPPEN.length) * 100}%` }}
         />
       </div>
@@ -480,7 +491,7 @@ function Voortgang({
                     actief
                       ? "bg-background text-foreground"
                       : klaar
-                        ? "bg-rose-600 text-white"
+                        ? "bg-accent text-background"
                         : "border border-current"
                   }`}
                 >
@@ -498,6 +509,7 @@ function Voortgang({
 
 function MaatKaart({
   veld,
+  beeld,
   waarde,
   controle,
   zetWaarde,
@@ -505,6 +517,7 @@ function MaatKaart({
   fout,
 }: {
   veld: MaatVeld;
+  beeld?: string;
   waarde: string;
   controle: string;
   zetWaarde: (w: string) => void;
@@ -522,7 +535,16 @@ function MaatKaart({
         fout ? "border-red-300 dark:border-red-800" : "border-black/10 dark:border-white/15"
       }`}
     >
-      <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="mx-auto h-40 sm:h-56" />
+      {beeld ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={beeld}
+          alt={`Zo meet je je ${label.toLowerCase()}`}
+          className="mx-auto h-40 w-auto rounded-lg object-contain sm:h-56"
+        />
+      ) : (
+        <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="mx-auto h-40 sm:h-56" />
+      )}
       <div className="flex flex-col gap-3">
         <h2 className="font-semibold">
           {label}
@@ -600,7 +622,7 @@ function Overzicht({ a, gaNaar }: { a: Antwoorden; gaNaar: (i: number) => void }
               <button
                 type="button"
                 onClick={() => gaNaar(r.stap)}
-                className="text-xs font-normal text-rose-700 underline underline-offset-2 dark:text-rose-400"
+                className="text-xs font-normal text-accent underline underline-offset-2"
               >
                 wijzig
               </button>

@@ -1,7 +1,9 @@
 import "server-only";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { adminClient } from "@/lib/supabase/admin";
-import { AdviesPdf, type PdfSectie } from "./document";
+import { AdviesPdf, type PdfSectie, type PdfSilhouet } from "./document";
+import { silhouetVoorSleutel } from "@/lib/test-config";
+import { vormUitMaten } from "@/lib/lichaam-pad";
 
 const BUCKET = "adviezen-pdf";
 const BEELD_BUCKET = "advies-beelden";
@@ -63,6 +65,28 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     .eq("order_id", orderId)
     .single();
 
+  // Silhouet op de voorpagina: getekend naar de eigen maten als die er (nog)
+  // zijn; na anonimisering valt het terug op het standaardsilhouet van de letter.
+  const optie = silhouetVoorSleutel(order.toegekend_type);
+  const eigenMaten =
+    res?.borst != null && res.taille != null && res.hoge_heup != null && res.heup != null;
+  const silhouet: PdfSilhouet | null = optie
+    ? {
+        naam: optie.naam,
+        uitleg: optie.uitleg,
+        eigenMaten,
+        vorm: eigenMaten
+          ? vormUitMaten({
+              borst: res.borst,
+              taille: res.taille,
+              hogeHeup: res.hoge_heup,
+              heup: res.heup,
+              schouder: res.schouder,
+            })
+          : optie.vorm,
+      }
+    : null;
+
   const datum = new Date(order.afgerond_op ?? Date.now()).toLocaleDateString("nl-NL", {
     day: "numeric",
     month: "long",
@@ -86,6 +110,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
         schouder: res?.schouder ?? null,
       }}
       secties={secties}
+      silhouet={silhouet}
     />,
   );
 

@@ -2,75 +2,11 @@
 // Alles is inline SVG: geen externe beelden nodig, scherp op elk scherm.
 
 import type { Lichaamsvorm, MaatSleutel } from "@/lib/test-config";
+import { CX, HOOFD, STANDAARD_VORM, Y, armPad, lichaamsPad } from "@/lib/lichaam-pad";
 
-const CX = 100;
-const LINT = "#e11d48";
+const LINT = "var(--accent)";
 
-export const STANDAARD_VORM: Lichaamsvorm = {
-  schouder: 38,
-  borst: 34,
-  taille: 26,
-  hogeHeup: 31,
-  heup: 37,
-};
-
-// Hoogtes (y) van de meetpunten in de illustratie.
-const Y = {
-  hoofdBoven: 20,
-  schouder: 92,
-  borst: 128,
-  taille: 172,
-  hogeHeup: 198,
-  heup: 232,
-  kruis: 270,
-  vloer: 398,
-};
-
-/** Catmull-Rom door de punten -> gesloten, vloeiend SVG-pad. */
-function vloeiendPad(p: [number, number][]): string {
-  const n = p.length;
-  let d = `M${p[0][0]},${p[0][1]}`;
-  for (let i = 0; i < n; i++) {
-    const [p0, p1, p2, p3] = [
-      p[(i - 1 + n) % n],
-      p[i],
-      p[(i + 1) % n],
-      p[(i + 2) % n],
-    ];
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0]},${p2[1]}`;
-  }
-  return d + "Z";
-}
-
-function lichaamsPad(v: Lichaamsvorm): string {
-  // Linkerhelft van boven naar beneden als [afstand tot midden, y].
-  const links: [number, number][] = [
-    [9, 66],
-    [10, 78],
-    [v.schouder, Y.schouder],
-    [v.borst + 1, 112],
-    [v.borst, Y.borst],
-    [v.taille, Y.taille],
-    [v.hogeHeup, Y.hogeHeup],
-    [v.heup, Y.heup],
-    [v.heup - 3, 262],
-    [Math.round(v.heup * 0.45 + 10), 330],
-    [15, 386],
-    [17, Y.vloer],
-    [5, Y.vloer],
-    [6, 386],
-    [7, 330],
-    [4, 285],
-  ];
-  const punten: [number, number][] = [
-    ...links.map(([dx, y]) => [CX - dx, y] as [number, number]),
-    [CX, Y.kruis],
-    ...[...links].reverse().map(([dx, y]) => [CX + dx, y] as [number, number]),
-  ];
-  return vloeiendPad(punten);
-}
+export { STANDAARD_VORM };
 
 /** Meetlint rond het lichaam: voorkant doorgetrokken, achterkant gestippeld. */
 function Lint({ y, r }: { y: number; r: number }) {
@@ -114,12 +50,7 @@ export function Lichaam({
   className?: string;
   titel: string;
 }) {
-  const arm = (kant: -1 | 1) => {
-    const x0 = CX + kant * (vorm.schouder - 4);
-    const xc = CX + kant * (vorm.schouder + 12);
-    const x1 = CX + kant * (vorm.heup + 10);
-    return `M${x0},${Y.schouder + 4} Q${xc},160 ${x1},240`;
-  };
+  const arm = (kant: -1 | 1) => armPad(vorm, kant);
 
   return (
     <svg
@@ -137,7 +68,7 @@ export function Lichaam({
           strokeWidth={1.5}
         >
           <path d={lichaamsPad(vorm)} />
-          <circle cx={CX} cy={42} r={22} />
+          <circle cx={HOOFD.cx} cy={HOOFD.cy} r={HOOFD.r} />
         </g>
         {armen && (
           <>

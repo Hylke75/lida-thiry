@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { mollie } from "@/lib/mollie";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
-import { stuurTestlinkMail } from "@/lib/resend";
+import { naBetaling } from "@/lib/bestelling-betaald";
 
 export const runtime = "nodejs";
 
@@ -62,17 +62,10 @@ export async function POST(request: Request) {
     if (updateFout) return NextResponse.json({ ok: false }, { status: 500 });
 
     if (bijgewerkt && bijgewerkt.length > 0) {
-      try {
-        await stuurTestlinkMail({
-          naam: order.klantnaam,
-          email: order.email,
-          token,
-          geldigDagen: dagen,
-        });
-      } catch (e) {
-        // Mail mislukt: betaling blijft geldig; de bedankpagina toont de testlink ook.
-        console.error("Testlink-mail mislukt", order.id, e);
-      }
+      // Kortingsgebruik tellen, factuur maken en bevestigingsmail met testlink
+      // sturen. Gooit nooit; bij fouten krijgt de beheerder een melding (de
+      // betaling blijft geldig en de bedankpagina toont de testlink ook).
+      await naBetaling({ orderId: order.id, token, geldigDagen: dagen });
     }
     return NextResponse.json({ ok: true });
   }

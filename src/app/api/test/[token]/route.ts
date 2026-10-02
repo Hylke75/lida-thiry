@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
-import { beoordeelToken } from "@/lib/test-order";
+import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
 import { leverAdvies } from "@/lib/advies-leveren";
+import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
 import {
   STANDAARD_ZANDLOPER_VARIANT,
   type ZandloperVariant,
 } from "@/rekenkern/config/ffit-regels";
 import { SILHOUETTEN } from "@/lib/test-config";
+import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
+import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,16 +23,26 @@ function getal(v: unknown): number | undefined {
   return Number.isFinite(n) ? Math.round(n) : undefined;
 }
 
+/**
+ * Antwoord met het definitieve type: sleutel (bijv. "6A"), de titel uit
+ * adviestypes (null als die ontbreekt) en de figuurletter.
+ */
+async function typeAntwoord(sleutel: string, extra: { pdfKlaar?: boolean } = {}) {
+  const titel = await haalTypeTitel(sleutel).catch(() => null);
+  return NextResponse.json({ soort: "type", sleutel, titel, letter: sleutel.slice(-1), ...extra });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  if (!(await magDoor(request, "test", 30, 600))) return teVeelVerzoeken();
   const { token } = await params;
   const beoordeling = await beoordeelToken(token);
   // Al afgerond (bijv. opnieuw verstuurd na een weggevallen verbinding): geef het
   // eerdere resultaat terug in plaats van een foutmelding.
   if (beoordeling.toestand === "al_afgerond" && beoordeling.order.toegekend_type) {
-    return NextResponse.json({ soort: "type", sleutel: beoordeling.order.toegekend_type });
+    return typeAntwoord(beoordeling.order.toegekend_type);
   }
   if (beoordeling.toestand !== "geldig") {
     return NextResponse.json({ fout: "Deze testlink is niet (meer) bruikbaar." }, { status: 403 });
@@ -91,7 +104,12 @@ export async function POST(
     return NextResponse.json({ soort: "opnieuw_meten", bevindingen: uitkomst.bevindingen });
   }
   if (uitkomst.soort === "silhouet_verschil") {
-    return NextResponse.json({ soort: "silhouet_verschil" });
+    return NextResponse.json({
+      soort: "silhouet_verschil",
+      gekozenLetter: invoer.gekozen_silhouet,
+      berekendeLetter: uitkomst.berekendeLetter,
+      reden: silhouetVerschilReden(invoer.maten, invoer.gekozen_silhouet, uitkomst.berekendeLetter),
+    });
   }
 
   const supabase = adminClient();
@@ -141,7 +159,7 @@ export async function POST(
     return NextResponse.json({ fout: "Afronden mislukte. Probeer het opnieuw." }, { status: 500 });
   }
   if (!bijgewerkt?.length) {
-    return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel });
+    return typeAntwoord(uitkomst.sleutel);
   }
 
   // PDF genereren, mailen en op 'advies_verzonden' zetten. Mislukt dat, dan blijft
@@ -151,7 +169,11 @@ export async function POST(
     pdfKlaar = await leverAdvies(order.id);
   } catch (e) {
     console.error("Advies leveren mislukt", order.id, e);
+    await stuurBeheerMelding(
+      "Advies leveren mislukt",
+      `Order ${order.id} (${order.klantnaam}, ${order.email}) heeft de test afgerond (type ${uitkomst.sleutel}), maar het advies kon niet worden gemaakt of gemaild. De nachtelijke taak probeert het opnieuw.\n\n${foutTekst(e)}`,
+    );
   }
 
-  return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel, pdfKlaar });
+  return typeAntwoord(uitkomst.sleutel, { pdfKlaar });
 }

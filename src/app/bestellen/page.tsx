@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
 import { BestelFormulier } from "./BestelFormulier";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Bestellen",
+  description:
+    "Bestel de online kledingadviestest van Lida Thiry en ontvang direct je persoonlijke kledingadvies als PDF.",
+  alternates: { canonical: "/bestellen" },
+};
 
 export default async function BestellenPage() {
   const gratisTest = Boolean(process.env.GRATIS_TEST);
@@ -23,26 +31,29 @@ export default async function BestellenPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-8">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
       <div>
         <Link
           href="/"
-          className="text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
+          className="text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
         >
           ← Terug
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Bestellen</h1>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight">Bestellen</h1>
         {prijsLabel && (
-          <p className="mt-1 text-black/60 dark:text-white/60">
-            Kledingadviestest — <strong>{prijsLabel}</strong>
+          <p className="mt-2 text-foreground/70">
+            Online kledingadviestest — <strong className="text-accent">{prijsLabel}</strong>{" "}
+            <span className="text-sm text-foreground/50">(incl. btw)</span>
           </p>
         )}
       </div>
 
       {prijsBekend || gratisTest ? (
-        <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} />
+        <div className="rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5 sm:p-8">
+          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} />
+        </div>
       ) : (
-        <p className="rounded-lg border border-black/10 px-4 py-3 text-sm text-black/60 dark:border-white/15 dark:text-white/60">
+        <p className="rounded-lg border border-accent/20 bg-accent-zacht px-4 py-3 text-sm text-foreground/70">
           De prijs is nog niet ingesteld, dus bestellen is nu niet mogelijk. Kom
           binnenkort terug.
         </p>
