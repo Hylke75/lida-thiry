@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
+import { leesMeetBeelden } from "@/lib/meetbeelden";
 import { TestWizard } from "./TestWizard";
 import { TypeOnthulling } from "./TypeOnthulling";
 
@@ -57,6 +58,6 @@ export default async function TestPage({
       );
     }
     case "geldig":
-      return <TestWizard token={token} klantnaam={b.order.klantnaam} />;
+      return <TestWizard token={token} klantnaam={b.order.klantnaam} meetBeelden={await leesMeetBeelden()} />;
   }
 }
