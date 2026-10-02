@@ -93,7 +93,16 @@ function stapFout(stap: Stap, a: Antwoorden): string | null {
   }
 }
 
-export function TestWizard({ token, klantnaam }: { token: string; klantnaam: string }) {
+export function TestWizard({
+  token,
+  klantnaam,
+  meetBeelden = {},
+}: {
+  token: string;
+  klantnaam: string;
+  /** Door de adviseur geüploade meetfoto's per maat (publieke URL); anders de tekening. */
+  meetBeelden?: Record<string, string>;
+}) {
   const opslagSleutel = `lida-test-${token}`;
   const [a, setA] = useState<Antwoorden>(LEEG);
   const [stap, setStap] = useState(0);
@@ -317,6 +326,7 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
               <MaatKaart
                 key={v.sleutel}
                 veld={v}
+                beeld={meetBeelden[v.sleutel]}
                 waarde={a.maten[v.sleutel] ?? ""}
                 controle={a.controle[v.sleutel] ?? ""}
                 zetWaarde={(w) => zet("maten", v.sleutel, w)}
@@ -498,6 +508,7 @@ function Voortgang({
 
 function MaatKaart({
   veld,
+  beeld,
   waarde,
   controle,
   zetWaarde,
@@ -505,6 +516,7 @@ function MaatKaart({
   fout,
 }: {
   veld: MaatVeld;
+  beeld?: string;
   waarde: string;
   controle: string;
   zetWaarde: (w: string) => void;
@@ -522,7 +534,16 @@ function MaatKaart({
         fout ? "border-red-300 dark:border-red-800" : "border-black/10 dark:border-white/15"
       }`}
     >
-      <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="mx-auto h-40 sm:h-56" />
+      {beeld ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={beeld}
+          alt={`Zo meet je je ${label.toLowerCase()}`}
+          className="mx-auto h-40 w-auto rounded-lg object-contain sm:h-56"
+        />
+      ) : (
+        <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="mx-auto h-40 sm:h-56" />
+      )}
       <div className="flex flex-col gap-3">
         <h2 className="font-semibold">
           {label}

@@ -43,14 +43,18 @@ export const OPEN_PUNTEN: OpenPunt[] = [
   },
   {
     nr: 6,
-    onderwerp: "Prijs, bewaartermijn maten, doorlooptijd handmatige beoordeling",
-    standaard: "Bewaartermijn 30 dagen; prijs en doorlooptijd nog leeg",
+    onderwerp: "Prijs en bewaartermijn maten",
+    standaard:
+      "Beide in te stellen via Beheer -> Instellingen (prijs_cent, bewaartermijn_maten_dagen; ingesteld op 120 dagen). " +
+      "Handmatige beoordeling bestaat niet meer (elke test krijgt automatisch een type), dus ook geen doorlooptijd.",
     status: "open",
   },
   {
     nr: 7,
     onderwerp: "Afbeeldingen voor silhouetvraag, meetinstructies en pasvormvragen",
-    standaard: "Placeholders",
+    standaard:
+      "Meetinstructies: ingebouwde tekeningen; de adviseur kan per maat een eigen foto uploaden via Beheer -> Meetinstructies. " +
+      "Silhouet en pasvormvragen: tekeningen/placeholders.",
     status: "open",
   },
 ];

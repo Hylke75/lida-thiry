@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { beoordeelToken } from "@/lib/test-order";
+import { leesMeetBeelden } from "@/lib/meetbeelden";
 import { TestWizard } from "./TestWizard";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,6 @@ export default async function TestPage({
         />
       );
     case "geldig":
-      return <TestWizard token={token} klantnaam={b.order.klantnaam} />;
+      return <TestWizard token={token} klantnaam={b.order.klantnaam} meetBeelden={await leesMeetBeelden()} />;
   }
 }
