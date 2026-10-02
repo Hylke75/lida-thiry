@@ -4,14 +4,20 @@ import { leesInstelling } from "@/lib/instellingen";
 import { beoordeelToken } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
 import { leverAdvies } from "@/lib/advies-leveren";
-import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
+import {
+  STANDAARD_ZANDLOPER_VARIANT,
+  type ZandloperVariant,
+} from "@/rekenkern/config/ffit-regels";
+import { SILHOUETTEN } from "@/lib/test-config";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/** Hele centimeters/kilo's (de database slaat gehele getallen op). */
 function getal(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === "") return undefined;
   const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isFinite(n) ? Math.round(n) : undefined;
 }
 
 export async function POST(
@@ -20,6 +26,11 @@ export async function POST(
 ) {
   const { token } = await params;
   const beoordeling = await beoordeelToken(token);
+  // Al afgerond (bijv. opnieuw verstuurd na een weggevallen verbinding): geef het
+  // eerdere resultaat terug in plaats van een foutmelding.
+  if (beoordeling.toestand === "al_afgerond" && beoordeling.order.toegekend_type) {
+    return NextResponse.json({ soort: "type", sleutel: beoordeling.order.toegekend_type });
+  }
   if (beoordeling.toestand !== "geldig") {
     return NextResponse.json({ fout: "Deze testlink is niet (meer) bruikbaar." }, { status: 403 });
   }
@@ -38,6 +49,15 @@ export async function POST(
 
   if ([lengte, gewicht, borst, taille, hogeHeup, heup].some((v) => v === undefined)) {
     return NextResponse.json({ fout: "Vul lengte, gewicht en alle verplichte maten in." }, { status: 400 });
+  }
+  if (lengte! < 120 || lengte! > 220 || gewicht! < 30 || gewicht! > 250) {
+    return NextResponse.json(
+      { fout: "Controleer je lengte (in cm) en gewicht (in kg)." },
+      { status: 400 },
+    );
+  }
+  if (!SILHOUETTEN.some((s) => s.letter === body.gekozen_silhouet)) {
+    return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
   }
 
   const invoer: TestInvoer = {
@@ -62,7 +82,8 @@ export async function POST(
     hermeting: body.hermeting === true,
   };
 
-  const variant = ((await leesInstelling("zandloper_variant")) || "ffit") as ZandloperVariant;
+  const variant = ((await leesInstelling("zandloper_variant")) ||
+    STANDAARD_ZANDLOPER_VARIANT) as ZandloperVariant;
   const uitkomst = verwerkTest(invoer, variant);
 
   // Tussenstappen: niets opslaan.
@@ -77,11 +98,11 @@ export async function POST(
   const categorie = uitkomst.categorie;
 
   // Testresultaat opslaan (één per order dankzij de unieke order_id).
-  await supabase.from("testresultaten").upsert(
+  const { error: opslagFout } = await supabase.from("testresultaten").upsert(
     {
       order_id: order.id,
-      lengte_cm: Math.round(invoer.lengte_cm),
-      gewicht_kg: Math.round(invoer.gewicht_kg),
+      lengte_cm: invoer.lengte_cm,
+      gewicht_kg: invoer.gewicht_kg,
       categorie,
       borst: invoer.maten.borst,
       taille: invoer.maten.taille,
@@ -97,9 +118,16 @@ export async function POST(
     },
     { onConflict: "order_id" },
   );
+  if (opslagFout) {
+    return NextResponse.json(
+      { fout: "Opslaan van je antwoorden mislukte. Probeer het opnieuw." },
+      { status: 500 },
+    );
+  }
 
-  // Definitief type.
-  await supabase
+  // Definitief type. Alleen de eerste overgang betaald -> test_afgerond telt,
+  // zodat een dubbele verzending niet twee keer een advies mailt.
+  const { data: bijgewerkt, error: orderFout } = await supabase
     .from("orders")
     .update({
       status: "test_afgerond",
@@ -107,15 +135,22 @@ export async function POST(
       afgerond_op: new Date().toISOString(),
     })
     .eq("id", order.id)
-    .eq("status", "betaald");
+    .eq("status", "betaald")
+    .select("id");
+  if (orderFout) {
+    return NextResponse.json({ fout: "Afronden mislukte. Probeer het opnieuw." }, { status: 500 });
+  }
+  if (!bijgewerkt?.length) {
+    return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel });
+  }
 
-  // PDF genereren, mailen en op 'advies_verzonden' zetten. Faalt stil als het
-  // adviesdocument nog niet geïmporteerd is (dan blijft de order 'test_afgerond').
+  // PDF genereren, mailen en op 'advies_verzonden' zetten. Mislukt dat, dan blijft
+  // de order 'test_afgerond' en probeert de nachtelijke cron het opnieuw.
   let pdfKlaar = false;
   try {
     pdfKlaar = await leverAdvies(order.id);
-  } catch {
-    // PDF of mail mislukt: order blijft test_afgerond, kan later opnieuw.
+  } catch (e) {
+    console.error("Advies leveren mislukt", order.id, e);
   }
 
   return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel, pdfKlaar });

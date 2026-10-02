@@ -20,7 +20,6 @@ export async function productieCheck(): Promise<{ gereed: boolean; items: CheckI
     .select("*", { count: "exact", head: true });
 
   const prijs = await leesInstelling("prijs_cent");
-  const adviseur = await leesInstelling("adviseur_email");
 
   const items: CheckItem[] = [
     {
@@ -34,9 +33,11 @@ export async function productieCheck(): Promise<{ gereed: boolean; items: CheckI
       detail: `${count ?? 0}/60`,
     },
     { label: "Prijs ingesteld", ok: Boolean(prijs) },
-    { label: "Adviseur-e-mail ingesteld", ok: Boolean(adviseur) },
     { label: "Mollie-sleutel aanwezig", ok: Boolean(process.env.MOLLIE_API_KEY) },
     { label: "Resend-sleutel aanwezig", ok: Boolean(process.env.RESEND_API_KEY) },
+    { label: "Eigen afzenderadres (RESEND_VAN) ingesteld", ok: Boolean(process.env.RESEND_VAN) },
+    { label: "Website-adres (NEXT_PUBLIC_SITE_URL) ingesteld", ok: Boolean(process.env.NEXT_PUBLIC_SITE_URL) },
+    { label: "Gratis testmodus uit (GRATIS_TEST)", ok: !process.env.GRATIS_TEST },
   ];
 
   return { gereed: items.every((i) => i.ok), items };

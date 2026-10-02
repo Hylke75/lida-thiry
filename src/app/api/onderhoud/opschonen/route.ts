@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
+import { leverAdvies } from "@/lib/advies-leveren";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 // Geplande opschoning (Vercel-cron): anonimiseert lichaamsmaten ouder dan de
-// bewaartermijn. Beveiligd met CRON_SECRET (Vercel stuurt Authorization: Bearer ...).
+// bewaartermijn en levert adviezen opnieuw waarvan de PDF of mail eerder mislukte.
+// Beveiligd met CRON_SECRET (Vercel stuurt Authorization: Bearer ...).
 export async function GET(request: Request) {
   const geheim = process.env.CRON_SECRET;
   if (!geheim) {
@@ -22,5 +25,27 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.json({ fout: error.message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, geanonimiseerd: data ?? 0, bewaartermijn_dagen: dagen });
+
+  // Afgeronde tests zonder verzonden advies (ouder dan 10 minuten) opnieuw leveren.
+  const { data: open } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("status", "test_afgerond")
+    .lt("afgerond_op", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+  let opnieuwGeleverd = 0;
+  for (const o of open ?? []) {
+    try {
+      if (await leverAdvies(o.id)) opnieuwGeleverd++;
+    } catch (e) {
+      console.error("Opnieuw leveren mislukt", o.id, e);
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    geanonimiseerd: data ?? 0,
+    bewaartermijn_dagen: dagen,
+    opnieuw_geleverd: opnieuwGeleverd,
+    nog_open: (open?.length ?? 0) - opnieuwGeleverd,
+  });
 }
