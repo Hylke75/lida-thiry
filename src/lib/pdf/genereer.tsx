@@ -1,12 +1,13 @@
 import "server-only";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { adminClient } from "@/lib/supabase/admin";
-import { AdviesPdf, type PdfSectie, type PdfSilhouet } from "./document";
+import { AdviesPdf, type PdfMaten, type PdfSectie, type PdfSilhouet } from "./document";
+import { haalAdviesInhoud } from "@/lib/advies-inhoud";
+import { BEELD_BUCKET } from "@/lib/beeldbank-regels";
 import { silhouetVoorSleutel } from "@/lib/test-config";
 import { vormUitMaten } from "@/lib/lichaam-pad";
 
 const BUCKET = "adviezen-pdf";
-const BEELD_BUCKET = "advies-beelden";
 
 /** Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF). */
 async function beeldDataUri(
@@ -18,6 +19,64 @@ async function beeldDataUri(
   const mime = pad.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
   const base64 = Buffer.from(await data.arrayBuffer()).toString("base64");
   return `data:${mime};base64,${base64}`;
+}
+
+/** Zet de secties van een adviestype om naar PDF-secties (beelden als data-URI). */
+async function pdfSecties(
+  supabase: ReturnType<typeof adminClient>,
+  inhoud: NonNullable<Awaited<ReturnType<typeof haalAdviesInhoud>>>,
+): Promise<PdfSectie[]> {
+  // Alle beelden parallel downloaden; een beeld dat in meerdere secties staat maar één keer.
+  const uris = new Map<string, Promise<string | null>>();
+  for (const s of inhoud.secties)
+    for (const b of s.beelden) if (!uris.has(b.pad)) uris.set(b.pad, beeldDataUri(supabase, b.pad));
+  return Promise.all(
+    inhoud.secties.map(async (s) => ({
+      kop: s.kop,
+      tekst: s.tekst,
+      beelden: (
+        await Promise.all(
+          s.beelden.map(async (b) => {
+            const src = await uris.get(b.pad)!;
+            return src ? { src, bijschrift: b.bijschrift } : null;
+          }),
+        )
+      ).filter((b): b is NonNullable<typeof b> => b !== null),
+    })),
+  );
+}
+
+/**
+ * Voorbeeld-PDF van een adviestype voor beheer (met voorbeeldmaten en het
+ * standaardsilhouet). Wordt niet opgeslagen.
+ */
+export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | null> {
+  const supabase = adminClient();
+  const inhoud = await haalAdviesInhoud(sleutel);
+  if (!inhoud) return null;
+  const secties = await pdfSecties(supabase, inhoud);
+  const optie = silhouetVoorSleutel(sleutel);
+  const maten: PdfMaten = {
+    lengte_cm: null,
+    gewicht_kg: null,
+    borst: null,
+    taille: null,
+    hoge_heup: null,
+    heup: null,
+    binnenbeen: null,
+    schouder: null,
+  };
+  return renderToBuffer(
+    <AdviesPdf
+      klantnaam="Voorbeeldklant"
+      datum={new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
+      sleutel={inhoud.sleutel}
+      titel={inhoud.titel}
+      maten={maten}
+      secties={secties}
+      silhouet={optie ? { naam: optie.naam, uitleg: optie.uitleg, eigenMaten: false, vorm: optie.vorm } : null}
+    />,
+  );
 }
 
 /**
@@ -35,29 +94,9 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     .single();
   if (!order?.toegekend_type) return null;
 
-  const { data: type } = await supabase
-    .from("adviestypes")
-    .select("sleutel, titel")
-    .eq("sleutel", order.toegekend_type)
-    .single();
-  if (!type) return null; // Adviesdocument nog niet geïmporteerd.
-
-  const { data: sectieRijen } = await supabase
-    .from("adviessecties")
-    .select("kop, tekst, afbeeldingen")
-    .eq("type_sleutel", order.toegekend_type)
-    .order("volgorde", { ascending: true });
-
-  // Alle beelden parallel downloaden (veel sneller dan serieel).
-  const secties: PdfSectie[] = await Promise.all(
-    (sectieRijen ?? []).map(async (s) => {
-      const paden = (s.afbeeldingen as string[]) ?? [];
-      const beelden = (
-        await Promise.all(paden.map((pad) => beeldDataUri(supabase, pad)))
-      ).filter((uri): uri is string => uri !== null);
-      return { kop: s.kop, tekst: s.tekst, beelden };
-    }),
-  );
+  const inhoud = await haalAdviesInhoud(order.toegekend_type);
+  if (!inhoud) return null; // Adviestype bestaat (nog) niet.
+  const secties = await pdfSecties(supabase, inhoud);
 
   const { data: res } = await supabase
     .from("testresultaten")
@@ -97,8 +136,8 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     <AdviesPdf
       klantnaam={order.klantnaam}
       datum={datum}
-      sleutel={type.sleutel}
-      titel={type.titel}
+      sleutel={inhoud.sleutel}
+      titel={inhoud.titel}
       maten={{
         lengte_cm: res?.lengte_cm ?? null,
         gewicht_kg: res?.gewicht_kg ?? null,

@@ -24,11 +24,16 @@ export interface PdfMaten {
   schouder: number | null;
 }
 
+export interface PdfBeeld {
+  /** Data-URI van het beeld. */
+  src: string;
+  bijschrift?: string | null;
+}
+
 export interface PdfSectie {
   kop: string;
   tekst: string;
-  /** Data-URI's van bijbehorende afbeeldingen. */
-  beelden?: string[];
+  beelden?: PdfBeeld[];
 }
 
 export interface PdfSilhouet {
@@ -115,7 +120,9 @@ const styles = StyleSheet.create({
   bulletTeken: { width: 12, color: kleur.accent },
   para: { marginBottom: 6 },
   beeldenRij: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
-  beeld: { width: 96, marginRight: 6, marginBottom: 6 },
+  beeldKader: { width: 112, marginRight: 8, marginBottom: 8 },
+  beeld: { width: 112 },
+  bijschrift: { fontSize: 7.5, color: "#6b6b6b", marginTop: 2, lineHeight: 1.3 },
   voettekst: {
     position: "absolute",
     // A4 is 841,89pt hoog; 'bottom' wordt bij doorlopende pagina's verkeerd berekend.
@@ -334,10 +341,13 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties, si
             )}
             {s.beelden && s.beelden.length > 0 && (
               <View style={styles.beeldenRij}>
-                {s.beelden.map((src, k) => (
-                  // react-pdf Image (geen HTML img); alt bestaat hier niet.
-                  // eslint-disable-next-line jsx-a11y/alt-text
-                  <Image key={k} src={src} style={styles.beeld} />
+                {s.beelden.map((b, k) => (
+                  <View key={k} style={styles.beeldKader} wrap={false}>
+                    {/* react-pdf Image (geen HTML img); alt bestaat hier niet. */}
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                    <Image src={b.src} style={styles.beeld} />
+                    {b.bijschrift ? <Text style={styles.bijschrift}>{b.bijschrift}</Text> : null}
+                  </View>
                 ))}
               </View>
             )}
