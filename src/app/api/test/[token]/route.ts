@@ -4,6 +4,7 @@ import { leesInstelling } from "@/lib/instellingen";
 import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
 import { leverAdvies } from "@/lib/advies-leveren";
+import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
 import {
   STANDAARD_ZANDLOPER_VARIANT,
   type ZandloperVariant,
@@ -168,6 +169,10 @@ export async function POST(
     pdfKlaar = await leverAdvies(order.id);
   } catch (e) {
     console.error("Advies leveren mislukt", order.id, e);
+    await stuurBeheerMelding(
+      "Advies leveren mislukt",
+      `Order ${order.id} (${order.klantnaam}, ${order.email}) heeft de test afgerond (type ${uitkomst.sleutel}), maar het advies kon niet worden gemaakt of gemaild. De nachtelijke taak probeert het opnieuw.\n\n${foutTekst(e)}`,
+    );
   }
 
   return typeAntwoord(uitkomst.sleutel, { pdfKlaar });

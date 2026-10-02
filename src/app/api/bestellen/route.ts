@@ -5,6 +5,13 @@ import { mollie, centenNaarBedrag } from "@/lib/mollie";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { siteUrl } from "@/lib/site";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
+import {
+  berekenKorting,
+  controleerKortingscode,
+  normaliseerCode,
+  type Kortingscode,
+} from "@/lib/prijs";
+import { naBetaling } from "@/lib/bestelling-betaald";
 
 export const runtime = "nodejs";
 
@@ -16,6 +23,7 @@ interface BestelInvoer {
   directe_levering_akkoord?: boolean;
   gratis?: boolean;
   website?: string;
+  kortingscode?: string;
 }
 
 function geldigEmail(email: string): boolean {
@@ -94,6 +102,73 @@ export async function POST(request: Request) {
   }
 
   const supabase = adminClient();
+
+  // Kortingscode of cadeaubon (optioneel): altijd server-side valideren.
+  const ingevoerdeCode = normaliseerCode(String(body.kortingscode ?? ""));
+  let kortingscode: string | null = null;
+  let kortingCent = 0;
+  let teBetalenCent = prijsCent;
+  if (ingevoerdeCode) {
+    const { data: codeRij, error: codeFout } = await supabase
+      .from("kortingscodes")
+      .select("code, soort, waarde, geldig_tot, max_gebruik, aantal_gebruikt, actief")
+      .eq("code", ingevoerdeCode)
+      .maybeSingle();
+    if (codeFout) {
+      return NextResponse.json({ fout: "Kortingscode controleren mislukt." }, { status: 500 });
+    }
+    const reden = controleerKortingscode(codeRij as Kortingscode | null);
+    if (reden) return NextResponse.json({ fout: reden }, { status: 400 });
+    const berekend = berekenKorting(prijsCent, codeRij as Kortingscode);
+    kortingscode = (codeRij as Kortingscode).code;
+    kortingCent = berekend.kortingCent;
+    teBetalenCent = berekend.eindbedragCent;
+  }
+
+  // Volledig betaald met korting/cadeaubon: geen Mollie, direct een betaalde order.
+  if (teBetalenCent === 0 && kortingscode) {
+    // Gebruik atomair claimen (voorkomt dat een eenmalige cadeaubon twee keer werkt).
+    const { data: geclaimd, error: claimFout } = await supabase.rpc("gebruik_kortingscode", {
+      p_code: kortingscode,
+      p_afdwingen: true,
+    });
+    if (claimFout) {
+      return NextResponse.json({ fout: "Kortingscode verwerken mislukt." }, { status: 500 });
+    }
+    if (!geclaimd) {
+      return NextResponse.json({ fout: "Deze kortingscode is al gebruikt." }, { status: 400 });
+    }
+
+    const dagen = Number((await leesInstelling("token_geldigheid_dagen")) || "30");
+    const token = maakTesttoken();
+    const { data: gratisOrder, error: gratisFout } = await supabase
+      .from("orders")
+      .insert({
+        klantnaam: naam,
+        email,
+        factuurgegevens: body.factuurgegevens ?? {},
+        voorwaarden_akkoord: true,
+        directe_levering_akkoord: true,
+        bedrag_cent: 0,
+        korting_cent: kortingCent,
+        kortingscode,
+        valuta,
+        status: "betaald",
+        betaald_op: new Date().toISOString(),
+        testtoken: token,
+        token_verloopt_op: tokenVerlooptOp(dagen),
+      })
+      .select("id")
+      .single();
+    if (gratisFout || !gratisOrder) {
+      await supabase.rpc("geef_kortingscode_vrij", { p_code: kortingscode });
+      return NextResponse.json({ fout: "Bestelling aanmaken mislukt." }, { status: 500 });
+    }
+    // Bevestigingsmail met testlink (geen factuur bij € 0). Gooit nooit.
+    await naBetaling({ orderId: gratisOrder.id, token, geldigDagen: dagen, kortingAlGeteld: true });
+    return NextResponse.json({ testUrl: `${siteUrl()}/test/${token}` });
+  }
+
   const { data: order, error: e1 } = await supabase
     .from("orders")
     .insert({
@@ -102,7 +177,9 @@ export async function POST(request: Request) {
       factuurgegevens: body.factuurgegevens ?? {},
       voorwaarden_akkoord: true,
       directe_levering_akkoord: true,
-      bedrag_cent: prijsCent,
+      bedrag_cent: teBetalenCent,
+      korting_cent: kortingCent,
+      kortingscode,
       valuta,
       status: "aangemaakt",
     })
@@ -118,7 +195,7 @@ export async function POST(request: Request) {
 
   try {
     const betaling = await mollie().payments.create({
-      amount: { currency: valuta, value: centenNaarBedrag(prijsCent) },
+      amount: { currency: valuta, value: centenNaarBedrag(teBetalenCent) },
       description: "Kledingadviestest – Lida Thiry",
       redirectUrl: `${basis}/bestellen/bedankt?order=${order.id}`,
       // Mollie weigert een niet-bereikbare (localhost) webhook: lokaal weglaten.
