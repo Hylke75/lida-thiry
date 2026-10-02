@@ -121,7 +121,7 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties }: 
           <MatenRij label="Tailleomvang" waarde={cm(maten.taille)} />
           <MatenRij label="Hoge heupomvang" waarde={cm(maten.hoge_heup)} />
           <MatenRij label="Heupomvang" waarde={cm(maten.heup)} />
-          {maten.schouder != null && <MatenRij label="Schouder" waarde={cm(maten.schouder)} />}
+          {maten.schouder != null && <MatenRij label="Schouderomvang" waarde={cm(maten.schouder)} />}
           {maten.binnenbeen != null && <MatenRij label="Binnenbeenlengte" waarde={cm(maten.binnenbeen)} />}
         </View>
 

@@ -339,9 +339,9 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
                 return (
                   <label
                     key={s.letter}
-                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-3 text-center text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-500 ${
+                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-3 text-center text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
                       gekozen
-                        ? "border-rose-600 bg-rose-50 dark:bg-rose-950/30"
+                        ? "border-accent bg-accent-zacht"
                         : "border-black/10 hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
                     }`}
                   >
@@ -374,9 +374,9 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
                     return (
                       <label
                         key={optie}
-                        className={`cursor-pointer rounded-full border-2 px-4 py-2 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-500 ${
+                        className={`cursor-pointer rounded-full border-2 px-4 py-2 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
                           gekozen
-                            ? "border-rose-600 bg-rose-50 dark:bg-rose-950/30"
+                            ? "border-accent bg-accent-zacht"
                             : "border-black/10 hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
                         }`}
                       >
@@ -450,7 +450,7 @@ function Voortgang({
     <nav aria-label="Voortgang" className="mt-4">
       <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
         <div
-          className="h-full rounded-full bg-rose-600 transition-[width] duration-500"
+          className="h-full rounded-full bg-accent transition-[width] duration-500"
           style={{ width: `${((stap + 1) / STAPPEN.length) * 100}%` }}
         />
       </div>
@@ -480,7 +480,7 @@ function Voortgang({
                     actief
                       ? "bg-background text-foreground"
                       : klaar
-                        ? "bg-rose-600 text-white"
+                        ? "bg-accent text-background"
                         : "border border-current"
                   }`}
                 >
@@ -600,7 +600,7 @@ function Overzicht({ a, gaNaar }: { a: Antwoorden; gaNaar: (i: number) => void }
               <button
                 type="button"
                 onClick={() => gaNaar(r.stap)}
-                className="text-xs font-normal text-rose-700 underline underline-offset-2 dark:text-rose-400"
+                className="text-xs font-normal text-accent underline underline-offset-2"
               >
                 wijzig
               </button>

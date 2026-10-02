@@ -4,7 +4,7 @@
 import type { Lichaamsvorm, MaatSleutel } from "@/lib/test-config";
 
 const CX = 100;
-const LINT = "#e11d48";
+const LINT = "var(--accent)";
 
 export const STANDAARD_VORM: Lichaamsvorm = {
   schouder: 38,
