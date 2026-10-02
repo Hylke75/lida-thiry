@@ -48,7 +48,7 @@ function isZandloper(a: AfgeleideMaten, variant: ZandloperVariant): boolean {
 
 /**
  * Bepaalt het FFIT-type uit de maten. Regels in vaste volgorde, eerste treffer wint.
- * "Geen type" betekent een twijfelgeval.
+ * Bij "Geen type" bepaalt het gekozen silhouet de letter (zie test-verwerking).
  */
 export function bepaalFiguurtype(
   maten: Maten,

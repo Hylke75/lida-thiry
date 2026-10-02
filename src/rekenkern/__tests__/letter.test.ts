@@ -13,7 +13,7 @@ describe("C. FFIT-type naar figuurletter", () => {
     expect(bepaalLetter("Omgekeerde driehoek")).toBe("V");
   });
 
-  it("geeft null (twijfelgeval) voor 'Geen type'", () => {
+  it("geeft null voor 'Geen type' (silhouet bepaalt dan de letter)", () => {
     expect(bepaalLetter("Geen type")).toBeNull();
   });
 

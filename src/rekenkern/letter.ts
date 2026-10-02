@@ -9,7 +9,7 @@ import {
 
 /**
  * Geeft de letter voor een FFIT-type, of null wanneer er (nog) geen letter is.
- * null betekent een twijfelgeval (ook altijd bij "Geen type").
+ * null bij "Geen type"; dan bepaalt het gekozen silhouet de letter.
  */
 export function bepaalLetter(ffitType: FfitType): Figuurletter | null {
   if (ffitType === "Geen type") return null;
@@ -36,7 +36,7 @@ export type SilhouetVergelijking = "gelijk" | "verschil";
 /**
  * Vergelijkt het door de klant gekozen silhouet met de berekende letter.
  * "verschil" -> klant eenmaal vragen de maten te controleren; blijft het verschil,
- * dan is het een twijfelgeval (die vervolgstap zit in de flow, niet hier).
+ * dan winnen de maten (die vervolgstap zit in de flow, niet hier).
  */
 export function vergelijkSilhouet(
   gekozenLetter: Figuurletter,
