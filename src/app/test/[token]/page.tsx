@@ -1,22 +1,15 @@
 import Link from "next/link";
-import { beoordeelToken } from "@/lib/test-order";
+import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { TestWizard } from "./TestWizard";
+import { TypeOnthulling } from "./TypeOnthulling";
 
 export const dynamic = "force-dynamic";
 
-function Melding({ titel, tekst, pdfUrl }: { titel: string; tekst: string; pdfUrl?: string }) {
+function Melding({ titel, tekst }: { titel: string; tekst: string }) {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
       <h1 className="text-2xl font-semibold tracking-tight">{titel}</h1>
       <p className="text-black/60 dark:text-white/60">{tekst}</p>
-      {pdfUrl && (
-        <a
-          href={pdfUrl}
-          className="mx-auto rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
-        >
-          Download je advies (PDF)
-        </a>
-      )}
       <Link
         href="/"
         className="mx-auto text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
@@ -42,18 +35,27 @@ export default async function TestPage({
       return <Melding titel="Testlink verlopen" tekst="Deze testlink is verlopen. Neem contact op als je alsnog de test wilt doen." />;
     case "niet_betaald":
       return <Melding titel="Betaling nog niet afgerond" tekst="Zodra je betaling is bevestigd, kun je de test starten." />;
-    case "al_afgerond":
+    case "al_afgerond": {
+      const sleutel = b.order.toegekend_type;
+      if (!sleutel) {
+        return (
+          <Melding
+            titel="Test al afgerond"
+            tekst="Je hebt de test al ingevuld. Je advies ontvang je per e-mail."
+          />
+        );
+      }
+      const titel = await haalTypeTitel(sleutel).catch(() => null);
       return (
-        <Melding
-          titel="Test al afgerond"
-          tekst={
-            b.order.toegekend_type
-              ? `Je hebt de test al ingevuld; jouw type is ${b.order.toegekend_type}. Download hieronder je persoonlijke advies.`
-              : "Je hebt de test al ingevuld. Je advies ontvang je per e-mail."
-          }
-          pdfUrl={b.order.toegekend_type ? `/api/test/${token}/pdf` : undefined}
+        <TypeOnthulling
+          token={token}
+          sleutel={sleutel}
+          titel={titel}
+          kop={`Welkom terug, ${b.order.klantnaam}. Jouw type is`}
+          intro="Je hebt de test al afgerond. Hieronder zie je nog eens je uitslag en kun je je persoonlijke advies downloaden."
         />
       );
+    }
     case "geldig":
       return <TestWizard token={token} klantnaam={b.order.klantnaam} />;
   }
