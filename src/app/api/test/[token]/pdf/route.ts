@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { genereerAdviesPdf, signedPdfUrl } from "@/lib/pdf/genereer";
+import { adviesDownloadbaar, tokenVerlopen } from "@/lib/advies-toegang";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,15 +16,17 @@ export async function GET(
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, pdf_pad, toegekend_type, token_verloopt_op")
+    .select("id, status, pdf_pad, toegekend_type, token_verloopt_op, afgerond_op")
     .eq("testtoken", token)
     .single();
 
   if (!order) return NextResponse.json({ fout: "Onbekende testlink." }, { status: 404 });
-  if (order.token_verloopt_op && new Date(order.token_verloopt_op) < new Date()) {
-    return NextResponse.json({ fout: "Deze testlink is verlopen." }, { status: 403 });
-  }
-  if (!["test_afgerond", "advies_verzonden"].includes(order.status) || !order.toegekend_type) {
+  // Na het verlopen van de testlink blijft een afgerond advies nog
+  // PDF_BESCHIKBAAR_DAGEN na het afronden te downloaden.
+  if (!adviesDownloadbaar(order)) {
+    if (tokenVerlopen(order)) {
+      return NextResponse.json({ fout: "Deze testlink is verlopen." }, { status: 403 });
+    }
     return NextResponse.json({ fout: "Er is nog geen advies beschikbaar." }, { status: 409 });
   }
 

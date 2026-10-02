@@ -12,13 +12,14 @@ import {
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Lichaam } from "./Lichaam";
+import { TypeOnthulling } from "./TypeOnthulling";
 
 interface Bevinding {
   code: string;
   ernst: string;
   bericht: string;
 }
-type Resultaat = { soort: "type"; sleutel: string };
+type Resultaat = { soort: "type"; sleutel: string; titel: string | null; letter: string };
 
 interface Antwoorden {
   lengte: string;
@@ -198,8 +199,17 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
       } else if (d.soort === "silhouet_verschil") {
         setHermeting(true);
         gaNaar(EERSTE_MATEN_STAP);
+        // Bijv. "Je heupen zijn duidelijk breder dan je borst (12 cm verschil).
+        // Dat past meer bij Peer / driehoek dan bij Zandloper."
+        const gekozen = SILHOUETTEN.find((x) => x.letter === a.silhouet)?.naam;
+        const berekend = SILHOUETTEN.find((x) => x.letter === d.berekendeLetter)?.naam;
+        const reden: string =
+          d.reden ??
+          (gekozen && berekend
+            ? `Je koos ${gekozen}, maar je maten passen meer bij ${berekend}.`
+            : "Het silhouet dat je koos past niet helemaal bij je maten.");
         setMelding(
-          "Het silhouet dat je koos past niet helemaal bij je maten. Loop je maten nog één keer na (en eventueel je silhouetkeuze) en rond daarna opnieuw af.",
+          `${reden} Loop je maten nog één keer na (en eventueel je silhouetkeuze) en rond daarna opnieuw af. Blijft het verschil bestaan, dan gaan we uit van je maten.`,
         );
       } else {
         try {
@@ -215,22 +225,13 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
 
   if (resultaat) {
     return (
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
-        <p className="text-4xl" aria-hidden>
-          🎉
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight">Klaar, {klantnaam}!</h1>
-        <p className="text-black/60 dark:text-white/60">
-          Op basis van je antwoorden is jouw type <strong>{resultaat.sleutel}</strong>. Je persoonlijke
-          advies kun je hieronder downloaden; we sturen het ook naar je e-mail.
-        </p>
-        <a
-          href={`/api/test/${token}/pdf`}
-          className="mx-auto mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
-        >
-          Download je advies (PDF)
-        </a>
-      </main>
+      <TypeOnthulling
+        token={token}
+        sleutel={resultaat.sleutel}
+        titel={resultaat.titel}
+        kop={`Klaar, ${klantnaam}! Jouw type is`}
+        intro="Op basis van je maten en antwoorden hebben we je figuurtype bepaald. Hieronder lees je wat dat betekent."
+      />
     );
   }
 

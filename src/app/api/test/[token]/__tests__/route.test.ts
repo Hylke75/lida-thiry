@@ -37,7 +37,10 @@ vi.mock("@/lib/supabase/admin", () => {
 });
 
 const beoordeelToken = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/test-order", () => ({ beoordeelToken }));
+vi.mock("@/lib/test-order", () => ({
+  beoordeelToken,
+  haalTypeTitel: vi.fn().mockResolvedValue("Testtitel"),
+}));
 
 const leverAdvies = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/advies-leveren", () => ({ leverAdvies }));
@@ -97,7 +100,7 @@ describe("POST /api/test/[token]", () => {
   it("verwerkt een geldige inzending tot een definitief type", async () => {
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ soort: "type", sleutel: "68", pdfKlaar: true });
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68", letter: "8", pdfKlaar: true });
 
     const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
     expect(upsert?.args[0]).toMatchObject({ order_id: "order-1", letter: "8", borst: 92 });
@@ -131,7 +134,7 @@ describe("POST /api/test/[token]", () => {
     });
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ soort: "type", sleutel: "6X" });
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6X", letter: "X" });
     expect(db.calls).toHaveLength(0);
     expect(leverAdvies).not.toHaveBeenCalled();
   });
@@ -139,7 +142,7 @@ describe("POST /api/test/[token]", () => {
   it("vraagt bij een silhouetverschil eerst om hermeting en slaat niets op", async () => {
     const res = await POST(verzoek(geldigeBody({ gekozen_silhouet: "X" })), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ soort: "silhouet_verschil" });
+    expect(await res.json()).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "8" });
     expect(db.calls).toHaveLength(0);
   });
 
@@ -151,7 +154,7 @@ describe("POST /api/test/[token]", () => {
   it("levert geen tweede advies bij een dubbele verzending", async () => {
     db.updateRows = [];
     const res = await POST(verzoek(geldigeBody()), ctx);
-    expect(await res.json()).toEqual({ soort: "type", sleutel: "68" });
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68" });
     expect(leverAdvies).not.toHaveBeenCalled();
   });
 
