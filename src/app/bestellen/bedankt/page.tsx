@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminClient } from "@/lib/supabase/admin";
+import { AutoVernieuwen } from "./AutoVernieuwen";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +12,16 @@ export default async function BedanktPage({
   const { order: orderId } = await searchParams;
 
   let status: string | null = null;
+  let token: string | null = null;
   if (orderId) {
     try {
       const { data } = await adminClient()
         .from("orders")
-        .select("status")
+        .select("status, testtoken")
         .eq("id", orderId)
         .single();
       status = data?.status ?? null;
+      token = data?.testtoken ?? null;
     } catch {
       status = null;
     }
@@ -32,17 +35,39 @@ export default async function BedanktPage({
         <>
           <h1 className="text-2xl font-semibold tracking-tight">Bedankt voor je bestelling!</h1>
           <p className="text-black/60 dark:text-white/60">
-            Je betaling is ontvangen. We hebben je een e-mail gestuurd met de link
-            om de test te starten. Geen mail ontvangen? Kijk in je spam-map.
+            Je betaling is ontvangen. Je kunt de test meteen starten. We hebben je
+            de link ook gemaild, zodat je later verder kunt gaan.
           </p>
+          {token && (
+            <Link
+              href={`/test/${token}`}
+              className="mx-auto rounded-full bg-foreground px-7 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Start de test →
+            </Link>
+          )}
+        </>
+      ) : status === "betaling_mislukt" || status === "verlopen" ? (
+        <>
+          <h1 className="text-2xl font-semibold tracking-tight">Betaling niet gelukt</h1>
+          <p className="text-black/60 dark:text-white/60">
+            Je betaling is niet afgerond; er is niets afgeschreven. Probeer het gerust opnieuw.
+          </p>
+          <Link
+            href="/bestellen"
+            className="mx-auto rounded-full bg-foreground px-7 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Opnieuw proberen
+          </Link>
         </>
       ) : (
         <>
           <h1 className="text-2xl font-semibold tracking-tight">We verwerken je betaling</h1>
           <p className="text-black/60 dark:text-white/60">
-            Zodra de betaling is bevestigd, ontvang je per e-mail de link om de test
-            te starten. Dit kan een moment duren.
+            Zodra de betaling is bevestigd, verschijnt hier de knop om de test te
+            starten. Dit duurt meestal maar een paar seconden.
           </p>
+          {status === "aangemaakt" && <AutoVernieuwen />}
         </>
       )}
       <Link

@@ -25,19 +25,21 @@ export async function POST(request: Request) {
   let betaling;
   try {
     betaling = await mollie().payments.get(betaalId);
-  } catch {
-    // Onbekende of onbereikbare betaling: bevestig zodat Mollie niet blijft herhalen.
-    return NextResponse.json({ ok: true });
+  } catch (e) {
+    // Mollie (tijdelijk) onbereikbaar: 500 zodat Mollie de webhook later herhaalt.
+    console.error("Mollie-betaling ophalen mislukt", betaalId, e);
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 
   const orderId = (betaling.metadata as { orderId?: string } | null)?.orderId;
   if (!orderId) return NextResponse.json({ ok: true });
 
-  const { data: order } = await supabase
+  const { data: order, error: leesFout } = await supabase
     .from("orders")
     .select("id, status, klantnaam, email")
     .eq("id", orderId)
-    .single();
+    .maybeSingle();
+  if (leesFout) return NextResponse.json({ ok: false }, { status: 500 });
   if (!order) return NextResponse.json({ ok: true });
 
   if (betaling.status === "paid") {
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
 
     // Idempotent: alleen de eerste overgang aangemaakt -> betaald slaagt en
     // levert een rij op; herhaalde webhooks doen niets en mailen niet opnieuw.
-    const { data: bijgewerkt } = await supabase
+    const { data: bijgewerkt, error: updateFout } = await supabase
       .from("orders")
       .update({
         status: "betaald",
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
       .eq("id", order.id)
       .eq("status", "aangemaakt")
       .select("id");
+    if (updateFout) return NextResponse.json({ ok: false }, { status: 500 });
 
     if (bijgewerkt && bijgewerkt.length > 0) {
       try {
@@ -66,8 +69,9 @@ export async function POST(request: Request) {
           token,
           geldigDagen: dagen,
         });
-      } catch {
-        // Mail mislukt: betaling blijft geldig. Handmatig opnieuw versturen kan later.
+      } catch (e) {
+        // Mail mislukt: betaling blijft geldig; de bedankpagina toont de testlink ook.
+        console.error("Testlink-mail mislukt", order.id, e);
       }
     }
     return NextResponse.json({ ok: true });

@@ -63,6 +63,24 @@ export const MAAT_VELDEN: MaatVeld[] = [
   },
 ];
 
+export type MaatSleutel = MaatVeld["sleutel"];
+
+/** Indeling van de maten over de tabbladen van de test (van boven naar beneden). */
+export const MAAT_GROEPEN: { titel: string; velden: MaatSleutel[] }[] = [
+  { titel: "Bovenlichaam", velden: ["schouder", "borst"] },
+  { titel: "Taille", velden: ["taille", "hoge_heup"] },
+  { titel: "Heupen en benen", velden: ["heup", "binnenbeen"] },
+];
+
+/** Halve breedtes (px in de illustratie) van een lichaamsvorm. */
+export interface Lichaamsvorm {
+  schouder: number;
+  borst: number;
+  taille: number;
+  hogeHeup: number;
+  heup: number;
+}
+
 // Algemene meettip (getoond bij stap 2). Uit "Tips voor Stijladvies op afstand".
 export const MEET_TIP =
   "Neem een meetlint en vraag een huisgenoot of vriend(in) om je te helpen — zelf nauwkeurig meten is lastig. Hoe nauwkeuriger je meet, hoe beter we je figuurtype kunnen bepalen.";
@@ -71,16 +89,16 @@ export interface SilhouetOptie {
   letter: Figuurletter;
   naam: string;
   omschrijving: string;
-  /** Placeholder-afbeelding; definitieve silhouetten volgen. */
-  afbeelding: string | null;
+  /** Verhoudingen voor de getekende silhouet-illustratie. */
+  vorm: Lichaamsvorm;
 }
 
 export const SILHOUETTEN: SilhouetOptie[] = [
-  { letter: "X", naam: "Zandloper", omschrijving: "Schouders en heupen in balans, duidelijke taille.", afbeelding: null },
-  { letter: "A", naam: "Peer / driehoek", omschrijving: "Heupen breder dan schouders.", afbeelding: null },
-  { letter: "V", naam: "Omgekeerde driehoek", omschrijving: "Schouders breder dan heupen.", afbeelding: null },
-  { letter: "H", naam: "Rechthoek", omschrijving: "Weinig verschil tussen borst, taille en heup.", afbeelding: null },
-  { letter: "8", naam: "De 8", omschrijving: "Voller silhouet met balans boven en onder.", afbeelding: null },
+  { letter: "X", naam: "Zandloper", omschrijving: "Schouders en heupen in balans, duidelijke taille.", vorm: { schouder: 40, borst: 38, taille: 20, hogeHeup: 30, heup: 40 } },
+  { letter: "A", naam: "Peer / driehoek", omschrijving: "Heupen breder dan schouders.", vorm: { schouder: 28, borst: 28, taille: 23, hogeHeup: 34, heup: 46 } },
+  { letter: "V", naam: "Omgekeerde driehoek", omschrijving: "Schouders breder dan heupen.", vorm: { schouder: 48, borst: 42, taille: 28, hogeHeup: 28, heup: 29 } },
+  { letter: "H", naam: "Rechthoek", omschrijving: "Weinig verschil tussen borst, taille en heup.", vorm: { schouder: 34, borst: 33, taille: 32, hogeHeup: 33, heup: 34 } },
+  { letter: "8", naam: "De 8", omschrijving: "Voller silhouet met balans boven en onder.", vorm: { schouder: 42, borst: 44, taille: 31, hogeHeup: 43, heup: 47 } },
 ];
 
 export interface Pasvormvraag {
