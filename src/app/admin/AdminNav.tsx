@@ -3,6 +3,8 @@ import Link from "next/link";
 
 const LINKS = [
   { href: "/admin", label: "Overzicht" },
+  { href: "/admin/types", label: "Adviestypes" },
+  { href: "/admin/beeldbank", label: "Beeldbank" },
   { href: "/admin/instellingen", label: "Instellingen" },
   { href: "/admin/meetinstructies", label: "Meetinstructies" },
   { href: "/admin/kortingscodes", label: "Kortingscodes" },
