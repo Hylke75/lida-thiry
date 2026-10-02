@@ -8,7 +8,7 @@ interface Bevinding {
   ernst: string;
   bericht: string;
 }
-type Resultaat = { soort: "type"; sleutel: string } | { soort: "twijfelgeval" };
+type Resultaat = { soort: "type"; sleutel: string };
 
 export function TestWizard({ token, klantnaam }: { token: string; klantnaam: string }) {
   const [stap, setStap] = useState(1);
@@ -90,29 +90,17 @@ export function TestWizard({ token, klantnaam }: { token: string; klantnaam: str
   if (resultaat) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
-        {resultaat.soort === "type" ? (
-          <>
-            <h1 className="text-2xl font-semibold tracking-tight">Klaar, {klantnaam}!</h1>
-            <p className="text-black/60 dark:text-white/60">
-              Op basis van je antwoorden is jouw type <strong>{resultaat.sleutel}</strong>.
-              Je ontvangt je persoonlijke advies-PDF per e-mail.
-            </p>
-            <a
-              href={`/api/test/${token}/pdf`}
-              className="mx-auto mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
-            >
-              Download je advies (PDF)
-            </a>
-          </>
-        ) : (
-          <>
-            <h1 className="text-2xl font-semibold tracking-tight">Bedankt, {klantnaam}!</h1>
-            <p className="text-black/60 dark:text-white/60">
-              We bekijken jouw antwoorden persoonlijk om je het beste advies te geven.
-              Je hoort binnenkort van ons per e-mail.
-            </p>
-          </>
-        )}
+        <h1 className="text-2xl font-semibold tracking-tight">Klaar, {klantnaam}!</h1>
+        <p className="text-black/60 dark:text-white/60">
+          Op basis van je antwoorden is jouw type <strong>{resultaat.sleutel}</strong>.
+          Je ontvangt je persoonlijke advies-PDF per e-mail.
+        </p>
+        <a
+          href={`/api/test/${token}/pdf`}
+          className="mx-auto mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
+        >
+          Download je advies (PDF)
+        </a>
       </main>
     );
   }

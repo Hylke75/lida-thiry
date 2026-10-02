@@ -4,8 +4,6 @@ import { leesInstelling } from "@/lib/instellingen";
 import { beoordeelToken } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
 import { leverAdvies } from "@/lib/advies-leveren";
-import { stuurTwijfelKlantMail, stuurTwijfelAdviseurMail } from "@/lib/resend";
-import { siteUrl } from "@/lib/site";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 
 export const runtime = "nodejs";
@@ -95,36 +93,10 @@ export async function POST(
       gekozen_silhouet: invoer.gekozen_silhouet,
       pasvormantwoorden: invoer.pasvormantwoorden,
       ffit_type: uitkomst.ffit_type,
-      letter: uitkomst.soort === "type" ? uitkomst.letter : null,
+      letter: uitkomst.letter,
     },
     { onConflict: "order_id" },
   );
-
-  if (uitkomst.soort === "twijfelgeval") {
-    await supabase
-      .from("orders")
-      .update({ status: "handmatige_beoordeling", afgerond_op: new Date().toISOString() })
-      .eq("id", order.id)
-      .eq("status", "betaald");
-
-    const werkdagen = await leesInstelling("doorlooptijd_werkdagen");
-    try {
-      await stuurTwijfelKlantMail({ naam: order.klantnaam, email: order.email, werkdagen });
-    } catch {}
-    const adviseurEmail = await leesInstelling("adviseur_email");
-    if (adviseurEmail) {
-      try {
-        await stuurTwijfelAdviseurMail({
-          adviseurEmail,
-          klantnaam: order.klantnaam,
-          orderId: order.id,
-          ffitType: uitkomst.ffit_type,
-          beheerUrl: `${siteUrl()}/admin/order/${order.id}`,
-        });
-      } catch {}
-    }
-    return NextResponse.json({ soort: "twijfelgeval" });
-  }
 
   // Definitief type.
   await supabase

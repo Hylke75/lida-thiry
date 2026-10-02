@@ -3,7 +3,7 @@
 export type Lengtegroep = "kort" | "gemiddeld" | "lang";
 export type Gewichtsklasse = "tenger" | "gemiddeld" | "vol" | "plus";
 
-/** De acht mogelijke FFIT-uitkomsten. "Geen type" is altijd een twijfelgeval. */
+/** De acht mogelijke FFIT-uitkomsten. Bij "Geen type" bepaalt het gekozen silhouet de letter. */
 export type FfitType =
   | "Zandloper"
   | "Onderste zandloper"

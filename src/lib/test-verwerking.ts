@@ -26,7 +26,6 @@ export interface TestInvoer {
 export type TestUitkomst =
   | { soort: "opnieuw_meten"; bevindingen: Bevinding[] }
   | { soort: "silhouet_verschil"; berekendeLetter: Figuurletter }
-  | { soort: "twijfelgeval"; reden: string; categorie: number; ffit_type: string }
   | {
       soort: "type";
       sleutel: string;
@@ -68,34 +67,32 @@ export function verwerkTest(
   const ffit = bepaalFiguurtype(maten, variant);
   const letter = bepaalLetter(ffit);
 
-  if (ffit === "Geen type" || letter === null) {
-    return {
-      soort: "twijfelgeval",
-      reden: ffit === "Geen type" ? "Geen passend figuurtype gevonden." : "Voor dit figuurtype is nog geen letter vastgesteld.",
-      categorie,
-      ffit_type: ffit,
-    };
+  // Geen passend figuurtype: het door de klant gekozen silhouet bepaalt de letter.
+  if (letter === null) {
+    return definitiefType(categorie, invoer.gekozen_silhouet, ffit, meldingen);
   }
 
-  // Silhouet-vergelijking: bij verschil eerst een keer laten hermeten.
-  if (vergelijkSilhouet(invoer.gekozen_silhouet, letter) === "verschil") {
-    if (!invoer.hermeting) {
-      return { soort: "silhouet_verschil", berekendeLetter: letter };
-    }
-    return {
-      soort: "twijfelgeval",
-      reden: "Gekozen silhouet en berekende maten blijven verschillen.",
-      categorie,
-      ffit_type: ffit,
-    };
+  // Silhouet-vergelijking: bij verschil eerst een keer laten hermeten. Blijft
+  // het verschil, dan winnen de maten (geen handmatige beoordeling).
+  if (vergelijkSilhouet(invoer.gekozen_silhouet, letter) === "verschil" && !invoer.hermeting) {
+    return { soort: "silhouet_verschil", berekendeLetter: letter };
   }
 
+  return definitiefType(categorie, letter, ffit, meldingen);
+}
+
+function definitiefType(
+  categorie: number,
+  letter: Figuurletter,
+  ffit_type: string,
+  meldingen: Bevinding[],
+): TestUitkomst {
   return {
     soort: "type",
     sleutel: `${categorie}${letter}`,
     categorie,
     letter,
-    ffit_type: ffit,
+    ffit_type,
     meldingen,
   };
 }
