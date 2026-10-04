@@ -62,7 +62,7 @@ describe("inhoud: alle groepen", () => {
 describe("inhoud: juridische teksten", () => {
   it.each([
     ["voorwaarden", JURIDISCH_VOORWAARDEN, 13],
-    ["privacy", JURIDISCH_PRIVACY, 11],
+    ["privacy", JURIDISCH_PRIVACY, 12],
   ] as const)("%s parseert met koppen en het blok {bedrijfsgegevens}", (_, s, koppen) => {
     const blokken = parseerOpmaak(s.velden.tekst.standaard);
     expect(blokken.filter((b) => b.soort === "kop" && b.niveau === 2)).toHaveLength(koppen);

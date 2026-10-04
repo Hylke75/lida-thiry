@@ -10,6 +10,7 @@ import type {
   EMAILS_BEVESTIGING,
   EMAILS_HERINNERING,
 } from "./inhoud/groepen/emails";
+import type { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
 
 export interface Mail {
   onderwerp: string;
@@ -138,6 +139,28 @@ export function adviesMail(
     ${kop(t.kop, w)}
     ${alineas(t.tekst, w)}
     ${knop(opts.downloadUrl, t.knop, "#1a1a1a", "24px 0")}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(t.onderwerp, w), html };
+}
+
+/**
+ * Bevestigingsmail voor de nieuwsbrief (dubbele opt-in): pas na een klik op de
+ * knop is iemand aangemeld. Zonder naam wordt {naam} ‘daar’ (‘Hoi daar,’).
+ */
+export function nieuwsbriefBevestigingMail(
+  t: SectieWaarden<typeof NIEUWSBRIEF_BEVESTIGMAIL>,
+  algemeen: Algemeen,
+  opts: { naam?: string | null; link: string },
+): Mail {
+  const w = { naam: opts.naam?.trim() || "daar" };
+  const html = omhulsel(
+    `
+      ${kop(t.kop, w)}
+      ${alineas(t.tekst, w)}
+      ${knop(opts.link, t.knop, "#a4634d", "28px 0")}
+      ${klein(t.na_knop, w)}
+      ${reserveLink(t.knop_werkt_niet, opts.link)}`,
     algemeen.voettekst,
   );
   return { onderwerp: vulIn(t.onderwerp, w), html };

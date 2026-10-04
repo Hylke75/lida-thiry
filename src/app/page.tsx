@@ -16,6 +16,8 @@ import {
   WEBSITE_STAPPEN,
   WEBSITE_VRAGEN,
 } from "@/lib/inhoud/groepen/website";
+import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,7 @@ const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeve
 const telwoord = (n: number) => TELWOORDEN[n] ?? String(n);
 
 export default async function Home() {
-  const [SILHOUETTEN, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting] = await Promise.all([
+  const [SILHOUETTEN, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief] = await Promise.all([
     haalSilhouetten().catch(() => []),
     leesSectie(WEBSITE_HERO),
     leesSectie(WEBSITE_STAPPEN),
@@ -39,6 +41,7 @@ export default async function Home() {
     leesSectie(WEBSITE_ERVARINGEN),
     leesSectie(WEBSITE_VRAGEN),
     leesSectie(WEBSITE_AFSLUITING),
+    leesSectie(NIEUWSBRIEF_AANMELDEN),
   ]);
   const aantal = { aantal: telwoord(SILHOUETTEN.length) };
   const vorm = (i: number) => SILHOUETTEN[i]?.vorm ?? STANDAARD_VORM;
@@ -197,6 +200,11 @@ export default async function Home() {
           </ul>
         </section>
       )}
+
+      {/* Nieuwsbrief */}
+      <section id="nieuwsbrief" className="mx-auto w-full max-w-5xl scroll-mt-8 px-6 py-16">
+        <NieuwsbriefAanmelden teksten={nieuwsbrief} toestemming={<Opmaak tekst={nieuwsbrief.toestemming_tekst} />} />
+      </section>
 
       {/* Veelgestelde vragen */}
       <section className="bg-kaart">
