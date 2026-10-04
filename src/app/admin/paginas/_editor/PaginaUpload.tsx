@@ -35,9 +35,10 @@ export function PaginaUpload({
         .storage.from(BLOG_BUCKET)
         .uploadToSignedUrl(u.pad, u.token, bestand, { contentType: bestand.type });
       if (error) return setFout(`Uploaden is niet gelukt (${error.message}).`);
-      onUrl(u.url);
-      // Ook in de mediabibliotheek zetten (op de achtergrond; de upload zelf is al gelukt).
-      void registreerEditorUpload(bestand, "blog", u.pad, "paginas");
+      // Ook in de mediabibliotheek zetten; de server maakt daarbij een verkleinde
+      // versie zonder EXIF/GPS. Die voegen we in; lukt dat niet, dan het origineel.
+      const webUrl = await registreerEditorUpload(bestand, "blog", u.pad, "paginas");
+      onUrl(webUrl ?? u.url);
     } catch {
       setFout("Uploaden is niet gelukt. Controleer je internetverbinding en probeer het opnieuw.");
     } finally {

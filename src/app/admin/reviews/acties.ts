@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { foutTekst } from "@/lib/beheermelding";
@@ -20,6 +21,7 @@ function terug(fd: FormData, melding: string, soort: "ok" | "fout" = "ok"): neve
 }
 
 function vernieuw() {
+  vernieuwPubliekeData("beoordelingen");
   revalidatePath(PAD);
   revalidatePath("/"); // de homepage toont goedgekeurde reviews
 }

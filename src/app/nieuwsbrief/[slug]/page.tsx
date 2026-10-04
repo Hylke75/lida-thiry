@@ -5,19 +5,28 @@ import { AanmeldFormulier } from "@/components/AanmeldFormulier";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { opmaakNaarTekst } from "@/lib/inhoud/opmaak";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
-import { haalActiefFormulier } from "@/lib/nieuwsbrief/formulieren";
+import { haalActiefFormulierPubliek } from "@/lib/nieuwsbrief/formulieren";
 import { geldigeFormulierSlug, type Formulier } from "@/lib/nieuwsbrief/formulierregels";
 
 // Landingspagina voor een aanmeldformulier met "eigen pagina" aan
 // (Beheer → Nieuwsbrief → Formulieren). De vaste routes /nieuwsbrief/bevestig/…
 // en /nieuwsbrief/afmelden/… gaan voor; die slugs zijn ook niet te kiezen.
-export const dynamic = "force-dynamic";
+//
+// ISR (bij het eerste bezoek gerenderd, daarna uit de cache): het formulier (tag
+// "formulieren") en de teksten (tag "inhoud") zijn voor iedereen gelijk; opslaan
+// in het beheer vernieuwt de tags en het pad direct. Onbekende slugs geven een
+// (gecachete) 404; zodra zo'n formulier wordt aangemaakt, vernieuwt de tag die ook.
+export const revalidate = 3600;
+
+export function generateStaticParams(): { slug: string }[] {
+  return [];
+}
 
 type Params = Promise<{ slug: string }>;
 
 async function landingsFormulier(slug: string): Promise<Formulier | null> {
   if (!geldigeFormulierSlug(slug)) return null;
-  const f = await haalActiefFormulier(slug).catch(() => null);
+  const f = await haalActiefFormulierPubliek(slug).catch(() => null);
   return f?.eigen_pagina ? f : null;
 }
 

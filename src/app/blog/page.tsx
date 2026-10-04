@@ -10,8 +10,9 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_OVERZICHT } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 
-// Per request gerenderd: de pagina hangt af van ?categorie, ?tag en ?pagina, en
-// zo verschijnt een ingepland bericht precies op het ingestelde moment.
+// Per request gerenderd: de pagina hangt af van ?categorie, ?tag en ?pagina. De
+// gegevens zelf komen wel uit de datacache (tag "blog", levensduur 120 s), dus
+// een ingepland bericht verschijnt uiterlijk 2 minuten na het ingestelde moment.
 export const dynamic = "force-dynamic";
 
 type Zoek = Promise<Record<string, string | string[] | undefined>>;
@@ -140,7 +141,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
 
         {toonUitgelicht && uitgelicht && (
           <article className="group relative grid overflow-hidden rounded-3xl bg-kaart shadow-sm ring-1 ring-foreground/5 transition-shadow focus-within:ring-2 focus-within:ring-accent hover:shadow-md md:grid-cols-[1.25fr_1fr]">
-            <BlogBeeld bericht={uitgelicht} prioriteit decoratief className="aspect-[3/2] w-full md:aspect-auto md:min-h-80" />
+            <BlogBeeld bericht={uitgelicht} prioriteit decoratief sizes="(min-width: 1024px) 570px, (min-width: 768px) 55vw, 100vw" className="aspect-[3/2] w-full md:aspect-auto md:min-h-80" />
             <div className="flex flex-col justify-center gap-3 p-6 sm:p-8">
               <p className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-widest uppercase">
                 <span className="rounded-full bg-accent px-2.5 py-0.5 text-background">{t.uitgelicht_label}</span>

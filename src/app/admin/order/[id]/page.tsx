@@ -9,7 +9,7 @@ import { signedFactuurUrl } from "@/lib/factuur";
 import { leesInstelling } from "@/lib/instellingen";
 import { stuurTestlinkMail } from "@/lib/resend";
 import { tokenVerlooptOp } from "@/lib/tokens";
-import { leesSectie } from "@/lib/inhoud/lees";
+import { leesSectieVers } from "@/lib/inhoud/lees";
 import { TEST_VRAGEN } from "@/lib/inhoud/groepen/test";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
@@ -159,7 +159,7 @@ export default async function OrderDetail({
   const antwoorden = (r?.pasvormantwoorden ?? {}) as Record<string, unknown>;
   // Toon de huidige vraagtekst; is de vraag inmiddels verwijderd, dan de opgeslagen sleutel.
   const vraagTekst = new Map(
-    (await leesSectie(TEST_VRAGEN)).vragen.map((q) => [q._id, q.vraag.trim()] as const),
+    (await leesSectieVers(TEST_VRAGEN)).vragen.map((q) => [q._id, q.vraag.trim()] as const),
   );
   const m = melding ? MELDINGEN[melding] : undefined;
   const betaald = BETAALDE_STATUSSEN.includes(order.status);

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Afbeelding } from "@/components/Afbeelding";
 import { Opmaak } from "@/components/Opmaak";
 
 // Typografie voor de paginatekst. Bewust met kind-selectors ([&>h2], [&>p_a], …):
@@ -32,6 +33,7 @@ export function PaginaWeergave({
   omslagUrl,
   omslagAlt,
   blokken,
+  afmetingen,
   kop = "h1",
 }: {
   titel: string;
@@ -40,6 +42,8 @@ export function PaginaWeergave({
   omslagUrl: string | null;
   omslagAlt: string;
   blokken: Readonly<Record<string, ReactNode>>;
+  /** Afmetingen van de afbeeldingen in de tekst (zie Opmaak); leeg = gewone <img>. */
+  afmetingen?: Readonly<Record<string, { breedte: number; hoogte: number }>>;
   /** In het live voorbeeld van de editor is de titel geen h1 van de beheerpagina. */
   kop?: "h1" | "h2";
 }) {
@@ -54,12 +58,13 @@ export function PaginaWeergave({
         {intro && <p className="text-lg leading-relaxed whitespace-pre-line text-balance text-foreground/70">{intro}</p>}
       </header>
       {omslag && (
-        // eslint-disable-next-line @next/next/no-img-element -- geüploade of externe foto met vrije afmetingen
-        <img src={omslag} alt={omslagAlt} fetchPriority="high" className="mt-8 aspect-[16/9] w-full rounded-3xl object-cover" />
+        <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-3xl">
+          <Afbeelding vullen src={omslag} alt={omslagAlt} prioriteit sizes="(min-width: 768px) 720px, 100vw" className="object-cover" />
+        </div>
       )}
       {inhoud.trim() && (
         <div className={`mt-8 ${PAGINA_PROZA}`}>
-          <Opmaak tekst={inhoud} blokken={blokken} />
+          <Opmaak tekst={inhoud} blokken={blokken} afmetingen={afmetingen} />
         </div>
       )}
     </article>

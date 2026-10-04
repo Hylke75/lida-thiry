@@ -5,7 +5,9 @@ import { MIJN_ADVIES_PAGINA } from "@/lib/inhoud/groepen/mijn-advies";
 import { Opmaak } from "@/components/Opmaak";
 import { MijnAdviesFormulier } from "./MijnAdviesFormulier";
 
-export const dynamic = "force-dynamic";
+// Statisch met ISR: alleen teksten (tag "inhoud"); het formulier zelf praat met
+// /api/mijn-advies. Opslaan in Beheer → Teksten vernieuwt de pagina direct.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Mijn advies opnieuw ontvangen",

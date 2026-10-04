@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { redirect } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
@@ -26,6 +27,7 @@ const tekst = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 
 function ververs() {
   // Lichaamstypes komen terug in de test, de uitslag, de website en de PDF.
+  vernieuwPubliekeData("lichaamstypes");
   revalidatePath("/", "layout");
 }
 

@@ -1,5 +1,5 @@
 import { vereisBeheerder } from "@/lib/admin-auth";
-import { leesSectie } from "@/lib/inhoud/lees";
+import { leesSectieVers } from "@/lib/inhoud/lees";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { alleTags } from "@/lib/nieuwsbrief/beheer";
 import { alleFormulieren } from "@/lib/nieuwsbrief/formulieren";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function NieuwFormulier() {
   await vereisBeheerder();
   const [teksten, tags, formulieren] = await Promise.all([
-    leesSectie(NIEUWSBRIEF_AANMELDEN),
+    leesSectieVers(NIEUWSBRIEF_AANMELDEN),
     alleTags().catch(() => [] as string[]),
     alleFormulieren().catch(() => []),
   ]);

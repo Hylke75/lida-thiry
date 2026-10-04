@@ -1,5 +1,6 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { PAGINA_VELDEN, valideerPagina, type Pagina } from "@/lib/paginas/beheer";
@@ -184,6 +185,7 @@ export async function zetTerug(id: string, door: string | null | undefined): Pro
     ? await db.from("inhoud").upsert({ sleutel: versie.ref, waarde: schoon }, { onConflict: "sleutel" })
     : await db.from("inhoud").delete().eq("sleutel", versie.ref);
   if (error) return fout(`Terugzetten is niet gelukt (${error.message}).`);
+  vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
   return { ok: true, soort: "tekst", waarden: combineer(gevonden.sectie, schoon), aangepast: Boolean(schoon) };
 }

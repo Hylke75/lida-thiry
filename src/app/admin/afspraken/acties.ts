@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { foutTekst } from "@/lib/beheermelding";
@@ -219,6 +220,7 @@ export async function bewaarSoort(fd: FormData): Promise<void> {
     ? await supabase.from("afspraak_soorten").update(v.waarde).eq("id", id)
     : await supabase.from("afspraak_soorten").insert(v.waarde);
   if (error) terug(INSTELLINGEN, `Opslaan mislukt: ${error.message}`, "fout");
+  vernieuwPubliekeData("afspraak_soorten");
   revalidatePath(INSTELLINGEN);
   revalidatePath("/afspraak");
   terug(INSTELLINGEN, geldigeUuid(id) ? `‘${v.waarde.naam}’ opgeslagen.` : `‘${v.waarde.naam}’ toegevoegd.`);
@@ -235,6 +237,7 @@ export async function verwijderSoort(fd: FormData): Promise<void> {
   }
   const { error } = await supabase.from("afspraak_soorten").delete().eq("id", id);
   if (error) terug(INSTELLINGEN, `Verwijderen mislukt: ${error.message}`, "fout");
+  vernieuwPubliekeData("afspraak_soorten");
   revalidatePath(INSTELLINGEN);
   terug(INSTELLINGEN, "Soort verwijderd.");
 }
@@ -318,6 +321,7 @@ export async function bewaarAlgemeen(fd: FormData): Promise<void> {
   ]);
   const error = a.error ?? b.error;
   if (error) terug(INSTELLINGEN, `Opslaan mislukt: ${error.message}`, "fout");
+  vernieuwPubliekeData("instellingen");
   revalidatePath(INSTELLINGEN);
   terug(INSTELLINGEN, "Instellingen opgeslagen.");
 }

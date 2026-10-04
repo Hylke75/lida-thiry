@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Afbeelding } from "@/components/Afbeelding";
 import { isActief, toonSiteKop, type MenuItem } from "@/lib/paginas/beheer";
 
 const LINK =
@@ -18,7 +19,7 @@ export function SiteHeaderWeergave({
   paginas: MenuItem[];
   siteNaam: string;
   /** Logo uit de website-instellingen; zonder logo staat de naam er als tekst. */
-  logo: { url: string; alt: string } | null;
+  logo: { url: string; alt: string; breedte: number | null; hoogte: number | null } | null;
 }) {
   const pad = usePathname();
   if (!toonSiteKop(pad)) return null;
@@ -35,8 +36,16 @@ export function SiteHeaderWeergave({
           className="flex shrink-0 items-center font-serif text-xl font-semibold tracking-tight hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- logo met vrije herkomst (mediabibliotheek of eigen adres)
-            <img src={logo.url} alt={logo.alt} className="h-9 w-auto max-w-[11rem] object-contain sm:h-10 sm:max-w-[14rem]" />
+            // next/image als de afmetingen bekend zijn (mediabibliotheek), anders een gewone <img>.
+            <Afbeelding
+              src={logo.url}
+              alt={logo.alt}
+              breedte={logo.breedte}
+              hoogte={logo.hoogte}
+              sizes="224px"
+              prioriteit
+              className="h-9 w-auto max-w-[11rem] object-contain sm:h-10 sm:max-w-[14rem]"
+            />
           ) : (
             siteNaam
           )}

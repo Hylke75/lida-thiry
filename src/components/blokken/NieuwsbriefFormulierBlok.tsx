@@ -3,7 +3,7 @@ import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
 import { AanmeldFormulier } from "@/components/AanmeldFormulier";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
-import { haalActiefFormulier } from "@/lib/nieuwsbrief/formulieren";
+import { haalActiefFormulierPubliek } from "@/lib/nieuwsbrief/formulieren";
 
 /**
  * Een nieuwsbrief-aanmeldformulier als blok op een pagina. Zonder slug het
@@ -16,7 +16,7 @@ export async function NieuwsbriefFormulierBlok({ slug }: { slug?: string }) {
   if (!slug) {
     return <NieuwsbriefAanmelden teksten={teksten} toestemming={<Opmaak tekst={teksten.toestemming_tekst} />} />;
   }
-  const formulier = await haalActiefFormulier(slug).catch((e) => {
+  const formulier = await haalActiefFormulierPubliek(slug).catch((e) => {
     console.error(`Nieuwsbriefformulier ${slug} niet geladen`, e);
     return null;
   });

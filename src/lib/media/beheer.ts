@@ -1,15 +1,17 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
+import { maakVersies } from "./verkleinen";
+import { alleOptPaden, isOptPad } from "./verkleinen-regels";
 import {
   bevatVerwijzing,
   controleerBestand,
   extensieVoorMime,
-  gebruikZoektekst,
+  gebruikPatroon,
   isImporteerbaar,
   isMediaBucket,
   isVeiligPad,
-  likePatroon,
   mapVoorImport,
   MEDIA_BUCKET,
   MEDIA_PER_PAGINA,
@@ -148,14 +150,24 @@ const afmeting = (n: unknown): number | null => {
  * Zet een geüpload bestand in de bibliotheek. Het bestand moet echt in de opslag
  * staan; grootte en type komen uit de opslag zelf. Bestond het al, dan blijft de
  * bestaande rij staan (en krijg je die terug).
+ *
+ * Daarnaast maken we een webversie (max. 2000 px, WebP, zonder EXIF/GPS; voor de
+ * nieuwsbrief JPG/PNG tot 1200 px) en een miniatuur van 400 px onder "opt/…"
+ * (zie verkleinen-regels.ts). Het origineel blijft staan; de afmetingen meten we
+ * hier zelf (na EXIF-rotatie). `webUrl` is het adres van de webversie, of null
+ * als er geen is (SVG, ICO, GIF, of het verkleinen lukte niet: dan gewoon het origineel).
  */
-export async function registreerMedia(r: Registratie): Promise<Uitkomst<{ media: MediaItem }>> {
-  if (!isMediaBucket(r.bucket) || !isVeiligPad(r.pad)) return { ok: false, fout: "Onbekend bestand." };
+export async function registreerMedia(r: Registratie): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
+  if (!isMediaBucket(r.bucket) || !isVeiligPad(r.pad) || isOptPad(r.pad)) return { ok: false, fout: "Onbekend bestand." };
   const bestand = await zoekBestand(r.bucket, r.pad);
   if (!bestand) return { ok: false, fout: "Het bestand is niet (meer) gevonden in de opslag." };
   const mime = bestand.metadata?.mimetype || mimeVoorNaam(r.pad);
   if (!mime || !extensieVoorMime(mime)) return { ok: false, fout: "Dit is geen ondersteunde afbeelding." };
   const naam = schoneBestandsnaam(r.naam || bestand.name);
+  const versies = await maakVersies(r.bucket, r.pad, mime).catch((e) => {
+    console.error("Verkleinen na upload mislukt; alleen het origineel wordt gebruikt.", e);
+    return null;
+  });
   const supabase = adminClient();
   const { error } = await supabase.from("media").upsert(
     {
@@ -166,8 +178,8 @@ export async function registreerMedia(r: Registratie): Promise<Uitkomst<{ media:
       alt: String(r.alt ?? "").replace(/\s+/g, " ").trim().slice(0, 300),
       mime,
       grootte: Math.max(0, Math.round(Number(bestand.metadata?.size) || 0)),
-      breedte: afmeting(r.breedte),
-      hoogte: afmeting(r.hoogte),
+      breedte: versies?.origineel.breedte ?? afmeting(r.breedte),
+      hoogte: versies?.origineel.hoogte ?? afmeting(r.hoogte),
       map: normaliseerMap(r.map) ?? STANDAARD_MAP,
     },
     { onConflict: "bucket,pad", ignoreDuplicates: true },
@@ -175,7 +187,8 @@ export async function registreerMedia(r: Registratie): Promise<Uitkomst<{ media:
   if (error) return { ok: false, fout: `Opslaan in de bibliotheek is niet gelukt (${error.message}).` };
   const { data } = await supabase.from("media").select(MEDIA_VELDEN).eq("bucket", r.bucket).eq("pad", r.pad).maybeSingle();
   if (!data) return { ok: false, fout: "Opslaan in de bibliotheek is niet gelukt." };
-  return { ok: true, media: data as MediaItem };
+  vernieuwPubliekeData("media");
+  return { ok: true, media: data as MediaItem, webUrl: versies?.webUrl ?? null };
 }
 
 /** Past naam, omschrijving en/of map aan. */
@@ -194,6 +207,7 @@ export async function werkMediaBij(id: string, w: { naam?: string; alt?: string;
   const { data, error } = await adminClient().from("media").update(wijziging).eq("id", id).select(MEDIA_VELDEN).maybeSingle();
   if (error) return { ok: false, fout: `Opslaan is niet gelukt (${error.message}).` };
   if (!data) return { ok: false, fout: "Deze afbeelding bestaat niet meer." };
+  vernieuwPubliekeData("media");
   return { ok: true, media: data as MediaItem };
 }
 
@@ -202,7 +216,7 @@ export async function werkMediaBij(id: string, w: { naam?: string; alt?: string;
 /** Waar wordt deze afbeelding gebruikt? Pagina's, blog, nieuwsbrieven en instellingen. */
 export async function zoekGebruik(m: { bucket: string; pad: string }): Promise<Gebruik[]> {
   const supabase = adminClient();
-  const patroon = likePatroon(gebruikZoektekst(m));
+  const patroon = gebruikPatroon(m);
   const [pInhoud, pOmslag, bInhoud, bOmslag, campagnes, instellingen] = await Promise.all([
     supabase.from("paginas").select("id, titel").ilike("inhoud", patroon).limit(100),
     supabase.from("paginas").select("id, titel").ilike("omslag_url", patroon).limit(100),
@@ -250,10 +264,12 @@ export async function verwijderMedia(id: string, forceer: boolean): Promise<Verw
     return { ok: false, fout: `Deze afbeelding wordt nog op ${gebruik.length} plek${gebruik.length === 1 ? "" : "ken"} gebruikt.`, gebruik };
   }
   const supabase = adminClient();
-  const { error: opslagFout } = await supabase.storage.from(m.bucket).remove([m.pad]);
+  // Het origineel plus de gemaakte versies (die er bij oudere bestanden niet zijn: geen probleem).
+  const { error: opslagFout } = await supabase.storage.from(m.bucket).remove([m.pad, ...alleOptPaden(m.pad)]);
   if (opslagFout) return { ok: false, fout: `Verwijderen uit de opslag is niet gelukt (${opslagFout.message}).` };
   const { error } = await supabase.from("media").delete().eq("id", id);
   if (error) return { ok: false, fout: `Verwijderen is niet gelukt (${error.message}).` };
+  vernieuwPubliekeData("media");
   return { ok: true };
 }
 
@@ -283,7 +299,8 @@ export async function importeerBestaande(): Promise<{ nieuw: number; bekeken: nu
   let nieuw = 0;
   let bekeken = 0;
   for (const bucket of ["blog", "nieuwsbrief"] as const) {
-    const bestanden = (await lijstBucket(bucket)).filter((x) => isImporteerbaar(x.b.name) && isVeiligPad(x.pad));
+    // Gemaakte versies (opt/…) horen bij hun origineel en komen niet apart in de bibliotheek.
+    const bestanden = (await lijstBucket(bucket)).filter((x) => isImporteerbaar(x.b.name) && isVeiligPad(x.pad) && !isOptPad(x.pad));
     bekeken += bestanden.length;
     if (!bestanden.length) continue;
     const { data: bestaand, error } = await supabase.from("media").select("pad").eq("bucket", bucket).limit(50_000);
@@ -312,5 +329,6 @@ export async function importeerBestaande(): Promise<{ nieuw: number; bekeken: nu
       nieuw += deel.length;
     }
   }
+  if (nieuw) vernieuwPubliekeData("media");
   return { nieuw, bekeken };
 }

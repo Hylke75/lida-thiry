@@ -2,7 +2,7 @@ import { Opmaak } from "@/components/Opmaak";
 import { AfspraakBoeken, type PubliekeSoort } from "@/components/afspraken/AfspraakBoeken";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
-import { haalSoorten } from "@/lib/afspraken/data";
+import { haalActieveSoortenPubliek } from "@/lib/afspraken/data";
 
 /**
  * Het boekingsformulier als blok (op /afspraak en via {afspraak} op een pagina).
@@ -12,7 +12,7 @@ import { haalSoorten } from "@/lib/afspraken/data";
 export async function AfspraakBlok() {
   const [teksten, soorten] = await Promise.all([
     leesSectie(AFSPRAKEN_BOEKEN),
-    haalSoorten(true).catch((e) => {
+    haalActieveSoortenPubliek().catch((e) => {
       console.error("Afspraaksoorten laden mislukt", e);
       return [];
     }),

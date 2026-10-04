@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Afbeelding } from "@/components/Afbeelding";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { mediaMappen, zoekMedia, type ZoekResultaat } from "@/lib/media/beheer";
 import { formatAfmetingen, formatGrootte, leesTypeFilter, normaliseerMap, schoneZoekterm, TYPE_FILTERS } from "@/lib/media/regels";
@@ -112,9 +113,9 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
                     href={`/admin/media/${m.id}`}
                     className="group flex h-full flex-col overflow-hidden rounded-xl border border-black/10 bg-kaart hover:border-accent/60 dark:border-white/15"
                   >
-                    <span className="flex aspect-square w-full items-center justify-center bg-[repeating-conic-gradient(#0000000d_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- afbeelding uit de opslag, elk formaat */}
-                      <img src={m.url} alt={m.alt} loading="lazy" decoding="async" className="max-h-full max-w-full object-contain" />
+                    <span className="relative flex aspect-square w-full items-center justify-center bg-[repeating-conic-gradient(#0000000d_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+                      {/* Miniatuur via next/image (SVG/ICO als gewone <img>, zie components/Afbeelding.tsx). */}
+                      <Afbeelding vullen src={m.url} alt={m.alt} sizes="(min-width: 1024px) 180px, (min-width: 640px) 33vw, 50vw" className="object-contain" />
                     </span>
                     <span className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5">
                       <span className="truncate text-xs font-medium group-hover:text-accent">{m.naam}</span>

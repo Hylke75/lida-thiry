@@ -13,6 +13,7 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
 import { gebruikteBlokken, paginaOmschrijving } from "@/lib/paginas/beheer";
 import { haalPagina } from "@/lib/paginas/publiek";
+import { afmetingenVoorTekst } from "@/lib/media/publiek";
 import { formulierSlugUitBlok } from "@/lib/paginas/regels";
 import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
 import { siteUrl } from "@/lib/site";
@@ -25,13 +26,23 @@ import { siteUrl } from "@/lib/site";
 // opgeslagen en geven hier hoe dan ook een 404 (haalPagina geeft dan null), bijv.
 // /test (alleen /test/<token> bestaat).
 //
-// Rendering: per request (force-dynamic), net als de homepage en de juridische
-// pagina's. Daardoor is elke wijziging na opslaan meteen zichtbaar, en kunnen de
-// blokken (formulieren, nieuwste blogberichten) altijd actuele gegevens tonen.
-// ISR zou hier weinig opleveren (één kleine query) en zou voor elke willekeurige
-// URL een gecachte 404 aanmaken. Opslaan in het beheer roept bovendien
-// revalidatePath aan (voor menu, footer en sitemap).
-export const dynamic = "force-dynamic";
+// Rendering: ISR. Een pagina wordt bij het eerste bezoek gerenderd en daarna uit
+// de cache geserveerd. Alle gegevens (de pagina, menu/footer, teksten, blokken
+// zoals formulieren, afspraaksoorten en de nieuwste blogberichten) komen uit de
+// datacache met tags (lib/cache/tags.ts). Opslaan in het beheer vernieuwt die
+// tags en roept revalidatePath aan, dus een wijziging is direct zichtbaar.
+// Staat {laatste_blogs} op de pagina, dan wordt hij hooguit elke 2 minuten
+// opnieuw opgebouwd (levensduur van de blog), anders hooguit elk uur.
+// Prijs: een willekeurige URL levert een gecachete 404 op. Die is klein, en
+// ongeldige slugs (geldigePaginaSlug) raken de database niet eens. Wordt later een
+// pagina met die slug gepubliceerd, dan vernieuwt de tag "paginas" ook de 404.
+// generateStaticParams geeft bewust een lege lijst: niets tijdens de build (de
+// database is dan niet nodig), maar elke pagina valt wel onder ISR.
+export const revalidate = 3600;
+
+export function generateStaticParams(): { pagina: string }[] {
+  return [];
+}
 
 type Params = Promise<{ pagina: string }>;
 
@@ -128,6 +139,7 @@ export default async function BeheerbarePagina({ params }: { params: Params }) {
   const { pagina: slug } = await params;
   const p = await haalPagina(slug);
   if (!p) notFound();
+  const afmetingen = await afmetingenVoorTekst(p.inhoud);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10 sm:py-14">
@@ -149,6 +161,7 @@ export default async function BeheerbarePagina({ params }: { params: Params }) {
         omslagUrl={p.omslag_url}
         omslagAlt={p.omslag_alt}
         blokken={maakBlokken(gebruikteBlokken(p.inhoud), p.slug)}
+        afmetingen={afmetingen}
       />
     </main>
   );

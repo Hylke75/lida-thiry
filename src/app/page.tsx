@@ -1,7 +1,7 @@
 import { haalReviewSamenvatting } from "@/lib/reviews/publiek";
 import { Fragment } from "react";
-import { leesPrijsCent, leesInstelling, leesInstellingen } from "@/lib/instellingen";
-import { haalSilhouetten } from "@/lib/lichaamstypes";
+import { leesPubliekeInstellingen, leesPubliekePrijs } from "@/lib/instellingen";
+import { haalSilhouettenPubliek } from "@/lib/lichaamstypes";
 import { STANDAARD_VORM } from "@/lib/lichaamstype-regels";
 import { leesSectie } from "@/lib/inhoud/lees";
 import {
@@ -24,7 +24,15 @@ import { siteUrl } from "@/lib/site";
 import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type ReviewSamenvatting } from "@/lib/seo/structuur";
 import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/Blokken";
 
-export const dynamic = "force-dynamic";
+// Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
+// bezoeker gelijk: teksten, instellingen, silhouetten, reviews en de nieuwste
+// blogberichten. Die staan in de datacache met tags (lib/cache/tags.ts); opslaan
+// in het beheer vernieuwt de tags en daarmee deze pagina direct. Zonder wijziging
+// wordt de pagina elk uur opnieuw opgebouwd; staat het blogblok aan, dan hooguit
+// elke 2 minuten (Next neemt de kortste levensduur van de gegevens over), zodat
+// ingeplande berichten op tijd verschijnen. Geen cookies of zoekparameters
+// nodig, dus geen force-dynamic meer.
+export const revalidate = 3600;
 
 function formatteerPrijs(cent: number, valuta: string): string {
   return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(
@@ -48,7 +56,7 @@ export default async function Home() {
 
   const [silhouetten, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews] =
     await Promise.all([
-      haalSilhouetten().catch(() => []),
+      haalSilhouettenPubliek().catch(() => []),
       leesSectie(WEBSITE_HERO),
       leesSectie(WEBSITE_STAPPEN),
       leesSectie(WEBSITE_FIGUURTYPES),
@@ -66,10 +74,10 @@ export default async function Home() {
   let prijsCent: number | null = null;
   let valuta = "EUR";
   try {
-    const cent = await leesPrijsCent();
-    valuta = (await leesInstelling("valuta")) || "EUR";
-    prijsCent = cent;
-    if (cent) prijsLabel = formatteerPrijs(cent, valuta);
+    const prijs = await leesPubliekePrijs();
+    valuta = prijs.valuta;
+    prijsCent = prijs.prijsCent;
+    if (prijsCent) prijsLabel = formatteerPrijs(prijsCent, valuta);
   } catch {
     prijsLabel = null;
   }
@@ -130,7 +138,7 @@ async function structuur(o: {
   const basis = siteUrl();
   let inst: Record<string, string | null> = {};
   try {
-    inst = await leesInstellingen();
+    inst = await leesPubliekeInstellingen();
   } catch {
     inst = {};
   }

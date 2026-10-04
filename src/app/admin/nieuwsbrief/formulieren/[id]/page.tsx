@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
-import { leesSectie } from "@/lib/inhoud/lees";
+import { leesSectieVers } from "@/lib/inhoud/lees";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { alleTags } from "@/lib/nieuwsbrief/beheer";
 import { aanmeldStatistiek, alleFormulieren, blokGebruik } from "@/lib/nieuwsbrief/formulieren";
@@ -29,7 +29,7 @@ export default async function FormulierBewerken({
   const [{ id }, { ok, fout }] = await Promise.all([params, searchParams]);
   if (!UUID_PATROON.test(id)) notFound();
   const [teksten, tags, formulieren, stats, gebruik] = await Promise.all([
-    leesSectie(NIEUWSBRIEF_AANMELDEN),
+    leesSectieVers(NIEUWSBRIEF_AANMELDEN),
     alleTags().catch(() => [] as string[]),
     alleFormulieren(),
     aanmeldStatistiek().catch(() => new Map<string, FormulierTelling>()),

@@ -63,7 +63,7 @@ export async function maakMediaUpload(mime: string, grootte: number, map: string
 }
 
 /** Stap 2: het geüploade bestand in de bibliotheek zetten (ook voor uploads uit de editors). */
-export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media: MediaItem }>> {
+export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
   await vereisBeheerder();
   if (!r || typeof r !== "object") return { ok: false, fout: "Onbekend bestand." };
   try {

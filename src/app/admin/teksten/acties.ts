@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { vindSectie } from "@/lib/inhoud/register";
@@ -35,6 +36,7 @@ export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<Se
   if (error) return { ok: false, fouten: [`Opslaan mislukt: ${error.message}`] };
 
   // Teksten worden op openbare pagina's, in de test en in e-mails gebruikt.
+  vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
   return {
     ok: true,
@@ -54,6 +56,7 @@ export async function zetSectieTerug(sleutel: string): Promise<SectieResultaat> 
   const { error } = await adminClient().from("inhoud").delete().eq("sleutel", sleutel);
   if (error) return { ok: false, fouten: [`Terugzetten mislukt: ${error.message}`] };
 
+  vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
   return {
     ok: true,

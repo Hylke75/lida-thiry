@@ -13,12 +13,14 @@ import { blogPostingJsonLd, veiligeJson } from "@/lib/blog/structuur";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { afmetingenVoorTekst } from "@/lib/media/publiek";
 import { siteUrl } from "@/lib/site";
 
-// ISR: elk bericht wordt bij het eerste bezoek gerenderd en daarna maximaal
-// 5 minuten uit de cache geserveerd. Opslaan in het beheer ververst de pagina
-// direct (revalidatePath). Ook een "nog niet gepubliceerd" (404) voor een
-// ingepland bericht blijft dus hooguit 5 minuten staan. generateStaticParams
+// ISR: elk bericht wordt bij het eerste bezoek gerenderd en daarna uit de cache
+// geserveerd. De gegevens hebben de tag "blog" met een levensduur van 120 s; de
+// pagina neemt die kortste levensduur over (onder de 300 hieronder). Opslaan in
+// het beheer ververst de pagina direct (tag + revalidatePath). Ook een "nog niet
+// gepubliceerd" (404) voor een ingepland bericht blijft dus hooguit ~4 minuten staan. generateStaticParams
 // geeft bewust een lege lijst: niets wordt tijdens de build gerenderd (de
 // database is dan niet nodig), maar elke pagina valt wel onder ISR.
 export const revalidate = 300;
@@ -89,10 +91,11 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
   const b = await haalBericht(slug);
   if (!b) notFound();
 
-  const [t, nieuwsbrief, gerelateerd] = await Promise.all([
+  const [t, nieuwsbrief, gerelateerd, afmetingen] = await Promise.all([
     leesSectie(BLOG_ARTIKEL),
     leesSectie(NIEUWSBRIEF_AANMELDEN),
     haalGerelateerd(b, 3),
+    afmetingenVoorTekst(b.inhoud),
   ]);
 
   const basis = siteUrl();
@@ -182,13 +185,13 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
 
         {b.omslag_url && (
           <figure className="mx-auto mt-8 w-full max-w-5xl px-0 sm:px-6">
-            <BlogBeeld bericht={b} prioriteit className="aspect-[16/9] w-full sm:rounded-3xl" />
+            <BlogBeeld bericht={b} prioriteit sizes="(min-width: 1024px) 976px, 100vw" className="aspect-[16/9] w-full sm:rounded-3xl" />
           </figure>
         )}
 
         <div className="mx-auto mt-10 w-full max-w-[68ch] px-6">
           <div className={PROZA}>
-            <Opmaak tekst={b.inhoud} />
+            <Opmaak tekst={b.inhoud} afmetingen={afmetingen} beeldSizes="(min-width: 768px) 680px, 100vw" />
           </div>
 
           {b.tags.length > 0 && (

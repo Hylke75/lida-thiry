@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { leesMeetBeeldRijen } from "@/lib/meetbeelden";
-import { leesSectie } from "@/lib/inhoud/lees";
+import { leesSectieVers } from "@/lib/inhoud/lees";
 import { TEST_MATEN, maatVeldenMetTeksten } from "@/lib/inhoud/groepen/test";
 import { Lichaam } from "@/app/test/[token]/Lichaam";
 import { AdminNav, Melding } from "../AdminNav";
@@ -17,7 +17,7 @@ export default async function MeetinstructiesPagina({
 }) {
   await vereisBeheerder();
   const { verwijderd } = await searchParams;
-  const [beelden, maten] = await Promise.all([leesMeetBeeldRijen(), leesSectie(TEST_MATEN)]);
+  const [beelden, maten] = await Promise.all([leesMeetBeeldRijen(), leesSectieVers(TEST_MATEN)]);
   const maatVelden = maatVeldenMetTeksten(maten);
   const verwijderdLabel = maatVelden.find((v) => v.sleutel === verwijderd)?.label;
 

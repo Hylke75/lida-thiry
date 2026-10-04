@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import {
@@ -59,6 +60,7 @@ async function slaOp(formData: FormData) {
   }
 
   // Instellingen (zoals de prijs) worden ook op openbare pagina's gebruikt.
+  vernieuwPubliekeData("instellingen");
   revalidatePath("/", "layout");
   redirect(`/admin/instellingen?opgeslagen=${wijzigingen.length}`);
 }

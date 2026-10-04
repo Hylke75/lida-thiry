@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { AfspraakBlok } from "@/components/blokken/AfspraakBlok";
 
-// Afspraak maken. Per request (de soorten kunnen in het beheer wijzigen; de vrije
-// tijden haalt het formulier zelf op via /api/afspraak/tijden).
-export const dynamic = "force-dynamic";
+// Afspraak maken. Statisch met ISR: de soorten (tag "afspraken") en teksten (tag
+// "inhoud") komen uit de datacache; opslaan in het beheer vernieuwt ze direct.
+// De vrije tijden zijn wél per moment anders: die haalt het formulier zelf op via
+// /api/afspraak/tijden (dynamisch), dus de pagina hoeft daarvoor niet per request.
+export const revalidate = 900;
 
 export const metadata: Metadata = {
   title: "Afspraak maken",
