@@ -51,6 +51,8 @@ export interface LivegangGegevens {
   omgeving: LivegangOmgeving;
   /** Aantal aangemelde nieuwsbriefcontacten (ontbreekt = 0). */
   aangemeldeContacten?: number;
+  /** Of er een gepubliceerde pagina is met het blok {contactformulier} (ontbreekt = nee). */
+  contactformulierGepubliceerd?: boolean;
 }
 
 export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
@@ -316,6 +318,32 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
       : "Kliklinks in nieuwsbrieven worden nu ondertekend met een ander geheim (CRON_SECRET of de Supabase-sleutel). Werkt, maar wisselt dat geheim ooit, dan werken oude kliklinks niet meer. Zet een eigen lange willekeurige waarde. " +
         VERCEL_UITLEG,
     links: [],
+  });
+
+  // Contact ----------------------------------------------------------------------
+  const contactformulier = g.contactformulierGepubliceerd === true;
+  items.push({
+    id: "contactformulier",
+    label: "Contactformulier staat op een gepubliceerde pagina",
+    ok: contactformulier,
+    niveau: "aanbevolen",
+    detail: contactformulier
+      ? undefined
+      : "Bezoekers kunnen je nu niet via de website een bericht sturen. Maak een pagina (bijv. ‘Contact’), zet {contactformulier} op een eigen regel in de tekst en publiceer de pagina.",
+    links: [{ href: "/admin/paginas", label: "Naar de pagina's" }],
+  });
+
+  const contactAdres = gevuld(g.instellingen.adviseur_email) || gevuld(g.instellingen.contact_email);
+  items.push({
+    id: "contact-meldingen",
+    label: "E-mailadres voor nieuwe contactberichten ingesteld",
+    ok: contactAdres,
+    // Pas een blokkade als het formulier echt online staat.
+    niveau: contactformulier ? "verplicht" : "aanbevolen",
+    detail: contactAdres
+      ? undefined
+      : "Meldingen van nieuwe berichten gaan naar het e-mailadres voor foutmeldingen, anders naar het contact-e-mailadres. Zonder een van beide zie je nieuwe berichten alleen in Beheer → Berichten.",
+    links: [INSTELLINGEN, { href: "/admin/berichten", label: "Naar de berichten" }],
   });
 
   // Blog -------------------------------------------------------------------------

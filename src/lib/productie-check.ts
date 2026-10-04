@@ -15,7 +15,7 @@ import { alleRijen } from "@/app/admin/types/gedeeld";
  */
 export async function productieCheck(): Promise<{ items: LivegangItem[] } & ReturnType<typeof livegangStatus>> {
   const supabase = adminClient();
-  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties, aangemeld] = await Promise.all([
+  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties, aangemeld, contactformulier] = await Promise.all([
     leesInstellingen(),
     leesPrijsCent(),
     leesAlleInhoud().catch(() => new Map<string, unknown>()),
@@ -31,6 +31,17 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
     ).then(
       (r) => r.count ?? 0,
       () => 0,
+    ),
+    // Contactformulier: een gepubliceerde pagina met het blok {contactformulier}.
+    Promise.resolve(
+      supabase
+        .from("paginas")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "gepubliceerd")
+        .ilike("inhoud", "%{contactformulier}%"),
+    ).then(
+      (r) => !r.error && (r.count ?? 0) > 0,
+      () => false,
     ),
   ]);
   if (typesRes.error) throw new Error(`adviestypes lezen: ${typesRes.error.message}`);
@@ -60,6 +71,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     },
     aangemeldeContacten: aangemeld,
+    contactformulierGepubliceerd: contactformulier,
   });
   return { items, ...livegangStatus(items) };
 }

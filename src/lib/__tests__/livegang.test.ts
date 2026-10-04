@@ -53,6 +53,7 @@ function compleet(): LivegangGegevens {
       ANTHROPIC_API_KEY: "sk-ant-123",
     },
     aangemeldeContacten: 12,
+    contactformulierGepubliceerd: true,
   };
 }
 
@@ -226,6 +227,31 @@ describe("blog in de controlelijst", () => {
     expect(item?.detail).toContain("ANTHROPIC_API_KEY");
     expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 1 });
     expect(vind(compleet(), "ai-schrijfhulp").ok).toBe(true);
+  });
+});
+
+describe("contact in de controlelijst", () => {
+  it("raadt een gepubliceerd contactformulier aan", () => {
+    const g = { ...compleet(), contactformulierGepubliceerd: undefined };
+    const items = evalueerLivegang(g);
+    expect(items.find((i) => i.id === "contactformulier")).toMatchObject({
+      ok: false,
+      niveau: "aanbevolen",
+      links: [{ href: "/admin/paginas" }],
+    });
+    expect(livegangStatus(items)).toMatchObject({ klaar: true, openAanbevolen: 1 });
+  });
+
+  it("meldingen gaan naar adviseur_email of contact_email", () => {
+    const zonder = compleet();
+    zonder.instellingen = { ...zonder.instellingen, adviseur_email: "", contact_email: null };
+    expect(vind(zonder, "contact-meldingen")).toMatchObject({ ok: false, niveau: "verplicht" });
+    expect(vind({ ...zonder, contactformulierGepubliceerd: false }, "contact-meldingen").niveau).toBe("aanbevolen");
+
+    const alleenContact = compleet();
+    alleenContact.instellingen = { ...alleenContact.instellingen, adviseur_email: "" };
+    expect(vind(alleenContact, "contact-meldingen").ok).toBe(true);
+    expect(vind(compleet(), "contact-meldingen").ok).toBe(true);
   });
 });
 
