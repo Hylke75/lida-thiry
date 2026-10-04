@@ -99,7 +99,8 @@ export function parseerOpmaak(tekst: string): Blok[] {
     const regel = ruweRegel.trimEnd();
     const kop = /^(#{2,3})\s+(.+)$/.exec(regel.trim());
     const item = /^\s*[-*]\s+(.+)$/.exec(regel);
-    const blok = /^\{([a-z_]+)\}$/.exec(regel.trim());
+    // Bloknamen mogen cijfers bevatten (bijv. {nieuwsbrief_zomer_2026}), net als in paginas/regels.ts.
+    const blok = /^\{([a-z][a-z0-9_]*)\}$/.exec(regel.trim());
     const beeld = /^!\[([^\]\n]*)\]\((https:\/\/[^)\s]+)\)$/.exec(regel.trim());
     if (!regel.trim()) {
       sluitAlinea();

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -48,6 +49,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Verbergt zich zelf in het beheer, bij inloggen en in de test (zie SiteHeaderWeergave). */}
+        <SiteHeader />
         {children}
         <SiteFooter />
       </body>
