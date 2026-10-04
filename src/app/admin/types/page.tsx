@@ -75,7 +75,7 @@ export default async function TypesPagina({
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Adviestypes</h1>
         <p className="text-sm text-black/60 dark:text-white/60">
-          Hier beheer je de {types.length} hand-outs: per type de titel, de secties met tekst en de beelden. Klik op een
+          Hier beheer je de {types.length} hand-outs: per type de titel, de vaste velden met tekst en de beelden. Klik op een
           type om het te bewerken. Wijzigingen gelden voor nieuwe PDF&rsquo;s; al verstuurde PDF&rsquo;s veranderen niet.
         </p>
       </div>
@@ -118,7 +118,7 @@ export default async function TypesPagina({
             <Link
               href={link({ aandacht: aandacht ? undefined : "1" })}
               className={`${chip(Boolean(aandacht))} ml-auto`}
-              title="Types zonder secties of zonder beelden"
+              title="Types zonder ingevulde velden of zonder beelden"
             >
               Aandachtspunten ({aantalAandacht})
             </Link>
@@ -143,7 +143,7 @@ export default async function TypesPagina({
               <tr>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Titel</th>
-                <th className="px-4 py-3 text-right font-medium">Secties</th>
+                <th className="px-4 py-3 text-right font-medium">Velden</th>
                 <th className="px-4 py-3 text-right font-medium">Beelden</th>
                 <th className="px-4 py-3 font-medium">Laatst bewerkt</th>
               </tr>
@@ -174,7 +174,7 @@ export default async function TypesPagina({
                       <span className="mt-1 flex flex-wrap gap-1">
                         {tel.secties === 0 && (
                           <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
-                            Geen secties
+                            Geen velden
                           </span>
                         )}
                         {tel.secties > 0 && tel.beelden === 0 && (

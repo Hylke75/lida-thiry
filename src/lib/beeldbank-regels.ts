@@ -7,6 +7,15 @@ export const BEELD_BUCKET = "advies-beelden";
 /** Kortste zijde die een (nieuw) beeld minimaal moet hebben, in pixels. */
 export const MIN_KORTE_ZIJDE = 600;
 
+/**
+ * Standaardverhouding van alle beelden: 2:3 staand. Gekozen na analyse van de
+ * 864 bronbeelden (beste vulling van het kader, 75% gemiddeld). Elk beeld wordt
+ * zonder bijsnijden gecentreerd op een wit kader van deze verhouding gezet, zodat
+ * alle beelden in de PDF even groot in een strak raster staan.
+ */
+export const STANDAARD_VERHOUDING: [number, number] = [2, 3];
+export const IDEAAL_FORMAAT = { breedte: 1000, hoogte: 1500 } as const;
+
 /** Toegestane afwijking van de vereiste verhouding (3%). */
 export const VERHOUDING_TOLERANTIE = 0.03;
 
@@ -46,6 +55,7 @@ export const ONDERDELEN = [
   "taille-en-middenrif",
   "onderlichaam",
   "outfits",
+  "silhouetten",
   "overig",
 ] as const;
 
@@ -99,10 +109,46 @@ export function minFormaat(vb: number, vh: number): { min_breedte: number; min_h
   return { min_breedte: MIN_KORTE_ZIJDE, min_hoogte: Math.round((MIN_KORTE_ZIJDE * vh) / vb) };
 }
 
-/** Eisen afgeleid van de afmetingen van het huidige (originele) beeld. */
-export function eisenUitAfmetingen(breedte: number, hoogte: number): Eisen {
-  const [verhouding_b, verhouding_h] = snapVerhouding(breedte, hoogte);
-  return { verhouding_b, verhouding_h, ...minFormaat(verhouding_b, verhouding_h) };
+/** De vaste eisen van de beeldbank: 2:3, minimaal 600 × 900 px. */
+export const STANDAARD_EISEN: Eisen = {
+  verhouding_b: STANDAARD_VERHOUDING[0],
+  verhouding_h: STANDAARD_VERHOUDING[1],
+  ...minFormaat(STANDAARD_VERHOUDING[0], STANDAARD_VERHOUDING[1]),
+};
+
+/**
+ * Afmetingen van het witte kader waarop een beeld zonder bijsnijden past
+ * (het beeld wordt in de breedte of hoogte aangevuld tot de verhouding).
+ */
+export function kaderAfmetingen(
+  breedte: number,
+  hoogte: number,
+  [vb, vh]: [number, number] = STANDAARD_VERHOUDING,
+): { breedte: number; hoogte: number; aangevuld: boolean } {
+  if (breedte * vh > hoogte * vb) {
+    const h = Math.round((breedte * vh) / vb);
+    return { breedte, hoogte: h, aangevuld: h !== hoogte };
+  }
+  const b = Math.round((hoogte * vb) / vh);
+  return { breedte: b, hoogte, aangevuld: b !== breedte };
+}
+
+/**
+ * Controle bij uploaden: het beeld wordt op het standaardkader gezet; alleen
+ * als dat kader kleiner is dan het minimum wordt het geweigerd.
+ */
+export function controleerUpload(breedte: number, hoogte: number): { fouten: string[]; melding: string | null } {
+  const k = kaderAfmetingen(breedte, hoogte);
+  const fouten: string[] = [];
+  if (k.breedte < STANDAARD_EISEN.min_breedte || k.hoogte < STANDAARD_EISEN.min_hoogte) {
+    fouten.push(
+      `Het beeld is te klein (${breedte} × ${hoogte} px). Op het 2:3-kader wordt het ${k.breedte} × ${k.hoogte} px; minimaal ${STANDAARD_EISEN.min_breedte} × ${STANDAARD_EISEN.min_hoogte} px is nodig voor een scherpe PDF (ideaal ${IDEAAL_FORMAAT.breedte} × ${IDEAAL_FORMAAT.hoogte} px).`,
+    );
+  }
+  const melding = k.aangevuld
+    ? `Het beeld is niet precies 2:3; het wordt zonder bijsnijden aangevuld met wit tot ${k.breedte} × ${k.hoogte} px.`
+    : null;
+  return { fouten, melding };
 }
 
 export function verhoudingLabel(vb: number, vh: number): string {

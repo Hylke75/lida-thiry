@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { BEELD_KOLOMMEN, beeldUrls, downloadUrl, gebruikVan, type Beeld } from "@/lib/beeldbank";
-import { isTeKlein, verhoudingLabel } from "@/lib/beeldbank-regels";
+import { IDEAAL_FORMAAT, STANDAARD_EISEN, isTeKlein, verhoudingLabel } from "@/lib/beeldbank-regels";
 import { afmetingTekst, gebruikZin, groepeerGebruik } from "@/lib/beeldbank-beheer";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BeeldUpload } from "../BeeldUpload";
 import { StatusBadge, TeKleinBadge } from "../badges";
 import { zetTerug } from "../acties";
 import { GegevensFormulier } from "./GegevensFormulier";
-import { EisenFormulier } from "./EisenFormulier";
 import { VerwijderKnop } from "./VerwijderKnop";
 
 export const dynamic = "force-dynamic";
@@ -51,16 +50,6 @@ export default async function BeeldPagina({
     gebruikVan(beeld.id),
   ]);
   const groepen = groepeerGebruik(gebruik);
-
-  const eisen =
-    beeld.verhouding_b && beeld.verhouding_h && beeld.min_breedte && beeld.min_hoogte
-      ? {
-          verhouding_b: beeld.verhouding_b,
-          verhouding_h: beeld.verhouding_h,
-          min_breedte: beeld.min_breedte,
-          min_hoogte: beeld.min_hoogte,
-        }
-      : null;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
@@ -120,33 +109,25 @@ export default async function BeeldPagina({
         <section className={kaart}>
           <h2 className="text-lg font-semibold">Beeld vervangen</h2>
           <div className="rounded-xl bg-accent-zacht p-4 text-sm leading-relaxed">
-            <p className="mb-2 font-medium">Eisen voor een vervangend beeld</p>
-            {eisen ? (
-              <ul className="list-disc space-y-1 pl-5">
-                <li>
-                  Verhouding: <strong>{verhoudingLabel(eisen.verhouding_b, eisen.verhouding_h)}</strong>
-                </li>
-                <li>
-                  Minimaal formaat: <strong>{eisen.min_breedte} × {eisen.min_hoogte} px</strong>
-                </li>
-                <li>
-                  Advies: liefst {eisen.min_breedte * 2} × {eisen.min_hoogte * 2} px (twee keer het minimum) voor de
-                  scherpste PDF
-                </li>
-                <li>Bestandstype: JPG, PNG of WebP, maximaal 15 MB</li>
-                <li>Tip: teken op een wit of transparant canvas</li>
-              </ul>
-            ) : (
-              <p>
-                De eisen van dit beeld zijn nog niet bekend, omdat de afmetingen nog niet bepaald zijn. Ga terug naar de
-                beeldbank en klik op ‘Afmetingen bepalen’, of stel de eisen hieronder zelf in.
-              </p>
-            )}
+            <p className="mb-2 font-medium">Zo lever je een beeld aan</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>
+                Verhouding: <strong>{verhoudingLabel(STANDAARD_EISEN.verhouding_b, STANDAARD_EISEN.verhouding_h)}</strong>{" "}
+                — de standaard voor alle beelden, zodat ze in de PDF even groot in een raster staan
+              </li>
+              <li>
+                Ideaal formaat: <strong>{IDEAAL_FORMAAT.breedte} × {IDEAAL_FORMAAT.hoogte} px</strong>; minimaal{" "}
+                {STANDAARD_EISEN.min_breedte} × {STANDAARD_EISEN.min_hoogte} px
+              </li>
+              <li>Niet precies 2:3? Dan vullen we het beeld zonder bijsnijden aan met wit</li>
+              <li>Bestandstype: JPG, PNG of WebP, maximaal 15 MB</li>
+              <li>Tip: teken op een wit of transparant canvas, met wat ruimte rondom</li>
+            </ul>
           </div>
           <p className="text-sm text-black/60 dark:text-white/60">
-            We controleren het beeld eerst. Past het niet, dan zie je meteen waarom en blijft het huidige beeld staan.
+            We controleren het beeld eerst. Is het te klein, dan zie je meteen waarom en blijft het huidige beeld staan.
           </p>
-          <BeeldUpload beeldId={beeld.id} eisen={eisen} label="Kies een nieuw bestand" />
+          <BeeldUpload beeldId={beeld.id} label="Kies een nieuw bestand" />
 
           {beeld.vorige_pad && (
             <form action={zetTerug} className="flex flex-col gap-2 border-t border-black/10 pt-4 dark:border-white/15">
@@ -206,16 +187,6 @@ export default async function BeeldPagina({
           </ul>
         )}
       </section>
-
-      <details className={kaart}>
-        <summary className="cursor-pointer text-lg font-semibold">Eisen aanpassen (geavanceerd)</summary>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Meestal hoef je hier niets te doen: de eisen zijn afgeleid van het oorspronkelijke beeld. Wil je dit beeld
-          bewust in een andere vorm tekenen, pas dan hier de verhouding aan. Let op: in de PDF krijgt het beeld dan
-          ook een andere vorm.
-        </p>
-        <EisenFormulier id={beeld.id} eisen={eisen} />
-      </details>
 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Beeld verwijderen</h2>

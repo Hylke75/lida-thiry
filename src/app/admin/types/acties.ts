@@ -11,7 +11,6 @@ import {
   verplaats,
   veiligeZoekterm,
   verwijderOp,
-  voegIn,
 } from "@/lib/adviestypes-beheer";
 import type { GevondenBeeld, Uitkomst } from "./uitkomst";
 
@@ -41,39 +40,16 @@ async function typeBestaat(supabase: Supabase, sleutel: string): Promise<boolean
   return Boolean(data);
 }
 
-/** Secties van een type in volgorde (id + volgorde). */
-async function sectiesVan(supabase: Supabase, sleutel: string) {
-  const { data, error } = await supabase
-    .from("adviessecties")
-    .select("id, volgorde")
-    .eq("type_sleutel", sleutel)
-    .order("volgorde", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as { id: string; volgorde: number }[];
-}
-
 /** Controleert dat de sectie bij dit type hoort. */
 async function sectieVanType(supabase: Supabase, sleutel: string, sectieId: string) {
   if (!sectieId) return null;
   const { data } = await supabase
     .from("adviessecties")
-    .select("id, volgorde, kop, tekst")
+    .select("id, volgorde, kop, tekst, veld_sleutel")
     .eq("id", sectieId)
     .eq("type_sleutel", sleutel)
     .maybeSingle();
-  return data as { id: string; volgorde: number; kop: string; tekst: string } | null;
-}
-
-/** Geeft de secties hun nieuwe volgorde (twee rondes, zie hernummerPlan). */
-async function hernummerSecties(supabase: Supabase, gewenst: { id: string; volgorde: number }[]) {
-  const plan = hernummerPlan(gewenst, (s) => s.volgorde);
-  for (const ronde of ["tijdelijk", "naar"] as const) {
-    const resultaten = await Promise.all(
-      plan.map((s) => supabase.from("adviessecties").update({ volgorde: s[ronde] }).eq("id", s.item.id)),
-    );
-    const mislukt = resultaten.find((r) => r.error);
-    if (mislukt?.error) throw new Error(mislukt.error.message);
-  }
+  return data as { id: string; volgorde: number; kop: string; tekst: string; veld_sleutel: string | null } | null;
 }
 
 /** Beeldkoppelingen van een sectie in volgorde. */
@@ -171,8 +147,7 @@ export async function slaSectieOp(_vorige: Uitkomst | null, fd: FormData): Promi
     const sleutel = tekst(fd, "sleutel");
     const sectie = await sectieVanType(supabase, sleutel, tekst(fd, "sectie_id"));
     if (!sectie) return fout("Deze sectie bestaat niet meer. Vernieuw de pagina.");
-    const kop = tekst(fd, "kop").trim();
-    if (!kop) return fout("Vul een kop in.");
+    const kop = tekst(fd, "kop").trim() || sectie.kop;
     // Windows-regeleinden gelijktrekken; spaties aan het eind van regels weg.
     const inhoud = tekst(fd, "tekst").replace(/\r\n?/g, "\n").replace(/[ \t]+$/gm, "").trim();
     const { error } = await supabase
@@ -183,23 +158,6 @@ export async function slaSectieOp(_vorige: Uitkomst | null, fd: FormData): Promi
     await raakAan(supabase, [sleutel]);
     ververs(sleutel);
     return ok("Opgeslagen.");
-  });
-}
-
-export async function verplaatsSectie(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
-  return veilig(async () => {
-    const supabase = adminClient();
-    const sleutel = tekst(fd, "sleutel");
-    const sectieId = tekst(fd, "sectie_id");
-    const richting = tekst(fd, "richting") === "omhoog" ? -1 : 1;
-    const secties = await sectiesVan(supabase, sleutel);
-    const index = secties.findIndex((s) => s.id === sectieId);
-    if (index < 0) return fout("Deze sectie bestaat niet meer. Vernieuw de pagina.");
-    await hernummerSecties(supabase, verplaats(secties, index, richting));
-    await raakAan(supabase, [sleutel]);
-    ververs(sleutel);
-    return ok(richting < 0 ? "Sectie omhoog verplaatst." : "Sectie omlaag verplaatst.", `sectie-${sectieId}`);
   });
 }
 
@@ -215,48 +173,53 @@ export async function verwijderSectie(_vorige: Uitkomst | null, fd: FormData): P
     if (e1) throw new Error(e1.message);
     const { error: e2 } = await supabase.from("adviessecties").delete().eq("id", sectie.id);
     if (e2) throw new Error(e2.message);
-    await hernummerSecties(supabase, await sectiesVan(supabase, sleutel));
     await raakAan(supabase, [sleutel]);
     ververs(sleutel);
-    return ok(`De sectie '${sectie.kop}' is verwijderd.`);
+    return ok(`'${sectie.kop}' is leeggemaakt en uit dit type gehaald.`);
   });
 }
 
-export async function voegSectieToe(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
+/** Maakt de (nog lege) sectie voor een veld van het sjabloon aan. */
+export async function vulVeld(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
   await vereisBeheerder();
   return veilig(async () => {
     const supabase = adminClient();
     const sleutel = tekst(fd, "sleutel");
     if (!(await typeBestaat(supabase, sleutel))) return fout("Dit adviestype bestaat niet (meer).");
-    const kop = tekst(fd, "kop").trim() || "Nieuwe sectie";
-    const naSectieId = tekst(fd, "na_sectie_id");
-    const secties = await sectiesVan(supabase, sleutel);
-    const laatste = secties.length ? secties[secties.length - 1].volgorde : -1;
-
-    // Eerst achteraan toevoegen (botst nooit), daarna op de juiste plek zetten.
+    const veld = await veldVan(supabase, tekst(fd, "veld"));
+    if (!veld) return fout("Dit veld bestaat niet.");
+    const { data: bestaand } = await supabase
+      .from("adviessecties")
+      .select("id")
+      .eq("type_sleutel", sleutel)
+      .eq("veld_sleutel", veld.sleutel)
+      .maybeSingle();
+    if (bestaand) return ok("Dit veld bestaat al.", `sectie-${bestaand.id}`);
     const { data: nieuw, error } = await supabase
       .from("adviessecties")
-      .insert({ type_sleutel: sleutel, volgorde: laatste + 1, kop, tekst: "" })
-      .select("id, volgorde")
+      .insert({ type_sleutel: sleutel, veld_sleutel: veld.sleutel, volgorde: veld.volgorde, kop: veld.kop, tekst: "" })
+      .select("id")
       .single();
-    if (error || !nieuw) throw new Error(error?.message ?? "invoegen mislukt");
-
-    if (naSectieId) {
-      const index = secties.findIndex((s) => s.id === naSectieId);
-      const gewenst = voegIn(secties, index < 0 ? secties.length : index + 1, nieuw);
-      await hernummerSecties(supabase, gewenst);
-    } else {
-      await hernummerSecties(supabase, [...secties, nieuw]);
-    }
+    if (error || !nieuw) throw new Error(error?.message ?? "aanmaken mislukt");
     await raakAan(supabase, [sleutel]);
     ververs(sleutel);
-    return ok("Nieuwe sectie toegevoegd. Vul de kop en tekst in en klik op Opslaan.", `sectie-${nieuw.id}`);
+    return ok(`'${veld.kop}' is toegevoegd. Vul de tekst in en klik op Opslaan.`, `sectie-${nieuw.id}`);
   });
 }
 
+async function veldVan(supabase: Supabase, veldSleutel: string) {
+  if (!veldSleutel) return null;
+  const { data } = await supabase
+    .from("advies_velden")
+    .select("sleutel, kop, volgorde")
+    .eq("sleutel", veldSleutel)
+    .maybeSingle();
+  return data as { sleutel: string; kop: string; volgorde: number } | null;
+}
+
 /**
- * Kopieert kop, tekst en beeldkoppelingen van een sectie als nieuwe sectie
- * achteraan in elk gekozen type.
+ * Kopieert tekst en beeldkoppelingen van een veld naar hetzelfde veld in elk
+ * gekozen type (bestaande inhoud van dat veld wordt vervangen).
  */
 export async function kopieerSectie(sleutel: string, sectieId: string, doelen: string[]): Promise<Uitkomst> {
   await vereisBeheerder();
@@ -267,44 +230,55 @@ export async function kopieerSectie(sleutel: string, sectieId: string, doelen: s
     const gekozen = [...new Set(doelen)].filter((d) => ontleedSleutel(d));
     if (gekozen.length === 0) return fout("Kies eerst een of meer types.");
 
-    const { data: bestaand } = await supabase.from("adviestypes").select("sleutel").in("sleutel", gekozen);
-    const typen = (bestaand ?? []).map((t) => t.sleutel as string);
+    const { data: gevonden } = await supabase.from("adviestypes").select("sleutel").in("sleutel", gekozen);
+    const typen = (gevonden ?? []).map((t) => t.sleutel as string);
     if (typen.length === 0) return fout("De gekozen types bestaan niet.");
 
-    // Hoogste volgorde per doeltype (per type opvragen: blijft ruim onder de rijlimiet).
-    const hoogste = await Promise.all(
-      typen.map(async (t) => {
-        const { data } = await supabase
-          .from("adviessecties")
-          .select("volgorde")
-          .eq("type_sleutel", t)
-          .order("volgorde", { ascending: false })
-          .limit(1);
-        return (data?.[0]?.volgorde as number | undefined) ?? -1;
-      }),
-    );
-
-    const { data: nieuwe, error } = await supabase
-      .from("adviessecties")
-      .insert(
-        typen.map((t, i) => ({ type_sleutel: t, volgorde: hoogste[i] + 1, kop: bron.kop, tekst: bron.tekst })),
-      )
-      .select("id");
-    if (error || !nieuwe) throw new Error(error?.message ?? "kopiëren mislukt");
-
+    if (!bron.veld_sleutel) return fout("Deze sectie hoort niet bij een veld van het sjabloon.");
     const koppelingen = await koppelingenVan(supabase, bron.id);
+    const { data: bestaandeSecties } = await supabase
+      .from("adviessecties")
+      .select("id, type_sleutel")
+      .eq("veld_sleutel", bron.veld_sleutel)
+      .in("type_sleutel", typen);
+    const bestaand = new Map((bestaandeSecties ?? []).map((r) => [r.type_sleutel as string, r.id as string]));
+
+    // Bestaande velden overschrijven, ontbrekende aanmaken.
+    const teMaken = typen.filter((t) => !bestaand.has(t));
+    if (teMaken.length) {
+      const { data: nieuwe, error } = await supabase
+        .from("adviessecties")
+        .insert(
+          teMaken.map((t) => ({
+            type_sleutel: t,
+            veld_sleutel: bron.veld_sleutel,
+            volgorde: bron.volgorde,
+            kop: bron.kop,
+            tekst: bron.tekst,
+          })),
+        )
+        .select("id, type_sleutel");
+      if (error || !nieuwe) throw new Error(error?.message ?? "kopiëren mislukt");
+      for (const r of nieuwe) bestaand.set(r.type_sleutel as string, r.id as string);
+    }
+    const ids = typen.map((t) => bestaand.get(t)!);
+    const { error: e1 } = await supabase
+      .from("adviessecties")
+      .update({ kop: bron.kop, tekst: bron.tekst, bijgewerkt_op: nu() })
+      .in("id", ids);
+    if (e1) throw new Error(e1.message);
+    const { error: e2 } = await supabase.from("sectie_beelden").delete().in("sectie_id", ids);
+    if (e2) throw new Error(e2.message);
     if (koppelingen.length) {
-      const rijen = nieuwe.flatMap((s) =>
-        koppelingen.map((k, i) => ({ sectie_id: s.id as string, volgorde: i, beeld_id: k.beeld_id })),
-      );
-      const { error: e2 } = await supabase.from("sectie_beelden").insert(rijen);
-      if (e2) throw new Error(e2.message);
+      const rijen = ids.flatMap((id) => koppelingen.map((k, i) => ({ sectie_id: id, volgorde: i, beeld_id: k.beeld_id })));
+      const { error: e3 } = await supabase.from("sectie_beelden").insert(rijen);
+      if (e3) throw new Error(e3.message);
     }
     await raakAan(supabase, typen);
     ververs();
     const lijst = typen.length <= 8 ? ` (${typen.join(", ")})` : "";
     return ok(
-      `De sectie is gekopieerd naar ${typen.length} ${typen.length === 1 ? "type" : "types"}${lijst}. Je vindt hem daar onderaan.`,
+      `'${bron.kop}' (tekst en beelden) is overgenomen in ${typen.length} ${typen.length === 1 ? "type" : "types"}${lijst}.`,
     );
   });
 }

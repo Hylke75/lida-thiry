@@ -5,14 +5,15 @@ import {
   BEELD_BUCKET,
   MAX_UPLOAD_BYTES,
   TOEGESTANE_TYPES,
-  controleerAfmetingen,
-  eisenUitAfmetingen,
+  controleerUpload,
+  kaderAfmetingen,
+  IDEAAL_FORMAAT,
+  STANDAARD_EISEN,
   type Eisen,
 } from "./beeldbank-regels";
 
-/** Breedte van de versie die in de PDF komt (ruim voldoende voor print). */
-const PDF_MAX_ZIJDE = 1600;
-const THUMB_MAX_ZIJDE = 400;
+/** Thumbnail-hoogte voor beheer (2:3 -> 267 × 400). */
+const THUMB_HOOGTE = 400;
 
 export interface Beeld {
   id: string;
@@ -124,8 +125,9 @@ export type UploadUitkomst = { ok: true; beeld: Beeld } | { ok: false; fouten: s
 /**
  * Verwerkt een geüpload bestand: controleert type, verhouding en minimaal
  * formaat, maakt een PDF-versie en een miniatuur, en koppelt het aan het beeld.
- * - beeldId gegeven: vervangt dat beeld (eisen van het beeld gelden).
- * - beeldId null: maakt een nieuw beeld (eisen worden van de upload afgeleid).
+ * Het beeld wordt zonder bijsnijden op het standaardkader (2:3) gezet.
+ * - beeldId gegeven: vervangt dat beeld.
+ * - beeldId null: maakt een nieuw beeld.
  */
 export async function verwerkUpload(
   uploadPad: string,
@@ -166,30 +168,27 @@ export async function verwerkUpload(
     if (!bestaand) return { ok: false, fouten: ["Beeld niet gevonden."] };
   }
 
-  const eisen: Eisen =
-    bestaand?.verhouding_b && bestaand.verhouding_h && bestaand.min_breedte && bestaand.min_hoogte
-      ? {
-          verhouding_b: bestaand.verhouding_b,
-          verhouding_h: bestaand.verhouding_h,
-          min_breedte: bestaand.min_breedte,
-          min_hoogte: bestaand.min_hoogte,
-        }
-      : eisenUitAfmetingen(breedte, hoogte);
-
-  const fouten = controleerAfmetingen(breedte, hoogte, eisen);
+  // Standaard 2:3: het beeld wordt zonder bijsnijden op een wit kader gezet.
+  const eisen: Eisen = STANDAARD_EISEN;
+  const { fouten } = controleerUpload(breedte, hoogte);
   if (fouten.length > 0) {
     await supabase.storage.from(BEELD_BUCKET).remove([uploadPad]);
     return { ok: false, fouten };
   }
+  const kader = kaderAfmetingen(breedte, hoogte);
 
-  // PDF-versie en miniatuur: gedraaid, op wit (transparantie), als JPEG.
-  const basis = () => sharp(invoer).rotate().flatten({ background: "#ffffff" });
-  const pdfVersie = await basis()
-    .resize({ width: PDF_MAX_ZIJDE, height: PDF_MAX_ZIJDE, fit: "inside", withoutEnlargement: true })
+  // PDF-versie en miniatuur: gedraaid, op wit (transparantie en kader), als JPEG.
+  const opKader = () =>
+    sharp(invoer)
+      .rotate()
+      .flatten({ background: "#ffffff" })
+      .resize({ width: kader.breedte, height: kader.hoogte, fit: "contain", background: "#ffffff" });
+  const pdfVersie = await sharp(await opKader().toBuffer())
+    .resize({ width: IDEAAL_FORMAAT.breedte, height: IDEAAL_FORMAAT.hoogte, fit: "inside", withoutEnlargement: true })
     .jpeg({ quality: 85, mozjpeg: true })
-    .toBuffer();
-  const thumb = await basis()
-    .resize({ width: THUMB_MAX_ZIJDE, height: THUMB_MAX_ZIJDE, fit: "inside", withoutEnlargement: true })
+    .toBuffer({ resolveWithObject: true });
+  const thumb = await sharp(await opKader().toBuffer())
+    .resize({ height: THUMB_HOOGTE, withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toBuffer();
 
@@ -202,7 +201,7 @@ export async function verwerkUpload(
   const origineelPad = `${map}/${stempel}-origineel.${meta.format === "jpeg" ? "jpg" : meta.format}`;
 
   const opslag = supabase.storage.from(BEELD_BUCKET);
-  const r1 = await opslag.upload(pad, pdfVersie, { contentType: "image/jpeg" });
+  const r1 = await opslag.upload(pad, pdfVersie.data, { contentType: "image/jpeg" });
   const r2 = await opslag.upload(thumbPad, thumb, { contentType: "image/jpeg" });
   const r3 = await opslag.move(uploadPad, origineelPad);
   if (r1.error || r2.error || r3.error) {
@@ -213,8 +212,8 @@ export async function verwerkUpload(
     pad,
     thumb_pad: thumbPad,
     origineel_pad: origineelPad,
-    breedte,
-    hoogte,
+    breedte: pdfVersie.info.width,
+    hoogte: pdfVersie.info.height,
     ...eisen,
   };
 
@@ -290,7 +289,7 @@ export async function bepaalOntbrekendeAfmetingen(
       rijen.slice(i, i + 10).map(async (r) => {
         const afm = await afmetingenVan(r.pad);
         if (!afm) return;
-        const eisen = r.verhouding_b ? {} : eisenUitAfmetingen(afm.breedte, afm.hoogte);
+        const eisen = r.verhouding_b ? {} : STANDAARD_EISEN;
         const { error } = await supabase
           .from("beelden")
           .update({ ...afm, ...eisen })

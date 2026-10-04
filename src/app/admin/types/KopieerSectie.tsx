@@ -13,7 +13,7 @@ export interface TypeKeuze {
 }
 
 /**
- * Kopieert een sectie (kop, tekst en beelden) als nieuwe sectie onderaan in
+ * Neemt een veld (tekst en beelden) over in hetzelfde veld van
  * de gekozen andere types.
  */
 export function KopieerSectie({
@@ -52,9 +52,9 @@ export function KopieerSectie({
     const lijst = doelen.length <= 12 ? `: ${doelen.join(", ")}` : "";
     if (
       !window.confirm(
-        `De sectie '${kop}' (tekst en beelden) wordt als nieuwe sectie onderaan toegevoegd bij ${doelen.length} ${
+        `'${kop}' (tekst en beelden) overnemen in ${doelen.length} ${
           doelen.length === 1 ? "type" : "types"
-        }${lijst}.\n\nBestaande secties daar blijven staan. Doorgaan?`,
+        }${lijst}?\n\nWat daar nu in '${kop}' staat, wordt vervangen. Doorgaan?`,
       )
     ) {
       return;
@@ -72,12 +72,12 @@ export function KopieerSectie({
   return (
     <details className="group rounded-xl border border-black/10 dark:border-white/15">
       <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-black/70 dark:text-white/70">
-        Sectie kopiëren naar andere types…
+        Dit veld overnemen in andere types…
       </summary>
       <div className="flex flex-col gap-3 border-t border-black/10 p-4 dark:border-white/15">
         <p className="text-sm text-black/60 dark:text-white/60">
-          Kies de types waar deze sectie bij moet komen. Hij wordt daar als <strong>nieuwe sectie onderaan</strong>{" "}
-          toegevoegd; je kunt hem daarna per type nog aanpassen of verplaatsen.
+          Kies de types die voor dit veld dezelfde tekst en beelden moeten krijgen. Wat daar nu in dit veld staat,{" "}
+          <strong>wordt vervangen</strong>; je kunt het daarna per type nog aanpassen.
         </p>
         <div className="flex flex-wrap gap-2">
           {LETTERS.map((l) => (

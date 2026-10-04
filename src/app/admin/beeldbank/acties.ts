@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { BEELD_BUCKET, MAX_UPLOAD_BYTES, TOEGESTANE_TYPES } from "@/lib/beeldbank-regels";
-import { controleerEisen, controleerMetadata } from "@/lib/beeldbank-beheer";
+import { controleerMetadata } from "@/lib/beeldbank-beheer";
 import {
   bepaalOntbrekendeAfmetingen,
   maakUploadUrl,
@@ -121,21 +121,6 @@ export async function slaGegevensOp(_vorige: FormulierStatus, fd: FormData): Pro
   return { ok: true, fouten: [], melding: "De gegevens zijn opgeslagen." };
 }
 
-/** Past de eisen (verhouding en minimaal formaat) voor een vervangend beeld aan. */
-export async function slaEisenOp(_vorige: FormulierStatus, fd: FormData): Promise<FormulierStatus> {
-  await vereisBeheerder();
-  const id = String(fd.get("id") ?? "");
-  if (!UUID.test(id)) return { ok: false, fouten: ["Beeld niet gevonden."] };
-  const { eisen, fouten } = controleerEisen(fd);
-  if (!eisen) return { ok: false, fouten };
-  const { error } = await adminClient().from("beelden").update(eisen).eq("id", id);
-  if (error) return { ok: false, fouten: [`Opslaan is niet gelukt (${error.message}).`] };
-  revalidatePath("/admin/beeldbank");
-  revalidatePath(`/admin/beeldbank/${id}`);
-  return { ok: true, fouten: [], melding: "De eisen zijn aangepast." };
-}
-
-/** Zet de vorige versie van het beeld terug. */
 export async function zetTerug(fd: FormData) {
   await vereisBeheerder();
   const id = String(fd.get("id") ?? "");

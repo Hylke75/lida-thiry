@@ -158,7 +158,7 @@ export default async function BeeldbankPagina({
             wordt.
           </p>
         </div>
-        <BeeldUpload beeldId={null} eisen={null} label="Nieuw beeld toevoegen" />
+        <BeeldUpload beeldId={null} label="Nieuw beeld toevoegen" />
       </div>
 
       {verwijderd && <Melding soort="ok">Beeld {verwijderd} is verwijderd.</Melding>}

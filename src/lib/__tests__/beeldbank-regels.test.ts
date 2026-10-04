@@ -2,13 +2,35 @@ import { describe, it, expect } from "vitest";
 import {
   snapVerhouding,
   minFormaat,
-  eisenUitAfmetingen,
+  STANDAARD_EISEN,
   controleerAfmetingen,
   isTeKlein,
   naamSuggestie,
   slug,
   NAAM_PATROON,
+  kaderAfmetingen,
+  controleerUpload,
 } from "../beeldbank-regels";
+
+describe("2:3-kader", () => {
+  it("vult een breed beeld aan in de hoogte", () => {
+    expect(kaderAfmetingen(1000, 1000)).toEqual({ breedte: 1000, hoogte: 1500, aangevuld: true });
+  });
+  it("vult een lang beeld aan in de breedte", () => {
+    expect(kaderAfmetingen(500, 1500)).toEqual({ breedte: 1000, hoogte: 1500, aangevuld: true });
+  });
+  it("laat een 2:3-beeld ongemoeid", () => {
+    expect(kaderAfmetingen(1000, 1500)).toEqual({ breedte: 1000, hoogte: 1500, aangevuld: false });
+  });
+  it("accepteert een groot genoeg beeld met melding over aanvullen", () => {
+    const r = controleerUpload(800, 800);
+    expect(r.fouten).toEqual([]);
+    expect(r.melding).toContain("aangevuld met wit");
+  });
+  it("weigert een te klein beeld", () => {
+    expect(controleerUpload(300, 400).fouten).toHaveLength(1);
+  });
+});
 
 describe("verhouding", () => {
   it("rondt af naar een gangbare verhouding", () => {
@@ -29,12 +51,12 @@ describe("minimaal formaat", () => {
     expect(minFormaat(1, 1)).toEqual({ min_breedte: 600, min_hoogte: 600 });
   });
 
-  it("leidt eisen af van het origineel", () => {
-    expect(eisenUitAfmetingen(240, 320)).toEqual({
-      verhouding_b: 3,
-      verhouding_h: 4,
+  it("gebruikt altijd de standaard 2:3, minimaal 600 × 900", () => {
+    expect(STANDAARD_EISEN).toEqual({
+      verhouding_b: 2,
+      verhouding_h: 3,
       min_breedte: 600,
-      min_hoogte: 800,
+      min_hoogte: 900,
     });
   });
 });

@@ -7,8 +7,7 @@ import {
   BEELD_BUCKET,
   MAX_UPLOAD_BYTES,
   TOEGESTANE_TYPES,
-  controleerAfmetingen,
-  type Eisen,
+  controleerUpload,
 } from "@/lib/beeldbank-regels";
 import { verwerkBeeld, vraagUploadUrl } from "./acties";
 
@@ -44,11 +43,9 @@ async function leesAfmetingen(bestand: File): Promise<{ breedte: number; hoogte:
  */
 export function BeeldUpload({
   beeldId,
-  eisen,
   label,
 }: {
   beeldId: string | null;
-  eisen: Eisen | null;
   label: string;
 }) {
   const router = useRouter();
@@ -56,10 +53,12 @@ export function BeeldUpload({
   const [bezig, setBezig] = useState<string | null>(null);
   const [fouten, setFouten] = useState<string[]>([]);
   const [gelukt, setGelukt] = useState(false);
+  const [melding, setMelding] = useState<string | null>(null);
 
   async function upload(bestand: File) {
     setFouten([]);
     setGelukt(false);
+    setMelding(null);
     if (!(TOEGESTANE_TYPES as readonly string[]).includes(bestand.type)) {
       return setFouten(["Dit bestandstype wordt niet ondersteund. Gebruik een JPG-, PNG- of WebP-bestand."]);
     }
@@ -75,12 +74,11 @@ export function BeeldUpload({
       } catch {
         return setFouten(["Dit bestand kon niet als afbeelding worden geopend. Kies een ander bestand."]);
       }
-      if (eisen) {
-        const problemen = controleerAfmetingen(afm.breedte, afm.hoogte, eisen);
-        if (problemen.length) {
-          return setFouten([...problemen, "Er is niets geüpload; het huidige beeld blijft gewoon staan."]);
-        }
+      const controle = controleerUpload(afm.breedte, afm.hoogte);
+      if (controle.fouten.length) {
+        return setFouten([...controle.fouten, "Er is niets geüpload; het huidige beeld blijft gewoon staan."]);
       }
+      setMelding(controle.melding);
 
       setBezig("Bezig met uploaden…");
       const url = await vraagUploadUrl(bestand.type, bestand.size);
@@ -137,6 +135,11 @@ export function BeeldUpload({
             </span>
           ))}
         </div>
+      )}
+      {melding && !fouten.length && (
+        <p role="status" className="text-sm text-black/60 dark:text-white/60">
+          {melding}
+        </p>
       )}
       {gelukt && (
         <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
