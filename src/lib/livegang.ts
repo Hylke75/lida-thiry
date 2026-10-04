@@ -63,12 +63,28 @@ export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
 ];
 
 const INSTELLINGEN: LivegangLink = { href: "/admin/instellingen", label: "Naar instellingen" };
+const WEBSITE_INSTELLINGEN: LivegangLink = { href: "/admin/website", label: "Naar instellingen website" };
 const VERCEL_UITLEG = "Wijzigen in Vercel → Settings → Environment Variables, daarna opnieuw publiceren.";
 /** Hoeveel losse links we maximaal per punt tonen; de rest staat in de toelichting. */
 const MAX_LINKS = 6;
 
 function gevuld(w: string | null | undefined): boolean {
   return typeof w === "string" && w.trim() !== "";
+}
+
+/**
+ * Of het website-adres een eigen domein is (geen *.vercel.app, geen localhost).
+ * Leeg of ongeldig telt als "nee".
+ */
+export function isEigenDomein(url: string | null | undefined): boolean {
+  if (typeof url !== "string" || !gevuld(url)) return false;
+  try {
+    const host = new URL(url.trim()).hostname.toLowerCase().replace(/\.$/, "");
+    if (host === "localhost" || /^[\d.]+$/.test(host) || !host.includes(".")) return false;
+    return !(host === "vercel.app" || host.endsWith(".vercel.app"));
+  } catch {
+    return false;
+  }
 }
 
 /** "a", "a en b", "a, b en c". */
@@ -279,6 +295,21 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
     links: [],
   });
 
+  const siteAdres = (env.NEXT_PUBLIC_SITE_URL ?? "").trim();
+  const eigenDomein = isEigenDomein(siteAdres);
+  items.push({
+    id: "eigen-domein",
+    label: "Website draait op een eigen domein",
+    ok: eigenDomein,
+    niveau: "aanbevolen",
+    detail: eigenDomein
+      ? undefined
+      : siteAdres
+        ? `NEXT_PUBLIC_SITE_URL is nu ${siteAdres}. Koppel je eigen domein (bijv. lidathiry.nl) in Vercel → Settings → Domains en zet het adres in NEXT_PUBLIC_SITE_URL. Links in e-mails, zoekresultaten en gedeelde berichten tonen dan je eigen naam. ${VERCEL_UITLEG}`
+        : `Stel eerst NEXT_PUBLIC_SITE_URL in op je eigen domein (bijv. https://lidathiry.nl). ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
   // Nieuwsbrief --------------------------------------------------------------
   const aangemeld = g.aangemeldeContacten ?? 0;
   const afzender = (env.RESEND_VAN ?? "").trim() || "onboarding@resend.dev";
@@ -344,6 +375,29 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
       ? undefined
       : "Meldingen van nieuwe berichten gaan naar het e-mailadres voor foutmeldingen, anders naar het contact-e-mailadres. Zonder een van beide zie je nieuwe berichten alleen in Beheer → Berichten.",
     links: [INSTELLINGEN, { href: "/admin/berichten", label: "Naar de berichten" }],
+  });
+
+  // Website ----------------------------------------------------------------------
+  const logo = gevuld(g.instellingen.logo_url);
+  items.push({
+    id: "logo",
+    label: "Logo ingesteld",
+    ok: logo,
+    niveau: "aanbevolen",
+    detail: logo ? undefined : "Bovenaan de site staat nu de naam als tekst. Met een logo herkennen bezoekers je huisstijl direct.",
+    links: [WEBSITE_INSTELLINGEN],
+  });
+
+  const deelafbeelding = gevuld(g.instellingen.deel_afbeelding_url);
+  items.push({
+    id: "deelafbeelding",
+    label: "Deelafbeelding ingesteld",
+    ok: deelafbeelding,
+    niveau: "aanbevolen",
+    detail: deelafbeelding
+      ? undefined
+      : "Wie een link naar je site deelt (WhatsApp, Facebook, LinkedIn), ziet nu de standaardafbeelding in de huisstijl. Een eigen foto van 1200×630 pixels maakt het persoonlijker.",
+    links: [WEBSITE_INSTELLINGEN],
   });
 
   // Blog -------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evalueerLivegang, livegangStatus, opsomming, sectieAnker, type LivegangGegevens } from "../livegang";
+import { evalueerLivegang, isEigenDomein, livegangStatus, opsomming, sectieAnker, type LivegangGegevens } from "../livegang";
 import { sectie, type Groep } from "../inhoud/schema";
 
 const HERO = sectie({
@@ -34,6 +34,8 @@ function compleet(): LivegangGegevens {
       kvk_nummer: "12345678",
       contact_email: "info@voorbeeld.nl",
       adviseur_email: "lida@voorbeeld.nl",
+      logo_url: "https://cdn.voorbeeld.nl/logo.png",
+      deel_afbeelding_url: "https://cdn.voorbeeld.nl/delen.jpg",
     },
     tekstgroepen: [WEBSITE],
     opgeslagenTeksten: new Map([["website.over.mij", { tekst: "Ik ben Lida.", vragen: [] }]]),
@@ -175,6 +177,7 @@ describe("evalueerLivegang", () => {
       "resend-sleutel",
       "resend-van",
       "site-url",
+      "eigen-domein",
       "nieuwsbrief-afzender",
       "nieuwsbrief-webhook",
       "nieuwsbrief-geheim",
@@ -182,7 +185,7 @@ describe("evalueerLivegang", () => {
     ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 3 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 4 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
@@ -252,6 +255,42 @@ describe("contact in de controlelijst", () => {
     alleenContact.instellingen = { ...alleenContact.instellingen, adviseur_email: "" };
     expect(vind(alleenContact, "contact-meldingen").ok).toBe(true);
     expect(vind(compleet(), "contact-meldingen").ok).toBe(true);
+  });
+});
+
+describe("website in de controlelijst", () => {
+  it("logo en deelafbeelding zijn aanbevelingen met een link naar de website-instellingen", () => {
+    const g = compleet();
+    g.instellingen = { ...g.instellingen, logo_url: null, deel_afbeelding_url: " " };
+    const items = evalueerLivegang(g);
+    expect(items.find((i) => i.id === "logo")).toMatchObject({
+      ok: false,
+      niveau: "aanbevolen",
+      links: [{ href: "/admin/website" }],
+    });
+    expect(items.find((i) => i.id === "deelafbeelding")).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 2 });
+  });
+
+  it("raadt een eigen domein aan in plaats van *.vercel.app", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, NEXT_PUBLIC_SITE_URL: "https://lida-thiry.vercel.app" };
+    const item = vind(g, "eigen-domein");
+    expect(item).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(item.detail).toContain("lida-thiry.vercel.app");
+    expect(vind(compleet(), "eigen-domein").ok).toBe(true);
+  });
+
+  it("isEigenDomein", () => {
+    expect(isEigenDomein("https://lidathiry.nl")).toBe(true);
+    expect(isEigenDomein("https://www.lidathiry.nl/")).toBe(true);
+    expect(isEigenDomein("https://lida-thiry.vercel.app")).toBe(false);
+    expect(isEigenDomein("https://LIDA.VERCEL.APP.")).toBe(false);
+    expect(isEigenDomein("http://localhost:3000")).toBe(false);
+    expect(isEigenDomein("http://127.0.0.1:3000")).toBe(false);
+    expect(isEigenDomein("")).toBe(false);
+    expect(isEigenDomein(undefined)).toBe(false);
+    expect(isEigenDomein("geen url")).toBe(false);
   });
 });
 

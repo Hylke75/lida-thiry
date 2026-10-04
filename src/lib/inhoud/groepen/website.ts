@@ -220,10 +220,42 @@ export const WEBSITE_BLOG = sectie({
   },
 });
 
+export const WEBSITE_FOUT = sectie({
+  sleutel: "website.fout",
+  titel: "Foutpagina's",
+  uitleg:
+    "De pagina die bezoekers zien als een pagina niet (meer) bestaat, of als er onverwacht iets misgaat. Technische details worden nooit aan bezoekers getoond.",
+  velden: {
+    nietGevondenTitel: { soort: "tekst", label: "Pagina niet gevonden: titel", max: 120, standaard: "Deze pagina bestaat niet (meer)" },
+    nietGevondenTekst: {
+      soort: "tekstvak",
+      label: "Pagina niet gevonden: tekst",
+      regels: 3,
+      max: 500,
+      standaard:
+        "Misschien is de pagina verhuisd of zit er een typfout in het adres. Hieronder vind je een paar plekken om verder te kijken.",
+    },
+    suggestiesTitel: { soort: "tekst", label: "Titel boven de suggesties", max: 80, standaard: "Misschien zoek je dit" },
+    blogTitel: { soort: "tekst", label: "Titel boven de nieuwste blogberichten", max: 80, standaard: "Nieuw op de blog" },
+    foutTitel: { soort: "tekst", label: "Er ging iets mis: titel", max: 120, standaard: "Er ging even iets mis" },
+    foutTekst: {
+      soort: "tekstvak",
+      label: "Er ging iets mis: tekst",
+      regels: 3,
+      max: 500,
+      standaard:
+        "Sorry, deze pagina kon niet goed geladen worden. Probeer het nog eens; lukt het dan nog niet, kom dan later terug of ga naar de homepage.",
+    },
+    opnieuwKnop: { soort: "tekst", label: "Knop: opnieuw proberen", max: 40, standaard: "Opnieuw proberen" },
+    homeKnop: { soort: "tekst", label: "Knop/link naar de homepage", max: 40, standaard: "Naar de homepage" },
+  },
+});
+
 export const WEBSITE: Groep = {
   sleutel: "website",
   titel: "Website",
-  omschrijving: "De teksten op de homepage: introductie, stappen, Over Lida, ervaringen, laatste blogberichten en veelgestelde vragen.",
+  omschrijving:
+    "De teksten op de homepage (introductie, stappen, Over Lida, ervaringen, laatste blogberichten en veelgestelde vragen) en op de foutpagina's.",
   bekijkUrl: "/",
   secties: [
     WEBSITE_HERO,
@@ -235,5 +267,6 @@ export const WEBSITE: Groep = {
     WEBSITE_BLOG,
     WEBSITE_VRAGEN,
     WEBSITE_AFSLUITING,
+    WEBSITE_FOUT,
   ],
 };
