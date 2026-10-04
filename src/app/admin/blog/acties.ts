@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { aiBeschikbaar, bewerkMetAi, stelVoor, type Suggesties } from "@/lib/blog/ai";
 import { BEWERKINGEN, type Bewerking } from "@/lib/blog/ai-prompt";
@@ -42,7 +43,7 @@ function leesId(formData: FormData): string {
 // Overzicht ---------------------------------------------------------------------------
 
 export async function nieuwBericht() {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const slug = await vrijeSlug("nieuw-bericht");
   const { data, error } = await adminClient()
     .from("blog_berichten")
@@ -55,7 +56,7 @@ export async function nieuwBericht() {
 }
 
 export async function dupliceerBericht(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const b = await haalBericht(leesId(formData));
   if (!b) redirect(`${BLOG_PAD}?fout=onbekend`);
   // Een kopie van een AI-bericht moet opnieuw gecontroleerd worden.
@@ -85,7 +86,7 @@ export async function dupliceerBericht(formData: FormData) {
 }
 
 export async function verwijderBericht(formData: FormData) {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("blog");
   const id = leesId(formData);
   if (!id) redirect(`${BLOG_PAD}?fout=onbekend`);
   // Eerst een momentopname, zodat het bericht via de prullenbak terug kan.
@@ -93,6 +94,14 @@ export async function verwijderBericht(formData: FormData) {
   if (weg) await bewaarVersie({ soort: "blog", ref: id, inhoud: blogSnapshot(weg), omschrijving: "Verwijderd", door: user.email, forceer: true });
   const { data } = await adminClient().from("blog_berichten").delete().eq("id", id).select("slug");
   if (!data?.length) redirect(`${BLOG_PAD}?fout=verwijderen`);
+  await logActie({
+    actie: "blog.verwijderen",
+    onderwerpSoort: "blog",
+    onderwerpId: id,
+    omschrijving: `Blogbericht ‘${weg?.titel ?? data[0].slug}’ verwijderd (naar de prullenbak)`,
+    details: { slug: data[0].slug },
+    gebruiker: user,
+  });
   vernieuwBlog(data[0].slug as string);
   redirect(`${BLOG_PAD}?verwijderd=1`);
 }
@@ -111,7 +120,7 @@ function bewaarHuidig(huidig: BlogBericht, door: string | undefined) {
 
 /** Slaat de velden op; een bericht dat online staat of is ingepland, moet daarbij publiceerbaar blijven. */
 export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("blog");
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
   const v = valideerBericht(ruw);
@@ -152,7 +161,7 @@ export async function publiceer(
   ruw: unknown,
   opties: { moment: string | null; gecontroleerd: boolean },
 ): Promise<BerichtUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("blog");
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
   const v = valideerBericht(ruw);
@@ -190,6 +199,17 @@ export async function publiceer(
   if (zichtbaarheid(huidig) === "online" && huidig.slug !== v.waarde.slug) {
     await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${v.waarde.slug}`);
   }
+  await logActie({
+    actie: opties.moment === null ? "blog.publiceren" : "blog.inplannen",
+    onderwerpSoort: "blog",
+    onderwerpId: id,
+    omschrijving:
+      opties.moment === null
+        ? `Blogbericht ‘${v.waarde.titel}’ gepubliceerd`
+        : `Blogbericht ‘${v.waarde.titel}’ ingepland voor ${toonDatumTijd(moment)}`,
+    details: { slug: v.waarde.slug, moment: moment.toISOString(), ai_gecontroleerd: nogTeControleren || undefined },
+    gebruiker: user,
+  });
   vernieuwBlog(huidig.slug, v.waarde.slug);
   revalidatePath(`${BLOG_PAD}/${id}`);
   return {
@@ -205,7 +225,7 @@ export async function publiceer(
 
 /** Haalt een bericht offline (of annuleert de planning); de tekst blijft bewaard. */
 export async function naarConcept(id: string): Promise<BerichtUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("blog");
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
   await bewaarHuidig(huidig, user.email);
@@ -216,6 +236,13 @@ export async function naarConcept(id: string): Promise<BerichtUitkomst> {
     .select(BERICHT_VELDEN)
     .single();
   if (error || !data) return fout(`Dat is niet gelukt (${error?.message ?? "onbekend"}).`);
+  await logActie({
+    actie: "blog.naar_concept",
+    onderwerpSoort: "blog",
+    onderwerpId: id,
+    omschrijving: `Blogbericht ‘${huidig.titel}’ offline gehaald (concept)`,
+    gebruiker: user,
+  });
   vernieuwBlog(huidig.slug);
   revalidatePath(`${BLOG_PAD}/${id}`);
   return { ok: true, bericht: data as BlogBericht, zichtbaar: "concept", melding: "Het bericht is weer een concept en niet meer zichtbaar op de site." };
@@ -223,7 +250,8 @@ export async function naarConcept(id: string): Promise<BerichtUitkomst> {
 
 /** Maakt een conceptcampagne in de nieuwsbrief die naar dit (online of ingeplande) bericht verwijst. */
 export async function alsNieuwsbrief(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
+  await vereisBeheerder("nieuwsbrief");
   const id = leesId(formData);
   const b = await haalBericht(id);
   if (!b) redirect(`${BLOG_PAD}?fout=onbekend`);
@@ -253,7 +281,7 @@ export async function maakBlogUpload(
   grootte: number,
   map: UploadMap,
 ): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const ext = BLOG_AFBEELDING_TYPES[type];
   if (!ext) return fout("Kies een afbeelding van het type JPG, PNG, GIF of WebP.");
   if (!(grootte > 0) || grootte > BLOG_AFBEELDING_MAX_BYTES) return fout("De afbeelding is te groot. Kies een bestand van maximaal 5 MB.");
@@ -269,7 +297,7 @@ export async function maakBlogUpload(
 
 /** Herschrijft een stuk tekst met de AI. Het resultaat wordt alleen getoond, niet opgeslagen. */
 export async function aiBewerk(id: string, bewerking: string, tekst: string): Promise<Uitkomst<{ tekst: string }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   if (!aiBeschikbaar()) return fout("De AI-schrijfhulp is nog niet ingesteld.");
   if (!(bewerking in BEWERKINGEN)) return fout("Onbekende bewerking.");
   const limiet = await aiLimietFout();
@@ -284,7 +312,7 @@ export async function aiBewerk(id: string, bewerking: string, tekst: string): Pr
 
 /** Voorstellen voor titels, samenvatting, SEO-teksten en tags. */
 export async function aiVoorstel(id: string, titel: string, inhoud: string): Promise<Uitkomst<{ suggesties: Suggesties }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   if (!aiBeschikbaar()) return fout("De AI-schrijfhulp is nog niet ingesteld.");
   const limiet = await aiLimietFout();
   if (limiet) return fout(limiet);

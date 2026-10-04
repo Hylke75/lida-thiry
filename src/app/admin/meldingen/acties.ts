@@ -16,7 +16,7 @@ const PAD = "/admin/meldingen";
 
 /** Slaat het pushabonnement van dit apparaat op (of werkt het bij) met de gekozen soorten. */
 export async function meldApparaatAan(abonnement: unknown, soorten: unknown): Promise<ActieUitkomst> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   const v = valideerAbonnement(abonnement);
   if (!v.ok) return { ok: false, bericht: v.fout };
   const gekozen = schoneSoorten(soorten);
@@ -40,7 +40,7 @@ export async function meldApparaatAan(abonnement: unknown, soorten: unknown): Pr
 
 /** Zet push uit voor dit apparaat (op adres van het abonnement). */
 export async function meldApparaatAf(endpoint: unknown): Promise<ActieUitkomst> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   if (typeof endpoint !== "string" || !endpoint) return { ok: false, bericht: "Geen apparaat opgegeven." };
   const { error } = await adminClient()
     .from("push_abonnementen")
@@ -54,7 +54,7 @@ export async function meldApparaatAf(endpoint: unknown): Promise<ActieUitkomst> 
 
 /** Welke meldingen dit apparaat krijgt. */
 export async function bewaarSoorten(endpoint: unknown, soorten: unknown): Promise<ActieUitkomst> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   if (typeof endpoint !== "string" || !endpoint) return { ok: false, bericht: "Geen apparaat opgegeven." };
   const { data, error } = await adminClient()
     .from("push_abonnementen")
@@ -70,7 +70,7 @@ export async function bewaarSoorten(endpoint: unknown, soorten: unknown): Promis
 
 /** Verwijdert een van je eigen apparaten uit de lijst. */
 export async function verwijderApparaat(id: unknown): Promise<ActieUitkomst> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, bericht: "Onbekend apparaat." };
   const { error } = await adminClient().from("push_abonnementen").delete().eq("id", id).eq("gebruiker_id", gebruiker.id);
   if (error) return { ok: false, bericht: `Verwijderen mislukt: ${error.message}` };
@@ -80,7 +80,7 @@ export async function verwijderApparaat(id: unknown): Promise<ActieUitkomst> {
 
 /** Stuurt een testmelding naar al je apparaten. */
 export async function stuurTest(): Promise<ActieUitkomst> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   const r = await stuurTestMelding(gebruiker.id);
   revalidatePath(PAD);
   if (r.verstuurd > 0) {

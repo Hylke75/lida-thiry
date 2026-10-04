@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
+import { heeftRecht } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
 import { adminClient } from "@/lib/supabase/admin";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
@@ -37,7 +39,7 @@ function geldigTotIso(waarde: FormDataEntryValue | null): string | null {
 
 async function maakCode(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("kortingscodes_beheren");
   const code = normaliseerCode(String(formData.get("code") ?? ""));
   const omschrijving = String(formData.get("omschrijving") ?? "").trim() || null;
   const soort = formData.get("soort") === "bedrag" ? "bedrag" : "percentage";
@@ -71,13 +73,21 @@ async function maakCode(formData: FormData) {
       "fout",
     );
   }
+  await logActie({
+    actie: "kortingscode.maken",
+    onderwerpSoort: "kortingscode",
+    onderwerpId: code,
+    omschrijving: `Kortingscode ${code} aangemaakt (${soort === "percentage" ? `${waarde}%` : formatteerBedrag(waarde)})`,
+    details: { code, soort, waarde, max_gebruik: maxGebruik, omschrijving },
+    gebruiker: ik,
+  });
   revalidatePath(PAD);
   terug(`Kortingscode ${code} aangemaakt.`);
 }
 
 async function maakCadeaubon(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("kortingscodes_beheren");
   const omschrijving = String(formData.get("omschrijving") ?? "").trim() || "Cadeaubon";
   const supabase = adminClient();
   // Bij een (zeer onwaarschijnlijke) botsing opnieuw proberen.
@@ -92,6 +102,13 @@ async function maakCadeaubon(formData: FormData) {
       geldig_tot: geldigTotIso(formData.get("geldig_tot")),
     });
     if (!error) {
+      // De code zelf is een tegoed: in het logboek alleen de laatste tekens.
+      await logActie({
+        actie: "kortingscode.cadeaubon_maken",
+        onderwerpSoort: "kortingscode",
+        omschrijving: `Cadeaubon …${code.slice(-4)} aangemaakt (100% korting, eenmalig): ${omschrijving}`,
+        gebruiker: ik,
+      });
       revalidatePath(PAD);
       terug(`Cadeaubon ${code} aangemaakt (eenmalig, 100% korting).`);
     }
@@ -102,11 +119,24 @@ async function maakCadeaubon(formData: FormData) {
 
 async function zetActief(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("kortingscodes_beheren");
   const id = String(formData.get("id") ?? "");
   const actief = formData.get("actief") === "1";
-  const { error } = await adminClient().from("kortingscodes").update({ actief }).eq("id", id);
+  const { data: rij, error } = await adminClient()
+    .from("kortingscodes")
+    .update({ actief })
+    .eq("id", id)
+    .select("code, waarde, max_gebruik, soort")
+    .maybeSingle();
   if (error) terug(`Bijwerken mislukt: ${error.message}`, "fout");
+  const naam = rij ? (rij.soort === "percentage" && rij.waarde === 100 && rij.max_gebruik === 1 ? `…${String(rij.code).slice(-4)}` : rij.code) : id;
+  await logActie({
+    actie: actief ? "kortingscode.activeren" : "kortingscode.deactiveren",
+    onderwerpSoort: "kortingscode",
+    onderwerpId: id,
+    omschrijving: `Kortingscode ${naam} ${actief ? "geactiveerd" : "gedeactiveerd"}`,
+    gebruiker: ik,
+  });
   revalidatePath(PAD);
   terug(actief ? "Code weer geactiveerd." : "Code gedeactiveerd.");
 }
@@ -143,7 +173,8 @@ export default async function KortingscodesPage({
 }: {
   searchParams: Promise<{ ok?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("kortingscodes");
+  const magBeheren = heeftRecht(ik.rol, "kortingscodes_beheren");
   const { ok, fout } = await searchParams;
 
   const { data, error } = await adminClient()
@@ -178,6 +209,13 @@ export default async function KortingscodesPage({
         </p>
       )}
 
+      {!magBeheren && (
+        <p className="text-sm text-black/60 dark:text-white/60">
+          Je kunt de codes bekijken. Codes maken of (de)activeren kan alleen de eigenaar.
+        </p>
+      )}
+      {magBeheren && (
+        <>
       <section className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-kaart p-5">
         <h2 className="text-lg font-semibold">Cadeaubon maken</h2>
         <p className="text-sm text-black/60 dark:text-white/60">
@@ -231,6 +269,8 @@ export default async function KortingscodesPage({
           </div>
         </form>
       </section>
+        </>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
@@ -267,13 +307,15 @@ export default async function KortingscodesPage({
                     >
                       {st.label}
                     </span>
-                    <form action={zetActief}>
-                      <input type="hidden" name="id" value={c.id} />
-                      <input type="hidden" name="actief" value={c.actief ? "0" : "1"} />
-                      <button className="text-xs text-black/60 underline underline-offset-4 hover:text-black dark:text-white/60 dark:hover:text-white">
-                        {c.actief ? "Deactiveren" : "Activeren"}
-                      </button>
-                    </form>
+                    {magBeheren && (
+                      <form action={zetActief}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <input type="hidden" name="actief" value={c.actief ? "0" : "1"} />
+                        <button className="text-xs text-black/60 underline underline-offset-4 hover:text-black dark:text-white/60 dark:hover:text-white">
+                          {c.actief ? "Deactiveren" : "Activeren"}
+                        </button>
+                      </form>
+                    )}
                   </span>
                 </li>
               );

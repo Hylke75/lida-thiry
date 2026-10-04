@@ -114,7 +114,7 @@ async function veilig(werk: () => Promise<Uitkomst>): Promise<Uitkomst> {
 // ---------------------------------------------------------------------------
 
 export async function slaTypeOp(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const sleutel = tekst(fd, "sleutel");
@@ -141,7 +141,7 @@ export async function slaTypeOp(_vorige: Uitkomst | null, fd: FormData): Promise
 // ---------------------------------------------------------------------------
 
 export async function slaSectieOp(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const sleutel = tekst(fd, "sleutel");
@@ -162,7 +162,7 @@ export async function slaSectieOp(_vorige: Uitkomst | null, fd: FormData): Promi
 }
 
 export async function verwijderSectie(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const sleutel = tekst(fd, "sleutel");
@@ -181,7 +181,7 @@ export async function verwijderSectie(_vorige: Uitkomst | null, fd: FormData): P
 
 /** Maakt de (nog lege) sectie voor een veld van het sjabloon aan. */
 export async function vulVeld(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const sleutel = tekst(fd, "sleutel");
@@ -222,7 +222,7 @@ async function veldVan(supabase: Supabase, veldSleutel: string) {
  * gekozen type (bestaande inhoud van dat veld wordt vervangen).
  */
 export async function kopieerSectie(sleutel: string, sectieId: string, doelen: string[]): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const bron = await sectieVanType(supabase, sleutel, sectieId);
@@ -300,7 +300,7 @@ async function koppelingMetControle(supabase: Supabase, fd: FormData) {
 }
 
 export async function verplaatsBeeld(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const k = await koppelingMetControle(supabase, fd);
@@ -314,7 +314,7 @@ export async function verplaatsBeeld(_vorige: Uitkomst | null, fd: FormData): Pr
 }
 
 export async function verwijderBeeld(_vorige: Uitkomst | null, fd: FormData): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const k = await koppelingMetControle(supabase, fd);
@@ -333,7 +333,7 @@ export async function verwijderBeeld(_vorige: Uitkomst | null, fd: FormData): Pr
 }
 
 export async function voegBeeldToe(sleutel: string, sectieId: string, beeldId: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   return veilig(async () => {
     const supabase = adminClient();
     const sectie = await sectieVanType(supabase, sleutel, sectieId);
@@ -352,7 +352,7 @@ export async function voegBeeldToe(sleutel: string, sectieId: string, beeldId: s
 
 /** Zoekt in de beeldbank (code, naam, omschrijving, onderdeel). Maximaal 24 resultaten. */
 export async function zoekBeelden(zoek: string, onderdeel: string): Promise<GevondenBeeld[]> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   let query = adminClient()
     .from("beelden")
     .select("id, code, naam, omschrijving, onderdeel, bijschrift, pad, thumb_pad")

@@ -34,7 +34,7 @@ export default async function BeeldPagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ nieuw?: string; teruggezet?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { id } = await params;
   const { nieuw, teruggezet, fout } = await searchParams;
   if (!UUID.test(id)) notFound();

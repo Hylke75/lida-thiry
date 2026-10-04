@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { heeftRecht } from "@/lib/rollen";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { haalCampagne, variantCijfers } from "@/lib/nieuwsbrief/verzenden";
@@ -56,7 +57,7 @@ function Cijfer({ label, waarde, van, uitleg }: { label: string; waarde: number;
 }
 
 export default async function RapportPagina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Zoek> }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("nieuwsbrief");
   const { id } = await params;
   const zoek = await searchParams;
   if (!UUID_PATROON.test(id)) notFound();
@@ -190,9 +191,11 @@ export default async function RapportPagina({ params, searchParams }: { params: 
       <section className={kaart}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Ontvangers</h2>
-          <a href={`${pad}/csv`} className={knopKlein} download>
-            Exporteren (CSV)
-          </a>
+          {heeftRecht(ik.rol, "nieuwsbrief_contacten") && (
+            <a href={`${pad}/csv`} className={knopKlein} download>
+              Exporteren (CSV)
+            </a>
+          )}
         </div>
         <form action={pad} method="get" className="flex flex-col gap-2 sm:flex-row">
           {filter !== "alle" && <input type="hidden" name="filter" value={filter} />}

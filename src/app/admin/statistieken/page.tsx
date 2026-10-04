@@ -157,7 +157,7 @@ const invoer =
   "rounded-lg border border-black/15 bg-kaart px-2 py-1 text-sm outline-none focus:border-accent dark:border-white/20";
 
 export default async function Statistieken({ searchParams }: { searchParams: Promise<Zoek> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("statistieken");
   const p = bepaalPeriode(await searchParams);
   const d = await laad(p);
   const knop = (actief: boolean) =>

@@ -8,6 +8,7 @@ import { nodigUitVoorReviews } from "@/lib/reviews/uitnodigen";
 import { stuurBetaalherinneringen } from "@/lib/betaalherinnering";
 import { verstuurGeplandeCadeaubonnen } from "@/lib/cadeaubon/verwerken";
 import { stuurAfspraakHerinneringen } from "@/lib/afspraken/data";
+import { ruimLogboekOp } from "@/lib/beheer-log";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -68,6 +69,8 @@ export async function GET(request: Request) {
   // Afspraken van morgen: herinnering aan de klant (gooit nooit).
   const afspraakHerinnering = await stuurAfspraakHerinneringen();
   herinnering.mislukt.push(...afspraakHerinnering.mislukt);
+  // Logboek van beheeracties: regels ouder dan 2 jaar weg (gooit nooit).
+  const logboekOpgeruimd = await ruimLogboekOp();
 
   const nogOpen = (open?.length ?? 0) - opnieuwGeleverd;
   if (nogOpen > 0 || herinnering.mislukt.length > 0 || reviews.mislukt.length > 0) {
@@ -103,6 +106,7 @@ export async function GET(request: Request) {
     betaalherinneringen,
     cadeaubonnen,
     afspraak_herinneringen_verstuurd: afspraakHerinnering.verstuurd,
+    logboek_opgeruimd: logboekOpgeruimd,
   });
 }
 

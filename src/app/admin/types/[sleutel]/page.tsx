@@ -184,7 +184,7 @@ export default async function TypeEditor({
 }: {
   params: Promise<{ sleutel: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { sleutel: ruw } = await params;
   const sleutel = decodeURIComponent(ruw);
   const geladen = await laad(sleutel);

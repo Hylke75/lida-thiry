@@ -39,7 +39,7 @@ export default async function TypesPagina({
 }: {
   searchParams: Promise<{ q?: string; letter?: string; categorie?: string; aandacht?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { q = "", letter = "", categorie = "", aandacht } = await searchParams;
   const { types, telling } = await laad();
   const letters = (await haalLichaamstypes()).map((t) => ({ letter: t.code, naam: t.naam }));

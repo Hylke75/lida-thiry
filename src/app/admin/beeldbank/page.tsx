@@ -125,7 +125,7 @@ export default async function BeeldbankPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const sp = await searchParams;
   const filters = leesFilters(sp);
   const [alle, gebruik] = await Promise.all([leesAlleBeelden(), gebruiksAantallen()]);

@@ -17,7 +17,7 @@ export default async function LichaamstypesPagina({
 }: {
   searchParams: Promise<{ verwijderd?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { verwijderd } = await searchParams;
   const supabase = adminClient();
   const [types, silhouetten, toewijzing, adviesRes, orderRes] = await Promise.all([

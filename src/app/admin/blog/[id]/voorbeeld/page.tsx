@@ -11,7 +11,7 @@ import { ZichtbaarheidBadge } from "../../_editor/onderdelen";
 export const dynamic = "force-dynamic";
 
 export default async function BlogVoorbeeld({ params }: { params: Promise<{ id: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const { id } = await params;
   const b = await haalBericht(id);
   if (!b) notFound();

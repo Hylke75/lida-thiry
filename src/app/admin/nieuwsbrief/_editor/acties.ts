@@ -44,7 +44,7 @@ export type OpslaanResultaat = Uitkomst<{ bericht: string; inhoud: MailInhoud; p
 
 /** Slaat naam, onderwerp, inhoud en doelgroep (of het moment, bij een automatische mail) op. */
 export async function slaMailOp(id: string, ruw: unknown): Promise<OpslaanResultaat> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende mail."] };
   const c = await haalCampagne(id);
   if (!c) return { ok: false, fouten: ["Deze mail bestaat niet meer."] };
@@ -108,7 +108,7 @@ export async function slaMailOp(id: string, ruw: unknown): Promise<OpslaanResult
 
 /** Hoeveel aangemelde contacten er in een doelgroep vallen. */
 export async function telOntvangers(doelgroep: Doelgroep): Promise<Uitkomst<{ aantal: number }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   try {
     const ontvangers = await zoekOntvangers(normaliseerDoelgroep(doelgroep));
     return { ok: true, aantal: ontvangers.length };
@@ -122,7 +122,7 @@ export async function stuurTest(
   ruw: { onderwerp: string; preheader: string; blokken: Blok[] },
   naar: string,
 ): Promise<Uitkomst<{ bericht: string }>> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("nieuwsbrief");
   const adres = normaliseerEmail(String(naar ?? ""));
   if (!adres) return { ok: false, fouten: ["Vul een geldig e-mailadres in."] };
   const { inhoud, fouten } = leesInhoud(ruw);
@@ -149,7 +149,7 @@ export async function maakAfbeeldingUpload(
   type: string,
   grootte: number,
 ): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const ext = AFBEELDING_TYPES[type];
   if (!ext) return { ok: false, fouten: ["Kies een afbeelding van het type JPG, PNG, GIF of WebP."] };
   if (!(grootte > 0) || grootte > AFBEELDING_MAX_BYTES) {

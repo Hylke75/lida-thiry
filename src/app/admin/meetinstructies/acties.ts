@@ -24,7 +24,7 @@ export async function maakUploadUrl(
   type: string,
   grootte: number,
 ): Promise<Uitkomst<{ pad: string; token: string }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   if (!geldigeMaat(sleutel)) return { ok: false, fout: "Onbekende maat." };
   const ext = MEET_TYPES[type];
   if (!ext) return { ok: false, fout: "Kies een foto van het type JPG, PNG of WebP." };
@@ -40,7 +40,7 @@ export async function maakUploadUrl(
 
 /** Stap 2: na een geslaagde upload de foto koppelen aan de maat en de oude opruimen. */
 export async function bevestigUpload(sleutel: string, pad: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   if (!geldigeMaat(sleutel)) return { ok: false, fout: "Onbekende maat." };
   const m = new RegExp(`^${sleutel}/([\\w-]+\\.(?:jpg|png|webp))$`).exec(pad);
   if (!m) return { ok: false, fout: "Ongeldige bestandsnaam." };
@@ -69,7 +69,7 @@ export async function bevestigUpload(sleutel: string, pad: string): Promise<Uitk
 
 /** Verwijdert de foto van een maat; de test toont dan weer de tekening. */
 export async function verwijderFoto(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const sleutel = String(formData.get("sleutel") ?? "");
   if (!geldigeMaat(sleutel)) redirect("/admin/meetinstructies");
   const supabase = adminClient();

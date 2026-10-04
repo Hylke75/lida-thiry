@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export default async function SchrijvenMetAi() {
-  await vereisBeheerder();
+  await vereisBeheerder("ai");
   const aan = aiBeschikbaar();
   const types = await haalLichaamstypes().catch(() => []);
 

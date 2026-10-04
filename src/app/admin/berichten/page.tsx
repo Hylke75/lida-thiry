@@ -23,7 +23,7 @@ export default async function BerichtenPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("berichten");
   const zoek = await searchParams;
   const filter = leesBerichtFilter(zoek);
   const ok = typeof zoek.ok === "string" ? zoek.ok : null;

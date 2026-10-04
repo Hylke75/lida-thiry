@@ -7,7 +7,7 @@ import { AdminNav } from "../AdminNav";
 export const dynamic = "force-dynamic";
 
 export default async function TekstenPagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("teksten");
   const opgeslagen = await leesAlleInhoud();
 
   return (

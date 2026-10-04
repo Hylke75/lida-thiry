@@ -15,7 +15,7 @@ export default async function PaginaBewerken({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ nieuw?: string; gekopieerd?: string; sjabloon?: string; hersteld?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const { id } = await params;
   const sp = await searchParams;
   const [pagina, formulieren] = await Promise.all([haalPaginaBeheer(id), haalFormulieren()]);

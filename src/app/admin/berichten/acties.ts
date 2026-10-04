@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { foutTekst } from "@/lib/beheermelding";
 import { BERICHT_VELDEN, verstuurAntwoord, type ContactBericht } from "@/lib/contact/berichten";
@@ -37,7 +38,7 @@ const STATUS_ACTIES: Record<string, { status: BerichtStatus; melding: string }> 
 };
 
 export async function wijzigStatus(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("berichten");
   const id = berichtId(fd);
   const actie = STATUS_ACTIES[String(fd.get("actie") ?? "")];
   if (!actie) terug(`${PAD}/${id}`, "Onbekende actie.", "fout");
@@ -57,7 +58,7 @@ export async function wijzigStatus(fd: FormData): Promise<void> {
 }
 
 export async function bewaarNotitie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("berichten");
   const id = berichtId(fd);
   const notitie = String(fd.get("notitie") ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 5_000);
   const { error } = await adminClient().from("contact_berichten").update({ notitie }).eq("id", id);
@@ -67,16 +68,23 @@ export async function bewaarNotitie(fd: FormData): Promise<void> {
 }
 
 export async function verwijderBericht(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("berichten");
   const id = berichtId(fd);
-  const { error } = await adminClient().from("contact_berichten").delete().eq("id", id);
+  const { data: weg, error } = await adminClient().from("contact_berichten").delete().eq("id", id).select("email").maybeSingle();
   if (error) terug(`${PAD}/${id}`, `Verwijderen mislukt: ${error.message}`, "fout");
+  await logActie({
+    actie: "bericht.verwijderen",
+    onderwerpSoort: "bericht",
+    onderwerpId: id,
+    omschrijving: `Contactbericht verwijderd${weg?.email ? ` (van ${weg.email})` : ""}`,
+    gebruiker: ik,
+  });
   revalidatePath(PAD);
   terug(PAD, "Bericht verwijderd.");
 }
 
 export async function beantwoord(fd: FormData): Promise<void> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("berichten");
   const id = berichtId(fd);
   const v = valideerAntwoord(String(fd.get("tekst") ?? "").slice(0, MAX.antwoord + 1));
   if (!v.ok) terug(`${PAD}/${id}`, v.fout, "fout");
@@ -103,6 +111,14 @@ export async function beantwoord(fd: FormData): Promise<void> {
     }),
     supabase.from("contact_berichten").update({ status: "beantwoord" }).eq("id", id),
   ]);
+  await logActie({
+    actie: "bericht.beantwoorden",
+    onderwerpSoort: "bericht",
+    onderwerpId: id,
+    omschrijving: `Antwoord gestuurd naar ${bericht.email}`,
+    details: { lengte: v.tekst.length },
+    gebruiker: user,
+  });
   revalidatePath(PAD);
   if (opslaan.error || status.error) {
     terug(

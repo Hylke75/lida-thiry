@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { meldAan, normaliseerEmail } from "@/lib/nieuwsbrief/contacten";
 import {
@@ -44,7 +45,7 @@ function ids(fd: FormData): string[] {
 // Lijst ---------------------------------------------------------------------------
 
 export async function voegContactToe(fd: FormData): Promise<void> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("nieuwsbrief_contacten");
   const email = normaliseerEmail(String(fd.get("email") ?? ""));
   if (!email) terug(PAD, "Vul een geldig e-mailadres in.", "fout");
   if (fd.get("toestemming") !== "on") {
@@ -75,7 +76,7 @@ export async function voegContactToe(fd: FormData): Promise<void> {
 }
 
 export async function bulkActie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const terugNaar = String(fd.get("terug") ?? PAD);
   const gekozen = ids(fd);
   const actie = String(fd.get("actie") ?? "");
@@ -100,6 +101,12 @@ export async function bulkActie(fd: FormData): Promise<void> {
   } catch (e) {
     terug(terugNaar, `Mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({
+    actie: `contact.bulk_${actie}`,
+    onderwerpSoort: "contact",
+    omschrijving: melding,
+    details: { aantal_gekozen: gekozen.length, tag: tag || undefined, ids: gekozen },
+  });
   revalidatePath(PAD);
   terug(terugNaar, melding);
 }
@@ -113,7 +120,7 @@ function contactId(fd: FormData): string {
 }
 
 export async function bewaarContact(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const id = contactId(fd);
   const naam = String(fd.get("naam") ?? "").trim().slice(0, 120) || null;
   const tags = ontleedTags(String(fd.get("tags") ?? ""));
@@ -124,7 +131,7 @@ export async function bewaarContact(fd: FormData): Promise<void> {
 }
 
 export async function meldContactAf(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const id = contactId(fd);
   try {
     await meldContactenAf([id]);
@@ -136,7 +143,7 @@ export async function meldContactAf(fd: FormData): Promise<void> {
 }
 
 export async function meldContactOpnieuwAan(fd: FormData): Promise<void> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("nieuwsbrief_contacten");
   const id = contactId(fd);
   if (fd.get("toestemming") !== "on") {
     terug(`${PAD}/${id}`, "Vink aan dat deze persoon opnieuw toestemming heeft gegeven.", "fout");
@@ -160,7 +167,7 @@ export async function meldContactOpnieuwAan(fd: FormData): Promise<void> {
 }
 
 export async function verwijderContact(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const id = contactId(fd);
   let n = 0;
   try {
@@ -168,6 +175,7 @@ export async function verwijderContact(fd: FormData): Promise<void> {
   } catch (e) {
     terug(`${PAD}/${id}`, `Verwijderen mislukt: ${foutTekst(e)}`, "fout");
   }
+  if (n) await logActie({ actie: "contact.verwijderen", onderwerpSoort: "contact", onderwerpId: id, omschrijving: "Nieuwsbriefcontact definitief verwijderd" });
   revalidatePath(PAD);
   terug(PAD, n ? "Contact en e-mailadres definitief verwijderd." : "Dit contact bestond niet (meer).");
 }
@@ -196,7 +204,7 @@ function schoneRijen(ruw: unknown): ImportRij[] {
 }
 
 export async function controleerImport(emails: string[]): Promise<{ ok: true; voorbeeld: ImportVoorbeeld } | { ok: false; fout: string }> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const schoon = schoneRijen(Array.isArray(emails) ? emails.map((email) => ({ email })) : []).map((r) => r.email);
   try {
     return { ok: true, voorbeeld: await voorbeeldImport(schoon) };
@@ -210,7 +218,7 @@ export async function voerImportUit(invoer: {
   tag?: string;
   toestemming: boolean;
 }): Promise<{ ok: true; resultaat: ImportResultaat } | { ok: false; fout: string }> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("nieuwsbrief_contacten");
   if (invoer.toestemming !== true) {
     return { ok: false, fout: "Bevestig dat iedereen in het bestand toestemming heeft gegeven." };
   }
@@ -222,6 +230,13 @@ export async function voerImportUit(invoer: {
       typeof invoer.tag === "string" ? invoer.tag : null,
       handmatigeToestemming("geïmporteerd", beheerderNaam(user)),
     );
+    await logActie({
+      actie: "contact.importeren",
+      onderwerpSoort: "contact",
+      omschrijving: `Contacten geïmporteerd: ${resultaat.toegevoegd} nieuw, ${resultaat.bijgewerkt} bijgewerkt, ${resultaat.overgeslagen.length} overgeslagen`,
+      details: { rijen: rijen.length, tag: invoer.tag || undefined, toegevoegd: resultaat.toegevoegd, bijgewerkt: resultaat.bijgewerkt, overgeslagen: resultaat.overgeslagen.length },
+      gebruiker: user,
+    });
     revalidatePath(PAD);
     return { ok: true, resultaat };
   } catch (e) {

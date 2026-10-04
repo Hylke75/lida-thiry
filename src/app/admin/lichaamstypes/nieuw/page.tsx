@@ -7,7 +7,7 @@ import { LichaamstypeFormulier } from "../LichaamstypeFormulier";
 export const dynamic = "force-dynamic";
 
 export default async function NieuwLichaamstype() {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const types = await haalLichaamstypes();
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">

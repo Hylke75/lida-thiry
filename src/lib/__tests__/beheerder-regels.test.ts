@@ -22,6 +22,14 @@ describe("verwijderBezwaar", () => {
   it("een andere beheerder mag wel", () => {
     expect(verwijderBezwaar({ mijnId: "a", doelId: "b", aantalBeheerders: 2 })).toBeNull();
   });
+  it("niet de laatste eigenaar", () => {
+    expect(
+      verwijderBezwaar({ mijnId: "a", doelId: "b", aantalBeheerders: 3, doelIsEigenaar: true, aantalEigenaren: 1 }),
+    ).toMatch(/laatste eigenaar/);
+    expect(
+      verwijderBezwaar({ mijnId: "a", doelId: "b", aantalBeheerders: 3, doelIsEigenaar: true, aantalEigenaren: 2 }),
+    ).toBeNull();
+  });
 });
 
 describe("wachtwoordBezwaar", () => {

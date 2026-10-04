@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { heeftRecht, startPagina } from "@/lib/rollen";
 import { adminClient } from "@/lib/supabase/admin";
 import { AdminNav } from "./AdminNav";
 import { Dashboard } from "./Dashboard";
@@ -12,7 +13,9 @@ export const dynamic = "force-dynamic";
 type Zoek = { q?: string; status?: string; periode?: string };
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<Zoek> }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder();
+  // Wie het overzicht (omzet, bestellingen) niet mag zien, begint op een eigen startpagina.
+  if (!heeftRecht(ik.rol, "overzicht")) redirect(startPagina(ik.rol));
   const zoek = await searchParams;
 
   // Oude links (zoeken/filteren stond vroeger op /admin) blijven werken.

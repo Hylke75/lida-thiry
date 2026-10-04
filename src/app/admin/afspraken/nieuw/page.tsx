@@ -10,7 +10,7 @@ import { invoer, kaart, knop, Meldingen, NAV_AFSPRAKEN, zacht } from "../stijl";
 export const dynamic = "force-dynamic";
 
 export default async function NieuweAfspraak({ searchParams }: { searchParams: Promise<{ ok?: string; fout?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const { ok, fout } = await searchParams;
   const soorten = await haalSoorten(false).catch(() => []);
 

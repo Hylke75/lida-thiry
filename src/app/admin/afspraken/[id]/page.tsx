@@ -33,7 +33,7 @@ export default async function AfspraakDetail({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ok?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const { id } = await params;
   const { ok, fout } = await searchParams;
   if (!geldigeUuid(id)) notFound();

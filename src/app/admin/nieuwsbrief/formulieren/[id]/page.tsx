@@ -25,7 +25,7 @@ export default async function FormulierBewerken({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ok?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const [{ id }, { ok, fout }] = await Promise.all([params, searchParams]);
   if (!UUID_PATROON.test(id)) notFound();
   const [teksten, tags, formulieren, stats, gebruik] = await Promise.all([

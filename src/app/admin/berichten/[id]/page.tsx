@@ -42,7 +42,7 @@ export default async function BerichtPagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("berichten");
   const { id } = await params;
   if (!UUID_PATROON.test(id)) notFound();
   const zoek = await searchParams;

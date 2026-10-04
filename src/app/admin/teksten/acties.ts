@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { vindSectie } from "@/lib/inhoud/register";
 import { combineer, standaardWaarden, valideer } from "@/lib/inhoud/schema";
@@ -21,7 +22,7 @@ async function bewaarHuidigeTekst(sleutel: string, door: string | undefined, oms
 
 /** Slaat de teksten van één sectie op. */
 export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<SectieResultaat> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("teksten");
   const gevonden = vindSectie(sleutel);
   if (!gevonden) return { ok: false, fouten: ["Onbekend onderdeel."] };
 
@@ -33,6 +34,7 @@ export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<Se
     .from("inhoud")
     .upsert({ sleutel, waarde: uitkomst.waarde }, { onConflict: "sleutel" });
   if (error) return { ok: false, fouten: [`Opslaan mislukt: ${error.message}`] };
+  await logActie({ actie: "tekst.opslaan", onderwerpSoort: "tekst", onderwerpId: sleutel, omschrijving: `Teksten opgeslagen: ${sleutel}`, gebruiker: user });
 
   // Teksten worden op openbare pagina's, in de test en in e-mails gebruikt.
   revalidatePath("/", "layout");
@@ -46,13 +48,20 @@ export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<Se
 
 /** Verwijdert de aanpassingen van een sectie, zodat de standaardtekst weer geldt. */
 export async function zetSectieTerug(sleutel: string): Promise<SectieResultaat> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("teksten");
   const gevonden = vindSectie(sleutel);
   if (!gevonden) return { ok: false, fouten: ["Onbekend onderdeel."] };
 
   await bewaarHuidigeTekst(sleutel, user.email, "Voor standaardtekst", true);
   const { error } = await adminClient().from("inhoud").delete().eq("sleutel", sleutel);
   if (error) return { ok: false, fouten: [`Terugzetten mislukt: ${error.message}`] };
+  await logActie({
+    actie: "tekst.standaard_terugzetten",
+    onderwerpSoort: "tekst",
+    onderwerpId: sleutel,
+    omschrijving: `Standaardtekst teruggezet: ${sleutel}`,
+    gebruiker: user,
+  });
 
   revalidatePath("/", "layout");
   return {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import {
   haalMedia,
   importeerBestaande,
@@ -37,7 +38,7 @@ export interface ZoekVraag {
 
 /** Zoeken in de bibliotheek (voor de kiezer). */
 export async function zoekInMedia(v: ZoekVraag): Promise<Uitkomst<{ resultaat: ZoekResultaat; mappen: string[] }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   try {
     const [resultaat, mappen] = await Promise.all([
       zoekMedia({
@@ -58,13 +59,13 @@ export async function zoekInMedia(v: ZoekVraag): Promise<Uitkomst<{ resultaat: Z
 
 /** Stap 1 van uploaden: een eenmalige upload-URL in de bucket "media". */
 export async function maakMediaUpload(mime: string, grootte: number, map: string): Promise<Uitkomst<UploadPlek>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   return maakUpload(String(mime ?? ""), Number(grootte), String(map ?? ""));
 }
 
 /** Stap 2: het geüploade bestand in de bibliotheek zetten (ook voor uploads uit de editors). */
 export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media: MediaItem }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   if (!r || typeof r !== "object") return { ok: false, fout: "Onbekend bestand." };
   try {
     const u = await registreerMedia(r);
@@ -76,7 +77,7 @@ export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media
 }
 
 export async function werkMediaGegevensBij(id: string, w: { naam?: string; alt?: string; map?: string }): Promise<Uitkomst<{ media: MediaItem }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   const u = await werkMediaBij(String(id ?? ""), {
     naam: typeof w?.naam === "string" ? w.naam : undefined,
     alt: typeof w?.alt === "string" ? w.alt : undefined,
@@ -88,7 +89,7 @@ export async function werkMediaGegevensBij(id: string, w: { naam?: string; alt?:
 
 /** Waar de afbeelding gebruikt wordt. */
 export async function gebruikVanMedia(id: string): Promise<Uitkomst<{ gebruik: Gebruik[] }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   try {
     const m = await haalMedia(String(id ?? ""));
     if (!m) return { ok: false, fout: "Deze afbeelding bestaat niet meer." };
@@ -100,10 +101,19 @@ export async function gebruikVanMedia(id: string): Promise<Uitkomst<{ gebruik: G
 
 /** Verwijderen; geblokkeerd zolang de afbeelding nog gebruikt wordt, tenzij `forceer`. */
 export async function verwijderMediaBestand(id: string, forceer = false): Promise<VerwijderUitkomst> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("media");
   try {
     const u = await verwijderMedia(String(id ?? ""), forceer === true);
-    if (u.ok) revalidatePath(MEDIA_PAD, "layout");
+    if (u.ok) {
+      await logActie({
+        actie: "media.verwijderen",
+        onderwerpSoort: "media",
+        onderwerpId: String(id ?? ""),
+        omschrijving: `Mediabestand verwijderd${forceer === true ? " (terwijl het nog in gebruik was)" : ""}`,
+        gebruiker: ik,
+      });
+      revalidatePath(MEDIA_PAD, "layout");
+    }
     return u;
   } catch (e) {
     return { ok: false, fout: `Verwijderen is niet gelukt (${foutTekst(e)}).` };
@@ -112,7 +122,7 @@ export async function verwijderMediaBestand(id: string, forceer = false): Promis
 
 /** Zet oudere uploads uit de buckets "blog" en "nieuwsbrief" in de bibliotheek. */
 export async function importeerBestaandeMedia(): Promise<Uitkomst<{ nieuw: number; bekeken: number }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   try {
     const r = await importeerBestaande();
     revalidatePath(MEDIA_PAD);

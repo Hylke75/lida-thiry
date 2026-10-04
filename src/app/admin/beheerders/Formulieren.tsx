@@ -1,8 +1,17 @@
 "use client";
 
 import { startTransition, useActionState, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { stuurInlogLink, verwijderBeheerder, voegBeheerderToe, wijzigWachtwoord, type BeheerUitkomst } from "./acties";
+import {
+  resetTweestap,
+  stuurInlogLink,
+  verwijderBeheerder,
+  voegBeheerderToe,
+  wijzigRol,
+  wijzigWachtwoord,
+  type BeheerUitkomst,
+} from "./acties";
 import { MIN_WACHTWOORD } from "@/lib/beheerder-regels";
+import { ROL_LABEL, ROL_UITLEG, ROLLEN, type Rol } from "@/lib/rollen";
 
 type Actie = (vorige: BeheerUitkomst | null, fd: FormData) => Promise<BeheerUitkomst>;
 
@@ -107,15 +116,73 @@ export function ToevoegFormulier() {
         aria-label="E-mailadres van de nieuwe beheerder"
         className={`${invoer} sm:flex-1`}
       />
+      <select name="rol" defaultValue="beheerder" aria-label="Rol" className={`${invoer} sm:w-40`}>
+        {ROLLEN.map((r) => (
+          <option key={r} value={r}>
+            {ROL_LABEL[r]}
+          </option>
+        ))}
+      </select>
       <button className={hoofdknop}>Toevoegen</button>
     </Formulier>
   );
 }
 
-export function RijActies({ id, email, isIkZelf, isLaatste }: { id: string; email: string; isIkZelf: boolean; isLaatste: boolean }) {
+export function RolKeuze({ id, email, rol, vergrendeld }: { id: string; email: string; rol: Rol; vergrendeld: string | null }) {
+  if (vergrendeld) {
+    return (
+      <span className="text-xs text-black/50 dark:text-white/50" title={vergrendeld}>
+        {ROL_LABEL[rol]}
+      </span>
+    );
+  }
+  return (
+    <Formulier actie={wijzigRol} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="gebruiker_id" value={id} />
+      <select
+        name="rol"
+        defaultValue={rol}
+        aria-label={`Rol van ${email}`}
+        title={ROL_UITLEG[rol]}
+        className="rounded-lg border border-black/15 bg-kaart px-2 py-1 text-xs dark:border-white/20"
+      >
+        {ROLLEN.map((r) => (
+          <option key={r} value={r}>
+            {ROL_LABEL[r]}
+          </option>
+        ))}
+      </select>
+      <button className={kleineKnop}>Rol opslaan</button>
+    </Formulier>
+  );
+}
+
+export function RijActies({
+  id,
+  email,
+  isIkZelf,
+  isLaatste,
+  tweestap,
+}: {
+  id: string;
+  email: string;
+  isIkZelf: boolean;
+  isLaatste: boolean;
+  tweestap: boolean;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
+        {tweestap && !isIkZelf && (
+          <Formulier
+            actie={resetTweestap}
+            bevestig={`De tweestapsverificatie van ${email} uitzetten? Doe dit alleen als diegene de app kwijt is en je zeker weet dat het verzoek echt van diegene komt.`}
+            className="flex flex-col gap-1"
+          >
+            <input type="hidden" name="gebruiker_id" value={id} />
+            <button className={kleineKnop}>Tweestap resetten</button>
+          </Formulier>
+        )}
         <Formulier actie={stuurInlogLink} bevestig={`Een inloglink sturen naar ${email}?`} className="flex flex-col gap-1">
           <input type="hidden" name="gebruiker_id" value={id} />
           <button className={kleineKnop}>Inloglink sturen</button>

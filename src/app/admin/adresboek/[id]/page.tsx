@@ -36,7 +36,7 @@ export default async function RelatiePagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ok?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const [{ id }, { ok, fout }] = await Promise.all([params, searchParams]);
   if (!UUID_PATROON.test(id)) notFound();
   const r = await relatieOpId(id);

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { datumTijd, ontleedTags } from "@/lib/nieuwsbrief/contactregels";
 import { normaliseerTag } from "@/lib/nieuwsbrief/doelgroep";
@@ -44,7 +45,7 @@ function relatieId(fd: FormData, veld = "id"): string {
 // Lijst ------------------------------------------------------------------------------
 
 export async function bulkActie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const terugNaar = String(fd.get("terug") ?? PAD);
   const gekozen = ids(fd);
   const actie = String(fd.get("actie") ?? "");
@@ -67,6 +68,12 @@ export async function bulkActie(fd: FormData): Promise<void> {
   } catch (e) {
     terug(terugNaar, `Mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({
+    actie: `relatie.bulk_${actie}`,
+    onderwerpSoort: "relatie",
+    omschrijving: melding,
+    details: { aantal_gekozen: gekozen.length, tag: tag || undefined, ids: gekozen },
+  });
   revalidatePath(PAD);
   terug(terugNaar, melding);
 }
@@ -81,7 +88,7 @@ export interface FormulierStatus {
 }
 
 export async function bewaarRelatie(_vorige: FormulierStatus, fd: FormData): Promise<FormulierStatus> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const idRuw = String(fd.get("id") ?? "");
   const id = UUID_PATROON.test(idRuw) ? idRuw : null;
   const { invoer, fouten } = controleerRelatieInvoer(Object.fromEntries(fd));
@@ -112,7 +119,7 @@ export async function bewaarRelatie(_vorige: FormulierStatus, fd: FormData): Pro
 }
 
 export async function voegNotitieToeActie(fd: FormData): Promise<void> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("adresboek");
   const id = relatieId(fd);
   const tekst = String(fd.get("notitie") ?? "").slice(0, 5000);
   if (!tekst.trim()) terug(`${PAD}/${id}`, "Schrijf eerst een notitie.", "fout");
@@ -128,7 +135,7 @@ export async function voegNotitieToeActie(fd: FormData): Promise<void> {
 // AVG --------------------------------------------------------------------------------
 
 export async function vergeetActie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const id = relatieId(fd);
   const r = await relatieOpId(id);
   if (!r) terug(PAD, "Deze relatie bestond niet (meer).", "fout");
@@ -142,6 +149,13 @@ export async function vergeetActie(fd: FormData): Promise<void> {
     uitkomst.nieuwsbrief ? "het nieuwsbriefcontact" : "",
     uitkomst.berichten ? `${uitkomst.berichten} contactbericht(en)` : "",
   ].filter(Boolean);
+  await logActie({
+    actie: "relatie.verwijderen",
+    onderwerpSoort: "relatie",
+    onderwerpId: id,
+    omschrijving: `${weergaveNaam(r)} uit het adresboek verwijderd${extra.length ? ` (plus ${extra.join(" en ")})` : ""}`,
+    details: { nieuwsbrief: uitkomst.nieuwsbrief, berichten: uitkomst.berichten },
+  });
   revalidatePath(PAD);
   terug(PAD, `${weergaveNaam(r)} is uit het adresboek verwijderd${extra.length ? `, net als ${extra.join(" en ")}` : ""}.`);
 }
@@ -149,7 +163,7 @@ export async function vergeetActie(fd: FormData): Promise<void> {
 // Samenvoegen ------------------------------------------------------------------------
 
 export async function voegSamenActie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const blijftId = relatieId(fd, "blijft");
   const wegId = relatieId(fd, "weg");
   const terugNaar = `${PAD}/dubbel?a=${blijftId}&b=${wegId}`;
@@ -172,6 +186,13 @@ export async function voegSamenActie(fd: FormData): Promise<void> {
   } catch (e) {
     terug(terugNaar, `Samenvoegen mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({
+    actie: "relatie.samenvoegen",
+    onderwerpSoort: "relatie",
+    onderwerpId: blijftId,
+    omschrijving: `${weergaveNaam(weg)} samengevoegd met ${weergaveNaam(blijft)}`,
+    details: { verwijderd: wegId, keuzes },
+  });
   revalidatePath(PAD);
   terug(`${PAD}/${blijftId}`, "Samengevoegd. De andere relatie is verwijderd en de notities en tags zijn overgenomen.");
 }
@@ -203,7 +224,7 @@ type ImportAntwoord = { ok: true; telling: ImportTelling } | { ok: false; fout: 
 const extraTag = (t: unknown) => (typeof t === "string" && t.trim() ? t : null);
 
 export async function controleerRelatieImport(rijen: unknown, tag?: string): Promise<ImportAntwoord> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   try {
     return { ok: true, telling: await voorbeeldImportRelaties(schoneRijen(rijen), extraTag(tag)) };
   } catch (e) {
@@ -212,11 +233,17 @@ export async function controleerRelatieImport(rijen: unknown, tag?: string): Pro
 }
 
 export async function voerRelatieImportUit(rijen: unknown, tag?: string): Promise<ImportAntwoord> {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const schoon = schoneRijen(rijen);
   if (!schoon.length) return { ok: false, fout: "Er staan geen geldige rijen in dit deel." };
   try {
     const telling = await importeerRelaties(schoon, extraTag(tag));
+    await logActie({
+      actie: "relatie.importeren",
+      onderwerpSoort: "relatie",
+      omschrijving: `${schoon.length} rij(en) in het adresboek geïmporteerd`,
+      details: { telling, tag: extraTag(tag) },
+    });
     revalidatePath(PAD);
     return { ok: true, telling };
   } catch (e) {

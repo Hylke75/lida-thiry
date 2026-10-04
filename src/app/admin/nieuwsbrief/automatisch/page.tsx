@@ -28,7 +28,7 @@ interface Rij {
 }
 
 export default async function AutomatischOverzicht({ searchParams }: { searchParams: Promise<{ fout?: string; verwijderd?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const { fout, verwijderd } = await searchParams;
   const { data, error } = await adminClient()
     .from("nb_campagnes")

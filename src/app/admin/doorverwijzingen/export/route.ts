@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 // CSV-export (van;naar;permanent), hetzelfde formaat dat de import verwacht.
 export async function GET() {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   const rijen = await alleDoorverwijzingen();
   const csv = maakCsv(exportRijen([...rijen].sort((a, b) => a.van.localeCompare(b.van))));
   const datum = new Date().toISOString().slice(0, 10);

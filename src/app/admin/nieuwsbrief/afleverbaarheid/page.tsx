@@ -69,7 +69,7 @@ function ControleKaart({ c }: { c: Controle }) {
  * voor het domein uit RESEND_VAN? Zoekt live in de DNS (bij elk bezoek).
  */
 export default async function Afleverbaarheid() {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const afzender = afzenderDomein(process.env.RESEND_VAN);
   const dns = afzender.soort === "eigen" ? await zoekDns(afzender.domein) : null;
   const controles = afzender.soort === "eigen" && dns ? beoordeel(afzender.domein, dns.gegevens) : [];

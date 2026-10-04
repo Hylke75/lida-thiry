@@ -72,7 +72,7 @@ function SoortVelden({ s }: { s?: AfspraakSoort }) {
 }
 
 export default async function AfspraakInstellingen({ searchParams }: { searchParams: Promise<{ ok?: string; fout?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const { ok, fout } = await searchParams;
   const nu = new Date();
   const [soorten, beschikbaarheid, blokkades, inst] = await Promise.all([

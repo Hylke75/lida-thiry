@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import {
@@ -47,7 +48,7 @@ function leesId(formData: FormData): string {
 // Overzicht ---------------------------------------------------------------------------
 
 export async function nieuweCampagne() {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const datum = new Date().toLocaleDateString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric" });
   const { data, error } = await adminClient()
     .from("nb_campagnes")
@@ -67,7 +68,7 @@ export async function nieuweCampagne() {
 }
 
 export async function dupliceerCampagne(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = leesId(formData);
   const c = id ? await haalCampagne(id) : null;
   if (!c || c.soort !== "campagne") redirect(`${PAD}?fout=onbekend`);
@@ -91,7 +92,7 @@ export async function dupliceerCampagne(formData: FormData) {
 }
 
 export async function verwijderCampagne(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = leesId(formData);
   if (!id) redirect(`${PAD}?fout=onbekend`);
   const { data } = await adminClient()
@@ -101,6 +102,7 @@ export async function verwijderCampagne(formData: FormData) {
     .eq("soort", "campagne")
     .eq("status", "concept")
     .select("id");
+  if (data?.length) await logActie({ actie: "campagne.verwijderen", onderwerpSoort: "campagne", onderwerpId: id, omschrijving: "Conceptcampagne verwijderd" });
   vernieuw();
   redirect(data?.length ? `${PAD}?verwijderd=1` : `${PAD}?fout=verwijderen`);
 }
@@ -108,11 +110,20 @@ export async function verwijderCampagne(formData: FormData) {
 // Verzenden ---------------------------------------------------------------------------
 
 export async function verzendNu(id: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   const r = await startCampagne(id);
   if (!r.ok) return { ok: false, fouten: r.fouten };
   if (r.aantal > 0) verwerkStraks();
+  await logActie({
+    actie: "campagne.verzenden",
+    onderwerpSoort: "campagne",
+    onderwerpId: id,
+    omschrijving: r.testgroep
+      ? `A/B-test gestart (${r.testgroep} van ${r.aantal} ontvangers)`
+      : `Campagne verzonden naar ${r.aantal} ontvanger(s)`,
+    details: { aantal: r.aantal, testgroep: r.testgroep ?? null },
+  });
   vernieuw(id);
   return {
     ok: true,
@@ -127,7 +138,7 @@ export async function verzendNu(id: string): Promise<Uitkomst> {
 
 /** A/B-test: kies nu de winnaar (op basis van de cijfers tot nu toe) en verstuur naar de rest. */
 export async function kiesWinnaarNu(id: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   let r;
   try {
@@ -136,6 +147,12 @@ export async function kiesWinnaarNu(id: string): Promise<Uitkomst> {
     return { ok: false, fouten: [`De rest van de doelgroep kon niet worden ingepland (${e instanceof Error ? e.message : "onbekend"}).`] };
   }
   if (!r.ok) return { ok: false, fouten: [r.fout] };
+  await logActie({
+    actie: "campagne.winnaar_kiezen",
+    onderwerpSoort: "campagne",
+    onderwerpId: id,
+    omschrijving: `A/B-test: onderwerp ${r.winnaar.toUpperCase()} gekozen; rest van de doelgroep ingepland`,
+  });
   verwerkStraks();
   vernieuw(id);
   revalidatePath(`${PAD}/${id}/rapport`);
@@ -148,7 +165,7 @@ export async function kiesWinnaarNu(id: string): Promise<Uitkomst> {
 
 /** Formulierversie van kiesWinnaarNu (voor het rapport). */
 export async function kiesWinnaarNuFormulier(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = leesId(formData);
   if (!id) redirect(`${PAD}?fout=onbekend`);
   const r = await kiesWinnaarNu(id);
@@ -156,7 +173,7 @@ export async function kiesWinnaarNuFormulier(formData: FormData) {
 }
 
 export async function planIn(id: string, moment: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   const tijd = amsterdamNaarUtc(String(moment ?? ""));
   const fout = controleerInplanmoment(tijd);
@@ -173,12 +190,19 @@ export async function planIn(id: string, moment: string): Promise<Uitkomst> {
     .select("id")
     .maybeSingle();
   if (!data) return { ok: false, fouten: ["Deze campagne wordt al verzonden."] };
+  await logActie({
+    actie: "campagne.inplannen",
+    onderwerpSoort: "campagne",
+    onderwerpId: id,
+    omschrijving: `Campagne ‘${c.naam ?? c.onderwerp ?? ""}’ ingepland voor ${toonDatumTijd(tijd)}`,
+    details: { moment: tijd.toISOString() },
+  });
   vernieuw(id);
   return { ok: true, bericht: `Ingepland voor ${toonDatumTijd(tijd)}.` };
 }
 
 export async function annuleerPlanning(id: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   const { data } = await adminClient()
     .from("nb_campagnes")
@@ -188,12 +212,13 @@ export async function annuleerPlanning(id: string): Promise<Uitkomst> {
     .select("id")
     .maybeSingle();
   if (!data) return { ok: false, fouten: ["Deze campagne was niet (meer) ingepland. Mogelijk wordt hij al verzonden."] };
+  await logActie({ actie: "campagne.planning_annuleren", onderwerpSoort: "campagne", onderwerpId: id, omschrijving: "Planning geannuleerd (weer concept)" });
   vernieuw(id);
   return { ok: true, bericht: "De planning is geannuleerd. De campagne is weer een concept." };
 }
 
 export async function pauzeer(id: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   const { data } = await adminClient()
     .from("nb_campagnes")
@@ -203,12 +228,13 @@ export async function pauzeer(id: string): Promise<Uitkomst> {
     .select("id")
     .maybeSingle();
   if (!data) return { ok: false, fouten: ["Pauzeren kan alleen terwijl de campagne wordt verstuurd."] };
+  await logActie({ actie: "campagne.pauzeren", onderwerpSoort: "campagne", onderwerpId: id, omschrijving: "Verzenden gepauzeerd" });
   vernieuw(id);
   return { ok: true, bericht: "Gepauzeerd. Mails die al onderweg waren, worden nog afgemaakt." };
 }
 
 export async function hervat(id: string): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
   const { data } = await adminClient()
     .from("nb_campagnes")
@@ -218,17 +244,19 @@ export async function hervat(id: string): Promise<Uitkomst> {
     .select("id")
     .maybeSingle();
   if (!data) return { ok: false, fouten: ["Deze campagne was niet gepauzeerd."] };
+  await logActie({ actie: "campagne.hervatten", onderwerpSoort: "campagne", onderwerpId: id, omschrijving: "Verzenden hervat" });
   verwerkStraks();
   vernieuw(id);
   return { ok: true, bericht: "Het verzenden gaat weer verder." };
 }
 
 export async function probeerOpnieuw(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = leesId(formData);
   if (!id) redirect(`${PAD}?fout=onbekend`);
   const n = await probeerMisluktOpnieuw(id);
   if (n > 0) verwerkStraks();
+  if (n > 0) await logActie({ actie: "campagne.opnieuw_proberen", onderwerpSoort: "campagne", onderwerpId: id, omschrijving: `${n} mislukte mail(s) opnieuw ingepland` });
   vernieuw(id);
   redirect(`${PAD}/${id}/rapport?opnieuw=${n}`);
 }

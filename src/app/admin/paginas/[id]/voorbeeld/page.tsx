@@ -10,7 +10,7 @@ import { PaginaVoorbeeld } from "../../_editor/voorbeeld";
 export const dynamic = "force-dynamic";
 
 export default async function PaginaVoorbeeldPagina({ params }: { params: Promise<{ id: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const { id } = await params;
   const [p, formulieren] = await Promise.all([haalPaginaBeheer(id), haalFormulieren()]);
   if (!p) notFound();

@@ -10,7 +10,7 @@ import { SectieEditor } from "../SectieEditor";
 export const dynamic = "force-dynamic";
 
 export default async function GroepPagina({ params }: { params: Promise<{ groep: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("teksten");
   const { groep: sleutel } = await params;
   const groep = vindGroep(sleutel);
   if (!groep) notFound();

@@ -118,6 +118,17 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
     uitleg: "Het adres dat klanten op de website zien om contact op te nemen.",
     soort: "email",
   },
+  mfa_verplicht: {
+    label: "Tweestapsverificatie verplicht",
+    uitleg:
+      "Bij ‘Ja’ moet iedere beheerder eerst een authenticator-app koppelen (Instellingen → Beveiliging) voordat die iets anders in het beheer kan doen. Wie al een app heeft gekoppeld, gebruikt die altijd bij het inloggen.",
+    soort: "keuze",
+    opties: [
+      { waarde: "nee", label: "Nee, ieder kiest zelf" },
+      { waarde: "ja", label: "Ja, verplicht voor iedereen" },
+    ],
+    verplicht: true,
+  },
 };
 
 /** Instellingen die niet meer gebruikt worden en daarom niet getoond worden. */

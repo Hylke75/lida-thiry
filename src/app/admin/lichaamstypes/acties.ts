@@ -53,7 +53,7 @@ function leesFormulier(fd: FormData): Partial<Lichaamstype> {
 
 /** Opslaan van een bestaand lichaamstype. */
 export async function slaLichaamstypeOp(_vorige: Status | null, fd: FormData): Promise<Status> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const supabase = adminClient();
   const code = tekst(fd, "code");
   const t = leesFormulier(fd);
@@ -106,7 +106,7 @@ async function werkTitelsBij(code: string, naam: string) {
  * lichaamstype per categorie overgenomen als startpunt.
  */
 export async function maakLichaamstype(_vorige: Status | null, fd: FormData): Promise<Status> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const supabase = adminClient();
   const { data: bestaand } = await supabase.from("lichaamstypes").select("code, volgorde");
   const t = leesFormulier(fd);
@@ -187,7 +187,7 @@ async function neemInhoudOver(bron: string, doel: string): Promise<number> {
 
 /** Welke uitkomst van de berekening bij welk lichaamstype hoort. */
 export async function slaToewijzingOp(_vorige: Status | null, fd: FormData): Promise<Status> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const supabase = adminClient();
   const rijen = FFIT_TYPES.map((f) => ({ ffit_type: f, code: tekst(fd, `ffit_${f}`) }));
   if (rijen.some((r) => !r.code)) return fout("Kies voor elke uitkomst een lichaamstype.");
@@ -205,7 +205,7 @@ export async function slaToewijzingOp(_vorige: Status | null, fd: FormData): Pro
  * bestellingen bij horen en de berekening het niet als uitkomst gebruikt.
  */
 export async function verwijderLichaamstype(_vorige: Status | null, fd: FormData): Promise<Status> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const supabase = adminClient();
   const code = tekst(fd, "code");
   if (tekst(fd, "bevestiging").toUpperCase() !== code) {
@@ -248,7 +248,7 @@ export interface FotoKeuze {
 
 /** Zoekt beelden in de beeldbank voor de foto van een lichaamstype. */
 export async function zoekFotos(zoek: string): Promise<FotoKeuze[]> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const supabase = adminClient();
   let q = supabase
     .from("beelden")

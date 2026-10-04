@@ -26,7 +26,7 @@ const ROOD = "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300";
 const AMBER = "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300";
 
 export default async function DoorverwijzingenPage({ searchParams }: { searchParams: Zoek }) {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   const { q = "", bewerk, ok, fout } = await searchParams;
 
   let rijen: DoorverwijzingRij[] = [];

@@ -24,7 +24,7 @@ function Getal({ label, waarde }: { label: string; waarde: string | number }) {
 }
 
 export default async function FormulierenOverzicht({ searchParams }: { searchParams: Promise<{ ok?: string; fout?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const { ok, fout } = await searchParams;
   const [geladen, stats, gebruik] = await Promise.all([
     alleFormulieren().then(

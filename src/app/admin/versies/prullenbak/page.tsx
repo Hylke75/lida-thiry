@@ -14,7 +14,7 @@ const FOUTEN: Record<string, string> = {
 };
 
 export default async function Prullenbak({ searchParams }: { searchParams: Promise<{ fout?: string; gewist?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("prullenbak");
   const sp = await searchParams;
   let items: PrullenbakItem[] = [];
   let laadFout: string | null = null;

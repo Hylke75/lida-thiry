@@ -15,7 +15,7 @@ export default async function MeetinstructiesPagina({
 }: {
   searchParams: Promise<{ verwijderd?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { verwijderd } = await searchParams;
   const [beelden, maten] = await Promise.all([leesMeetBeeldRijen(), leesSectie(TEST_MATEN)]);
   const maatVelden = maatVeldenMetTeksten(maten);
