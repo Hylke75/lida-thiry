@@ -80,6 +80,22 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
     label: "Btw-nummer",
     soort: "tekst",
   },
+  nb_max_per_dag: {
+    label: "Nieuwsbrief: maximaal aantal mails per dag",
+    uitleg: "De limiet van je Resend-abonnement (gratis: 100 per dag). Wat erboven komt, gaat de volgende dag automatisch verder.",
+    soort: "geheel_getal",
+    min: 1,
+    max: 100000,
+  },
+  nb_meten: {
+    label: "Nieuwsbrief: opens en kliks meten",
+    uitleg: "Meet wie een nieuwsbrief opent en op welke links geklikt wordt. Vermeld dit in je privacyverklaring.",
+    soort: "keuze",
+    opties: [
+      { waarde: "ja", label: "Ja, meten" },
+      { waarde: "nee", label: "Nee, niet meten" },
+    ],
+  },
   contact_email: {
     label: "Contact-e-mailadres",
     uitleg: "Het adres dat klanten op de website zien om contact op te nemen.",
