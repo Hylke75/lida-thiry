@@ -12,6 +12,7 @@ export const GERESERVEERDE_SLUGS = new Set([
   "voorwaarden",
   "status",
   "test",
+  "review",
   "robots.txt",
   "sitemap.xml",
   "icon.svg",

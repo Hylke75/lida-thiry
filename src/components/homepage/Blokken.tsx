@@ -18,6 +18,7 @@ import type {
 } from "@/lib/inhoud/groepen/website";
 import type { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import type { BlogBericht } from "@/lib/blog/regels";
+import type { PubliekeReview } from "@/lib/reviews/regels";
 import type { HomepageBlok } from "@/lib/website/homepage";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
 import type { Lichaamsvorm } from "@/lib/test-config";
@@ -40,6 +41,8 @@ export interface HomepageGegevens {
   advies: SectieWaarden<typeof WEBSITE_ADVIES>;
   over: SectieWaarden<typeof WEBSITE_OVER>;
   ervaringen: SectieWaarden<typeof WEBSITE_ERVARINGEN>;
+  /** Goedgekeurde reviews met toestemming (nieuwste eerst); staan vóór de handmatige ervaringen. */
+  reviews: readonly PubliekeReview[];
   vragen: SectieWaarden<typeof WEBSITE_VRAGEN>;
   afsluiting: SectieWaarden<typeof WEBSITE_AFSLUITING>;
   nieuwsbrief: SectieWaarden<typeof NIEUWSBRIEF_AANMELDEN>;
@@ -172,24 +175,47 @@ const Over: Blok = ({ over }) => (
   </section>
 );
 
-/** Alleen als er echte ervaringen zijn ingevuld. */
-const Ervaringen: Blok = ({ ervaringen }) =>
-  ervaringen.ervaringen.length > 0 && (
-    <section className="mx-auto w-full max-w-5xl px-6 py-16">
-      <h2 className="text-center text-3xl font-semibold tracking-tight">{ervaringen.titel}</h2>
-      <ul className="mt-10 grid gap-6 md:grid-cols-3">
-        {ervaringen.ervaringen.map((e) => (
-          <li key={e._id} className="flex flex-col gap-4 rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5">
-            <span className="font-serif text-4xl leading-none text-accent" aria-hidden="true">
-              &ldquo;
-            </span>
-            <blockquote className="-mt-4 text-foreground/80">{e.citaat}</blockquote>
-            <p className="mt-auto text-sm text-foreground/50">{e.naam}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
+function ReviewSterren({ aantal }: { aantal: number }) {
+  return (
+    <span className="text-lg leading-none tracking-widest text-accent" role="img" aria-label={`${aantal} van 5 sterren`}>
+      {"★".repeat(aantal)}
+      <span className="text-foreground/15">{"★".repeat(5 - aantal)}</span>
+    </span>
   );
+}
+
+/**
+ * Alleen als er goedgekeurde reviews of handmatig ingevulde ervaringen zijn.
+ * Reviews (met sterren) eerst, daarna de handmatige ervaringen.
+ */
+const Ervaringen: Blok = ({ ervaringen, reviews }) => {
+  const items = [
+    ...reviews.map((r) => ({ key: `r-${r.id}`, citaat: r.tekst, naam: r.naam, sterren: r.sterren as number | null })),
+    ...ervaringen.ervaringen.map((e) => ({ key: e._id, citaat: e.citaat, naam: e.naam, sterren: null })),
+  ].filter((i) => i.citaat.trim());
+  return (
+    items.length > 0 && (
+      <section className="mx-auto w-full max-w-5xl px-6 py-16">
+        <h2 className="text-center text-3xl font-semibold tracking-tight">{ervaringen.titel}</h2>
+        <ul className="mt-10 grid gap-6 md:grid-cols-3">
+          {items.map((e) => (
+            <li key={e.key} className="flex flex-col gap-4 rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5">
+              {e.sterren ? (
+                <ReviewSterren aantal={e.sterren} />
+              ) : (
+                <span className="font-serif text-4xl leading-none text-accent" aria-hidden="true">
+                  &ldquo;
+                </span>
+              )}
+              <blockquote className={`${e.sterren ? "" : "-mt-4 "}whitespace-pre-line text-foreground/80`}>{e.citaat}</blockquote>
+              <p className="mt-auto text-sm text-foreground/50">{e.naam}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  );
+};
 
 /** Alleen als er gepubliceerde berichten zijn. */
 const Blog: Blok = ({ blog, blogberichten }) =>

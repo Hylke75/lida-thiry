@@ -15,7 +15,7 @@ import { alleRijen } from "@/app/admin/types/gedeeld";
  */
 export async function productieCheck(): Promise<{ items: LivegangItem[] } & ReturnType<typeof livegangStatus>> {
   const supabase = adminClient();
-  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties, aangemeld, contactformulier] = await Promise.all([
+  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties, aangemeld, contactformulier, reviews] = await Promise.all([
     leesInstellingen(),
     leesPrijsCent(),
     leesAlleInhoud().catch(() => new Map<string, unknown>()),
@@ -42,6 +42,17 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
     ).then(
       (r) => !r.error && (r.count ?? 0) > 0,
       () => false,
+    ),
+    // Reviews: goedgekeurd en met toestemming (zoals op de website). Fout = punt niet tonen.
+    Promise.resolve(
+      supabase
+        .from("beoordelingen")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "goedgekeurd")
+        .eq("toestemming_publicatie", true),
+    ).then(
+      (r) => (r.error ? undefined : (r.count ?? 0)),
+      () => undefined,
     ),
   ]);
   if (typesRes.error) throw new Error(`adviestypes lezen: ${typesRes.error.message}`);
@@ -72,6 +83,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
     },
     aangemeldeContacten: aangemeld,
     contactformulierGepubliceerd: contactformulier,
+    goedgekeurdeReviews: reviews,
   });
   return { items, ...livegangStatus(items) };
 }

@@ -4,6 +4,7 @@ import { leesInstelling } from "@/lib/instellingen";
 import { leverAdvies } from "@/lib/advies-leveren";
 import { stuurHerinneringMail } from "@/lib/resend";
 import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
+import { nodigUitVoorReviews } from "@/lib/reviews/uitnodigen";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -56,9 +57,11 @@ export async function GET(request: Request) {
   }
 
   const herinnering = await stuurHerinneringen(supabase);
+  // Klanten een paar dagen na hun advies om een review vragen (gooit niet).
+  const reviews = await nodigUitVoorReviews(supabase);
 
   const nogOpen = (open?.length ?? 0) - opnieuwGeleverd;
-  if (nogOpen > 0 || herinnering.mislukt.length > 0) {
+  if (nogOpen > 0 || herinnering.mislukt.length > 0 || reviews.mislukt.length > 0) {
     const delen: string[] = [];
     if (nogOpen > 0) {
       delen.push(
@@ -68,6 +71,11 @@ export async function GET(request: Request) {
     if (herinnering.mislukt.length > 0) {
       delen.push(
         `${herinnering.mislukt.length} herinneringsmail(s) mislukt:\n${herinnering.mislukt.map((r) => `- ${r}`).join("\n")}`,
+      );
+    }
+    if (reviews.mislukt.length > 0) {
+      delen.push(
+        `${reviews.mislukt.length} review-uitnodiging(en) mislukt:\n${reviews.mislukt.map((r) => `- ${r}`).join("\n")}`,
       );
     }
     await stuurBeheerMelding("Nachtelijke controle: actie nodig", delen.join("\n\n"));
@@ -81,6 +89,8 @@ export async function GET(request: Request) {
     nog_open: nogOpen,
     herinneringen_verstuurd: herinnering.verstuurd,
     herinneringen_mislukt: herinnering.mislukt.length,
+    reviews_uitgenodigd: reviews.verstuurd,
+    reviews_mislukt: reviews.mislukt.length,
   });
 }
 

@@ -46,6 +46,15 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
     max: 3650,
     verplicht: true,
   },
+  review_na_dagen: {
+    label: "Om een review vragen na (dagen)",
+    uitleg:
+      "Zoveel dagen nadat het advies is verzonden, krijgt de klant automatisch één mail met de vraag om een review. Klanten van wie het advies langer dan 60 dagen geleden is verzonden, krijgen geen automatische mail; die kun je zelf uitnodigen in Beheer → Reviews.",
+    soort: "geheel_getal",
+    min: 1,
+    max: 45,
+    verplicht: true,
+  },
   zandloper_variant: {
     label: "Rekenregel zandloper",
     uitleg:
