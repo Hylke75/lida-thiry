@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { stuurPushMelding } from "@/lib/push/versturen";
 import { adminClient } from "@/lib/supabase/admin";
 import { REVIEW_TOKEN_PATROON, valideerReview, type ReviewVeld } from "@/lib/reviews/regels";
 
@@ -47,5 +48,10 @@ export async function bewaarReview(
     return { ok: false, fout: true };
   }
   revalidatePath("/admin/reviews");
+  await stuurPushMelding("review", {
+    titel: "Nieuwe review",
+    tekst: `${v.waarde.naam || "Een klant"} · ${"★".repeat(v.waarde.sterren)}`,
+    url: "/admin/reviews",
+  });
   return { ok: true };
 }

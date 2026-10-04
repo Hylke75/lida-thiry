@@ -10,6 +10,7 @@ import { BLOG } from "./groepen/blog";
 import { REVIEWS } from "./groepen/reviews";
 import { CADEAUBON } from "./groepen/cadeaubon";
 import { MIJN_ADVIES } from "./groepen/mijn-advies";
+import { AFSPRAKEN } from "./groepen/afspraken";
 
 /** Alle groepen beheerbare teksten, in de volgorde van het beheerscherm. */
 export const GROEPEN: readonly Groep[] = [
@@ -21,6 +22,7 @@ export const GROEPEN: readonly Groep[] = [
   MIJN_ADVIES,
   TEST,
   EMAILS,
+  AFSPRAKEN,
   NIEUWSBRIEF,
   REVIEWS,
   JURIDISCH,

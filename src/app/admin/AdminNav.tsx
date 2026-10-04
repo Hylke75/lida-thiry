@@ -35,6 +35,13 @@ const GROEPEN = [
     ],
   },
   {
+    label: "Afspraken",
+    links: [
+      { href: "/admin/afspraken", label: "Agenda" },
+      { href: "/admin/afspraken/instellingen", label: "Instellingen" },
+    ],
+  },
+  {
     label: "Verkoop",
     links: [
       { href: "/admin/bestellingen", label: "Bestellingen" },

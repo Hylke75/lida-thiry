@@ -7,6 +7,7 @@ import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
 import { nodigUitVoorReviews } from "@/lib/reviews/uitnodigen";
 import { stuurBetaalherinneringen } from "@/lib/betaalherinnering";
 import { verstuurGeplandeCadeaubonnen } from "@/lib/cadeaubon/verwerken";
+import { stuurAfspraakHerinneringen } from "@/lib/afspraken/data";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -64,6 +65,9 @@ export async function GET(request: Request) {
   // Eigen beheermeldingen bij fouten; gooien nooit.
   const betaalherinneringen = await stuurBetaalherinneringen();
   const cadeaubonnen = await verstuurGeplandeCadeaubonnen();
+  // Afspraken van morgen: herinnering aan de klant (gooit nooit).
+  const afspraakHerinnering = await stuurAfspraakHerinneringen();
+  herinnering.mislukt.push(...afspraakHerinnering.mislukt);
 
   const nogOpen = (open?.length ?? 0) - opnieuwGeleverd;
   if (nogOpen > 0 || herinnering.mislukt.length > 0 || reviews.mislukt.length > 0) {
@@ -98,6 +102,7 @@ export async function GET(request: Request) {
     reviews_mislukt: reviews.mislukt.length,
     betaalherinneringen,
     cadeaubonnen,
+    afspraak_herinneringen_verstuurd: afspraakHerinnering.verstuurd,
   });
 }
 

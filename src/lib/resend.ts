@@ -301,3 +301,38 @@ export async function stuurReviewUitnodiging(opts: { email: string; naam: string
   const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
   if (error) throw new Error(`Resend review-uitnodiging: ${error.message}`);
 }
+
+/**
+ * Mail rond een afspraak (bevestiging, herinnering, annulering of melding aan de
+ * beheerder). De inhoud komt uit de pure bouwers in afspraken/mail-html.ts; een
+ * agendabestand (.ics) gaat optioneel als bijlage mee. Gooit bij een fout.
+ */
+export async function stuurAfspraakMail(opts: {
+  aan: string;
+  onderwerp: string;
+  html: string;
+  tekst: string;
+  replyTo?: string | null;
+  ics?: { bestandsnaam: string; inhoud: string; geannuleerd?: boolean } | null;
+}) {
+  const { error } = await resend().emails.send({
+    from: afzender(),
+    to: opts.aan,
+    subject: opts.onderwerp,
+    html: opts.html,
+    text: opts.tekst,
+    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    ...(opts.ics
+      ? {
+          attachments: [
+            {
+              filename: opts.ics.bestandsnaam,
+              content: Buffer.from(opts.ics.inhoud, "utf8").toString("base64"),
+              contentType: `text/calendar; charset=utf-8; method=${opts.ics.geannuleerd ? "CANCEL" : "PUBLISH"}`,
+            },
+          ],
+        }
+      : {}),
+  });
+  if (error) throw new Error(`Resend afspraak: ${error.message}`);
+}

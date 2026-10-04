@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlogKaart } from "@/components/blog/BlogKaart";
+import { AfspraakBlok } from "@/components/blokken/AfspraakBlok";
 import { ContactFormulierBlok } from "@/components/blokken/ContactFormulierBlok";
 import { NieuwsbriefFormulierBlok } from "@/components/blokken/NieuwsbriefFormulierBlok";
 import { Identiteit } from "@/components/JuridischePagina";
@@ -108,6 +109,7 @@ function maakBlokken(namen: string[], slug: string): Record<string, ReactNode> {
   for (const naam of namen) {
     let blok: ReactNode = null;
     if (naam === "contactformulier") blok = <ContactFormulierBlok pagina={`/${slug}`} />;
+    else if (naam === "afspraak") blok = <AfspraakBlok />;
     else if (naam === "nieuwsbrief") blok = <NieuwsbriefFormulierBlok />;
     else if (naam === "test") blok = <TestBlok />;
     else if (naam === "laatste_blogs") blok = <LaatsteBlogsBlok />;
