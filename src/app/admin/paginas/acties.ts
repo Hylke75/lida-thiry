@@ -17,6 +17,7 @@ import {
   type Pagina,
 } from "@/lib/paginas/beheer";
 import { vindStartpagina } from "@/lib/paginas/sjablonen";
+import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
 import { haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
 
 type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
@@ -140,6 +141,9 @@ export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitko
   const { data, error } = await adminClient().from("paginas").update(v.waarde).eq("id", id).select(PAGINA_VELDEN).single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Opslaan is niet gelukt (${error?.message ?? "onbekend"}).`);
+  if (huidig.status === "gepubliceerd" && huidig.slug !== v.waarde.slug) {
+    await registreerSlugWijziging(`/${huidig.slug}`, `/${v.waarde.slug}`);
+  }
   vernieuwPaginas(huidig.slug, v.waarde.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
   return { ok: true, pagina: data as Pagina, melding: "Opgeslagen." };
@@ -162,6 +166,9 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Publiceren is niet gelukt (${error?.message ?? "onbekend"}).`);
+  if (huidig.status === "gepubliceerd" && huidig.slug !== v.waarde.slug) {
+    await registreerSlugWijziging(`/${huidig.slug}`, `/${v.waarde.slug}`);
+  }
   vernieuwPaginas(huidig.slug, v.waarde.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
   return { ok: true, pagina: data as Pagina, melding: "Gepubliceerd! De pagina staat nu online." };
