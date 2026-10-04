@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  MAAT_VELDEN,
-  MAAT_GROEPEN,
-  PASVORMVRAGEN,
-  MEET_TIP,
-  type MaatVeld,
-} from "@/lib/test-config";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MAAT_GROEPEN, type MaatVeld } from "@/lib/test-config";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Lichaam } from "./Lichaam";
 import { ontleedTypeSleutel, type Silhouet } from "@/lib/lichaamstype-regels";
 import { TypeOnthulling } from "./TypeOnthulling";
+import { Opmaak } from "@/components/Opmaak";
+import { vulIn } from "@/lib/inhoud/schema";
+import {
+  maatVeldenMetTeksten,
+  meetStapTitel,
+  pasvormVragen,
+  type PasvormVraag,
+  type TestTeksten,
+} from "@/lib/inhoud/groepen/test";
 
 interface Bevinding {
   code: string;
@@ -36,21 +39,25 @@ type Stap =
   | { soort: "jij"; titel: string }
   | { soort: "maten"; titel: string; velden: MaatVeld[] }
   | { soort: "silhouet"; titel: string }
-  | { soort: "vragen"; titel: string }
+  | { soort: "vragen"; titel: string; vragen: PasvormVraag[] }
   | { soort: "controle"; titel: string };
 
-const STAPPEN: Stap[] = [
-  { soort: "jij", titel: "Over jou" },
-  ...MAAT_GROEPEN.map((g) => ({
-    soort: "maten" as const,
-    titel: g.titel,
-    velden: g.velden.map((s) => MAAT_VELDEN.find((v) => v.sleutel === s)!),
-  })),
-  { soort: "silhouet", titel: "Silhouet" },
-  { soort: "vragen", titel: "Vragen" },
-  { soort: "controle", titel: "Afronden" },
-];
-const EERSTE_MATEN_STAP = STAPPEN.findIndex((s) => s.soort === "maten");
+/** De stappen van de test, met de (beheerbare) titels. */
+function maakStappen(t: TestTeksten, maatVelden: MaatVeld[], vragen: PasvormVraag[]): Stap[] {
+  return [
+    { soort: "jij", titel: t.overJou.titel },
+    ...MAAT_GROEPEN.map((g) => ({
+      soort: "maten" as const,
+      titel: meetStapTitel(t.meten, g.sleutel),
+      velden: g.velden.map((s) => maatVelden.find((v) => v.sleutel === s)!),
+    })),
+    { soort: "silhouet", titel: t.silhouet.titel },
+    { soort: "vragen", titel: t.vragen.titel, vragen },
+    { soort: "controle", titel: t.afronden.titel },
+  ];
+}
+// Stap 1 is "Over jou"; daarna volgen de meetstappen.
+const EERSTE_MATEN_STAP = 1;
 
 const getal = (v: string | undefined) => (v ? Number(v) : NaN);
 
@@ -88,7 +95,9 @@ function stapFout(stap: Stap, a: Antwoorden): string | null {
     case "silhouet":
       return a.silhouet ? null : "Kies het silhouet dat het meest op het jouwe lijkt.";
     case "vragen":
-      return PASVORMVRAGEN.some((q) => !a.pasvorm[q.sleutel]) ? "Beantwoord alle vragen." : null;
+      return stap.vragen.some((q) => !a.pasvorm[q.sleutel] || !q.opties.includes(a.pasvorm[q.sleutel]))
+        ? "Beantwoord alle vragen."
+        : null;
     case "controle":
       return null;
   }
@@ -99,6 +108,7 @@ export function TestWizard({
   klantnaam,
   meetBeelden = {},
   silhouetten,
+  teksten,
 }: {
   token: string;
   klantnaam: string;
@@ -106,7 +116,13 @@ export function TestWizard({
   silhouetten: Silhouet[];
   /** Door de adviseur geüploade meetfoto's per maat (publieke URL); anders de tekening. */
   meetBeelden?: Record<string, string>;
+  /** Beheerbare teksten (Beheer → Teksten → Test), op de server gelezen. */
+  teksten: TestTeksten;
 }) {
+  const maatVelden = useMemo(() => maatVeldenMetTeksten(teksten.maten), [teksten.maten]);
+  const vragen = useMemo(() => pasvormVragen(teksten.vragen), [teksten.vragen]);
+  const STAPPEN = useMemo(() => maakStappen(teksten, maatVelden, vragen), [teksten, maatVelden, vragen]);
+  const aantalStappen = STAPPEN.length;
   const opslagSleutel = `lida-test-${token}`;
   const [a, setA] = useState<Antwoorden>(LEEG);
   const [stap, setStap] = useState(0);
@@ -131,14 +147,14 @@ export function TestWizard({
         const o = JSON.parse(opgeslagen);
         /* eslint-disable react-hooks/set-state-in-effect -- eenmalig herstellen uit localStorage */
         setA({ ...LEEG, ...o.a });
-        setStap(Math.min(o.stap ?? 0, STAPPEN.length - 1));
-        setBereikt(Math.min(o.bereikt ?? 0, STAPPEN.length - 1));
+        setStap(Math.min(o.stap ?? 0, aantalStappen - 1));
+        setBereikt(Math.min(o.bereikt ?? 0, aantalStappen - 1));
         setHermeting(Boolean(o.hermeting));
       }
     } catch {}
     setHersteld(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [opslagSleutel]);
+  }, [opslagSleutel, aantalStappen]);
 
   useEffect(() => {
     if (!hersteld || resultaat) return;
@@ -187,12 +203,15 @@ export function TestWizard({
     const payload = {
       lengte_cm: Number(a.lengte),
       gewicht_kg: Number(a.gewicht),
-      maten: Object.fromEntries(MAAT_VELDEN.map((v) => [v.sleutel, num(a.maten[v.sleutel])])),
+      maten: Object.fromEntries(maatVelden.map((v) => [v.sleutel, num(a.maten[v.sleutel])])),
       controlemetingen: Object.fromEntries(
-        MAAT_VELDEN.filter((v) => v.controle).map((v) => [v.sleutel, num(a.controle[v.sleutel])]),
+        maatVelden.filter((v) => v.controle).map((v) => [v.sleutel, num(a.controle[v.sleutel])]),
       ),
       gekozen_silhouet: a.silhouet,
-      pasvormantwoorden: a.pasvorm,
+      // Alleen antwoorden op de huidige vragen meesturen.
+      pasvormantwoorden: Object.fromEntries(
+        vragen.filter((q) => a.pasvorm[q.sleutel]).map((q) => [q.sleutel, a.pasvorm[q.sleutel]]),
+      ),
       hermeting,
     };
 
@@ -242,8 +261,9 @@ export function TestWizard({
         sleutel={resultaat.sleutel}
         titel={resultaat.titel}
         silhouet={silhouetten.find((s) => s.letter === ontleedTypeSleutel(resultaat.sleutel)?.code)}
-        kop={`Klaar, ${klantnaam}! Jouw type is`}
-        intro="Op basis van je maten en antwoorden hebben we je figuurtype bepaald. Hieronder lees je wat dat betekent."
+        kop={vulIn(teksten.uitslag.kop, { naam: klantnaam })}
+        intro={teksten.uitslag.intro}
+        teksten={teksten.uitslag}
       />
     );
   }
@@ -255,8 +275,10 @@ export function TestWizard({
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
       <div ref={kop} className="scroll-mt-4">
-        <p className="text-sm text-black/50 dark:text-white/50">Hoi {klantnaam}, welkom bij je kledingadviestest.</p>
-        <Voortgang stap={stap} bereikbaar={bereikbaar} gaNaar={gaNaar} />
+        <p className="text-sm text-black/50 dark:text-white/50">
+          {vulIn(teksten.algemeen.welkom, { naam: klantnaam })}
+        </p>
+        <Voortgang stappen={STAPPEN} stap={stap} bereikbaar={bereikbaar} gaNaar={gaNaar} />
       </div>
 
       <form
@@ -296,10 +318,7 @@ export function TestWizard({
           <div className="grid items-center gap-6 sm:grid-cols-[140px_1fr]">
             <Lichaam meet="lengte" titel="Lengte meten" className="mx-auto h-56 sm:h-64" />
             <div className="flex flex-col gap-4">
-              <p className="text-sm text-black/60 dark:text-white/60">
-                We beginnen eenvoudig. Met je lengte en gewicht bepalen we je categorie. Meet je lengte
-                zonder schoenen, met je rug tegen een muur.
-              </p>
+              <p className="whitespace-pre-line text-sm text-black/60 dark:text-white/60">{teksten.overJou.intro}</p>
               <Invoer
                 label="Lengte"
                 eenheid="cm"
@@ -322,9 +341,9 @@ export function TestWizard({
 
         {huidig.soort === "maten" && (
           <div className="flex flex-col gap-5">
-            {stap === EERSTE_MATEN_STAP && (
-              <p className="rounded-lg bg-black/5 px-4 py-3 text-sm text-black/70 dark:bg-white/10 dark:text-white/70">
-                💡 {MEET_TIP}
+            {stap === EERSTE_MATEN_STAP && teksten.meten.tip && (
+              <p className="whitespace-pre-line rounded-lg bg-black/5 px-4 py-3 text-sm text-black/70 dark:bg-white/10 dark:text-white/70">
+                💡 {teksten.meten.tip}
               </p>
             )}
             {huidig.velden.map((v) => (
@@ -337,6 +356,7 @@ export function TestWizard({
                 zetWaarde={(w) => zet("maten", v.sleutel, w)}
                 zetControle={(w) => zet("controle", v.sleutel, w)}
                 fout={toonFouten ? maatFout(v, a) : null}
+                tweeKeerHint={teksten.meten.twee_keer}
               />
             ))}
           </div>
@@ -344,9 +364,8 @@ export function TestWizard({
 
         {huidig.soort === "silhouet" && (
           <fieldset>
-            <legend className="mb-3 text-sm text-black/60 dark:text-white/60">
-              Ga voor de spiegel staan. Welk silhouet lijkt het meest op het jouwe? Twijfel je, kies dan
-              wat het dichtst in de buurt komt.
+            <legend className="mb-3 whitespace-pre-line text-sm text-black/60 dark:text-white/60">
+              {teksten.silhouet.intro}
             </legend>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {silhouetten.map((s) => {
@@ -385,7 +404,7 @@ export function TestWizard({
 
         {huidig.soort === "vragen" && (
           <div className="flex flex-col gap-6">
-            {PASVORMVRAGEN.map((q) => (
+            {huidig.vragen.map((q) => (
               <fieldset key={q.sleutel}>
                 <legend className="mb-2 text-sm font-medium">{q.vraag}</legend>
                 <div className="flex flex-wrap gap-2">
@@ -418,7 +437,17 @@ export function TestWizard({
           </div>
         )}
 
-        {huidig.soort === "controle" && <Overzicht a={a} gaNaar={gaNaar} silhouetten={silhouetten} />}
+        {huidig.soort === "controle" && (
+          <Overzicht
+            a={a}
+            gaNaar={gaNaar}
+            silhouetten={silhouetten}
+            stappen={STAPPEN}
+            maatVelden={maatVelden}
+            vragen={vragen}
+            intro={teksten.afronden.intro}
+          />
+        )}
 
         {fout && (
           <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
@@ -442,8 +471,8 @@ export function TestWizard({
           >
             {huidig.soort === "controle"
               ? bezig
-                ? "Even geduld, je advies wordt gemaakt…"
-                : "Test afronden"
+                ? teksten.afronden.bezig
+                : teksten.afronden.knop
               : `Volgende: ${STAPPEN[stap + 1].titel} →`}
           </button>
         </div>
@@ -453,10 +482,12 @@ export function TestWizard({
 }
 
 function Voortgang({
+  stappen: STAPPEN,
   stap,
   bereikbaar,
   gaNaar,
 }: {
+  stappen: Stap[];
   stap: number;
   bereikbaar: (i: number) => boolean;
   gaNaar: (i: number) => void;
@@ -479,7 +510,7 @@ function Voortgang({
           const klaar = i < stap;
           const actief = i === stap;
           return (
-            <li key={s.titel} ref={actief ? actiefRef : undefined} className="shrink-0">
+            <li key={i} ref={actief ? actiefRef : undefined} className="shrink-0">
               <button
                 type="button"
                 onClick={() => gaNaar(i)}
@@ -524,6 +555,7 @@ function MaatKaart({
   zetWaarde,
   zetControle,
   fout,
+  tweeKeerHint,
 }: {
   veld: MaatVeld;
   beeld?: string;
@@ -532,6 +564,7 @@ function MaatKaart({
   zetWaarde: (w: string) => void;
   zetControle: (w: string) => void;
   fout: string | null;
+  tweeKeerHint: string;
 }) {
   const label = veld.label.replace(" (optioneel)", "");
   const beideIngevuld = veld.controle && waarde !== "" && controle !== "";
@@ -561,7 +594,9 @@ function MaatKaart({
             <span className="ml-2 text-xs font-normal text-black/40 dark:text-white/40">optioneel</span>
           )}
         </h2>
-        <p className="text-sm leading-relaxed text-black/60 dark:text-white/60">{veld.instructie}</p>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-black/60 dark:text-white/60">
+          {veld.instructie}
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Invoer label={veld.controle ? "1e meting" : "Meting"} eenheid="cm" waarde={waarde} zet={zetWaarde} />
           {veld.controle && <Invoer label="2e meting (controle)" eenheid="cm" waarde={controle} zet={zetControle} />}
@@ -572,8 +607,8 @@ function MaatKaart({
           <p className={`text-sm ${komtOvereen ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300"}`}>
             {komtOvereen ? "✓ Je metingen komen overeen." : "Je metingen verschillen te veel. Meet nog een keer."}
           </p>
-        ) : veld.controle ? (
-          <p className="text-xs text-black/40 dark:text-white/40">Meet twee keer, zo weten we zeker dat de maat klopt.</p>
+        ) : veld.controle && tweeKeerHint ? (
+          <p className="text-xs text-black/40 dark:text-white/40">{tweeKeerHint}</p>
         ) : null}
       </div>
     </section>
@@ -584,10 +619,19 @@ function Overzicht({
   a,
   gaNaar,
   silhouetten,
+  stappen: STAPPEN,
+  maatVelden,
+  vragen,
+  intro,
 }: {
   a: Antwoorden;
   gaNaar: (i: number) => void;
   silhouetten: Silhouet[];
+  stappen: Stap[];
+  maatVelden: MaatVeld[];
+  vragen: PasvormVraag[];
+  /** Uitleg boven het overzicht (met opmaak). */
+  intro: string;
 }) {
   const stapVan = (sleutel: string) =>
     STAPPEN.findIndex((s) => s.soort === "maten" && s.velden.some((v) => v.sleutel === sleutel));
@@ -603,13 +647,13 @@ function Overzicht({
   const rijen: { label: string; waarde: string; stap: number }[] = [
     { label: "Lengte", waarde: `${a.lengte} cm`, stap: 0 },
     { label: "Gewicht", waarde: `${a.gewicht} kg`, stap: 0 },
-    ...MAAT_VELDEN.map((v) => ({
+    ...maatVelden.map((v) => ({
       label: v.label.replace(" (optioneel)", ""),
       waarde: a.maten[v.sleutel] ? `${a.maten[v.sleutel]} cm` : "—",
       stap: stapVan(v.sleutel),
     })),
     { label: "Silhouet", waarde: silhouet?.naam ?? "—", stap: STAPPEN.findIndex((s) => s.soort === "silhouet") },
-    ...PASVORMVRAGEN.map((q) => ({
+    ...vragen.map((q) => ({
       label: q.vraag,
       waarde: a.pasvorm[q.sleutel] ?? "—",
       stap: STAPPEN.findIndex((s) => s.soort === "vragen"),
@@ -618,10 +662,9 @@ function Overzicht({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-black/60 dark:text-white/60">
-        Bijna klaar! Kijk je antwoorden nog even na. Klopt alles, klik dan op <strong>Test afronden</strong>.
-        Je krijgt direct je type en je persoonlijke advies.
-      </p>
+      <div className="flex flex-col gap-2 text-sm text-black/60 dark:text-white/60 [&_a]:text-accent [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5">
+        <Opmaak tekst={intro} />
+      </div>
       {meldingen.map((m) => (
         <p
           key={m.code}
@@ -631,8 +674,8 @@ function Overzicht({
         </p>
       ))}
       <dl className="divide-y divide-black/10 rounded-2xl border border-black/10 dark:divide-white/10 dark:border-white/15">
-        {rijen.map((r) => (
-          <div key={r.label} className="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
+        {rijen.map((r, i) => (
+          <div key={i}className="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
             <dt className="text-black/60 dark:text-white/60">{r.label}</dt>
             <dd className="flex items-center gap-3 text-right font-medium">
               {r.waarde}

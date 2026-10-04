@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { leesMeetBeeldRijen } from "@/lib/meetbeelden";
-import { MAAT_VELDEN } from "@/lib/test-config";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { TEST_MATEN, maatVeldenMetTeksten } from "@/lib/inhoud/groepen/test";
 import { Lichaam } from "@/app/test/[token]/Lichaam";
 import { AdminNav, Melding } from "../AdminNav";
 import { FotoUpload } from "./FotoUpload";
@@ -15,8 +17,9 @@ export default async function MeetinstructiesPagina({
 }) {
   await vereisBeheerder();
   const { verwijderd } = await searchParams;
-  const beelden = await leesMeetBeeldRijen();
-  const verwijderdLabel = MAAT_VELDEN.find((v) => v.sleutel === verwijderd)?.label;
+  const [beelden, maten] = await Promise.all([leesMeetBeeldRijen(), leesSectie(TEST_MATEN)]);
+  const maatVelden = maatVeldenMetTeksten(maten);
+  const verwijderdLabel = maatVelden.find((v) => v.sleutel === verwijderd)?.label;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
@@ -28,12 +31,17 @@ export default async function MeetinstructiesPagina({
           om die tekening te vervangen. Een JPG-, PNG- of WebP-foto van maximaal 5 MB. Verwijder je de foto,
           dan wordt de tekening weer gebruikt.
         </p>
+        <p className="text-sm">
+          <Link href="/admin/teksten/test#test-maten" className="text-accent underline underline-offset-2">
+            Teksten van de metingen aanpassen
+          </Link>
+        </p>
       </div>
 
       {verwijderdLabel && <Melding soort="ok">De foto bij &lsquo;{verwijderdLabel}&rsquo; is verwijderd.</Melding>}
 
       <ul className="flex flex-col gap-4">
-        {MAAT_VELDEN.map((v) => {
+        {maatVelden.map((v) => {
           const beeld = beelden[v.sleutel];
           const label = v.label.replace(" (optioneel)", "");
           return (
@@ -54,7 +62,7 @@ export default async function MeetinstructiesPagina({
               </div>
               <div className="flex flex-col gap-3">
                 <h2 className="font-semibold">{label}</h2>
-                <p className="text-sm leading-relaxed text-black/60 dark:text-white/60">{v.instructie}</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-black/60 dark:text-white/60">{v.instructie}</p>
                 <div className="flex flex-wrap items-start gap-3">
                   <FotoUpload sleutel={v.sleutel} heeftFoto={Boolean(beeld)} />
                   {beeld && (
