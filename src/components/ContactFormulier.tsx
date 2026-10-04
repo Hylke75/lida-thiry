@@ -1,5 +1,7 @@
 "use client";
 
+import { meet } from "@/lib/analytics/meet";
+import { GEBEURTENISSEN } from "@/lib/analytics/regels";
 import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { SectieWaarden } from "@/lib/inhoud/schema";
 import type { CONTACT_FORMULIER } from "@/lib/inhoud/groepen/contact";
@@ -70,6 +72,7 @@ export function ContactFormulier({ teksten, privacy }: { teksten: ContactFormuli
       };
       if (res.ok) {
         setGelukt(true);
+        meet(GEBEURTENISSEN.contactVerzonden);
         formRef.current?.reset();
       } else if (data.velden && Object.keys(data.velden).length) {
         setVelden(data.velden);

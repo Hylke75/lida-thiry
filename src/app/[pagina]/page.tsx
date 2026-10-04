@@ -13,6 +13,8 @@ import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
 import { gebruikteBlokken, paginaOmschrijving } from "@/lib/paginas/beheer";
 import { haalPagina } from "@/lib/paginas/publiek";
 import { formulierSlugUitBlok } from "@/lib/paginas/regels";
+import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
+import { siteUrl } from "@/lib/site";
 
 // Beheerbare pagina's op /<slug> ("Over mij", "Contact", …).
 //
@@ -127,6 +129,17 @@ export default async function BeheerbarePagina({ params }: { params: Params }) {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10 sm:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: veiligeJson(
+            kruimelpadJsonLd(siteUrl(), [
+              { naam: "Home", pad: "/" },
+              { naam: p.titel, pad: `/${p.slug}` },
+            ]),
+          ),
+        }}
+      />
       <PaginaWeergave
         titel={p.titel}
         intro={p.intro}

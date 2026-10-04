@@ -6,7 +6,14 @@ import { after } from "next/server";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
-import { haalCampagne, probeerMisluktOpnieuw, startCampagne, verwerkWachtrij, verzendProblemen } from "@/lib/nieuwsbrief/verzenden";
+import {
+  haalCampagne,
+  kiesAbWinnaar,
+  probeerMisluktOpnieuw,
+  startCampagne,
+  verwerkWachtrij,
+  verzendProblemen,
+} from "@/lib/nieuwsbrief/verzenden";
 import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
 
 const PAD = "/admin/nieuwsbrief/campagnes";
@@ -73,6 +80,8 @@ export async function dupliceerCampagne(formData: FormData) {
       preheader: c.preheader,
       blokken: c.blokken,
       doelgroep: c.doelgroep,
+      onderwerp_b: c.onderwerp_b,
+      ab_percentage: c.ab_percentage,
     })
     .select("id")
     .single();
@@ -110,8 +119,40 @@ export async function verzendNu(id: string): Promise<Uitkomst> {
     bericht:
       r.aantal === 0
         ? "Er waren geen ontvangers in deze doelgroep; er is niets verstuurd."
-        : `De campagne wordt nu verstuurd naar ${r.aantal.toLocaleString("nl-NL")} ${r.aantal === 1 ? "ontvanger" : "ontvangers"}.`,
+        : r.testgroep
+          ? `De A/B-test is gestart: ${r.testgroep.toLocaleString("nl-NL")} van de ${r.aantal.toLocaleString("nl-NL")} ontvangers krijgen nu onderwerp A of B. Na de wachttijd krijgt de rest het winnende onderwerp.`
+          : `De campagne wordt nu verstuurd naar ${r.aantal.toLocaleString("nl-NL")} ${r.aantal === 1 ? "ontvanger" : "ontvangers"}.`,
   };
+}
+
+/** A/B-test: kies nu de winnaar (op basis van de cijfers tot nu toe) en verstuur naar de rest. */
+export async function kiesWinnaarNu(id: string): Promise<Uitkomst> {
+  await vereisBeheerder();
+  if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
+  let r;
+  try {
+    r = await kiesAbWinnaar(id, { direct: true });
+  } catch (e) {
+    return { ok: false, fouten: [`De rest van de doelgroep kon niet worden ingepland (${e instanceof Error ? e.message : "onbekend"}).`] };
+  }
+  if (!r.ok) return { ok: false, fouten: [r.fout] };
+  verwerkStraks();
+  vernieuw(id);
+  revalidatePath(`${PAD}/${id}/rapport`);
+  const reden = r.reden === "open" ? "meer geopend" : r.reden === "klik" ? "evenveel geopend, meer geklikt" : "gelijke cijfers; dan wint A";
+  return {
+    ok: true,
+    bericht: `Onderwerp ${r.winnaar.toUpperCase()} wint (${reden}). De rest van de doelgroep krijgt nu dit onderwerp.`,
+  };
+}
+
+/** Formulierversie van kiesWinnaarNu (voor het rapport). */
+export async function kiesWinnaarNuFormulier(formData: FormData) {
+  await vereisBeheerder();
+  const id = leesId(formData);
+  if (!id) redirect(`${PAD}?fout=onbekend`);
+  const r = await kiesWinnaarNu(id);
+  redirect(`${PAD}/${id}/rapport?${r.ok ? "winnaar=1" : "winnaar=0"}`);
 }
 
 export async function planIn(id: string, moment: string): Promise<Uitkomst> {

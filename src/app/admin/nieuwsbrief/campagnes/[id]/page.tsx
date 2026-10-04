@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { haalCampagne } from "@/lib/nieuwsbrief/verzenden";
+import { abUitCampagne } from "@/lib/nieuwsbrief/ab-test";
 import { standaardInplanmoment } from "@/lib/nieuwsbrief/tijd";
 import { Melding } from "../../../AdminNav";
 import { alsInhoud, laadEditorContext } from "../../_editor/laden";
@@ -29,6 +30,7 @@ export default async function CampagnePagina({
   if (c.soort === "automatisch") redirect(`/admin/nieuwsbrief/automatisch/${id}`);
 
   const context = await laadEditorContext(true);
+  const ab = abUitCampagne(c);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-8">
@@ -56,6 +58,7 @@ export default async function CampagnePagina({
         tags={context.tags}
         typen={context.typen}
         testAdres={gebruiker.email ?? ""}
+        ab={{ wachtUren: ab?.wachtUren ?? null, percentage: ab?.percentage ?? null, winnaar: c.ab_winnaar }}
       />
     </main>
   );

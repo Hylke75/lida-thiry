@@ -138,6 +138,8 @@ Als je je aanmeldt voor onze nieuwsbrief, via het formulier op de website of met
 
 Deze website gebruikt geen tracking- of advertentiecookies. We gebruiken alleen functionele cookies die nodig zijn om de website en de beveiligde beheeromgeving te laten werken.
 
+Om te zien hoe de website wordt gebruikt en hoe snel hij laadt, houden we anonieme bezoekersstatistieken bij via Vercel Web Analytics en Speed Insights: zonder cookies, zonder je te volgen over andere websites en zonder gegevens die tot jou herleidbaar zijn.
+
 ## 9. Beveiliging
 
 We nemen passende technische en organisatorische maatregelen om je gegevens te beschermen, zoals versleutelde verbindingen (https), toegangsbeperking tot de beheeromgeving en persoonlijke, moeilijk te raden testlinks.

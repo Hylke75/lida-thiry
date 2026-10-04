@@ -266,6 +266,12 @@ export default async function NieuwsbriefOverzicht() {
           >
             Automatische mails
           </Link>
+          <Link
+            href="/admin/nieuwsbrief/afleverbaarheid"
+            className="rounded-full border border-black/15 px-4 py-2 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
+          >
+            Afleverbaarheid
+          </Link>
         </div>
       </div>
 
