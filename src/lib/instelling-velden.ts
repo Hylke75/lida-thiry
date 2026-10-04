@@ -106,6 +106,22 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
 /** Instellingen die niet meer gebruikt worden en daarom niet getoond worden. */
 export const VEROUDERDE_INSTELLINGEN = new Set(["doorlooptijd_werkdagen"]);
 
+/** Instellingen met een eigen beheerscherm (Website → Instellingen); niet op de algemene pagina. */
+export const WEBSITE_INSTELLINGEN = new Set([
+  "site_naam",
+  "site_omschrijving",
+  "logo_url",
+  "favicon_url",
+  "deel_afbeelding_url",
+  "social_instagram",
+  "social_facebook",
+  "social_linkedin",
+  "social_pinterest",
+  "social_youtube",
+  "social_tiktok",
+  "homepage_indeling",
+]);
+
 /** Veld voor een sleutel; onbekende sleutels worden een gewoon tekstveld. */
 export function veldVoor(sleutel: string, omschrijving?: string | null): InstellingVeld {
   return (
