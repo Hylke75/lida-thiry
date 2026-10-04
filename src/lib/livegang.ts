@@ -4,6 +4,7 @@
 
 import { bevatPlaceholder, combineer, type Groep } from "./inhoud/schema";
 import { CATEGORIEEN, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
+import { vapidCompleet } from "./push/regels";
 
 export interface LivegangLink {
   href: string;
@@ -35,6 +36,9 @@ export interface LivegangOmgeving {
   RESEND_WEBHOOK_SECRET?: string;
   NIEUWSBRIEF_GEHEIM?: string;
   ANTHROPIC_API_KEY?: string;
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
 }
 
 export interface LivegangGegevens {
@@ -412,6 +416,21 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
         "Maak een API-sleutel aan op console.anthropic.com en zet die in ANTHROPIC_API_KEY. " +
         VERCEL_UITLEG,
     links: [{ href: "/admin/blog", label: "Naar de blog" }],
+  });
+
+  // Pushmeldingen ----------------------------------------------------------------
+  const push = vapidCompleet(env);
+  items.push({
+    id: "pushmeldingen",
+    label: "Pushmeldingen ingesteld (VAPID-sleutels)",
+    ok: push,
+    niveau: "aanbevolen",
+    detail: push
+      ? undefined
+      : "Met pushmeldingen krijg je op je telefoon direct bericht bij een betaalde bestelling of een nieuw contactbericht. " +
+        "Maak een sleutelpaar met `node scripts/vapid-sleutels.mjs mailto:jij@jouwdomein.nl` en zet VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY en VAPID_SUBJECT. " +
+        VERCEL_UITLEG,
+    links: [{ href: "/admin/meldingen", label: "Naar de meldingen" }],
   });
 
   return items;
