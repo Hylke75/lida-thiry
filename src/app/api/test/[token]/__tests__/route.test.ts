@@ -120,6 +120,26 @@ describe("POST /api/test/[token]", () => {
     expect(leverAdvies).toHaveBeenCalledWith("order-1");
   });
 
+  it("bewaart alleen pasvormantwoorden op bestaande vragen en opties", async () => {
+    const res = await POST(
+      verzoek(
+        geldigeBody({
+          pasvormantwoorden: {
+            gewicht_erbij: "Rond de taille",
+            taille_zichtbaar: "Verzonnen optie",
+            onbekende_vraag: "Bovenlichaam",
+          },
+        }),
+      ),
+      ctx,
+    );
+    expect(res.status).toBe(200);
+    const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
+    expect((upsert?.args[0] as { pasvormantwoorden: unknown }).pasvormantwoorden).toEqual({
+      gewicht_erbij: "Rond de taille",
+    });
+  });
+
   it("weigert een onmogelijke lengte met 400", async () => {
     const res = await POST(verzoek(geldigeBody({ lengte_cm: 20 })), ctx);
     expect(res.status).toBe(400);

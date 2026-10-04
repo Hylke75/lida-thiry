@@ -12,6 +12,8 @@ import {
 import { haalFfitToewijzing, haalSilhouetten } from "@/lib/lichaamstypes";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { TEST_VRAGEN, pasvormVragen, schoonPasvormAntwoorden } from "@/lib/inhoud/groepen/test";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -92,7 +94,8 @@ export async function POST(
       heup: getal((body.controlemetingen as Record<string, unknown>)?.heup),
     },
     gekozen_silhouet: body.gekozen_silhouet as TestInvoer["gekozen_silhouet"],
-    pasvormantwoorden: (body.pasvormantwoorden ?? {}) as Record<string, string>,
+    // Telt niet mee in de berekening; wordt vlak voor het opslaan opgeschoond.
+    pasvormantwoorden: {},
     hermeting: body.hermeting === true,
   };
 
@@ -118,6 +121,13 @@ export async function POST(
     });
   }
 
+  // Dezelfde (beheerbare) pasvormvragen als in de test: alleen antwoorden op
+  // bestaande vragen met een bestaande antwoordmogelijkheid worden bewaard.
+  const pasvormantwoorden = schoonPasvormAntwoorden(
+    body.pasvormantwoorden,
+    pasvormVragen(await leesSectie(TEST_VRAGEN)),
+  );
+
   const supabase = adminClient();
   const categorie = uitkomst.categorie;
 
@@ -136,7 +146,7 @@ export async function POST(
       schouder: invoer.maten.schouder ?? null,
       controlemetingen: invoer.controlemetingen,
       gekozen_silhouet: invoer.gekozen_silhouet,
-      pasvormantwoorden: invoer.pasvormantwoorden,
+      pasvormantwoorden,
       ffit_type: uitkomst.ffit_type,
       letter: uitkomst.letter,
     },

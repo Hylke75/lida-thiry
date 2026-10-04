@@ -9,6 +9,8 @@ import { signedFactuurUrl } from "@/lib/factuur";
 import { leesInstelling } from "@/lib/instellingen";
 import { stuurTestlinkMail } from "@/lib/resend";
 import { tokenVerlooptOp } from "@/lib/tokens";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { TEST_VRAGEN } from "@/lib/inhoud/groepen/test";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
 
@@ -153,7 +155,11 @@ export default async function OrderDetail({
   const factuurUrl = order.factuur_pad ? await signedFactuurUrl(order.factuur_pad) : null;
   const { data: r } = await supabase.from("testresultaten").select("*").eq("order_id", id).maybeSingle();
   const cm = (v: number | null | undefined) => (v == null ? "–" : `${v} cm`);
-  const antwoorden = (r?.pasvormantwoorden ?? {}) as Record<string, string>;
+  const antwoorden = (r?.pasvormantwoorden ?? {}) as Record<string, unknown>;
+  // Toon de huidige vraagtekst; is de vraag inmiddels verwijderd, dan de opgeslagen sleutel.
+  const vraagTekst = new Map(
+    (await leesSectie(TEST_VRAGEN)).vragen.map((q) => [q._id, q.vraag.trim()] as const),
+  );
   const m = melding ? MELDINGEN[melding] : undefined;
   const betaald = BETAALDE_STATUSSEN.includes(order.status);
 
@@ -202,7 +208,7 @@ export default async function OrderDetail({
           <Regel label="FFIT-type" waarde={r.ffit_type ?? "–"} />
           <Regel label="Gekozen silhouet" waarde={r.gekozen_silhouet ?? "–"} />
           {Object.entries(antwoorden).map(([k, v]) => (
-            <Regel key={k} label={k} waarde={String(v)} />
+            <Regel key={k} label={vraagTekst.get(k) || k} waarde={String(v)} />
           ))}
         </section>
       ) : (

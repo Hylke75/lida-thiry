@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
+import type { SectieWaarden } from "@/lib/inhoud/schema";
+import type { TEST_UITSLAG } from "@/lib/inhoud/groepen/test";
 import { Lichaam } from "./Lichaam";
 
 export function TypeOnthulling({
@@ -12,6 +14,7 @@ export function TypeOnthulling({
   kop,
   intro,
   silhouet,
+  teksten,
 }: {
   token: string;
   sleutel: string;
@@ -21,6 +24,8 @@ export function TypeOnthulling({
   titel: string | null;
   kop: string;
   intro: string;
+  /** Beheerbare teksten van het uitslagscherm. */
+  teksten: Pick<SectieWaarden<typeof TEST_UITSLAG>, "silhouet_label" | "download_knop" | "download_uitleg">;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-4 py-10 sm:px-8">
@@ -52,7 +57,7 @@ export function TypeOnthulling({
           {silhouet && (
             <>
               <p className="text-xs font-medium uppercase tracking-widest text-foreground/50">
-                Jouw silhouet
+                {teksten.silhouet_label}
               </p>
               <h2 className="text-2xl font-semibold">{silhouet.naam}</h2>
               {silhouet.alias && <p className="-mt-2 text-sm text-foreground/55">ook wel {silhouet.alias}</p>}
@@ -78,12 +83,9 @@ export function TypeOnthulling({
           href={`/api/test/${token}/pdf`}
           className="rounded-full bg-accent px-8 py-4 text-base font-medium text-background shadow-sm transition-opacity hover:opacity-90"
         >
-          Download je persoonlijke advies (PDF)
+          {teksten.download_knop}
         </a>
-        <p className="max-w-sm text-sm text-foreground/60">
-          In je advies lees je precies welke kleding, vormen en stoffen jouw figuur het mooist laten
-          uitkomen. We sturen het ook naar je e-mail.
-        </p>
+        <p className="max-w-sm whitespace-pre-line text-sm text-foreground/60">{teksten.download_uitleg}</p>
         <Link
           href="/"
           className="mt-2 text-sm text-foreground/50 underline underline-offset-4 hover:text-foreground/80"

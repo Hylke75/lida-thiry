@@ -1,8 +1,10 @@
 import type { Groep, Sectie } from "./schema";
 import { WEBSITE } from "./groepen/website";
+import { TEST } from "./groepen/test";
+import { EMAILS } from "./groepen/emails";
 
 /** Alle groepen beheerbare teksten, in de volgorde van het beheerscherm. */
-export const GROEPEN: readonly Groep[] = [WEBSITE];
+export const GROEPEN: readonly Groep[] = [WEBSITE, TEST, EMAILS];
 
 export function vindGroep(sleutel: string): Groep | undefined {
   return GROEPEN.find((g) => g.sleutel === sleutel);

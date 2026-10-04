@@ -1,6 +1,7 @@
-// Configuratie voor de test-UI. Teksten en beeldverwijzingen zijn placeholders
-// (OPEN-punt #7: definitieve afbeeldingen, meetinstructie-video's en pasvormvragen
-// volgen). Alles staat hier zodat het zonder codewijziging aangepast kan worden.
+// Configuratie voor de test-UI: de vaste opbouw (welke maten, verplicht,
+// controlemeting, indeling in stappen) en de standaardteksten. De teksten zelf
+// (labels, instructies, meettip, pasvormvragen) zijn aan te passen in
+// Beheer → Teksten → Test; zie src/lib/inhoud/groepen/test.ts.
 
 
 export interface MaatVeld {
@@ -65,11 +66,13 @@ export const MAAT_VELDEN: MaatVeld[] = [
 export type MaatSleutel = MaatVeld["sleutel"];
 
 /** Indeling van de maten over de tabbladen van de test (van boven naar beneden). */
-export const MAAT_GROEPEN: { titel: string; velden: MaatSleutel[] }[] = [
-  { titel: "Bovenlichaam", velden: ["schouder", "borst"] },
-  { titel: "Taille", velden: ["taille", "hoge_heup"] },
-  { titel: "Heupen en benen", velden: ["heup", "binnenbeen"] },
-];
+export const MAAT_GROEPEN = [
+  { sleutel: "bovenlichaam", titel: "Bovenlichaam", velden: ["schouder", "borst"] },
+  { sleutel: "taille", titel: "Taille", velden: ["taille", "hoge_heup"] },
+  { sleutel: "heupen_benen", titel: "Heupen en benen", velden: ["heup", "binnenbeen"] },
+] as const satisfies readonly { sleutel: string; titel: string; velden: readonly MaatSleutel[] }[];
+
+export type MaatGroepSleutel = (typeof MAAT_GROEPEN)[number]["sleutel"];
 
 /** Halve breedtes (px in de illustratie) van een lichaamsvorm. */
 export interface Lichaamsvorm {
@@ -90,7 +93,8 @@ export interface Pasvormvraag {
   opties: string[];
 }
 
-// Configureerbare pasvormvragen (placeholders).
+// Standaard-pasvormvragen. De sleutel is ook de vaste id van de vraag in
+// Beheer → Teksten en daarmee de sleutel waaronder het antwoord wordt opgeslagen.
 export const PASVORMVRAGEN: Pasvormvraag[] = [
   {
     sleutel: "gewicht_erbij",
