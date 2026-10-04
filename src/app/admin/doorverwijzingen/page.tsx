@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { alleDoorverwijzingen } from "@/lib/doorverwijzingen/beheer";
 import { bestemmingsPad, filterDoorverwijzingen, vanInLus, type DoorverwijzingRij } from "@/lib/doorverwijzingen/regels";
-import { AdminNav, Melding, type AdminPad } from "../AdminNav";
+import { AdminNav, Melding } from "../AdminNav";
 import { verwijderDoorverwijzing } from "./acties";
 import { DoorverwijzingFormulier } from "./Formulier";
 import { ImportDoorverwijzingen } from "./Import";
@@ -44,7 +44,7 @@ export default async function DoorverwijzingenPage({ searchParams }: { searchPar
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 p-8">
       {/* Cast: de link "Doorverwijzingen" komt in het menu onder Website. */}
-      <AdminNav actief={PAD as AdminPad} />
+      <AdminNav actief="/admin/doorverwijzingen" />
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Doorverwijzingen</h1>
         <p className={`text-sm ${zacht}`}>
