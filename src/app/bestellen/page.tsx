@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Fragment, type ReactNode } from "react";
 import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
 import { BestelFormulier } from "./BestelFormulier";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +15,18 @@ export const metadata: Metadata = {
   alternates: { canonical: "/bestellen" },
 };
 
+/** Zet {prijs} in een tekst om in het meegegeven element. */
+function metPrijs(tekst: string, prijs: ReactNode): ReactNode {
+  return tekst.split("{prijs}").map((deel, i) => (
+    <Fragment key={i}>
+      {i > 0 && prijs}
+      {deel}
+    </Fragment>
+  ));
+}
+
 export default async function BestellenPage() {
+  const [pagina, formulier] = await Promise.all([leesSectie(BESTELLEN_PAGINA), leesSectie(BESTELLEN_FORMULIER)]);
   const gratisTest = Boolean(process.env.GRATIS_TEST);
   let prijsLabel: string | null = null;
   let prijsBekend = false;
@@ -39,23 +53,22 @@ export default async function BestellenPage() {
         >
           ← Terug
         </Link>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">Bestellen</h1>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{pagina.titel}</h1>
         {prijsLabel && (
           <p className="mt-2 text-foreground/70">
-            Online kledingadviestest — <strong className="text-accent">{prijsLabel}</strong>{" "}
-            <span className="text-sm text-foreground/50">(incl. btw)</span>
+            {metPrijs(pagina.prijsregel, <strong className="text-accent">{prijsLabel}</strong>)}{" "}
+            <span className="text-sm text-foreground/50">{pagina.btw}</span>
           </p>
         )}
       </div>
 
       {prijsBekend || gratisTest ? (
         <div className="rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5 sm:p-8">
-          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} />
+          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} teksten={formulier} />
         </div>
       ) : (
-        <p className="rounded-lg border border-accent/20 bg-accent-zacht px-4 py-3 text-sm text-foreground/70">
-          De prijs is nog niet ingesteld, dus bestellen is nu niet mogelijk. Kom
-          binnenkort terug.
+        <p className="rounded-lg border border-accent/20 bg-accent-zacht px-4 py-3 text-sm whitespace-pre-line text-foreground/70">
+          {pagina.geenPrijs}
         </p>
       )}
     </main>

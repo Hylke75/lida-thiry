@@ -1,13 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
+import { parseerOpmaak, type Inline } from "@/lib/inhoud/opmaak";
+import type { SectieWaarden } from "@/lib/inhoud/schema";
+import type { BESTELLEN_FORMULIER } from "@/lib/inhoud/groepen/bestellen";
+
+export type BestelFormulierTeksten = SectieWaarden<typeof BESTELLEN_FORMULIER>;
 
 export function BestelFormulier({
   prijsBekend,
   gratisTest,
+  teksten,
 }: {
   prijsBekend: boolean;
   gratisTest: boolean;
+  teksten: BestelFormulierTeksten;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [bezig, setBezig] = useState(false);
@@ -43,13 +50,13 @@ export function BestelFormulier({
       });
       const data = await res.json();
       if (!res.ok) {
-        setFout(data.fout || "Er ging iets mis.");
+        setFout(data.fout || teksten.foutAlgemeen);
         setBezig(false);
         return;
       }
       window.location.href = data.testUrl || data.checkoutUrl;
     } catch {
-      setFout("Kon niet doorgaan. Probeer het opnieuw.");
+      setFout(teksten.foutVerbinding);
       setBezig(false);
     }
   }
@@ -77,22 +84,13 @@ export function BestelFormulier({
       <label className="flex items-start gap-3 text-sm text-foreground/70">
         <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1 accent-accent" />
         <span>
-          Ik ga akkoord met de{" "}
-          <a href="/voorwaarden" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">
-            voorwaarden
-          </a>{" "}
-          en de{" "}
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">
-            privacyverklaring
-          </a>
-          .
+          <VinkjeTekst tekst={teksten.akkoordVoorwaarden} />
         </span>
       </label>
       <label className="flex items-start gap-3 text-sm text-foreground/70">
         <input type="checkbox" name="directe_levering_akkoord" required className="mt-1 accent-accent" />
         <span>
-          Ik ga ermee akkoord dat de digitale inhoud direct wordt geleverd en dat
-          ik daarmee mijn herroepingsrecht verlies.
+          <VinkjeTekst tekst={teksten.akkoordLevering} />
         </span>
       </label>
 
@@ -109,7 +107,7 @@ export function BestelFormulier({
           disabled={bezig}
           className="mt-2 rounded-full bg-accent px-6 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {bezig ? "Bezig…" : "Naar betaling"}
+          {bezig ? teksten.knopBezig : teksten.knop}
         </button>
       )}
       {gratisTest && (
@@ -119,10 +117,67 @@ export function BestelFormulier({
           disabled={bezig}
           className="rounded-full border border-accent/40 px-6 py-3 text-sm font-medium text-accent hover:bg-accent-zacht disabled:opacity-50"
         >
-          {bezig ? "Bezig…" : "Gratis testen (zonder betalen)"}
+          {bezig ? teksten.knopBezig : "Gratis testen (zonder betalen)"}
         </button>
       )}
     </form>
+  );
+}
+
+/**
+ * Tekst bij een vinkje, met **vet** en [links](url). Alle links openen in een
+ * nieuw tabblad, zodat het half ingevulde formulier niet verloren gaat. Alinea's,
+ * koppen en opsommingen worden als losse regels getoond (binnen een label past
+ * geen blokopmaak).
+ */
+function VinkjeTekst({ tekst }: { tekst: string }) {
+  const regels = parseerOpmaak(tekst).flatMap((b) =>
+    b.soort === "lijst" ? b.items : b.soort === "blok" ? [] : [b.inhoud],
+  );
+  return (
+    <>
+      {regels.map((inhoud, i) => (
+        <Fragment key={i}>
+          {i > 0 && <br />}
+          <InlineTekst delen={inhoud} />
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function InlineTekst({ delen }: { delen: Inline[] }) {
+  return (
+    <>
+      {delen.map((d, i) => {
+        switch (d.soort) {
+          case "tekst":
+            return <Fragment key={i}>{d.tekst}</Fragment>;
+          case "regel":
+            return <br key={i} />;
+          case "vet":
+            return (
+              <strong key={i}>
+                <InlineTekst delen={d.kinderen} />
+              </strong>
+            );
+          case "link":
+            return (
+              <a
+                key={i}
+                href={d.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline underline-offset-2"
+              >
+                <InlineTekst delen={d.kinderen} />
+              </a>
+            );
+          case "variabele":
+            return <Fragment key={i}>{`{${d.naam}}`}</Fragment>;
+        }
+      })}
+    </>
   );
 }
 

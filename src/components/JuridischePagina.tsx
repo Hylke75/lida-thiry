@@ -28,7 +28,7 @@ export function JuridischePagina({
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{titel}</h1>
         <p className="mt-2 text-sm text-foreground/50">Laatst bijgewerkt: {bijgewerkt}</p>
       </header>
-      <div className="flex flex-col gap-4 leading-relaxed text-foreground/80 [&_h2]:mt-6 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
+      <div className="flex flex-col gap-4 leading-relaxed text-foreground/80 [&_h2]:mt-6 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
         {children}
       </div>
     </main>

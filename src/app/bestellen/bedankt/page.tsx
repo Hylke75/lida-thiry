@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { adminClient } from "@/lib/supabase/admin";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { BESTELLEN_BETAALD, BESTELLEN_MISLUKT, BESTELLEN_VERWERKEN } from "@/lib/inhoud/groepen/bestellen";
 import { AutoVernieuwen } from "./AutoVernieuwen";
 
 export const dynamic = "force-dynamic";
@@ -34,46 +36,44 @@ export default async function BedanktPage({
   }
 
   const betaald = status === "betaald" || status === "test_afgerond" || status === "advies_verzonden";
+  const mislukt = status === "betaling_mislukt" || status === "verlopen";
+  const [tBetaald, tMislukt, tVerwerken] = await Promise.all([
+    leesSectie(BESTELLEN_BETAALD),
+    leesSectie(BESTELLEN_MISLUKT),
+    leesSectie(BESTELLEN_VERWERKEN),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
       <div className="flex flex-col gap-6 rounded-2xl bg-kaart p-8 shadow-sm ring-1 ring-foreground/5">
       {betaald ? (
         <>
-          <h1 className="text-2xl font-semibold tracking-tight">Bedankt voor je bestelling!</h1>
-          <p className="text-foreground/70">
-            Je betaling is ontvangen. Je kunt de test meteen starten. We hebben je
-            de link ook gemaild, zodat je later verder kunt gaan.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{tBetaald.titel}</h1>
+          <p className="whitespace-pre-line text-foreground/70">{tBetaald.tekst}</p>
           {token && (
             <Link
               href={`/test/${token}`}
               className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
             >
-              Start de test →
+              {tBetaald.knop}
             </Link>
           )}
         </>
-      ) : status === "betaling_mislukt" || status === "verlopen" ? (
+      ) : mislukt ? (
         <>
-          <h1 className="text-2xl font-semibold tracking-tight">Betaling niet gelukt</h1>
-          <p className="text-foreground/70">
-            Je betaling is niet afgerond; er is niets afgeschreven. Probeer het gerust opnieuw.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{tMislukt.titel}</h1>
+          <p className="whitespace-pre-line text-foreground/70">{tMislukt.tekst}</p>
           <Link
             href="/bestellen"
             className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
           >
-            Opnieuw proberen
+            {tMislukt.knop}
           </Link>
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-semibold tracking-tight">We verwerken je betaling</h1>
-          <p className="text-foreground/70">
-            Zodra de betaling is bevestigd, verschijnt hier de knop om de test te
-            starten. Dit duurt meestal maar een paar seconden.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{tVerwerken.titel}</h1>
+          <p className="whitespace-pre-line text-foreground/70">{tVerwerken.tekst}</p>
           {status === "aangemaakt" && <AutoVernieuwen />}
         </>
       )}
