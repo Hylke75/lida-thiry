@@ -5,7 +5,12 @@
 
 import type { FfitType } from "../types";
 
-export type Figuurletter = "X" | "A" | "V" | "H" | "8";
+/**
+ * Code van een lichaamstype (X, A, V, H, 8 of een in beheer toegevoegde code).
+ * De actuele koppeling staat in de database (ffit_toewijzing); deze tabel is de
+ * oorspronkelijke standaard en dient als terugval.
+ */
+export type Figuurletter = string;
 
 export const FFIT_NAAR_LETTER: Record<
   Exclude<FfitType, "Geen type">,

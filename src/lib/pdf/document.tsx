@@ -1,3 +1,4 @@
+import { blokken, inlineDelen, zonderOpmaak } from "./opmaak";
 import {
   Document,
   Page,
@@ -24,11 +25,16 @@ export interface PdfMaten {
   schouder: number | null;
 }
 
+export interface PdfBeeld {
+  /** Data-URI van het beeld. */
+  src: string;
+  bijschrift?: string | null;
+}
+
 export interface PdfSectie {
   kop: string;
   tekst: string;
-  /** Data-URI's van bijbehorende afbeeldingen. */
-  beelden?: string[];
+  beelden?: PdfBeeld[];
 }
 
 export interface PdfSilhouet {
@@ -115,7 +121,10 @@ const styles = StyleSheet.create({
   bulletTeken: { width: 12, color: kleur.accent },
   para: { marginBottom: 6 },
   beeldenRij: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
-  beeld: { width: 96, marginRight: 6, marginBottom: 6 },
+  // Alle beelden zijn 2:3 (beeldbank-standaard): vaste tegels, 4 per rij.
+  beeldKader: { width: 112, marginRight: 8, marginBottom: 8 },
+  beeld: { width: 112, height: 168, objectFit: "contain" },
+  bijschrift: { fontSize: 7.5, color: "#6b6b6b", marginTop: 2, lineHeight: 1.3 },
   voettekst: {
     position: "absolute",
     // A4 is 841,89pt hoog; 'bottom' wordt bij doorlopende pagina's verkeerd berekend.
@@ -133,39 +142,21 @@ const styles = StyleSheet.create({
 });
 
 // Ruwe markdown-achtige opmaak opschonen naar leesbare tekst.
-function schoon(tekst: string): string {
-  return tekst
-    .replace(/<\/?u>/g, "")
-    .replace(/\*\*/g, "")
-    .replace(/\*/g, "")
-    .replace(/\\$/gm, "")
-    .trim();
-}
-
-function blokken(tekst: string): { type: "bullet" | "para"; tekst: string }[] {
-  const uit: { type: "bullet" | "para"; tekst: string }[] = [];
-  let para: string[] = [];
-  const flush = () => {
-    if (para.length) {
-      uit.push({ type: "para", tekst: para.join(" ") });
-      para = [];
-    }
-  };
-  for (const rawRegel of schoon(tekst).split("\n")) {
-    const regel = rawRegel.trim();
-    if (!regel) {
-      flush();
-      continue;
-    }
-    if (/^[-•]\s+/.test(regel)) {
-      flush();
-      uit.push({ type: "bullet", tekst: regel.replace(/^[-•]\s+/, "") });
-    } else {
-      para.push(regel);
-    }
-  }
-  flush();
-  return uit;
+/** Regel met vet/cursief als geneste react-pdf Text-delen. */
+function Opgemaakt({ tekst }: { tekst: string }) {
+  return (
+    <>
+      {inlineDelen(tekst).map((d, i) =>
+        d.vet || d.cursief ? (
+          <Text key={i} style={{ fontFamily: d.vet ? "Helvetica-Bold" : "Helvetica-Oblique" }}>
+            {d.tekst}
+          </Text>
+        ) : (
+          d.tekst
+        ),
+      )}
+    </>
+  );
 }
 
 /** Het silhouet als vectortekening; dezelfde geometrie als op de website. */
@@ -308,7 +299,7 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties, si
             {secties.map((s, i) => (
               <View key={i} style={styles.inhoudRij}>
                 <Text style={styles.inhoudNummer}>{i + 1}.</Text>
-                <Text style={{ flex: 1 }}>{schoon(s.kop)}</Text>
+                <Text style={{ flex: 1 }}>{zonderOpmaak(s.kop)}</Text>
               </View>
             ))}
           </View>
@@ -318,26 +309,31 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties, si
           <View key={i}>
             <View style={styles.sectieKop} minPresenceAhead={60} wrap={false}>
               <Text style={styles.sectieNummer}>{i + 1}.</Text>
-              <Text style={styles.sectieTitel}>{schoon(s.kop)}</Text>
+              <Text style={styles.sectieTitel}>{zonderOpmaak(s.kop)}</Text>
             </View>
             {blokken(s.tekst).map((b, j) =>
               b.type === "bullet" ? (
-                <View key={j} style={styles.bullet}>
+                <View key={j} style={styles.bullet} wrap={false}>
                   <Text style={styles.bulletTeken}>•</Text>
-                  <Text style={{ flex: 1 }}>{b.tekst}</Text>
+                  <Text style={{ flex: 1 }}>
+                    <Opgemaakt tekst={b.tekst} />
+                  </Text>
                 </View>
               ) : (
                 <Text key={j} style={styles.para}>
-                  {b.tekst}
+                  <Opgemaakt tekst={b.tekst} />
                 </Text>
               ),
             )}
             {s.beelden && s.beelden.length > 0 && (
               <View style={styles.beeldenRij}>
-                {s.beelden.map((src, k) => (
-                  // react-pdf Image (geen HTML img); alt bestaat hier niet.
-                  // eslint-disable-next-line jsx-a11y/alt-text
-                  <Image key={k} src={src} style={styles.beeld} />
+                {s.beelden.map((b, k) => (
+                  <View key={k} style={styles.beeldKader} wrap={false}>
+                    {/* react-pdf Image (geen HTML img); alt bestaat hier niet. */}
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                    <Image src={b.src} style={styles.beeld} />
+                    {b.bijschrift ? <Text style={styles.bijschrift}>{b.bijschrift}</Text> : null}
+                  </View>
                 ))}
               </View>
             )}

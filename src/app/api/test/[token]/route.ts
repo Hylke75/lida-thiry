@@ -9,7 +9,7 @@ import {
   STANDAARD_ZANDLOPER_VARIANT,
   type ZandloperVariant,
 } from "@/rekenkern/config/ffit-regels";
-import { SILHOUETTEN } from "@/lib/test-config";
+import { haalFfitToewijzing, haalSilhouetten } from "@/lib/lichaamstypes";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
 
@@ -69,7 +69,8 @@ export async function POST(
       { status: 400 },
     );
   }
-  if (!SILHOUETTEN.some((s) => s.letter === body.gekozen_silhouet)) {
+  const silhouetten = await haalSilhouetten();
+  if (!silhouetten.some((s) => s.letter === body.gekozen_silhouet)) {
     return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
   }
 
@@ -97,7 +98,7 @@ export async function POST(
 
   const variant = ((await leesInstelling("zandloper_variant")) ||
     STANDAARD_ZANDLOPER_VARIANT) as ZandloperVariant;
-  const uitkomst = verwerkTest(invoer, variant);
+  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing());
 
   // Tussenstappen: niets opslaan.
   if (uitkomst.soort === "opnieuw_meten") {
@@ -108,7 +109,12 @@ export async function POST(
       soort: "silhouet_verschil",
       gekozenLetter: invoer.gekozen_silhouet,
       berekendeLetter: uitkomst.berekendeLetter,
-      reden: silhouetVerschilReden(invoer.maten, invoer.gekozen_silhouet, uitkomst.berekendeLetter),
+      reden: silhouetVerschilReden(
+        invoer.maten,
+        invoer.gekozen_silhouet,
+        uitkomst.berekendeLetter,
+        Object.fromEntries(silhouetten.map((s) => [s.letter, s.naam])),
+      ),
     });
   }
 

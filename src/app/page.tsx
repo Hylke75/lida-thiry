@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
-import { SILHOUETTEN } from "@/lib/test-config";
+import { haalSilhouetten } from "@/lib/lichaamstypes";
+import { STANDAARD_VORM } from "@/lib/lichaamstype-regels";
 import { Lichaam } from "./test/[token]/Lichaam";
 
 export const dynamic = "force-dynamic";
@@ -78,7 +79,12 @@ const VRAGEN = [
   },
 ];
 
+const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen", "tien"];
+const telwoord = (n: number) => TELWOORDEN[n] ?? String(n);
+
 export default async function Home() {
+  const SILHOUETTEN = await haalSilhouetten().catch(() => []);
+  const vorm = (i: number) => SILHOUETTEN[i]?.vorm ?? STANDAARD_VORM;
   let prijsLabel: string | null = null;
   try {
     const cent = await leesPrijsCent();
@@ -122,9 +128,9 @@ export default async function Home() {
             </div>
           </div>
           <div className="mx-auto flex items-end gap-2" aria-hidden="true">
-            <Lichaam vorm={SILHOUETTEN[1].vorm} armen={false} titel="" className="h-56 w-auto opacity-70 sm:h-64" />
-            <Lichaam vorm={SILHOUETTEN[0].vorm} armen={false} titel="" className="h-64 w-auto sm:h-80" />
-            <Lichaam vorm={SILHOUETTEN[2].vorm} armen={false} titel="" className="h-56 w-auto opacity-70 sm:h-64" />
+            <Lichaam vorm={vorm(1)} armen={false} titel="" className="h-56 w-auto opacity-70 sm:h-64" />
+            <Lichaam vorm={vorm(0)} armen={false} titel="" className="h-64 w-auto sm:h-80" />
+            <Lichaam vorm={vorm(2)} armen={false} titel="" className="h-56 w-auto opacity-70 sm:h-64" />
           </div>
         </div>
       </section>
@@ -148,10 +154,10 @@ export default async function Home() {
       {/* Figuurtypes */}
       <section className="bg-kaart">
         <div className="mx-auto w-full max-w-5xl px-6 py-16">
-          <h2 className="text-center text-3xl font-semibold tracking-tight">De vijf figuurtypes</h2>
+          <h2 className="text-center text-3xl font-semibold tracking-tight">De {telwoord(SILHOUETTEN.length)} figuurtypes</h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-foreground/70">
             Ieder lichaam is anders, maar de verhoudingen tussen schouders, taille en
-            heupen vallen grofweg in vijf types. De test bepaalt welk type het beste bij
+            heupen vallen grofweg in {telwoord(SILHOUETTEN.length)} types. De test bepaalt welk type het beste bij
             jou past.
           </p>
           <ul className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
@@ -197,7 +203,7 @@ export default async function Home() {
           <p className="mt-4 font-serif text-2xl">Jouw persoonlijke kledingadvies</p>
           <p className="mt-1 font-serif text-lg text-accent">Type X — Zandloper</p>
           <div className="mt-6 flex gap-4">
-            <Lichaam vorm={SILHOUETTEN[0].vorm} armen={false} titel="" className="h-28 w-auto flex-none" />
+            <Lichaam vorm={vorm(0)} armen={false} titel="" className="h-28 w-auto flex-none" />
             <div className="flex flex-1 flex-col gap-2 pt-2">
               <div className="h-2 w-full rounded bg-foreground/10" />
               <div className="h-2 w-5/6 rounded bg-foreground/10" />

@@ -4,10 +4,12 @@
 import { afgeleideMaten } from "@/rekenkern/figuurtype";
 import type { Maten } from "@/rekenkern/types";
 import type { Figuurletter } from "@/rekenkern/config/ffit-naar-letter";
-import { SILHOUETTEN } from "./test-config";
+/** Namen per code; standaard de vijf oorspronkelijke lichaamstypes. */
+export type Namen = Record<string, string>;
+const STANDAARD_NAMEN: Namen = { X: "Zandloper", A: "Peer / driehoek", V: "Omgekeerde driehoek", H: "Rechthoek", "8": "De 8" };
 
-export function silhouetNaam(letter: Figuurletter): string {
-  return SILHOUETTEN.find((s) => s.letter === letter)?.naam ?? letter;
+export function silhouetNaam(letter: Figuurletter, namen: Namen = STANDAARD_NAMEN): string {
+  return namen[letter] ?? letter;
 }
 
 const cm = (v: number) => `${Math.round(Math.abs(v))} cm`;
@@ -30,6 +32,8 @@ function redenUitMaten(maten: Maten, berekend: Figuurletter): string {
       return a.heupMinBorst >= a.borstMinHeup
         ? `Je taille is duidelijk smaller (${cm(tailleVerschil)}) en je heupen zijn voller dan je borst (${cm(a.heupMinBorst)} verschil).`
         : `Je taille is duidelijk smaller (${cm(tailleVerschil)}) en je borst is voller dan je heupen (${cm(a.borstMinHeup)} verschil).`;
+    default:
+      return "De verhoudingen tussen je borst, taille en heupen wijzen op een ander silhouet.";
   }
 }
 
@@ -42,6 +46,7 @@ export function silhouetVerschilReden(
   maten: Maten,
   gekozen: Figuurletter,
   berekend: Figuurletter,
+  namen?: Namen,
 ): string {
-  return `${redenUitMaten(maten, berekend)} Dat past meer bij ${silhouetNaam(berekend)} dan bij ${silhouetNaam(gekozen)}.`;
+  return `${redenUitMaten(maten, berekend)} Dat past meer bij ${silhouetNaam(berekend, namen)} dan bij ${silhouetNaam(gekozen, namen)}.`;
 }

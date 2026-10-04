@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { adminClient } from "@/lib/supabase/admin";
 import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN, OMZET_STATUSSEN } from "./status";
+import { haalLichaamstypes } from "@/lib/lichaamstypes";
+import { ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
 
 interface DashOrder {
   status: string;
@@ -8,7 +10,6 @@ interface DashOrder {
   toegekend_type: string | null;
 }
 
-const LETTERS = ["X", "A", "V", "H", "8"] as const;
 const CATEGORIEEN = Array.from({ length: 12 }, (_, i) => String(i + 1));
 
 /** Haalt alle bestellingen op (in blokken, Supabase geeft er max. 1000 per keer). */
@@ -73,6 +74,7 @@ function Balken({ titel, rijen }: { titel: string; rijen: { label: string; aanta
 export async function Dashboard({ periode, linkVoor }: { periode: string | undefined; linkVoor: (p?: string) => string }) {
   const dertig = periode === "30";
   const orders = await leesOrders(dertig ? 30 : null);
+  const lichaamstypes = await haalLichaamstypes();
 
   const betaald = orders.filter((o) => BETAALDE_STATUSSEN.includes(o.status));
   const afgerond = orders.filter((o) => AFGERONDE_STATUSSEN.includes(o.status));
@@ -84,10 +86,10 @@ export async function Dashboard({ periode, linkVoor }: { periode: string | undef
   const perLetter = new Map<string, number>();
   const perCategorie = new Map<string, number>();
   for (const o of orders) {
-    const m = /^(1[0-2]|[1-9])([XAVH8])$/.exec(o.toegekend_type ?? "");
+    const m = ontleedTypeSleutel(o.toegekend_type ?? "");
     if (!m) continue;
-    perCategorie.set(m[1], (perCategorie.get(m[1]) ?? 0) + 1);
-    perLetter.set(m[2], (perLetter.get(m[2]) ?? 0) + 1);
+    perCategorie.set(String(m.categorie), (perCategorie.get(String(m.categorie)) ?? 0) + 1);
+    perLetter.set(m.code, (perLetter.get(m.code) ?? 0) + 1);
   }
 
   const knop = (actief: boolean) =>
@@ -116,7 +118,10 @@ export async function Dashboard({ periode, linkVoor }: { periode: string | undef
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Balken titel="Figuurtypes (letter)" rijen={LETTERS.map((l) => ({ label: l, aantal: perLetter.get(l) ?? 0 }))} />
+        <Balken
+          titel="Lichaamstypes"
+          rijen={lichaamstypes.map((l) => ({ label: `${l.code} · ${l.naam}`, aantal: perLetter.get(l.code) ?? 0 }))}
+        />
         <Balken
           titel="Lengte/maat-categorie"
           rijen={CATEGORIEEN.map((c) => ({ label: c, aantal: perCategorie.get(c) ?? 0 }))}

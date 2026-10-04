@@ -2,6 +2,7 @@ import "server-only";
 import { adminClient } from "./supabase/admin";
 import { leesInstelling } from "./instellingen";
 import { isMappingCompleet, ontbrekendeLetters } from "@/rekenkern/letter";
+import { haalFfitToewijzing, haalLichaamstypes } from "./lichaamstypes";
 
 export interface CheckItem {
   label: string;
@@ -20,17 +21,19 @@ export async function productieCheck(): Promise<{ gereed: boolean; items: CheckI
     .select("*", { count: "exact", head: true });
 
   const prijs = await leesInstelling("prijs_cent");
+  const toewijzing = await haalFfitToewijzing();
+  const verwacht = 12 * (await haalLichaamstypes()).length;
 
   const items: CheckItem[] = [
     {
-      label: "FFIT → letter-mapping compleet",
-      ok: isMappingCompleet(),
-      detail: isMappingCompleet() ? undefined : `Ontbreekt: ${ontbrekendeLetters().join(", ")}`,
+      label: "Elke uitkomst van de berekening hoort bij een lichaamstype",
+      ok: isMappingCompleet(toewijzing),
+      detail: isMappingCompleet(toewijzing) ? undefined : `Ontbreekt: ${ontbrekendeLetters(toewijzing).join(", ")}`,
     },
     {
-      label: "Alle 60 adviestypes geïmporteerd",
-      ok: (count ?? 0) >= 60,
-      detail: `${count ?? 0}/60`,
+      label: `Alle ${verwacht} adviestypes aanwezig (12 categorieën × lichaamstypes)`,
+      ok: (count ?? 0) >= verwacht,
+      detail: `${count ?? 0}/${verwacht}`,
     },
     { label: "Prijs ingesteld", ok: Boolean(prijs) },
     { label: "Mollie-sleutel aanwezig", ok: Boolean(process.env.MOLLIE_API_KEY) },
