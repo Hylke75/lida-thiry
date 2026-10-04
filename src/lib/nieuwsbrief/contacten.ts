@@ -1,6 +1,7 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
 import { ontleedSleutel } from "../adviestypes-beheer";
+import { koppelRelatie } from "../relaties/koppel";
 import {
   normaliseerTag,
   valtBinnen,
@@ -104,6 +105,7 @@ export type AanmeldUitkomst =
 export async function meldAan(a: Aanmelding): Promise<AanmeldUitkomst> {
   const email = normaliseerEmail(a.email);
   if (!email) return { soort: "ongeldig" };
+  await koppelRelatie({ email, naam: a.naam, bron: "nieuwsbrief" });
   const supabase = adminClient();
   const { data: bestaand } = await supabase.from("nb_contacten").select(CONTACT_VELDEN).eq("email", email).maybeSingle();
   const nu = new Date().toISOString();

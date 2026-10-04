@@ -6,6 +6,7 @@ import { stuurBeheerMelding, foutTekst } from "./beheermelding";
 import { leesSectie } from "./inhoud/lees";
 import { NIEUWSBRIEF_BESTELLING } from "./inhoud/groepen/nieuwsbrief";
 import { meldAanNaBestelling } from "./nieuwsbrief/beheer";
+import { koppelRelatie } from "./relaties/koppel";
 
 /**
  * Meldt de klant aan voor de nieuwsbrief als bij de bestelling het vinkje aan
@@ -45,7 +46,7 @@ export async function naBetaling(opts: {
     const supabase = adminClient();
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, klantnaam, email, bedrag_cent, korting_cent, kortingscode, valuta")
+      .select("id, klantnaam, email, bedrag_cent, korting_cent, kortingscode, valuta, factuurgegevens")
       .eq("id", opts.orderId)
       .single();
     if (error || !order) {
@@ -55,6 +56,17 @@ export async function naBetaling(opts: {
       );
       return;
     }
+
+    // Adresboek bijwerken (vult alleen lege velden aan; gooit nooit).
+    const adres = (order.factuurgegevens ?? {}) as Record<string, unknown>;
+    await koppelRelatie({
+      email: order.email,
+      naam: order.klantnaam,
+      straat: typeof adres.adres === "string" ? adres.adres : null,
+      postcode: typeof adres.postcode === "string" ? adres.postcode : null,
+      plaats: typeof adres.plaats === "string" ? adres.plaats : null,
+      bron: "bestelling",
+    });
 
     if (order.kortingscode && !opts.kortingAlGeteld) {
       const { error: rpcFout } = await supabase.rpc("gebruik_kortingscode", {
