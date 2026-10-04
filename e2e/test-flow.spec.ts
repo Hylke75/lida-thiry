@@ -73,7 +73,7 @@ test("gratis bestelling, test invullen en advies-PDF downloaden", async ({ page,
   // 7. Afronden
   await page.getByRole("button", { name: "Test afronden" }).click();
   await expect(page.getByText(/jouw type/i)).toBeVisible({ timeout: 60_000 });
-  const pdfLink = page.getByRole("link", { name: "Download je advies (PDF)" });
+  const pdfLink = page.getByRole("link", { name: "Download je persoonlijke advies (PDF)" });
   await expect(pdfLink).toBeVisible();
   await expect(pdfLink).toHaveAttribute("href", `/api/test/${token}/pdf`);
 

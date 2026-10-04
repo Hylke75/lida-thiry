@@ -1,5 +1,4 @@
 import "server-only";
-import { Resend } from "resend";
 import type { User } from "@supabase/supabase-js";
 import { adminClient } from "./supabase/admin";
 import { siteUrl } from "./site";
@@ -68,33 +67,3 @@ export async function maakInlogLink(email: string, soort: LinkSoort): Promise<{ 
   return { link: `${siteUrl()}/auth/bevestig?${p.toString()}`, user: data.user };
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-/**
- * Stuurt de uitnodiging of inloglink. Gooit een fout als dat niet lukt (bijv.
- * geen RESEND_API_KEY, of het testadres van Resend dat alleen naar de eigenaar
- * van het Resend-account mag sturen).
- */
-export async function stuurBeheerderMail(opts: { aan: string; link: string | null; nieuw: boolean }) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY ontbreekt.");
-  const knop = (href: string, tekst: string) =>
-    `<p><a href="${escapeHtml(href)}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">${tekst}</a></p>`;
-  const inhoud = opts.link
-    ? `<h1 style="font-size:18px">${opts.nieuw ? "Je bent uitgenodigd voor het beheer" : "Inloggen in het beheer"}</h1>
-       <p>${opts.nieuw ? "Je hebt toegang gekregen tot het beheer van de website van Lida Thiry Imago &amp; Kledingadvies." : "Hier is een link om in te loggen in het beheer."} Klik op de knop en kies daarna een eigen wachtwoord.</p>
-       ${knop(opts.link, opts.nieuw ? "Uitnodiging accepteren" : "Inloggen en wachtwoord instellen")}
-       <p style="font-size:13px;color:#555">De link werkt één keer en is beperkt geldig (standaard 1 uur). Werkt hij niet meer, vraag dan om een nieuwe.</p>`
-    : `<h1 style="font-size:18px">Je hebt toegang tot het beheer</h1>
-       <p>Je kunt nu inloggen in het beheer van de website van Lida Thiry Imago &amp; Kledingadvies met je bestaande e-mailadres en wachtwoord.</p>
-       ${knop(`${siteUrl()}/admin/inloggen`, "Naar het beheer")}`;
-  const { error } = await new Resend(key).emails.send({
-    from: process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>",
-    to: opts.aan,
-    subject: opts.link && opts.nieuw ? "Uitnodiging voor het beheer" : "Toegang tot het beheer",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">${inhoud}</div>`,
-  });
-  if (error) throw new Error(error.message);
-}

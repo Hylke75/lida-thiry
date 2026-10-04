@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { maakInlogLink, stuurBeheerderMail, zoekGebruiker } from "@/lib/beheerders";
+import { maakInlogLink, zoekGebruiker } from "@/lib/beheerders";
+import { stuurBeheerderMail } from "@/lib/resend";
 import { normaliseerEmail, verwijderBezwaar, wachtwoordBezwaar } from "@/lib/beheerder-regels";
 
 const PAD = "/admin/beheerders";
