@@ -3,6 +3,7 @@
 
 export const GERESERVEERDE_SLUGS = new Set([
   "admin",
+  "afspraak",
   "api",
   "auth",
   "bestellen",
@@ -31,6 +32,7 @@ export function geldigePaginaSlug(slug: string): boolean {
  */
 export const PAGINA_BLOKKEN: Record<string, string> = {
   contactformulier: "het contactformulier",
+  afspraak: "het formulier om online een afspraak te maken",
   nieuwsbrief: "het standaard aanmeldblok voor de nieuwsbrief",
   test: "een knop en korte uitnodiging om de kledingadviestest te doen",
   laatste_blogs: "de drie nieuwste blogberichten",

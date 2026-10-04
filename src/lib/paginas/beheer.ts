@@ -211,6 +211,7 @@ export interface FormulierKeuze {
 export function blokLabel(naam: string, formulieren: readonly FormulierKeuze[]): { label: string; bekend: boolean } {
   const vast: Record<string, string> = {
     contactformulier: "Contactformulier",
+    afspraak: "Afspraak maken (boekingsformulier)",
     nieuwsbrief: "Aanmeldblok nieuwsbrief",
     test: "Uitnodiging voor de test (knop naar /bestellen)",
     laatste_blogs: "De drie nieuwste blogberichten",

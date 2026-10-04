@@ -4,6 +4,7 @@ import { leesInstelling } from "@/lib/instellingen";
 import { mollie } from "@/lib/mollie";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { naBetaling } from "@/lib/bestelling-betaald";
+import { verwerkAfspraakBetaling } from "@/lib/afspraken/data";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,14 @@ export async function POST(request: Request) {
     // Mollie (tijdelijk) onbereikbaar: 500 zodat Mollie de webhook later herhaalt.
     console.error("Mollie-betaling ophalen mislukt", betaalId, e);
     return NextResponse.json({ ok: false }, { status: 500 });
+  }
+
+  // Aanbetaling voor een afspraak (metadata soort 'afspraak'): eigen verwerking.
+  const afspraakMeta = betaling.metadata as { soort?: string; afspraakId?: string } | null;
+  if (afspraakMeta?.soort === "afspraak") {
+    if (!afspraakMeta.afspraakId) return NextResponse.json({ ok: true });
+    const gelukt = await verwerkAfspraakBetaling({ id: betaling.id, status: betaling.status }, afspraakMeta.afspraakId);
+    return NextResponse.json({ ok: gelukt }, { status: gelukt ? 200 : 500 });
   }
 
   const orderId = (betaling.metadata as { orderId?: string } | null)?.orderId;
