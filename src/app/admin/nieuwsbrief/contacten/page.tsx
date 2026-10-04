@@ -19,7 +19,7 @@ export default async function ContactenPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const zoek = await searchParams;
   const filter = leesFilter(zoek);
   const ok = typeof zoek.ok === "string" ? zoek.ok : null;

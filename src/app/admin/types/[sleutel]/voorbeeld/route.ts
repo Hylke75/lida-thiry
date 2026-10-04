@@ -6,7 +6,7 @@ export const maxDuration = 60;
 
 // Voorbeeld-PDF van een adviestype (met voorbeeldmaten), direct in de browser.
 export async function GET(_request: Request, { params }: { params: Promise<{ sleutel: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { sleutel } = await params;
   const pdf = await genereerVoorbeeldPdf(sleutel);
   if (!pdf) {

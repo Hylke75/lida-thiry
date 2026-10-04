@@ -1,4 +1,5 @@
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { alleContacten } from "@/lib/nieuwsbrief/beheer";
 import { leesFilter } from "@/lib/nieuwsbrief/contactregels";
 import { maakCsv } from "@/lib/nieuwsbrief/csv";
@@ -10,7 +11,7 @@ export const maxDuration = 60;
 
 // CSV-export van de contacten binnen het huidige filter (zelfde parameters als de lijst).
 export async function GET(request: Request) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("nieuwsbrief_contacten");
   const params = Object.fromEntries(new URL(request.url).searchParams);
   const { pagina: _pagina, ...filter } = leesFilter(params);
   void _pagina;
@@ -30,6 +31,13 @@ export async function GET(request: Request) {
       c.aangemaakt_op,
     ]),
   ]);
+  await logActie({
+    actie: "contact.exporteren",
+    onderwerpSoort: "contact",
+    omschrijving: `${contacten.length} nieuwsbriefcontact(en) geëxporteerd (CSV)`,
+    details: { filter },
+    gebruiker: ik,
+  });
   const datum = new Date().toISOString().slice(0, 10);
   return new Response(csv, {
     headers: {

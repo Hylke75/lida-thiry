@@ -24,8 +24,7 @@ function Kaart({ titel, children }: { titel: string; children: ReactNode }) {
 }
 
 export default async function BackupPagina() {
-  // TODO(rollen): alleen eigenaar, zodra vereisBeheerder rollen ondersteunt.
-  await vereisBeheerder();
+  await vereisBeheerder("backup");
   const supabase = adminClient();
   const [tellingen, opslag] = await Promise.all([
     telTabellen(supabase),

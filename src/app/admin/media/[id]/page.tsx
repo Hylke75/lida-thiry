@@ -10,7 +10,7 @@ import { MediaDetail } from "./MediaDetail";
 export const dynamic = "force-dynamic";
 
 export default async function MediaBekijken({ params }: { params: Promise<{ id: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   const { id } = await params;
   const media = await haalMedia(id);
   if (!media) notFound();

@@ -8,7 +8,7 @@ import { HomepageIndeling } from "./HomepageIndeling";
 export const dynamic = "force-dynamic";
 
 export default async function HomepagePagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("homepage");
   const indeling = normaliseerIndeling(await leesInstelling("homepage_indeling"));
 
   return (

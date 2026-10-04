@@ -9,7 +9,7 @@ import { WebsiteFormulier } from "./WebsiteFormulier";
 export const dynamic = "force-dynamic";
 
 export default async function WebsiteInstellingenPagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("website_instellingen");
   const opgeslagen = await leesInstellingen();
   const begin = Object.fromEntries(WEBSITE_SLEUTELS.map((s) => [s, opgeslagen[s] ?? ""])) as Record<WebsiteSleutel, string>;
 

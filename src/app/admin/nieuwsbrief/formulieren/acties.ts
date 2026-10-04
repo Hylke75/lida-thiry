@@ -37,7 +37,7 @@ function ververs(slug?: string) {
 
 /** Maakt een formulier aan of slaat een bestaand op (useActionState). */
 export async function bewaarFormulier(_vorige: BewaarStaat, fd: FormData): Promise<BewaarStaat> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const ruwId = String(fd.get("id") ?? "");
   const id = UUID_PATROON.test(ruwId) ? ruwId : null;
   const ruw: Record<string, unknown> = Object.fromEntries(
@@ -78,7 +78,7 @@ export async function bewaarFormulier(_vorige: BewaarStaat, fd: FormData): Promi
 
 /** Maakt een kopie (uitgeschakeld) en opent die. */
 export async function dupliceerFormulier(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = formulierId(fd);
   const supabase = adminClient();
   const { data } = await supabase.from("nb_formulieren").select(FORMULIER_VELDEN).eq("id", id).maybeSingle();
@@ -110,7 +110,7 @@ export async function dupliceerFormulier(fd: FormData): Promise<void> {
 
 /** Verwijdert een formulier. Contacten blijven bestaan; hun koppeling (formulier_id) wordt leeg. */
 export async function verwijderFormulier(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = formulierId(fd);
   const { data, error } = await adminClient().from("nb_formulieren").delete().eq("id", id).select("slug, naam");
   if (error) melding(`${PAD}/${id}`, `Verwijderen mislukt: ${error.message}`, "fout");
@@ -126,7 +126,7 @@ export async function verwijderFormulier(fd: FormData): Promise<void> {
 
 /** Zet een formulier aan of uit. */
 export async function zetFormulierActief(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = formulierId(fd);
   const actief = fd.get("actief") === "true";
   const terug = fd.get("terug") === "lijst" ? PAD : `${PAD}/${id}`;
@@ -138,7 +138,7 @@ export async function zetFormulierActief(fd: FormData): Promise<void> {
 
 /** Formulieren om een campagne-doelgroep op te filteren (Beheer → Campagnes → Ontvangers). */
 export async function formulierKeuzes(): Promise<{ id: string; naam: string; actief: boolean }[]> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const { data } = await adminClient().from("nb_formulieren").select("id, naam, actief").order("naam");
   return (data ?? []) as { id: string; naam: string; actief: boolean }[];
 }

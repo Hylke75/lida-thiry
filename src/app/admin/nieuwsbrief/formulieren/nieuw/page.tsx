@@ -10,7 +10,7 @@ import { FormulierenKop } from "../Kop";
 export const dynamic = "force-dynamic";
 
 export default async function NieuwFormulier() {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const [teksten, tags, formulieren] = await Promise.all([
     leesSectie(NIEUWSBRIEF_AANMELDEN),
     alleTags().catch(() => [] as string[]),

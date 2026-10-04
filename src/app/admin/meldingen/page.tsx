@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Meldingen · Beheer" };
 
 export default async function MeldingenPagina() {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("meldingen");
   const { data, error } = await adminClient()
     .from("push_abonnementen")
     .select("id, endpoint, apparaat, meldingen, aangemaakt_op, laatst_gebruikt_op")

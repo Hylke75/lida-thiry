@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
@@ -41,7 +42,7 @@ async function laatsteVolgorde(): Promise<number> {
 // Overzicht ---------------------------------------------------------------------------
 
 export async function nieuwePagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const slug = await vrijePaginaSlug("nieuwe-pagina");
   const { data, error } = await adminClient()
     .from("paginas")
@@ -55,7 +56,7 @@ export async function nieuwePagina() {
 
 /** Maakt een conceptpagina van een startsjabloon ("Over mij", "Contact", …). */
 export async function maakStartpagina(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const sjabloon = vindStartpagina(String(formData.get("sjabloon") ?? ""));
   if (!sjabloon) redirect(`${PAGINAS_PAD}?fout=sjabloon`);
   const { data, error } = await adminClient()
@@ -69,7 +70,7 @@ export async function maakStartpagina(formData: FormData) {
 }
 
 export async function dupliceerPagina(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const p = await haalPaginaBeheer(leesId(formData));
   if (!p) redirect(`${PAGINAS_PAD}?fout=onbekend`);
   const { data, error } = await adminClient()
@@ -98,7 +99,7 @@ export async function dupliceerPagina(formData: FormData) {
 }
 
 export async function verwijderPagina(formData: FormData) {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("paginas");
   const id = leesId(formData);
   if (!id) redirect(`${PAGINAS_PAD}?fout=onbekend`);
   // Eerst een momentopname, zodat de pagina via de prullenbak terug kan.
@@ -106,13 +107,21 @@ export async function verwijderPagina(formData: FormData) {
   if (weg) await bewaarVersie({ soort: "pagina", ref: id, inhoud: paginaSnapshot(weg), omschrijving: "Verwijderd", door: user.email, forceer: true });
   const { data } = await adminClient().from("paginas").delete().eq("id", id).select("slug");
   if (!data?.length) redirect(`${PAGINAS_PAD}?fout=verwijderen`);
+  await logActie({
+    actie: "pagina.verwijderen",
+    onderwerpSoort: "pagina",
+    onderwerpId: id,
+    omschrijving: `Pagina ‘${weg?.titel ?? data[0].slug}’ verwijderd (naar de prullenbak)`,
+    details: { slug: data[0].slug },
+    gebruiker: user,
+  });
   vernieuwPaginas(data[0].slug as string);
   redirect(`${PAGINAS_PAD}?verwijderd=1`);
 }
 
 /** Zet een pagina één plek hoger of lager in de volgorde (menu en footer). */
 export async function verplaatsPagina(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const id = leesId(formData);
   const richting = formData.get("richting") === "omhoog" ? "omhoog" : "omlaag";
   const supabase = adminClient();
@@ -138,7 +147,7 @@ export type PaginaUitkomst = Uitkomst<{ pagina: Pagina; melding: string }>;
 
 /** Slaat de velden op; een gepubliceerde pagina moet daarbij publiceerbaar blijven. */
 export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("paginas");
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
   const v = valideerPagina(ruw);
@@ -163,7 +172,7 @@ export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitko
 
 /** Slaat op en zet de pagina online. */
 export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("paginas");
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
   const v = valideerPagina(ruw);
@@ -182,6 +191,14 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
   if (huidig.status === "gepubliceerd" && huidig.slug !== v.waarde.slug) {
     await registreerSlugWijziging(`/${huidig.slug}`, `/${v.waarde.slug}`);
   }
+  await logActie({
+    actie: "pagina.publiceren",
+    onderwerpSoort: "pagina",
+    onderwerpId: id,
+    omschrijving: `Pagina ‘${v.waarde.titel}’ gepubliceerd (/${v.waarde.slug})`,
+    details: { slug: v.waarde.slug, was: huidig.status },
+    gebruiker: user,
+  });
   vernieuwPaginas(huidig.slug, v.waarde.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
   return { ok: true, pagina: data as Pagina, melding: "Gepubliceerd! De pagina staat nu online." };
@@ -189,12 +206,19 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
 
 /** Haalt een pagina offline; de tekst blijft bewaard. */
 export async function paginaNaarConcept(id: string): Promise<PaginaUitkomst> {
-  const user = await vereisBeheerder();
+  const user = await vereisBeheerder("paginas");
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
   await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient().from("paginas").update({ status: "concept" }).eq("id", id).select(PAGINA_VELDEN).single();
   if (error || !data) return fout(`Dat is niet gelukt (${error?.message ?? "onbekend"}).`);
+  await logActie({
+    actie: "pagina.naar_concept",
+    onderwerpSoort: "pagina",
+    onderwerpId: id,
+    omschrijving: `Pagina ‘${huidig.titel}’ offline gehaald (concept)`,
+    gebruiker: user,
+  });
   vernieuwPaginas(huidig.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
   return { ok: true, pagina: data as Pagina, melding: "De pagina is weer een concept en niet meer zichtbaar op de site." };
@@ -209,7 +233,7 @@ export async function maakPaginaUpload(
   grootte: number,
   map: UploadMap,
 ): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const ext = BLOG_AFBEELDING_TYPES[type];
   if (!ext) return fout("Kies een afbeelding van het type JPG, PNG, GIF of WebP.");
   if (!(grootte > 0) || grootte > BLOG_AFBEELDING_MAX_BYTES) return fout("De afbeelding is te groot. Kies een bestand van maximaal 5 MB.");

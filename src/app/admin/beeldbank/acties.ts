@@ -24,7 +24,7 @@ export async function vraagUploadUrl(
   type: string,
   grootte: number,
 ): Promise<{ ok: true; pad: string; token: string } | { ok: false; fout: string }> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   if (!(TOEGESTANE_TYPES as readonly string[]).includes(type)) {
     return { ok: false, fout: "Gebruik een JPG-, PNG- of WebP-bestand." };
   }
@@ -48,7 +48,7 @@ export async function verwerkBeeld(
   pad: string,
   beeldId: string | null,
 ): Promise<{ ok: true; id: string } | { ok: false; fouten: string[] }> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   if (beeldId && !UUID.test(beeldId)) return { ok: false, fouten: ["Beeld niet gevonden."] };
   const supabase = adminClient();
 
@@ -77,7 +77,7 @@ export async function verwerkBeeld(
 
 /** Bepaalt de afmetingen van (een deel van) de beelden waarvan ze nog ontbreken. */
 export async function bepaalAfmetingen() {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const { verwerkt, open } = await bepaalOntbrekendeAfmetingen(150);
   revalidatePath("/admin/beeldbank");
   redirect(`/admin/beeldbank?bepaald=${verwerkt}&open=${open}`);
@@ -85,7 +85,7 @@ export async function bepaalAfmetingen() {
 
 /** Slaat naam, onderdeel, omschrijving, figuur, advies, bijschrift en status op. */
 export async function slaGegevensOp(_vorige: FormulierStatus, fd: FormData): Promise<FormulierStatus> {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const id = String(fd.get("id") ?? "");
   if (!UUID.test(id)) return { ok: false, fouten: ["Beeld niet gevonden."] };
   const { waarden, fouten } = controleerMetadata(fd);
@@ -122,7 +122,7 @@ export async function slaGegevensOp(_vorige: FormulierStatus, fd: FormData): Pro
 }
 
 export async function zetTerug(fd: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const id = String(fd.get("id") ?? "");
   if (!UUID.test(id)) redirect("/admin/beeldbank");
   const gelukt = await zetVorigeVersieTerug(id);
@@ -133,7 +133,7 @@ export async function zetTerug(fd: FormData) {
 
 /** Verwijdert een beeld dat nergens gebruikt wordt, inclusief de bestanden. */
 export async function verwijderBeeld(fd: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const id = String(fd.get("id") ?? "");
   if (!UUID.test(id)) redirect("/admin/beeldbank");
   const supabase = adminClient();

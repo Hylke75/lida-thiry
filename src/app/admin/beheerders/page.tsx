@@ -1,28 +1,26 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { lijstBeheerders } from "@/lib/beheerders";
+import { ROL_LABEL, ROL_UITLEG, ROLLEN } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
 import { formatteerMoment } from "../types/gedeeld";
-import { RijActies, ToevoegFormulier, WachtwoordFormulier } from "./Formulieren";
+import { RijActies, RolKeuze, ToevoegFormulier } from "./Formulieren";
 
 export const dynamic = "force-dynamic";
 
 const kaart = "flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15";
 
 export default async function BeheerdersPagina({ searchParams }: { searchParams: Promise<{ welkom?: string }> }) {
-  const ik = await vereisBeheerder();
   const { welkom } = await searchParams;
+  // Oude uitnodigingslinks kwamen hier uit; het eigen wachtwoord staat nu onder Beveiliging (voor elke rol).
+  if (welkom) {
+    await vereisBeheerder(undefined, { zonderVerplichteMfa: true });
+    redirect("/admin/beveiliging?welkom=1");
+  }
+  const ik = await vereisBeheerder("beheerders");
   const beheerders = await lijstBeheerders();
-
-  const wachtwoord = (
-    <section id="wachtwoord" className={`${kaart} scroll-mt-6 ${welkom ? "border-accent/50" : ""}`}>
-      <h2 className="text-lg">Je eigen wachtwoord {welkom ? "instellen" : "wijzigen"}</h2>
-      <p className="text-sm text-black/60 dark:text-white/60">
-        Je bent ingelogd als <strong>{ik.email}</strong>. Kies een wachtwoord van minstens 10 tekens; een zinnetje van
-        een paar woorden is makkelijk te onthouden en toch sterk.
-      </p>
-      <WachtwoordFormulier email={ik.email ?? ""} />
-    </section>
-  );
+  const eigenaren = beheerders.filter((b) => b.rol === "eigenaar").length;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
@@ -30,17 +28,26 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Beheerders</h1>
         <p className="text-sm text-black/60 dark:text-white/60">
-          Wie kan inloggen in dit beheer. Iedere beheerder kan alles: bestellingen inzien, teksten en instellingen
-          wijzigen en andere beheerders toevoegen of verwijderen.
+          Wie kan inloggen in dit beheer, en wat mag iedereen. Je eigen wachtwoord en tweestapsverificatie regel je
+          onder{" "}
+          <Link href="/admin/beveiliging" className="underline underline-offset-4">
+            Beveiliging
+          </Link>
+          .
         </p>
       </div>
 
-      {welkom && (
-        <p role="status" className="rounded-lg bg-accent-zacht px-4 py-3 text-sm">
-          Welkom! Je bent ingelogd. Kies hieronder een eigen wachtwoord; daarmee log je voortaan in via de inlogpagina.
-        </p>
-      )}
-      {welkom && wachtwoord}
+      <section className={kaart}>
+        <h2 className="text-lg">Rollen</h2>
+        <dl className="grid gap-2 text-sm sm:grid-cols-[8rem_1fr]">
+          {ROLLEN.map((r) => (
+            <div key={r} className="contents">
+              <dt className="font-medium">{ROL_LABEL[r]}</dt>
+              <dd className="text-black/60 dark:text-white/60">{ROL_UITLEG[r]}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className={kaart}>
         <h2 className="text-lg">Huidige beheerders</h2>
@@ -55,17 +62,33 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
                   )}
                 </span>
                 <span className="text-xs text-black/50 dark:text-white/50">
-                  Toegevoegd {formatteerMoment(b.aangemaakt_op)} ·{" "}
+                  {b.tweestap ? "Tweestapsverificatie aan" : "Geen tweestapsverificatie"} · Toegevoegd{" "}
+                  {formatteerMoment(b.aangemaakt_op)} ·{" "}
                   {b.laatstIngelogd ? `laatst ingelogd ${formatteerMoment(b.laatstIngelogd)}` : "nog nooit ingelogd"}
                   {b.uitgenodigd && " (uitnodiging nog niet geaccepteerd)"}
                 </span>
               </div>
-              <RijActies
-                id={b.gebruiker_id}
-                email={b.email}
-                isIkZelf={b.gebruiker_id === ik.id}
-                isLaatste={beheerders.length <= 1}
-              />
+              <div className="flex flex-col gap-2 sm:items-end">
+                <RolKeuze
+                  id={b.gebruiker_id}
+                  email={b.email}
+                  rol={b.rol}
+                  vergrendeld={
+                    b.gebruiker_id === ik.id
+                      ? "Je eigen rol kan een andere eigenaar wijzigen."
+                      : b.rol === "eigenaar" && eigenaren <= 1
+                        ? "De laatste eigenaar blijft eigenaar."
+                        : null
+                  }
+                />
+                <RijActies
+                  id={b.gebruiker_id}
+                  email={b.email}
+                  isIkZelf={b.gebruiker_id === ik.id}
+                  isLaatste={beheerders.length <= 1 || (b.rol === "eigenaar" && eigenaren <= 1)}
+                  tweestap={b.tweestap}
+                />
+              </div>
             </li>
           ))}
         </ul>
@@ -89,11 +112,10 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
         <ToevoegFormulier />
       </section>
 
-      {!welkom && wachtwoord}
-
       <p className="text-xs text-black/50 dark:text-white/50">
         Verwijderen trekt alleen de toegang tot het beheer in; het account zelf blijft bestaan en kan later weer worden
-        toegevoegd. Je kunt jezelf niet verwijderen, en de laatste beheerder blijft altijd staan.
+        toegevoegd. Je kunt jezelf niet verwijderen of je eigen rol wijzigen, en de laatste eigenaar blijft altijd staan.
+        Alle wijzigingen hier komen in het logboek.
       </p>
     </main>
   );

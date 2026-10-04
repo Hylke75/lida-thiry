@@ -8,7 +8,7 @@ import { heelZacht, kaart, PAD } from "../ui";
 export const dynamic = "force-dynamic";
 
 export default async function NieuweRelatiePagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const tags = await alleRelatieTags().catch(() => [] as string[]);
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">

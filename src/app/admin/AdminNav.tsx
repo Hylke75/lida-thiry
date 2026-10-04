@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { huidigeBeheerder } from "@/lib/admin-auth";
+import { magPad, type Rol } from "@/lib/rollen";
 import { BerichtenTeller } from "./BerichtenTeller";
 import { PreviewWaarschuwing } from "./PreviewWaarschuwing";
 import { PwaRegistratie } from "./PwaRegistratie";
@@ -92,6 +94,8 @@ const GROEPEN = [
       { href: "/admin/meldingen", label: "Meldingen" },
       { href: "/admin/fouten", label: "Fouten" },
       { href: "/admin/backup", label: "Back-up" },
+      { href: "/admin/beveiliging", label: "Beveiliging" },
+      { href: "/admin/logboek", label: "Logboek" },
     ],
   },
 ] as const satisfies readonly NavGroep[];
@@ -135,10 +139,24 @@ function Uitloggen({ className }: { className?: string }) {
   );
 }
 
-/** Navigatiebalk bovenaan elke beheerpagina. */
-export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
+/**
+ * De groepen en links die een rol mag zien (lege groepen vallen weg). Zonder
+ * volledige inlog (tweestapsverificatie nog in te stellen) alleen Beveiliging.
+ */
+function zichtbareGroepen(rol: Rol | null, alleenBeveiliging: boolean): NavGroep[] {
+  return GROEPEN.map((g) => ({
+    label: g.label,
+    links: g.links.filter((l) => (alleenBeveiliging ? l.href === "/admin/beveiliging" : magPad(rol, l.href))),
+  })).filter((g) => g.links.length > 0);
+}
+
+/** Navigatiebalk bovenaan elke beheerpagina; toont alleen wat de rol van de beheerder mag. */
+export async function AdminNav({ actief: pad }: { actief?: AdminPad }) {
   const actief = actieveLink(pad);
-  const groepen: readonly NavGroep[] = GROEPEN;
+  const ik = await huidigeBeheerder();
+  const groepen: readonly NavGroep[] = zichtbareGroepen(ik?.rol ?? null, !ik || ik.mfa !== "ok");
+  const metZoeken = Boolean(ik && ik.mfa === "ok" && magPad(ik.rol, "/admin/zoeken"));
+  const beginHref = groepen[0]?.links[0]?.href ?? "/admin/beveiliging";
   const huidigeGroep = groepen.find((g) => groepIsActief(g, actief));
   const huidigeLink = huidigeGroep?.links.find((l) => l.href === actief);
   const subLinks = huidigeGroep && huidigeGroep.links.length > 1 ? huidigeGroep.links : null;
@@ -165,7 +183,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
           </span>
         </summary>
         <nav aria-label="Beheer" className="mt-3 flex flex-col gap-3 text-sm">
-          <ZoekVeld />
+          {metZoeken && <ZoekVeld />}
           {groepen.map((g) =>
             g.links.length === 1 ? (
               <Link
@@ -202,10 +220,10 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
       {/* Groter scherm: groepen op één rij, de pagina's van de actieve groep eronder. */}
       <div className="hidden flex-col gap-2 sm:flex">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/admin" className="font-serif text-xl tracking-tight">
+          <Link href={beginHref} className="font-serif text-xl tracking-tight">
             Beheer
           </Link>
-          <ZoekVeld className="w-36 shrink-0 lg:w-52" />
+          {metZoeken && <ZoekVeld className="w-36 shrink-0 lg:w-52" />}
           <nav aria-label="Beheer" className="flex flex-wrap items-center justify-end gap-1 text-sm">
             {groepen.map((g) => {
               const isActief = groepIsActief(g, actief);

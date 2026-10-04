@@ -22,7 +22,7 @@ function paginaLink(sp: { q: string; map: string; type: string }, pagina: number
 }
 
 export default async function MediaBibliotheek({ searchParams }: { searchParams: Promise<Zoek> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("media");
   const sp = await searchParams;
   const filters = { q: schoneZoekterm(sp.q), map: normaliseerMap(sp.map) ?? "", type: leesTypeFilter(sp.type) };
   const pagina = Math.max(1, Number.parseInt(sp.pagina ?? "1", 10) || 1);

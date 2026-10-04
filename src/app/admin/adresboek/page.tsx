@@ -37,7 +37,7 @@ export default async function AdresboekPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const zoek = await searchParams;
   const filter = leesRelatieFilter(zoek);
   const ok = typeof zoek.ok === "string" ? zoek.ok : null;

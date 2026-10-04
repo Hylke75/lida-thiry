@@ -21,7 +21,7 @@ export default async function LichaamstypeBewerken({
   params: Promise<{ code: string }>;
   searchParams: Promise<{ nieuw?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("advies");
   const code = decodeURIComponent((await params).code);
   const { nieuw } = await searchParams;
   const type = (await haalLichaamstypes()).find((t) => t.code === code);

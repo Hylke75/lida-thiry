@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { heeftRecht } from "@/lib/rollen";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import {
@@ -77,7 +78,8 @@ export default async function ReviewsPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews");
+  const magUitnodigen = heeftRecht(ik.rol, "reviews_uitnodigen");
   const zoek = await searchParams;
   const tab: ReviewStatus = isReviewStatus(zoek.tab) ? zoek.tab : "ingevuld";
   const ok = typeof zoek.ok === "string" ? zoek.ok : null;
@@ -212,21 +214,25 @@ export default async function ReviewsPagina({
                   <span className="text-xs text-black/50 dark:text-white/50">
                     {r.uitgenodigd_op ? `Uitgenodigd ${datumTijd(r.uitgenodigd_op)}` : "Nog niet verstuurd"}
                   </span>
-                  <form action={stuurOpnieuw}>
-                    <Verborgen tab={tab} id={r.id} />
-                    <VerzendKnop bezig="Versturen…" className={kleineKnop}>
-                      Opnieuw sturen
-                    </VerzendKnop>
-                  </form>
-                  <form action={verwijder}>
-                    <Verborgen tab={tab} id={r.id} />
-                    <BevestigKnop
-                      bevestiging="Deze uitnodiging verwijderen? De link in de mail werkt dan niet meer en de klant wordt niet opnieuw automatisch uitgenodigd."
-                      className={gevaarKnop}
-                    >
-                      Verwijderen
-                    </BevestigKnop>
-                  </form>
+                  {magUitnodigen && (
+                    <form action={stuurOpnieuw}>
+                      <Verborgen tab={tab} id={r.id} />
+                      <VerzendKnop bezig="Versturen…" className={kleineKnop}>
+                        Opnieuw sturen
+                      </VerzendKnop>
+                    </form>
+                  )}
+                  {magUitnodigen && (
+                    <form action={verwijder}>
+                      <Verborgen tab={tab} id={r.id} />
+                      <BevestigKnop
+                        bevestiging="Deze uitnodiging verwijderen? De link in de mail werkt dan niet meer en de klant wordt niet opnieuw automatisch uitgenodigd."
+                        className={gevaarKnop}
+                      >
+                        Verwijderen
+                      </BevestigKnop>
+                    </form>
+                  )}
                 </li>
               ))}
             </ul>
@@ -275,12 +281,14 @@ export default async function ReviewsPagina({
                     <span className="text-xs text-black/50 dark:text-white/50">
                       {o.afgerond_op ? `Advies ${datumTijd(o.afgerond_op)}` : ""}
                     </span>
-                    <form action={nodigUit}>
-                      <Verborgen tab={tab} id={o.id} naam="order_id" />
-                      <VerzendKnop bezig="Versturen…" className={kleineKnop}>
-                        Nodig uit
-                      </VerzendKnop>
-                    </form>
+                    {magUitnodigen && (
+                      <form action={nodigUit}>
+                        <Verborgen tab={tab} id={o.id} naam="order_id" />
+                        <VerzendKnop bezig="Versturen…" className={kleineKnop}>
+                          Nodig uit
+                        </VerzendKnop>
+                      </form>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -347,15 +355,17 @@ export default async function ReviewsPagina({
                     </VerzendKnop>
                   </form>
                 )}
-                <form action={verwijder} className="ml-auto">
-                  <Verborgen tab={tab} id={r.id} />
-                  <BevestigKnop
-                    bevestiging="Deze review definitief verwijderen? Naam, e-mailadres en tekst worden gewist."
-                    className={gevaarKnop}
-                  >
-                    Verwijderen
-                  </BevestigKnop>
-                </form>
+                {magUitnodigen && (
+                  <form action={verwijder} className="ml-auto">
+                    <Verborgen tab={tab} id={r.id} />
+                    <BevestigKnop
+                      bevestiging="Deze review definitief verwijderen? Naam, e-mailadres en tekst worden gewist."
+                      className={gevaarKnop}
+                    >
+                      Verwijderen
+                    </BevestigKnop>
+                  </form>
+                )}
               </div>
 
               <details className="rounded-lg border border-black/10 px-3 py-2 dark:border-white/15">

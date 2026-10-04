@@ -34,7 +34,7 @@ export default async function FoutPagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("fouten");
   const { id } = await params;
   if (!UUID_PATROON.test(id)) notFound();
   const zoek = await searchParams;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { CodeFormulier } from "./CodeFormulier";
 
 export function InlogFormulier() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export function InlogFormulier() {
   const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
+  const [codeNodig, setCodeNodig] = useState(false);
 
   async function verstuur(e: React.FormEvent) {
     e.preventDefault();
@@ -25,8 +27,26 @@ export function InlogFormulier() {
       setBezig(false);
       return;
     }
+    // Tweestapsverificatie: met een gekoppelde app eerst de code (aal1 → aal2).
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      setBezig(false);
+      setCodeNodig(true);
+      return;
+    }
     router.push("/admin");
     router.refresh();
+  }
+
+  if (codeNodig) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-black/60 dark:text-white/60">
+          Je wachtwoord klopt. Vul nu de code van 6 cijfers uit je authenticator-app in.
+        </p>
+        <CodeFormulier />
+      </div>
+    );
   }
 
   return (

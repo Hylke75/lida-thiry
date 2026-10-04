@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
+import { heeftRecht } from "@/lib/rollen";
 import { adminClient } from "@/lib/supabase/admin";
 import { leverAdvies } from "@/lib/advies-leveren";
 import { TYPE_SLEUTEL_PATROON } from "@/lib/lichaamstype-regels";
@@ -47,7 +49,7 @@ function terug(id: string, melding: string): never {
 
 async function kenTypeToe(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("bestellingen");
   const id = String(formData.get("id"));
   const sleutel = String(formData.get("sleutel") || "").trim().toUpperCase();
   if (!TYPE_PATROON.test(sleutel)) terug(id, "type_ongeldig");
@@ -65,12 +67,20 @@ async function kenTypeToe(formData: FormData) {
   } catch {
     gelukt = false;
   }
+  await logActie({
+    actie: "order.type_toekennen",
+    onderwerpSoort: "order",
+    onderwerpId: id,
+    omschrijving: `Type ${sleutel} toegekend (status: test afgerond)${gelukt ? "" : "; advies versturen mislukt"}`,
+    details: { type: sleutel, status: "test_afgerond", advies_verstuurd: gelukt },
+    gebruiker: ik,
+  });
   terug(id, gelukt ? "type_ok" : "type_ok_levering_mislukt");
 }
 
 async function verstuurOpnieuw(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("bestellingen");
   const id = String(formData.get("id"));
   let gelukt = true;
   try {
@@ -78,12 +88,19 @@ async function verstuurOpnieuw(formData: FormData) {
   } catch {
     gelukt = false;
   }
+  await logActie({
+    actie: "order.advies_opnieuw",
+    onderwerpSoort: "order",
+    onderwerpId: id,
+    omschrijving: gelukt ? "Advies opnieuw verstuurd" : "Advies opnieuw versturen mislukt",
+    gebruiker: ik,
+  });
   terug(id, gelukt ? "advies_ok" : "advies_mislukt");
 }
 
 async function stuurTestlinkOpnieuw(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("bestellingen");
   const id = String(formData.get("id"));
   const supabase = adminClient();
   const { data: order } = await supabase
@@ -104,17 +121,38 @@ async function stuurTestlinkOpnieuw(formData: FormData) {
   } catch {
     gelukt = false;
   }
+  await logActie({
+    actie: "order.testlink_opnieuw",
+    onderwerpSoort: "order",
+    onderwerpId: id,
+    omschrijving: gelukt ? `Testlink opnieuw gestuurd naar ${order.email}` : "Testlink opnieuw sturen mislukt",
+    gebruiker: ik,
+  });
   terug(id, gelukt ? "testlink_ok" : "testlink_mislukt");
 }
 
 async function verwijderBestelling(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("bestellingen_verwijderen");
   const id = String(formData.get("id"));
   const supabase = adminClient();
-  const { data } = await supabase.from("orders").select("pdf_pad").eq("id", id).single();
+  const { data } = await supabase
+    .from("orders")
+    .select("pdf_pad, klantnaam, email, status, bedrag_cent")
+    .eq("id", id)
+    .single();
   if (data?.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
-  await supabase.from("orders").delete().eq("id", id);
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+  if (!error) {
+    await logActie({
+      actie: "order.verwijderen",
+      onderwerpSoort: "order",
+      onderwerpId: id,
+      omschrijving: `Bestelling verwijderd${data ? ` (${data.klantnaam ?? ""} <${data.email ?? ""}>, ${data.status})` : ""}`,
+      details: data ? { status: data.status, bedrag_cent: data.bedrag_cent } : null,
+      gebruiker: ik,
+    });
+  }
   revalidatePath("/admin/bestellingen");
   redirect("/admin/bestellingen");
 }
@@ -138,7 +176,7 @@ export default async function OrderDetail({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ melding?: string }>;
 }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("bestellingen");
   const { id } = await params;
   const { melding } = await searchParams;
   const supabase = adminClient();
@@ -260,12 +298,14 @@ export default async function OrderDetail({
           </form>
         )}
 
-        <form action={verwijderBestelling} className="border-t border-black/5 pt-4 dark:border-white/10">
-          <input type="hidden" name="id" value={order.id} />
-          <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">
-            Bestelling verwijderen
-          </button>
-        </form>
+        {heeftRecht(ik.rol, "bestellingen_verwijderen") && (
+          <form action={verwijderBestelling} className="border-t border-black/5 pt-4 dark:border-white/10">
+            <input type="hidden" name="id" value={order.id} />
+            <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">
+              Bestelling verwijderen
+            </button>
+          </form>
+        )}
       </section>
     </main>
   );

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { foutTekst } from "@/lib/beheermelding";
 import { koppelRelatie } from "@/lib/relaties/koppel";
@@ -52,7 +53,7 @@ async function haal(id: string): Promise<AfspraakRij> {
 // Afspraak ------------------------------------------------------------------------------
 
 export async function wijzigStatus(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = afspraakId(fd);
   const nieuw = String(fd.get("status") ?? "");
   const mailen = fd.get("mail") === "on";
@@ -74,6 +75,13 @@ export async function wijzigStatus(fd: FormData): Promise<void> {
   if (error) terug(`${PAD}/${id}`, `Opslaan mislukt: ${error.message}`, "fout");
   const rij = (data as AfspraakRij[] | null)?.[0];
   if (!rij) terug(`${PAD}/${id}`, "De afspraak is intussen gewijzigd. Bekijk hem opnieuw.", "fout");
+  await logActie({
+    actie: "afspraak.status",
+    onderwerpSoort: "afspraak",
+    onderwerpId: id,
+    omschrijving: `Afspraak van ${a.naam ?? a.email}: ${STATUS_LABEL[a.status]} → ${STATUS_LABEL[nieuw]}${mailen ? " (met mail)" : ""}`,
+    details: { van: a.status, naar: nieuw, mail: mailen, reden: reden || undefined },
+  });
   revalidatePath(PAD);
 
   let melding = `Status gewijzigd naar ‘${STATUS_LABEL[nieuw]}’.`;
@@ -90,7 +98,7 @@ export async function wijzigStatus(fd: FormData): Promise<void> {
 }
 
 export async function stuurBevestigingOpnieuw(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = afspraakId(fd);
   const a = await haal(id);
   if (a.status !== "bevestigd") terug(`${PAD}/${id}`, "Alleen een bevestigde afspraak kan opnieuw worden bevestigd.", "fout");
@@ -103,7 +111,7 @@ export async function stuurBevestigingOpnieuw(fd: FormData): Promise<void> {
 }
 
 export async function bewaarNotitie(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = afspraakId(fd);
   const notitie = String(fd.get("notitie") ?? "").replace(/\r\n?/g, "\n").trim().slice(0, MAX.notitie);
   const { error } = await adminClient().from("afspraken").update({ notitie }).eq("id", id);
@@ -113,7 +121,7 @@ export async function bewaarNotitie(fd: FormData): Promise<void> {
 }
 
 export async function koppelAanAdresboek(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = afspraakId(fd);
   const a = await haal(id);
   const relatie = await koppelRelatie({ email: a.email, naam: a.naam, telefoon: a.telefoon, bron: "handmatig", tags: ["afspraak"] });
@@ -124,10 +132,19 @@ export async function koppelAanAdresboek(fd: FormData): Promise<void> {
 }
 
 export async function verwijderAfspraak(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("afspraken");
   const id = afspraakId(fd);
-  const { error } = await adminClient().from("afspraken").delete().eq("id", id);
+  const { data: weg, error } = await adminClient().from("afspraken").delete().eq("id", id).select("email, start_op").maybeSingle();
   if (error) terug(`${PAD}/${id}`, `Verwijderen mislukt: ${error.message}`, "fout");
+  if (weg) {
+    await logActie({
+      actie: "afspraak.verwijderen",
+      onderwerpSoort: "afspraak",
+      onderwerpId: id,
+      omschrijving: `Afspraak van ${weg.email} (${weg.start_op}) verwijderd`,
+      gebruiker: ik,
+    });
+  }
   revalidatePath(PAD);
   terug(PAD, "Afspraak verwijderd.");
 }
@@ -137,7 +154,7 @@ export async function verwijderAfspraak(fd: FormData): Promise<void> {
  * maar overlap met andere afspraken of blokkades moet bewust worden bevestigd.
  */
 export async function maakAfspraak(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const NIEUW = `${PAD}/nieuw`;
   const soortId = String(fd.get("soort") ?? "");
   const soort = geldigeUuid(soortId) ? await haalSoort(soortId) : null;
@@ -210,7 +227,7 @@ export async function maakAfspraak(fd: FormData): Promise<void> {
 // Instellingen: soorten ----------------------------------------------------------------
 
 export async function bewaarSoort(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = String(fd.get("id") ?? "");
   const v = valideerSoort(Object.fromEntries(fd.entries()));
   if (!v.ok) terug(INSTELLINGEN, v.fouten.join(" "), "fout");
@@ -225,7 +242,7 @@ export async function bewaarSoort(fd: FormData): Promise<void> {
 }
 
 export async function verwijderSoort(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = String(fd.get("id") ?? "");
   if (!geldigeUuid(id)) terug(INSTELLINGEN, "Onbekende soort.", "fout");
   const supabase = adminClient();
@@ -242,7 +259,7 @@ export async function verwijderSoort(fd: FormData): Promise<void> {
 // Instellingen: beschikbaarheid, blokkades en algemeen ----------------------------------
 
 export async function bewaarBeschikbaarheid(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   let blokken: unknown;
   try {
     blokken = JSON.parse(String(fd.get("blokken") ?? "[]"));
@@ -271,7 +288,7 @@ export async function bewaarBeschikbaarheid(fd: FormData): Promise<void> {
 }
 
 export async function voegBlokkadeToe(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const v = valideerBlokkade(Object.fromEntries(fd.entries()));
   if (!v.ok) terug(INSTELLINGEN, v.fout, "fout");
   const { error } = await adminClient().from("afspraak_blokkades").insert(v.waarde);
@@ -281,7 +298,7 @@ export async function voegBlokkadeToe(fd: FormData): Promise<void> {
 }
 
 export async function verwijderBlokkade(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const id = String(fd.get("id") ?? "");
   if (!geldigeUuid(id)) terug(INSTELLINGEN, "Onbekende blokkade.", "fout");
   const { error } = await adminClient().from("afspraak_blokkades").delete().eq("id", id);
@@ -291,7 +308,7 @@ export async function verwijderBlokkade(fd: FormData): Promise<void> {
 }
 
 export async function bewaarAlgemeen(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const min = Number(String(fd.get("min_vooraf_uren") ?? ""));
   const max = Number(String(fd.get("max_vooruit_dagen") ?? ""));
   if (!Number.isInteger(min) || min < 0 || min > 24 * 60) terug(INSTELLINGEN, "‘Minimaal vooraf’ ligt tussen 0 en 1440 uur.", "fout");

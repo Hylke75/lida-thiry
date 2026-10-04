@@ -26,7 +26,7 @@ const tijd = (iso: string | null) =>
 
 // Ontvangers van een campagne als CSV (puntkomma's, voor Excel), alleen voor beheerders.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const { id } = await params;
   if (!UUID_PATROON.test(id)) return new Response("Onbekende campagne.", { status: 404 });
   const c = await haalCampagne(id);

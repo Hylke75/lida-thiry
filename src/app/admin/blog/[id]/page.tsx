@@ -28,7 +28,7 @@ export default async function BlogBewerken({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ai?: string; nieuw?: string; gekopieerd?: string; fout?: string; hersteld?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const { id } = await params;
   const sp = await searchParams;
   const bericht = await haalBericht(id);

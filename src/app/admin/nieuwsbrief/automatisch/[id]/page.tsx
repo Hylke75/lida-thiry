@@ -16,7 +16,7 @@ export default async function AutomatischPagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ nieuw?: string }>;
 }) {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("nieuwsbrief");
   const { id } = await params;
   const { nieuw } = await searchParams;
   if (!UUID_PATROON.test(id)) notFound();

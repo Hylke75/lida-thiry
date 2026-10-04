@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { valideerWebsiteInvoer, WEBSITE_SLEUTELS, type WebsiteSleutel } from "@/lib/website/instellingen";
 import { isStandaardIndeling, normaliseerIndeling, type IndelingItem } from "@/lib/website/homepage";
@@ -17,12 +18,19 @@ async function schrijf(rijen: { sleutel: string; waarde: string | null }[]): Pro
 
 /** Slaat naam, omschrijving, afbeeldingen en social media op. Leeg = standaard. */
 export async function slaWebsiteOp(invoer: Partial<Record<WebsiteSleutel, string>>): Promise<WebsiteResultaat> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("website_instellingen");
   const uitkomst = valideerWebsiteInvoer(invoer ?? {});
   if (!uitkomst.ok) return { ok: false, fouten: uitkomst.fouten };
 
   const fout = await schrijf(WEBSITE_SLEUTELS.map((sleutel) => ({ sleutel, waarde: uitkomst.waarden[sleutel] })));
   if (fout) return { ok: false, fouten: [`Opslaan mislukt: ${fout}`] };
+  await logActie({
+    actie: "website.instellingen_wijzigen",
+    onderwerpSoort: "website",
+    omschrijving: "Website-instellingen opgeslagen",
+    details: uitkomst.waarden,
+    gebruiker: ik,
+  });
 
   // Naam, logo, favicon en social media staan op elke pagina.
   revalidatePath("/", "layout");
@@ -34,7 +42,7 @@ export type IndelingResultaat = { ok: true; bericht: string; indeling: IndelingI
 
 /** Slaat volgorde en zichtbaarheid van de homepageblokken op. */
 export async function slaIndelingOp(invoer: unknown): Promise<IndelingResultaat> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("homepage");
   if (!Array.isArray(invoer)) return { ok: false, fouten: ["Ongeldige indeling."] };
   const indeling = normaliseerIndeling(invoer);
   // De standaard slaan we op als leeg, zodat nieuwe blokken later vanzelf meekomen.
@@ -42,6 +50,13 @@ export async function slaIndelingOp(invoer: unknown): Promise<IndelingResultaat>
     { sleutel: "homepage_indeling", waarde: isStandaardIndeling(indeling) ? null : JSON.stringify(indeling) },
   ]);
   if (fout) return { ok: false, fouten: [`Opslaan mislukt: ${fout}`] };
+  await logActie({
+    actie: "website.homepage_indeling",
+    onderwerpSoort: "website",
+    omschrijving: "Homepage-indeling opgeslagen",
+    details: { indeling },
+    gebruiker: ik,
+  });
 
   revalidatePath("/");
   return { ok: true, bericht: "Opgeslagen. De homepage is bijgewerkt.", indeling };

@@ -7,7 +7,7 @@ import { ImportFormulier } from "./ImportFormulier";
 export const dynamic = "force-dynamic";
 
 export default async function ImportPagina() {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief_contacten");
   const tags = await alleTags().catch(() => [] as string[]);
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">

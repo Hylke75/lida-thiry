@@ -34,7 +34,7 @@ export default async function DubbelPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("adresboek");
   const zoek = await searchParams;
   const aId = een(zoek.a);
   const bId = een(zoek.b);

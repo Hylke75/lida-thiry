@@ -13,9 +13,19 @@ export function normaliseerEmail(invoer: unknown): string | null {
 }
 
 /** Waarom een beheerder niet verwijderd mag worden, of null als het mag. */
-export function verwijderBezwaar(opts: { mijnId: string; doelId: string; aantalBeheerders: number }): string | null {
+export function verwijderBezwaar(opts: {
+  mijnId: string;
+  doelId: string;
+  aantalBeheerders: number;
+  /** De te verwijderen beheerder is eigenaar. */
+  doelIsEigenaar?: boolean;
+  aantalEigenaren?: number;
+}): string | null {
   if (opts.doelId === opts.mijnId) return "Je kunt jezelf niet verwijderen. Laat dat een andere beheerder doen.";
   if (opts.aantalBeheerders <= 1) return "Dit is de laatste beheerder; die kan niet verwijderd worden.";
+  if (opts.doelIsEigenaar && (opts.aantalEigenaren ?? 0) <= 1) {
+    return "Dit is de laatste eigenaar; maak eerst iemand anders eigenaar.";
+  }
   return null;
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import {
   INSTELLING_VELDEN,
@@ -33,17 +34,17 @@ async function leesRijen(): Promise<Rij[]> {
 
 async function slaOp(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("instellingen");
   const rijen = await leesRijen();
   const fouten: string[] = [];
-  const wijzigingen: { sleutel: string; waarde: string | null }[] = [];
+  const wijzigingen: { sleutel: string; waarde: string | null; oud: string | null }[] = [];
 
   for (const r of rijen) {
     const invoer = formData.get(`veld:${r.sleutel}`);
     if (typeof invoer !== "string") continue;
     const uitkomst = vanInvoer(veldVoor(r.sleutel, r.omschrijving), invoer);
     if (!uitkomst.ok) fouten.push(uitkomst.fout);
-    else if (uitkomst.waarde !== r.waarde) wijzigingen.push({ sleutel: r.sleutel, waarde: uitkomst.waarde });
+    else if (uitkomst.waarde !== r.waarde) wijzigingen.push({ sleutel: r.sleutel, waarde: uitkomst.waarde, oud: r.waarde });
   }
 
   if (fouten.length) {
@@ -56,6 +57,16 @@ async function slaOp(formData: FormData) {
     if (error) {
       redirect(`/admin/instellingen?fout=${encodeURIComponent(`Opslaan mislukt: ${error.message}`)}`);
     }
+  }
+
+  if (wijzigingen.length) {
+    await logActie({
+      actie: "instellingen.wijzigen",
+      onderwerpSoort: "instellingen",
+      omschrijving: `Instellingen gewijzigd: ${wijzigingen.map((w) => w.sleutel).join(", ")}`,
+      details: { wijzigingen: wijzigingen.map((w) => ({ sleutel: w.sleutel, van: w.oud, naar: w.waarde })) },
+      gebruiker: ik,
+    });
   }
 
   // Instellingen (zoals de prijs) worden ook op openbare pagina's gebruikt.
@@ -113,7 +124,7 @@ export default async function InstellingenPagina({
 }: {
   searchParams: Promise<{ opgeslagen?: string; fout?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("instellingen");
   const { opgeslagen, fout } = await searchParams;
   const rijen = await leesRijen();
 

@@ -46,7 +46,7 @@ function tabUrl(w: Weergave, extra: Record<string, string | undefined> = {}): st
 }
 
 export default async function AfsprakenPagina({ searchParams }: { searchParams: Zoek }) {
-  await vereisBeheerder();
+  await vereisBeheerder("afspraken");
   const zoek = await searchParams;
   const weergave: Weergave = zoek.weergave === "voorbij" || zoek.weergave === "week" ? zoek.weergave : "komend";
   const status = isAfspraakStatus(zoek.status) ? zoek.status : undefined;

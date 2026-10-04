@@ -19,7 +19,7 @@ function vernieuw(id?: string) {
 
 /** Maakt een nieuwe automatische mail (uit een sjabloon of leeg); staat nog uit. */
 export async function maakAutomatisering(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const s = vindSjabloon(formData.get("sjabloon"));
   const rij = s
     ? {
@@ -42,7 +42,7 @@ export async function maakAutomatisering(formData: FormData) {
 }
 
 export async function verwijderAutomatisering(formData: FormData) {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   const id = String(formData.get("id") ?? "");
   if (!UUID_PATROON.test(id)) redirect(`${PAD}?fout=onbekend`);
   const { data } = await adminClient()
@@ -58,7 +58,7 @@ export async function verwijderAutomatisering(formData: FormData) {
 
 /** Zet een automatische mail aan of uit. Aanzetten kan alleen als de opgeslagen mail compleet is. */
 export async function zetActief(id: string, aan: boolean): Promise<{ ok: true; bericht: string } | { ok: false; fouten: string[] }> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende automatische mail."] };
   const c = await haalCampagne(id);
   if (!c || c.soort !== "automatisch") return { ok: false, fouten: ["Onbekende automatische mail."] };

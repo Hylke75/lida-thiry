@@ -14,7 +14,7 @@ export const maxDuration = 300;
  * voor beheerders, nooit gecachet.
  */
 export async function GET() {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("backup");
   const supabase = adminClient();
   const nu = new Date();
 

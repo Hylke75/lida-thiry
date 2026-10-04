@@ -35,7 +35,7 @@ function Plek({ aan, label }: { aan: boolean; label: string }) {
 }
 
 export default async function PaginasOverzicht({ searchParams }: { searchParams: Promise<{ fout?: string; verwijderd?: string }> }) {
-  await vereisBeheerder();
+  await vereisBeheerder("paginas");
   const sp = await searchParams;
   const { data, error } = await adminClient()
     .from("paginas")

@@ -60,7 +60,7 @@ async function koppelGebruik(berichtId: string, sinds: Date) {
 
 /** Laat de AI een concept schrijven, slaat het op en opent het in de editor. */
 export async function schrijfMetAi(ruw: unknown): Promise<SchrijfUitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("ai");
   if (!aiBeschikbaar()) return { ok: false, fout: "De AI-schrijfhulp is nog niet ingesteld (ANTHROPIC_API_KEY ontbreekt)." };
   const n = normaliseerOpdracht(ruw);
   if (!n.ok) return { ok: false, fout: n.fout };

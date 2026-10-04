@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { foutTekst } from "@/lib/beheermelding";
 import { nodigOrderUit, stuurUitnodigingOpnieuw } from "@/lib/reviews/uitnodigen";
@@ -37,7 +38,7 @@ const BEOORDELING: Record<string, { status: "goedgekeurd" | "afgewezen" | "ingev
 };
 
 export async function beoordeel(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews");
   const reviewId = id(fd);
   const actie = BEOORDELING[String(fd.get("actie") ?? "")];
   if (!actie) terug(fd, "Onbekende actie.", "fout");
@@ -53,12 +54,20 @@ export async function beoordeel(fd: FormData): Promise<void> {
     .select("id");
   if (error) terug(fd, `Opslaan mislukt: ${error.message}`, "fout");
   if (!data?.length) terug(fd, "Deze review is (nog) niet ingevuld.", "fout");
+  await logActie({
+    actie: `review.${String(fd.get("actie"))}`,
+    onderwerpSoort: "review",
+    onderwerpId: reviewId,
+    omschrijving: actie.melding,
+    details: { status: actie.status },
+    gebruiker: ik,
+  });
   vernieuw();
   terug(fd, actie.melding);
 }
 
 export async function bewerk(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews");
   const reviewId = id(fd);
   const v = valideerBeheerBewerking({ naam: fd.get("naam"), tekst: fd.get("tekst") });
   if (!v.ok) terug(fd, v.fout, "fout");
@@ -68,6 +77,7 @@ export async function bewerk(fd: FormData): Promise<void> {
     .eq("id", reviewId)
     .not("email", "is", null);
   if (error) terug(fd, `Opslaan mislukt: ${error.message}`, "fout");
+  await logActie({ actie: "review.bewerken", onderwerpSoort: "review", onderwerpId: reviewId, omschrijving: "Review bewerkt", gebruiker: ik });
   vernieuw();
   terug(fd, "Wijzigingen opgeslagen.");
 }
@@ -78,7 +88,7 @@ export async function bewerk(fd: FormData): Promise<void> {
  * automatisch wordt uitgenodigd.
  */
 export async function verwijder(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews_uitnodigen");
   const reviewId = id(fd);
   const supabase = adminClient();
   const { data } = await supabase.from("beoordelingen").select("order_id").eq("id", reviewId).maybeSingle();
@@ -98,12 +108,13 @@ export async function verwijder(fd: FormData): Promise<void> {
         .eq("id", reviewId)
     : await supabase.from("beoordelingen").delete().eq("id", reviewId);
   if (error) terug(fd, `Verwijderen mislukt: ${error.message}`, "fout");
+  await logActie({ actie: "review.verwijderen", onderwerpSoort: "review", onderwerpId: reviewId, omschrijving: "Review verwijderd", gebruiker: ik });
   vernieuw();
   terug(fd, "Review verwijderd.");
 }
 
 export async function nodigUit(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews_uitnodigen");
   const orderId = id(fd, "order_id");
   let email: string;
   try {
@@ -111,12 +122,13 @@ export async function nodigUit(fd: FormData): Promise<void> {
   } catch (e) {
     terug(fd, `Uitnodigen mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({ actie: "review.uitnodigen", onderwerpSoort: "order", onderwerpId: orderId, omschrijving: `Reviewuitnodiging verstuurd naar ${email}`, gebruiker: ik });
   vernieuw();
   terug(fd, `Uitnodiging verstuurd naar ${email}.`);
 }
 
 export async function stuurOpnieuw(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("reviews_uitnodigen");
   const reviewId = id(fd);
   let email: string;
   try {
@@ -124,6 +136,7 @@ export async function stuurOpnieuw(fd: FormData): Promise<void> {
   } catch (e) {
     terug(fd, `Opnieuw sturen mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({ actie: "review.uitnodiging_opnieuw", onderwerpSoort: "review", onderwerpId: reviewId, omschrijving: `Reviewuitnodiging opnieuw verstuurd naar ${email}`, gebruiker: ik });
   vernieuw();
   terug(fd, `Uitnodiging opnieuw verstuurd naar ${email}.`);
 }

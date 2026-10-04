@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { parseerCsvRijen } from "@/lib/nieuwsbrief/csv";
@@ -35,7 +36,7 @@ export type BewaarStaat = { fouten: string[] } | null;
 
 /** Nieuwe doorverwijzing of een bestaande aanpassen (useActionState). */
 export async function bewaarDoorverwijzing(_vorige: BewaarStaat, fd: FormData): Promise<BewaarStaat> {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   const ruwId = String(fd.get("id") ?? "");
   const id = UUID_PATROON.test(ruwId) ? ruwId : null;
   const v = valideerDoorverwijzing({ van: fd.get("van"), naar: fd.get("naar"), permanent: fd.get("permanent") });
@@ -63,23 +64,38 @@ export async function bewaarDoorverwijzing(_vorige: BewaarStaat, fd: FormData): 
   if (error) {
     return { fouten: [error.code === "23505" ? `Voor ${v.waarde.van} bestaat al een doorverwijzing.` : `Opslaan mislukt: ${error.message}`] };
   }
+  await logActie({
+    actie: id ? "doorverwijzing.wijzigen" : "doorverwijzing.toevoegen",
+    onderwerpSoort: "doorverwijzing",
+    onderwerpId: id ?? v.waarde.van,
+    omschrijving: `${id ? "Doorverwijzing gewijzigd" : "Doorverwijzing toegevoegd"}: ${v.waarde.van} → ${v.waarde.naar}`,
+    details: { ...v.waarde, was: huidig ? { van: huidig.van, naar: huidig.naar, permanent: huidig.permanent } : undefined },
+  });
   klaar();
   terug([`${id ? "Opgeslagen" : "Toegevoegd"}: ${v.waarde.van} → ${v.waarde.naar}.`, ...waarschuwingen.map((w) => `Let op: ${w}`)].join(" "));
 }
 
 export async function verwijderDoorverwijzing(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   const id = String(fd.get("id") ?? "");
   if (!UUID_PATROON.test(id)) terug("Onbekende doorverwijzing.", "fout");
   const { data, error } = await adminClient().from("doorverwijzingen").delete().eq("id", id).select("van");
   if (error) terug(`Verwijderen mislukt: ${error.message}`, "fout");
+  if (data?.length) {
+    await logActie({
+      actie: "doorverwijzing.verwijderen",
+      onderwerpSoort: "doorverwijzing",
+      onderwerpId: id,
+      omschrijving: `Doorverwijzing vanaf ${data[0].van} verwijderd`,
+    });
+  }
   klaar();
   terug(data?.length ? `Doorverwijzing vanaf ${data[0].van} verwijderd.` : "Deze doorverwijzing bestond niet (meer).");
 }
 
 /** Wat er gebeurt bij een bezoek aan dit adres (met de huidige tabel, niet de cache). */
 export async function testDoorverwijzing(invoer: string): Promise<{ ok: true; uitkomst: TestUitkomst } | { ok: false; fout: string }> {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   try {
     const regels = await alleDoorverwijzingen();
     return { ok: true, uitkomst: testAdres(regels, String(invoer ?? "").slice(0, 2000)) };
@@ -142,7 +158,7 @@ async function analyseer(tekst: string): Promise<{ ok: false; fout: string } | {
 }
 
 export async function controleerImport(tekst: string): Promise<ImportUitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   try {
     const a = await analyseer(String(tekst ?? ""));
     return a.ok ? { ok: true, voorbeeld: a.voorbeeld } : a;
@@ -152,7 +168,7 @@ export async function controleerImport(tekst: string): Promise<ImportUitkomst> {
 }
 
 export async function voerImportUit(tekst: string): Promise<ImportUitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("doorverwijzingen");
   try {
     const a = await analyseer(String(tekst ?? ""));
     if (!a.ok) return a;
@@ -165,6 +181,12 @@ export async function voerImportUit(tekst: string): Promise<ImportUitkomst> {
         );
       if (error) return { ok: false, fout: `Importeren mislukt: ${error.message}` };
     }
+    await logActie({
+      actie: "doorverwijzing.importeren",
+      onderwerpSoort: "doorverwijzing",
+      omschrijving: `Doorverwijzingen geïmporteerd: ${a.voorbeeld.nieuw} nieuw, ${a.voorbeeld.bijgewerkt} bijgewerkt`,
+      details: { nieuw: a.voorbeeld.nieuw, bijgewerkt: a.voorbeeld.bijgewerkt, ongewijzigd: a.voorbeeld.ongewijzigd, ongeldig: a.voorbeeld.ongeldig.length },
+    });
     klaar();
     return { ok: true, voorbeeld: a.voorbeeld };
   } catch (e) {

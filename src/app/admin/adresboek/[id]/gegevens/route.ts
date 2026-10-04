@@ -1,4 +1,5 @@
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { gegevensVanRelatie } from "@/lib/relaties/beheer";
 
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 // AVG-inzage: alles wat over deze relatie is opgeslagen, als JSON-download.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("adresboek");
   const { id } = await params;
   const gegevens = UUID_PATROON.test(id) ? await gegevensVanRelatie(id) : null;
   if (!gegevens) {
@@ -16,6 +17,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
+  await logActie({
+    actie: "relatie.avg_export",
+    onderwerpSoort: "relatie",
+    onderwerpId: id,
+    omschrijving: "AVG-inzage gedownload (alle gegevens van deze relatie)",
+    gebruiker: ik,
+  });
   const datum = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(gegevens, null, 2), {
     headers: {

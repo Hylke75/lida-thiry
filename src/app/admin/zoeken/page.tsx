@@ -84,7 +84,7 @@ export default async function ZoekPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("overzicht");
   const q = normaliseerZoekterm((await searchParams).q);
   const teKort = q.length > 0 && q.length < MIN_ZOEKTERM;
   const { woorden, groepen } = q && !teKort ? await zoekOveral(q) : { woorden: [], groepen: [] };

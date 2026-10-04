@@ -21,7 +21,7 @@ export default async function CampagnePagina({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ gekopieerd?: string }>;
 }) {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("nieuwsbrief");
   const { id } = await params;
   const { gekopieerd } = await searchParams;
   if (!UUID_PATROON.test(id)) notFound();

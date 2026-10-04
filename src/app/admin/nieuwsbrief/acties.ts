@@ -22,7 +22,7 @@ function beschrijf(r: WachtrijResultaat): string {
 
 /** "Wachtrij nu verwerken" op het nieuwsbriefoverzicht. */
 export async function verwerkWachtrijNu(): Promise<Uitkomst> {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
   try {
     const r = await verwerkWachtrij({ max: 300 });
     revalidatePath("/admin/nieuwsbrief");

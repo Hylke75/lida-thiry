@@ -33,7 +33,7 @@ function terugNaar(fd: FormData, id: string): string {
 }
 
 export async function markeerOpgelost(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("fouten");
   const id = foutId(fd);
   // gemeld_op leeg: komt de fout terug, dan volgt er weer een mail (zie meldReden).
   const { error } = await adminClient().from("fouten_log").update({ opgelost: true, gemeld_op: null }).eq("id", id);
@@ -43,7 +43,7 @@ export async function markeerOpgelost(fd: FormData): Promise<void> {
 }
 
 export async function heropen(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("fouten");
   const id = foutId(fd);
   const { error } = await adminClient().from("fouten_log").update({ opgelost: false }).eq("id", id);
   if (error) terug(`${PAD}/${id}`, `Opslaan mislukt: ${error.message}`, "fout");
@@ -52,7 +52,7 @@ export async function heropen(fd: FormData): Promise<void> {
 }
 
 export async function verwijderFout(fd: FormData): Promise<void> {
-  await vereisBeheerder();
+  await vereisBeheerder("fouten");
   const id = foutId(fd);
   const { error } = await adminClient().from("fouten_log").delete().eq("id", id);
   if (error) terug(`${PAD}/${id}`, `Verwijderen mislukt: ${error.message}`, "fout");
@@ -67,7 +67,7 @@ export async function verwijderFout(fd: FormData): Promise<void> {
  * binnenkomt. Zo zijn zowel de foutlog en de mail als de serverkoppeling getest.
  */
 export async function veroorzaakTestfout(): Promise<void> {
-  const gebruiker = await vereisBeheerder();
+  const gebruiker = await vereisBeheerder("fouten");
   const kenmerk = randomBytes(3).toString("hex");
   await registreerFout({
     bron: "test",

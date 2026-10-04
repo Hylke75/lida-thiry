@@ -211,7 +211,7 @@ async function laadOverzicht() {
 }
 
 export default async function NieuwsbriefOverzicht() {
-  await vereisBeheerder();
+  await vereisBeheerder("nieuwsbrief");
 
   // Wachtrij op de achtergrond bijwerken terwijl de beheerder actief is: ingeplande
   // campagnes en automatische mails hoeven dan niet op de dagelijkse ronde te wachten.

@@ -53,7 +53,7 @@ export default async function BlogOverzicht({
 }: {
   searchParams: Promise<{ zoek?: string; status?: string; categorie?: string; tag?: string; fout?: string; verwijderd?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("blog");
   const sp = await searchParams;
 
   const [{ data, error }, gebruik] = await Promise.all([

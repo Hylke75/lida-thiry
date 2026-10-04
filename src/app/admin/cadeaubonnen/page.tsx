@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { formatteerBedrag } from "@/lib/prijs";
 import { foutTekst } from "@/lib/beheermelding";
@@ -28,7 +29,7 @@ function terug(melding: string, soort: "ok" | "fout" = "ok"): never {
 
 async function verstuurOpnieuw(formData: FormData) {
   "use server";
-  await vereisBeheerder();
+  const ik = await vereisBeheerder("cadeaubonnen");
   const id = String(formData.get("id") ?? "");
   const kopie = formData.get("kopie") === "1";
   if (!UUID_PATROON.test(id)) terug("Onbekende cadeaubon.", "fout");
@@ -38,6 +39,13 @@ async function verstuurOpnieuw(formData: FormData) {
   } catch (e) {
     terug(`Versturen mislukt: ${foutTekst(e)}`, "fout");
   }
+  await logActie({
+    actie: "cadeaubon.opnieuw_versturen",
+    onderwerpSoort: "cadeaubon",
+    onderwerpId: id,
+    omschrijving: `Cadeaubon opnieuw verstuurd naar ${aan}${kopie ? " (met kopie naar koper)" : ""}`,
+    gebruiker: ik,
+  });
   revalidatePath(PAD);
   terug(`Cadeaubon verstuurd naar ${aan}.`);
 }
@@ -62,7 +70,7 @@ export default async function CadeaubonnenPage({
 }: {
   searchParams: Promise<{ ok?: string; fout?: string; alles?: string }>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("cadeaubonnen");
   const { ok, fout, alles } = await searchParams;
   const supabase = adminClient();
 

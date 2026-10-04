@@ -33,7 +33,7 @@ import { Geschiedenis } from "../../versies/Geschiedenis";
 import { zetBerichtVersieTerug } from "../../versies/acties";
 import { ArtikelTekst } from "./Artikel";
 import { BlogUpload } from "./BlogUpload";
-import { AiBadge, ZichtbaarheidBadge } from "./onderdelen";
+import { AiBadge, ZichtbaarheidBadge } from "./badges";
 import { TagInvoer } from "./TagInvoer";
 
 interface Velden {

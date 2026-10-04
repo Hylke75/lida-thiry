@@ -58,7 +58,7 @@ export default async function FoutenPagina({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await vereisBeheerder();
+  await vereisBeheerder("fouten");
   const zoek = await searchParams;
   const filter = leesFilter(zoek);
   const ok = typeof zoek.ok === "string" ? zoek.ok : null;
