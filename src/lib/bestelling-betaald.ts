@@ -7,6 +7,7 @@ import { leesSectie } from "./inhoud/lees";
 import { NIEUWSBRIEF_BESTELLING } from "./inhoud/groepen/nieuwsbrief";
 import { meldAanNaBestelling } from "./nieuwsbrief/beheer";
 import { koppelRelatie } from "./relaties/koppel";
+import { stuurPushMelding } from "./push/versturen";
 
 /**
  * Meldt de klant aan voor de nieuwsbrief als bij de bestelling het vinkje aan
@@ -117,6 +118,7 @@ export async function naBetaling(opts: {
       );
     }
 
+    await stuurPushMelding("bestelling", { titel: "Nieuwe bestelling betaald", tekst: `${order.klantnaam} · € ${((order.bedrag_cent ?? 0) / 100).toFixed(2).replace(".", ",")}${order.kortingscode ? ` · code ${order.kortingscode}` : ""}`, url: `/admin/order/${order.id}` });
     await nieuwsbriefNaBetaling(order.id);
   } catch (e) {
     console.error("Afhandeling na betaling mislukt", opts.orderId, e);

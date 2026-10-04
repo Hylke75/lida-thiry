@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { BerichtenTeller } from "./BerichtenTeller";
+import { PwaRegistratie } from "./PwaRegistratie";
+import { ZoekVeld } from "./ZoekVeld";
 
 interface NavLink {
   href: string;
@@ -71,6 +73,7 @@ const GROEPEN = [
     links: [
       { href: "/admin/instellingen", label: "Algemeen" },
       { href: "/admin/beheerders", label: "Beheerders" },
+      { href: "/admin/meldingen", label: "Meldingen" },
     ],
   },
 ] as const satisfies readonly NavGroep[];
@@ -124,6 +127,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
 
   return (
     <header className="flex flex-col gap-3 border-b border-black/10 pb-4 dark:border-white/15">
+      <PwaRegistratie />
       {/* Telefoon: compacte balk met uitklapmenu. */}
       <details className="group sm:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
@@ -142,6 +146,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
           </span>
         </summary>
         <nav aria-label="Beheer" className="mt-3 flex flex-col gap-3 text-sm">
+          <ZoekVeld />
           {groepen.map((g) =>
             g.links.length === 1 ? (
               <Link
@@ -181,6 +186,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
           <Link href="/admin" className="font-serif text-xl tracking-tight">
             Beheer
           </Link>
+          <ZoekVeld className="w-36 shrink-0 lg:w-52" />
           <nav aria-label="Beheer" className="flex flex-wrap items-center justify-end gap-1 text-sm">
             {groepen.map((g) => {
               const isActief = groepIsActief(g, actief);

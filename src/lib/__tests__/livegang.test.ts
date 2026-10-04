@@ -53,6 +53,9 @@ function compleet(): LivegangGegevens {
       RESEND_WEBHOOK_SECRET: "whsec_abc",
       NIEUWSBRIEF_GEHEIM: "geheim",
       ANTHROPIC_API_KEY: "sk-ant-123",
+      VAPID_PUBLIC_KEY: "BPubliek",
+      VAPID_PRIVATE_KEY: "privaat",
+      VAPID_SUBJECT: "mailto:info@lidathiry.nl",
     },
     aangemeldeContacten: 12,
     contactformulierGepubliceerd: true,
@@ -182,10 +185,11 @@ describe("evalueerLivegang", () => {
       "nieuwsbrief-webhook",
       "nieuwsbrief-geheim",
       "ai-schrijfhulp",
+      "pushmeldingen",
     ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 4 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 5 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
@@ -230,6 +234,25 @@ describe("blog in de controlelijst", () => {
     expect(item?.detail).toContain("ANTHROPIC_API_KEY");
     expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 1 });
     expect(vind(compleet(), "ai-schrijfhulp").ok).toBe(true);
+  });
+});
+
+describe("pushmeldingen in de controlelijst", () => {
+  it("raadt VAPID-sleutels aan, maar blokkeert niet", () => {
+    expect(vind(compleet(), "pushmeldingen").ok).toBe(true);
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, VAPID_PRIVATE_KEY: "" };
+    const items = evalueerLivegang(g);
+    const item = items.find((i) => i.id === "pushmeldingen");
+    expect(item).toMatchObject({ ok: false, niveau: "aanbevolen", links: [{ href: "/admin/meldingen" }] });
+    expect(item?.detail).toContain("vapid-sleutels.mjs");
+    expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 1 });
+  });
+
+  it("vereist een mailto:- of https-onderwerp", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, VAPID_SUBJECT: "info@lidathiry.nl" };
+    expect(vind(g, "pushmeldingen").ok).toBe(false);
   });
 });
 

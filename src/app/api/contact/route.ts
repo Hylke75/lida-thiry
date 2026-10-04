@@ -8,6 +8,7 @@ import { siteUrl } from "@/lib/site";
 import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
 import { BERICHT_VELDEN, stuurContactMails, type ContactBericht } from "@/lib/contact/berichten";
 import { paginaUitReferer, spamRedenen, valideerContact } from "@/lib/contact/regels";
+import { stuurPushMelding } from "@/lib/push/versturen";
 
 export const runtime = "nodejs";
 
@@ -87,6 +88,7 @@ export async function POST(request: Request) {
   if (!spam.length) {
     // Na het antwoord versturen: de bezoeker hoeft niet op Resend te wachten.
     after(() => stuurContactMails(bericht));
+    after(() => stuurPushMelding("bericht", { titel: `Nieuw bericht van ${bericht.naam}`, tekst: bericht.onderwerp ? `${bericht.onderwerp}: ${bericht.bericht}` : bericht.bericht, url: `/admin/berichten/${bericht.id}` }));
   }
   return gelukt();
 }
