@@ -43,6 +43,13 @@ const GROEPEN = [
       { href: "/admin/nieuwsbrief/automatisch", label: "Automatisch" },
     ],
   },
+  {
+    label: "Blog",
+    links: [
+      { href: "/admin/blog", label: "Berichten" },
+      { href: "/admin/blog/ai", label: "Schrijven met AI" },
+    ],
+  },
   { label: "Teksten", links: [{ href: "/admin/teksten", label: "Teksten" }] },
   {
     label: "Instellingen",
