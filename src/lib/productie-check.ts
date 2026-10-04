@@ -1,47 +1,54 @@
 import "server-only";
 import { adminClient } from "./supabase/admin";
-import { leesInstelling } from "./instellingen";
-import { isMappingCompleet, ontbrekendeLetters } from "@/rekenkern/letter";
+import { leesInstellingen, leesPrijsCent } from "./instellingen";
+import { ontbrekendeLetters } from "@/rekenkern/letter";
 import { haalFfitToewijzing, haalLichaamstypes } from "./lichaamstypes";
-
-export interface CheckItem {
-  label: string;
-  ok: boolean;
-  detail?: string;
-}
+import { leesAlleInhoud } from "./inhoud/lees";
+import { GROEPEN } from "./inhoud/register";
+import { evalueerLivegang, livegangStatus, type LivegangItem } from "./livegang";
+import { alleRijen } from "@/app/admin/types/gedeeld";
 
 /**
- * Productie-gereedheid: de app mag niet live zolang de FFIT->letter-mapping niet
- * compleet is en niet alle 60 adviestypes zijn geïmporteerd.
+ * Productie-gereedheid ("Klaar voor livegang"): haalt de benodigde gegevens op
+ * en laat de beoordeling over aan de pure functie in livegang.ts.
+ * Bewust zuinig: per tabel één (gepagineerde) query met alleen de nodige kolommen.
  */
-export async function productieCheck(): Promise<{ gereed: boolean; items: CheckItem[] }> {
+export async function productieCheck(): Promise<{ items: LivegangItem[] } & ReturnType<typeof livegangStatus>> {
   const supabase = adminClient();
-  const { count } = await supabase
-    .from("adviestypes")
-    .select("*", { count: "exact", head: true });
+  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties] = await Promise.all([
+    leesInstellingen(),
+    leesPrijsCent(),
+    leesAlleInhoud().catch(() => new Map<string, unknown>()),
+    haalLichaamstypes(),
+    haalFfitToewijzing(),
+    supabase.from("adviestypes").select("sleutel"),
+    alleRijen<{ type_sleutel: string }>((van, tot) =>
+      supabase.from("adviessecties").select("type_sleutel").order("id").range(van, tot),
+    ),
+  ]);
+  if (typesRes.error) throw new Error(`adviestypes lezen: ${typesRes.error.message}`);
 
-  const prijs = await leesInstelling("prijs_cent");
-  const toewijzing = await haalFfitToewijzing();
-  const verwacht = 12 * (await haalLichaamstypes()).length;
+  const perType = new Map<string, number>();
+  for (const s of secties) perType.set(s.type_sleutel, (perType.get(s.type_sleutel) ?? 0) + 1);
 
-  const items: CheckItem[] = [
-    {
-      label: "Elke uitkomst van de berekening hoort bij een lichaamstype",
-      ok: isMappingCompleet(toewijzing),
-      detail: isMappingCompleet(toewijzing) ? undefined : `Ontbreekt: ${ontbrekendeLetters(toewijzing).join(", ")}`,
+  const items = evalueerLivegang({
+    prijsCent,
+    instellingen,
+    tekstgroepen: GROEPEN,
+    opgeslagenTeksten,
+    lichaamstypes,
+    adviestypes: ((typesRes.data ?? []) as { sleutel: string }[]).map((t) => ({
+      sleutel: t.sleutel,
+      secties: perType.get(t.sleutel) ?? 0,
+    })),
+    ontbrekendeKoppelingen: ontbrekendeLetters(toewijzing),
+    omgeving: {
+      GRATIS_TEST: process.env.GRATIS_TEST,
+      RESEND_VAN: process.env.RESEND_VAN,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      MOLLIE_API_KEY: process.env.MOLLIE_API_KEY,
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     },
-    {
-      label: `Alle ${verwacht} adviestypes aanwezig (12 categorieën × lichaamstypes)`,
-      ok: (count ?? 0) >= verwacht,
-      detail: `${count ?? 0}/${verwacht}`,
-    },
-    { label: "Prijs ingesteld", ok: Boolean(prijs) },
-    { label: "Mollie-sleutel aanwezig", ok: Boolean(process.env.MOLLIE_API_KEY) },
-    { label: "Resend-sleutel aanwezig", ok: Boolean(process.env.RESEND_API_KEY) },
-    { label: "Eigen afzenderadres (RESEND_VAN) ingesteld", ok: Boolean(process.env.RESEND_VAN) },
-    { label: "Website-adres (NEXT_PUBLIC_SITE_URL) ingesteld", ok: Boolean(process.env.NEXT_PUBLIC_SITE_URL) },
-    { label: "Gratis testmodus uit (GRATIS_TEST)", ok: !process.env.GRATIS_TEST },
-  ];
-
-  return { gereed: items.every((i) => i.ok), items };
+  });
+  return { items, ...livegangStatus(items) };
 }

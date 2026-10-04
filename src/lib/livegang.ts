@@ -1,0 +1,288 @@
+// "Klaar voor livegang": de controlelijst op de beheer-homepage. Puur: krijgt
+// gewone gegevens binnen (instellingen, teksten, types, omgevingsvariabelen) en
+// geeft een lijst punten terug. Het ophalen gebeurt in productie-check.ts.
+
+import { bevatPlaceholder, combineer, type Groep } from "./inhoud/schema";
+import { CATEGORIEEN, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
+
+export interface LivegangLink {
+  href: string;
+  label: string;
+}
+
+export interface LivegangItem {
+  /** Vaste sleutel (voor React en tests). */
+  id: string;
+  label: string;
+  ok: boolean;
+  /**
+   * "verplicht": moet in orde zijn voor de livegang.
+   * "aanbevolen": kan ook later, maar is het nakijken waard.
+   */
+  niveau: "verplicht" | "aanbevolen";
+  /** Korte toelichting: wat ontbreekt of wat er mis is. */
+  detail?: string;
+  /** Waar je het oplost. */
+  links: LivegangLink[];
+}
+
+export interface LivegangOmgeving {
+  GRATIS_TEST?: string;
+  RESEND_VAN?: string;
+  RESEND_API_KEY?: string;
+  MOLLIE_API_KEY?: string;
+  NEXT_PUBLIC_SITE_URL?: string;
+}
+
+export interface LivegangGegevens {
+  prijsCent: number | null;
+  instellingen: Readonly<Record<string, string | null | undefined>>;
+  /** Groepen beheerbare teksten (uit inhoud/register.ts) en de opgeslagen aanpassingen. */
+  tekstgroepen: readonly Groep[];
+  opgeslagenTeksten: ReadonlyMap<string, unknown>;
+  lichaamstypes: readonly { code: string; naam: string; actief: boolean; beeld_id: string | null }[];
+  /** Alle adviestypes met hun aantal secties. */
+  adviestypes: readonly { sleutel: string; secties: number }[];
+  /** Uitkomsten van de berekening zonder lichaamstype (leeg = compleet). */
+  ontbrekendeKoppelingen: readonly string[];
+  omgeving: LivegangOmgeving;
+}
+
+export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
+  { sleutel: "bedrijfsnaam", label: "bedrijfsnaam" },
+  { sleutel: "bedrijf_adres", label: "adres" },
+  { sleutel: "kvk_nummer", label: "KvK-nummer" },
+  { sleutel: "contact_email", label: "contact-e-mailadres" },
+];
+
+const INSTELLINGEN: LivegangLink = { href: "/admin/instellingen", label: "Naar instellingen" };
+const VERCEL_UITLEG = "Wijzigen in Vercel → Settings → Environment Variables, daarna opnieuw publiceren.";
+/** Hoeveel losse links we maximaal per punt tonen; de rest staat in de toelichting. */
+const MAX_LINKS = 6;
+
+function gevuld(w: string | null | undefined): boolean {
+  return typeof w === "string" && w.trim() !== "";
+}
+
+/** "a", "a en b", "a, b en c". */
+export function opsomming(delen: readonly string[]): string {
+  if (delen.length <= 1) return delen.join("");
+  return `${delen.slice(0, -1).join(", ")} en ${delen[delen.length - 1]}`;
+}
+
+/** Het anker van een tekstsectie op de tekstenpagina (zoals in teksten/[groep]/page.tsx). */
+export function sectieAnker(sleutel: string): string {
+  return sleutel.replace(/\./g, "-");
+}
+
+/** Secties waarvan de (opgeslagen of standaard)tekst nog een invulplek bevat. */
+export function tekstenMetPlaceholder(
+  groepen: readonly Groep[],
+  opgeslagen: ReadonlyMap<string, unknown>,
+): { groep: Groep; sleutel: string; titel: string; href: string }[] {
+  const uit: { groep: Groep; sleutel: string; titel: string; href: string }[] = [];
+  for (const groep of groepen) {
+    for (const s of groep.secties) {
+      if (bevatPlaceholder(combineer(s, opgeslagen.get(s.sleutel)))) {
+        uit.push({
+          groep,
+          sleutel: s.sleutel,
+          titel: s.titel,
+          href: `/admin/teksten/${groep.sleutel}#${sectieAnker(s.sleutel)}`,
+        });
+      }
+    }
+  }
+  return uit;
+}
+
+function beperk(links: LivegangLink[], meer: LivegangLink): LivegangLink[] {
+  return links.length > MAX_LINKS ? [...links.slice(0, MAX_LINKS - 1), meer] : links;
+}
+
+/** Evalueert alle punten van de controlelijst. */
+export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
+  const items: LivegangItem[] = [];
+  const env = g.omgeving;
+
+  // Instellingen -------------------------------------------------------------
+  items.push({
+    id: "prijs",
+    label: "Prijs van de test ingesteld",
+    ok: g.prijsCent != null,
+    niveau: "verplicht",
+    detail: g.prijsCent != null ? undefined : "Zonder prijs kan niemand de test kopen.",
+    links: [INSTELLINGEN],
+  });
+
+  const ontbrekend = BEDRIJFSGEGEVENS.filter((b) => !gevuld(g.instellingen[b.sleutel])).map((b) => b.label);
+  items.push({
+    id: "bedrijfsgegevens",
+    label: "Bedrijfsgegevens ingevuld",
+    ok: ontbrekend.length === 0,
+    niveau: "verplicht",
+    detail: ontbrekend.length ? `Nog in te vullen: ${opsomming(ontbrekend)}.` : undefined,
+    links: [INSTELLINGEN],
+  });
+
+  items.push({
+    id: "foutmeldingen",
+    label: "E-mailadres voor foutmeldingen ingesteld",
+    ok: gevuld(g.instellingen.adviseur_email),
+    niveau: "verplicht",
+    detail: gevuld(g.instellingen.adviseur_email)
+      ? undefined
+      : "Zonder dit adres hoor je het niet als een advies of e-mail niet verstuurd kon worden.",
+    links: [INSTELLINGEN],
+  });
+
+  // Teksten ------------------------------------------------------------------
+  const placeholders = tekstenMetPlaceholder(g.tekstgroepen, g.opgeslagenTeksten);
+  items.push({
+    id: "teksten",
+    label: "Alle teksten ingevuld (geen “[aan te vullen …]” meer)",
+    ok: placeholders.length === 0,
+    niveau: "verplicht",
+    detail: placeholders.length
+      ? `${placeholders.length} ${placeholders.length === 1 ? "onderdeel bevat" : "onderdelen bevatten"} nog een invulplek.`
+      : undefined,
+    links: beperk(
+      placeholders.map((p) => ({ href: p.href, label: `${p.groep.titel}: ${p.titel}` })),
+      { href: "/admin/teksten", label: "Alle teksten" },
+    ),
+  });
+
+  // Lichaamstypes en adviestypes ---------------------------------------------
+  items.push({
+    id: "koppeling",
+    label: "Elke uitkomst van de berekening hoort bij een lichaamstype",
+    ok: g.ontbrekendeKoppelingen.length === 0,
+    niveau: "verplicht",
+    detail: g.ontbrekendeKoppelingen.length ? `Nog niet gekoppeld: ${opsomming(g.ontbrekendeKoppelingen)}.` : undefined,
+    links: [{ href: "/admin/lichaamstypes#koppeling", label: "Naar de koppeling" }],
+  });
+
+  const actief = g.lichaamstypes.filter((t) => t.actief);
+  const bestaand = new Set(g.adviestypes.map((t) => t.sleutel));
+  const missendPerType = actief
+    .map((t) => ({ t, missend: CATEGORIEEN.map((c) => typeSleutel(c, t.code)).filter((s) => !bestaand.has(s)) }))
+    .filter((m) => m.missend.length > 0);
+  const aantalMissend = missendPerType.reduce((n, m) => n + m.missend.length, 0);
+  items.push({
+    id: "adviestypes",
+    label: "Voor elk actief lichaamstype alle 12 adviestypes aanwezig",
+    ok: aantalMissend === 0,
+    niveau: "verplicht",
+    detail: aantalMissend
+      ? `Ontbreekt: ${missendPerType.map((m) => `${m.t.naam} (${m.missend.join(", ")})`).join("; ")}.`
+      : undefined,
+    links: beperk(
+      missendPerType.map((m) => ({ href: `/admin/types?letter=${encodeURIComponent(m.t.code)}`, label: m.t.naam })),
+      { href: "/admin/types", label: "Alle adviestypes" },
+    ),
+  });
+
+  const actieveCodes = new Set(actief.map((t) => t.code));
+  const zonderSecties = g.adviestypes
+    .filter((t) => t.secties === 0 && actieveCodes.has(ontleedTypeSleutel(t.sleutel)?.code ?? ""))
+    .map((t) => t.sleutel);
+  items.push({
+    id: "adviestekst",
+    label: "Elk adviestype heeft inhoud",
+    ok: zonderSecties.length === 0,
+    niveau: "verplicht",
+    detail: zonderSecties.length ? `Zonder onderdelen (lege hand-out): ${zonderSecties.join(", ")}.` : undefined,
+    links: beperk(
+      zonderSecties.map((s) => ({ href: `/admin/types/${encodeURIComponent(s)}`, label: s })),
+      { href: "/admin/types?aandacht=1", label: "Alle types met aandachtspunten" },
+    ),
+  });
+
+  const zonderFoto = actief.filter((t) => !t.beeld_id);
+  items.push({
+    id: "silhouetfoto",
+    label: "Elk actief lichaamstype heeft een afbeelding",
+    ok: zonderFoto.length === 0,
+    niveau: "aanbevolen",
+    detail: zonderFoto.length
+      ? `Zonder afbeelding (de getekende vorm wordt getoond): ${opsomming(zonderFoto.map((t) => t.naam))}.`
+      : undefined,
+    links: beperk(
+      zonderFoto.map((t) => ({ href: `/admin/lichaamstypes/${encodeURIComponent(t.code)}`, label: t.naam })),
+      { href: "/admin/lichaamstypes", label: "Alle lichaamstypes" },
+    ),
+  });
+
+  // Omgeving (Vercel) --------------------------------------------------------
+  items.push({
+    id: "gratis-test",
+    label: "Gratis testmodus staat uit",
+    ok: !gevuld(env.GRATIS_TEST),
+    niveau: "verplicht",
+    detail: gevuld(env.GRATIS_TEST)
+      ? `GRATIS_TEST staat aan: iedereen kan de test zonder betalen doen. ${VERCEL_UITLEG}`
+      : undefined,
+    links: [],
+  });
+
+  const mollie = (env.MOLLIE_API_KEY ?? "").trim();
+  items.push({
+    id: "mollie",
+    label: "Echte Mollie-sleutel (live) ingesteld",
+    ok: mollie.startsWith("live_"),
+    niveau: "verplicht",
+    detail: !mollie
+      ? `MOLLIE_API_KEY ontbreekt: betalen is niet mogelijk. ${VERCEL_UITLEG}`
+      : mollie.startsWith("test_")
+        ? `MOLLIE_API_KEY is een testsleutel: er wordt niet echt betaald. ${VERCEL_UITLEG}`
+        : mollie.startsWith("live_")
+          ? undefined
+          : `MOLLIE_API_KEY lijkt geen geldige sleutel (begint niet met live_). ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
+  items.push({
+    id: "resend-sleutel",
+    label: "E-mail versturen ingesteld (RESEND_API_KEY)",
+    ok: gevuld(env.RESEND_API_KEY),
+    niveau: "verplicht",
+    detail: gevuld(env.RESEND_API_KEY) ? undefined : `Zonder deze sleutel worden er geen e-mails verstuurd. ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
+  items.push({
+    id: "resend-van",
+    label: "Eigen afzenderadres voor e-mails (RESEND_VAN)",
+    ok: gevuld(env.RESEND_VAN),
+    niveau: "verplicht",
+    detail: gevuld(env.RESEND_VAN)
+      ? undefined
+      : `E-mails gaan nu van het testadres onboarding@resend.dev en komen alleen bij het Resend-account zelf aan. ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
+  items.push({
+    id: "site-url",
+    label: "Website-adres ingesteld (NEXT_PUBLIC_SITE_URL)",
+    ok: gevuld(env.NEXT_PUBLIC_SITE_URL),
+    niveau: "verplicht",
+    detail: gevuld(env.NEXT_PUBLIC_SITE_URL)
+      ? undefined
+      : `Nodig voor de links in e-mails en voor de terugkeer na betalen. ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
+  return items;
+}
+
+/** Samenvatting: klaar als alle verplichte punten in orde zijn. */
+export function livegangStatus(items: readonly LivegangItem[]): {
+  klaar: boolean;
+  allesKlaar: boolean;
+  openVerplicht: number;
+  openAanbevolen: number;
+} {
+  const openVerplicht = items.filter((i) => !i.ok && i.niveau === "verplicht").length;
+  const openAanbevolen = items.filter((i) => !i.ok && i.niveau === "aanbevolen").length;
+  return { klaar: openVerplicht === 0, allesKlaar: openVerplicht + openAanbevolen === 0, openVerplicht, openAanbevolen };
+}
