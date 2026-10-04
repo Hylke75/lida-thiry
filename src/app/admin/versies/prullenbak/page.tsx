@@ -26,7 +26,7 @@ export default async function Prullenbak({ searchParams }: { searchParams: Promi
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 sm:p-8">
-      <AdminNav actief="/admin/paginas" />
+      <AdminNav actief="/admin/versies/prullenbak" />
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Prullenbak</h1>
         <p className="text-sm text-black/55 dark:text-white/55">

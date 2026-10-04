@@ -23,6 +23,7 @@ const GROEPEN = [
     links: [
       { href: "/admin/adresboek", label: "Adresboek" },
       { href: "/admin/berichten", label: "Berichten" },
+      { href: "/admin/reviews", label: "Reviews" },
     ],
   },
   {
@@ -51,6 +52,7 @@ const GROEPEN = [
       { href: "/admin/teksten", label: "Teksten" },
       { href: "/admin/media", label: "Media" },
       { href: "/admin/doorverwijzingen", label: "Doorverwijzingen" },
+      { href: "/admin/versies/prullenbak", label: "Prullenbak" },
       { href: "/admin/website", label: "Instellingen" },
     ],
   },
