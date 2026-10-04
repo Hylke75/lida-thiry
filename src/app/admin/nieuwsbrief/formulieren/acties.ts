@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
+import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
 import { FORMULIER_VELDEN, kopieSlug, valideerFormulier, type Formulier } from "@/lib/nieuwsbrief/formulierregels";
 
 const PAD = "/admin/nieuwsbrief/formulieren";
@@ -54,11 +55,15 @@ export async function bewaarFormulier(_vorige: BewaarStaat, fd: FormData): Promi
   let nieuwId = id;
   let oudeSlug: string | undefined;
   if (id) {
-    const { data: oud } = await supabase.from("nb_formulieren").select("slug").eq("id", id).maybeSingle();
+    const { data: oud } = await supabase.from("nb_formulieren").select("slug, eigen_pagina, actief").eq("id", id).maybeSingle();
     if (!oud) return { fouten: ["Dit formulier bestaat niet (meer)."] };
     oudeSlug = oud.slug as string;
     const { error } = await supabase.from("nb_formulieren").update(v.waarden).eq("id", id);
     if (error) return { fouten: [error.code === "23505" ? "Deze slug is al in gebruik." : `Opslaan mislukt: ${error.message}`] };
+    // Stond de eigen pagina online, dan verwijst het oude adres voortaan naar het nieuwe.
+    if (oud.eigen_pagina && oud.actief && v.waarden.eigen_pagina && v.waarden.actief && oudeSlug !== v.waarden.slug) {
+      await registreerSlugWijziging(`/nieuwsbrief/${oudeSlug}`, `/nieuwsbrief/${v.waarden.slug}`);
+    }
   } else {
     const { data, error } = await supabase.from("nb_formulieren").insert(v.waarden).select("id").single();
     if (error || !data) {

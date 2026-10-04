@@ -18,6 +18,7 @@ import { BERICHT_VELDEN, publicatieProblemen, valideerBericht, zichtbaarheid, ty
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
 import { siteUrl } from "@/lib/site";
+import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
 import {
   aiFoutmelding,
   aiLimietFout,
@@ -121,6 +122,9 @@ export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUit
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Opslaan is niet gelukt (${error?.message ?? "onbekend"}).`);
+  if (zichtbaarheid(huidig) === "online" && huidig.slug !== v.waarde.slug) {
+    await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${v.waarde.slug}`);
+  }
   vernieuwBlog(huidig.slug, v.waarde.slug);
   revalidatePath(`${BLOG_PAD}/${id}`);
   return { ok: true, bericht: data as BlogBericht, zichtbaar: zichtbaarheid(data as BlogBericht), melding: "Opgeslagen." };
@@ -170,6 +174,9 @@ export async function publiceer(
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Publiceren is niet gelukt (${error?.message ?? "onbekend"}).`);
+  if (zichtbaarheid(huidig) === "online" && huidig.slug !== v.waarde.slug) {
+    await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${v.waarde.slug}`);
+  }
   vernieuwBlog(huidig.slug, v.waarde.slug);
   revalidatePath(`${BLOG_PAD}/${id}`);
   return {
