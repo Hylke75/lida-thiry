@@ -7,7 +7,8 @@ import { STARTPAGINAS } from "@/lib/paginas/sjablonen";
 import { Melding } from "../AdminNav";
 import { VerwijderKnop } from "../nieuwsbrief/_editor/VerwijderKnop";
 import { kaart, knopHoofd, knopKlein, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
-import { PaginaKop, StatusBadge } from "./_editor/onderdelen";
+import { StatusBadge } from "./_editor/onderdelen";
+import { PaginaKop } from "./_editor/PaginaKop";
 import { dupliceerPagina, maakStartpagina, nieuwePagina, verplaatsPagina, verwijderPagina } from "./acties";
 
 export const dynamic = "force-dynamic";

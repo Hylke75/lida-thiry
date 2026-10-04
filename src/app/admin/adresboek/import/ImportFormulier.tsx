@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
 import { analyseerRelatieImport, MAX_IMPORT_BYTES, MAX_IMPORT_RIJEN, type RelatieImportAnalyse, type RelatieImportRij } from "@/lib/relaties/csv";
 import { volledigeNaam } from "@/lib/relaties/regels";
-import { Melding } from "../../AdminNav";
+import { Melding } from "../../Melding";
 import { controleerRelatieImport, voerRelatieImportUit } from "../acties";
 import { heelZacht, hoofdknop, invoer, kaart, PAD, zacht } from "../ui";
 

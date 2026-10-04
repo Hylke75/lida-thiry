@@ -12,7 +12,7 @@ export default async function NieuweRelatiePagina() {
   const tags = await alleRelatieTags().catch(() => [] as string[]);
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
-      <AdminNav />
+      <AdminNav actief="/admin/adresboek" />
       <header className="flex flex-col gap-1">
         <Link href={PAD} className={`text-sm underline underline-offset-4 ${heelZacht}`}>
           ← Adresboek

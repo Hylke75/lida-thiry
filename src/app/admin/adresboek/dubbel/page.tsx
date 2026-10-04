@@ -55,7 +55,7 @@ export default async function DubbelPagina({
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-4 sm:p-8">
-      <AdminNav />
+      <AdminNav actief="/admin/adresboek" />
       <header className="flex flex-col gap-2">
         <Link href={a && !b ? `${PAD}/${a.id}` : a && b ? DUBBEL : PAD} className={`text-sm underline underline-offset-4 ${heelZacht}`}>
           ← {a && !b ? weergaveNaam(a) : a && b ? "Alle dubbelen" : "Adresboek"}

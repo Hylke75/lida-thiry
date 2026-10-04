@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
+import { BerichtenTeller } from "./BerichtenTeller";
 
 interface NavLink {
   href: string;
@@ -19,6 +19,13 @@ interface NavGroep {
 const GROEPEN = [
   { label: "Overzicht", links: [{ href: "/admin", label: "Overzicht" }] },
   {
+    label: "Relaties",
+    links: [
+      { href: "/admin/adresboek", label: "Adresboek" },
+      { href: "/admin/berichten", label: "Berichten" },
+    ],
+  },
+  {
     label: "Verkoop",
     links: [
       { href: "/admin/bestellingen", label: "Bestellingen" },
@@ -31,26 +38,28 @@ const GROEPEN = [
       { href: "/admin/lichaamstypes", label: "Lichaamstypes" },
       { href: "/admin/types", label: "Adviestypes" },
       { href: "/admin/beeldbank", label: "Beeldbank" },
+      { href: "/admin/meetinstructies", label: "Meetinstructies" },
     ],
   },
-  { label: "Test", links: [{ href: "/admin/meetinstructies", label: "Meetinstructies" }] },
+  {
+    label: "Website",
+    links: [
+      { href: "/admin/paginas", label: "Pagina's" },
+      { href: "/admin/blog", label: "Blog" },
+      { href: "/admin/blog/ai", label: "Schrijven met AI" },
+      { href: "/admin/teksten", label: "Teksten" },
+    ],
+  },
   {
     label: "Nieuwsbrief",
     links: [
       { href: "/admin/nieuwsbrief", label: "Overzicht" },
       { href: "/admin/nieuwsbrief/campagnes", label: "Campagnes" },
       { href: "/admin/nieuwsbrief/contacten", label: "Contacten" },
+      { href: "/admin/nieuwsbrief/formulieren", label: "Formulieren" },
       { href: "/admin/nieuwsbrief/automatisch", label: "Automatisch" },
     ],
   },
-  {
-    label: "Blog",
-    links: [
-      { href: "/admin/blog", label: "Berichten" },
-      { href: "/admin/blog/ai", label: "Schrijven met AI" },
-    ],
-  },
-  { label: "Teksten", links: [{ href: "/admin/teksten", label: "Teksten" }] },
   {
     label: "Instellingen",
     links: [
@@ -149,6 +158,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
                       className={pil(actief === l.href)}
                     >
                       {l.label}
+                      {l.href === "/admin/berichten" && <BerichtenTeller />}
                     </Link>
                   ))}
                 </div>
@@ -176,6 +186,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
                   className={pil(isActief)}
                 >
                   {g.label}
+                  {g.links.some((l) => l.href === "/admin/berichten") && <BerichtenTeller />}
                 </Link>
               );
             })}
@@ -196,6 +207,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
                 }`}
               >
                 {l.label}
+                {l.href === "/admin/berichten" && <BerichtenTeller />}
               </Link>
             ))}
           </nav>
@@ -205,18 +217,4 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
   );
 }
 
-/** Groene of rode melding bovenaan een pagina. */
-export function Melding({ soort, children }: { soort: "ok" | "fout"; children: ReactNode }) {
-  return (
-    <p
-      role={soort === "fout" ? "alert" : "status"}
-      className={`rounded-lg px-4 py-3 text-sm ${
-        soort === "ok"
-          ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
-      }`}
-    >
-      {children}
-    </p>
-  );
-}
+export { Melding } from "./Melding";

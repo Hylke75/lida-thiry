@@ -6,7 +6,7 @@ import { analyseerImport, MAX_IMPORT_BYTES, MAX_IMPORT_RIJEN, type ImportAnalyse
 import { STATUS_LABEL } from "@/lib/nieuwsbrief/doelgroep";
 import type { ImportResultaat, ImportVoorbeeld } from "@/lib/nieuwsbrief/beheer";
 import { controleerImport, voerImportUit } from "../acties";
-import { Melding } from "../../../AdminNav";
+import { Melding } from "../../../Melding";
 import { hoofdknop, invoer } from "../stijl";
 
 /** Leest het bestand als UTF-8, of als Windows-1252 (zoals Excel een ‘CSV’ vaak opslaat). */

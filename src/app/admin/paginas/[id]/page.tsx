@@ -3,7 +3,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { siteUrl } from "@/lib/site";
 import { Melding } from "../../AdminNav";
 import { PaginaEditor } from "../_editor/PaginaEditor";
-import { PaginaKop } from "../_editor/onderdelen";
+import { PaginaKop } from "../_editor/PaginaKop";
 import { haalFormulieren, haalPaginaBeheer } from "../_editor/server";
 
 export const dynamic = "force-dynamic";

@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import type { Relatie } from "@/lib/relaties/regels";
 import { normaliseerPostcode } from "@/lib/relaties/regels";
 import { TagInvoer } from "../nieuwsbrief/contacten/Invoer";
-import { Melding } from "../AdminNav";
+import { Melding } from "../Melding";
 import { bewaarRelatie, type FormulierStatus } from "./acties";
 import { hoofdknop, invoer, PAD } from "./ui";
 
