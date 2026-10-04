@@ -1,6 +1,7 @@
 import "server-only";
 import { leesInstelling } from "./instellingen";
 import { stuurBeheerMail } from "./resend";
+import { registreerFout } from "./fouten/registreer";
 
 /** Zet een fout (of willekeurige waarde) om in leesbare tekst voor een melding. */
 export function foutTekst(e: unknown): string {
@@ -16,8 +17,19 @@ export function foutTekst(e: unknown): string {
  * Mailt een foutmelding naar de beheerder: het adres uit de instelling
  * 'adviseur_email', anders env BEHEER_EMAIL. Doet niets als geen van beide is
  * ingesteld. Gooit NOOIT: alarmering mag de eigenlijke verwerking niet breken.
+ *
+ * Elke melding komt ook in de foutlog (bron 'melding'), zodat alle problemen op
+ * één plek staan (Beheer → Instellingen → Fouten). `registreren: false` slaat dat
+ * over (gebruikt door de foutlog zelf, die al geregistreerd heeft).
  */
-export async function stuurBeheerMelding(onderwerp: string, details: string): Promise<void> {
+export async function stuurBeheerMelding(
+  onderwerp: string,
+  details: string,
+  opties: { registreren?: boolean } = {},
+): Promise<void> {
+  if (opties.registreren !== false) {
+    await registreerFout({ bron: "melding", fout: onderwerp, details: { melding: details.slice(0, 2000) } });
+  }
   try {
     let aan: string | null = null;
     try {
@@ -30,5 +42,10 @@ export async function stuurBeheerMelding(onderwerp: string, details: string): Pr
     await stuurBeheerMail({ aan, onderwerp, details });
   } catch (e) {
     console.error("Beheermelding versturen mislukt", onderwerp, e);
+    await registreerFout({
+      bron: "melding",
+      fout: e,
+      details: { onderwerp, toelichting: "De beheermelding hierboven kon niet worden gemaild." },
+    });
   }
 }

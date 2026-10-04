@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Bezoekersstatistiek } from "@/components/Bezoekersstatistiek";
+import { FoutRapporteur } from "@/components/FoutRapporteur";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site";
@@ -41,6 +42,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteFooter />
         {/* Anoniem en zonder cookies; uit in het beheer (zie Bezoekersstatistiek). */}
         <Bezoekersstatistiek />
+        {/* Browserfouten naar de eigen foutlog (Beheer → Instellingen → Fouten). */}
+        <FoutRapporteur />
       </body>
     </html>
   );

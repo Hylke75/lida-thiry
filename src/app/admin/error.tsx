@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { meldBrowserFout } from "@/lib/fouten/browser";
 
 /**
  * Foutpagina in het beheer. Toont de foutcode (digest) waarmee de fout in de
@@ -13,6 +14,8 @@ export default function BeheerFout({ error, retry }: { error: Error & { digest?:
 
   useEffect(() => {
     console.error(error);
+    // Serverfouten (met digest) staan al in de foutlog via instrumentation.ts.
+    if (!error.digest) meldBrowserFout(error, { soort: "foutpagina" });
   }, [error]);
 
   const kopieer = async () => {

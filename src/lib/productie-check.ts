@@ -7,6 +7,7 @@ import { leesAlleInhoud } from "./inhoud/lees";
 import { GROEPEN } from "./inhoud/register";
 import { evalueerLivegang, livegangStatus, type LivegangItem } from "./livegang";
 import { alleRijen } from "@/app/admin/types/gedeeld";
+import { huidigeDatabaseOmgeving } from "./omgeving";
 
 /**
  * Productie-gereedheid ("Klaar voor livegang"): haalt de benodigde gegevens op
@@ -83,6 +84,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
       VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
       VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+      ...huidigeDatabaseOmgeving(),
     },
     aangemeldeContacten: aangemeld,
     contactformulierGepubliceerd: contactformulier,

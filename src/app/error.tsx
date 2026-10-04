@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { meldBrowserFout } from "@/lib/fouten/browser";
 import { WEBSITE_FOUT } from "@/lib/inhoud/groepen/website";
 import { standaardWaarden } from "@/lib/inhoud/schema";
 import { haalFoutTeksten, type FoutTeksten } from "@/lib/website/fout-teksten";
@@ -19,6 +20,8 @@ export default function Fout({ error, retry }: { error: Error & { digest?: strin
 
   useEffect(() => {
     console.error(error);
+    // Serverfouten (met digest) staan al in de foutlog via instrumentation.ts.
+    if (!error.digest) meldBrowserFout(error, { soort: "foutpagina" });
   }, [error]);
 
   useEffect(() => {

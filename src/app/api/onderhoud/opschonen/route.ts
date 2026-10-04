@@ -8,6 +8,7 @@ import { nodigUitVoorReviews } from "@/lib/reviews/uitnodigen";
 import { stuurBetaalherinneringen } from "@/lib/betaalherinnering";
 import { verstuurGeplandeCadeaubonnen } from "@/lib/cadeaubon/verwerken";
 import { stuurAfspraakHerinneringen } from "@/lib/afspraken/data";
+import { registreerFout } from "@/lib/fouten/registreer";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -37,7 +38,22 @@ export async function GET(request: Request) {
     () => undefined,
     () => undefined,
   );
+  // Opgeloste fouten na 90 dagen uit de foutlog; ook dit mag de rest niet tegenhouden.
+  await supabase
+    .from("fouten_log")
+    .delete()
+    .eq("opgelost", true)
+    .lt("laatst_op", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+    .then(
+      () => undefined,
+      () => undefined,
+    );
   if (error) {
+    await registreerFout({
+      bron: "cron",
+      fout: `Anonimiseren oude maten mislukt: ${error.message}`,
+      pad: "/api/onderhoud/opschonen",
+    });
     return NextResponse.json({ fout: error.message }, { status: 500 });
   }
 

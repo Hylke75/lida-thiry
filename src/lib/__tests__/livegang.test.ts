@@ -56,6 +56,7 @@ function compleet(): LivegangGegevens {
       VAPID_PUBLIC_KEY: "BPubliek",
       VAPID_PRIVATE_KEY: "privaat",
       VAPID_SUBJECT: "mailto:info@lidathiry.nl",
+      PRODUCTIE_SUPABASE_REF: "prodref",
     },
     aangemeldeContacten: 12,
     contactformulierGepubliceerd: true,
@@ -181,6 +182,7 @@ describe("evalueerLivegang", () => {
       "resend-van",
       "site-url",
       "eigen-domein",
+      "aparte-testdatabase",
       "nieuwsbrief-afzender",
       "nieuwsbrief-webhook",
       "nieuwsbrief-geheim",
@@ -189,7 +191,7 @@ describe("evalueerLivegang", () => {
     ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 5 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 6 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
@@ -325,5 +327,37 @@ describe("hulpjes", () => {
   });
   it("sectieAnker", () => {
     expect(sectieAnker("website.over.mij")).toBe("website-over-mij");
+  });
+});
+
+describe("aparte testdatabase in de controlelijst", () => {
+  const omgeving = (extra: Partial<LivegangGegevens["omgeving"]>) => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, ...extra };
+    return vind(g, "aparte-testdatabase");
+  };
+
+  it("is op productie in orde als PRODUCTIE_SUPABASE_REF is ingesteld, anders een aanbeveling met handleiding", () => {
+    expect(omgeving({ VERCEL_ENV: "production" }).ok).toBe(true);
+    const item = omgeving({ VERCEL_ENV: "production", PRODUCTIE_SUPABASE_REF: "" });
+    expect(item).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(item.links[0].href).toContain("docs/testomgeving.md");
+    expect(omgeving({ PRODUCTIE_SUPABASE_REF: undefined, PRODUCTIE_SUPABASE_URL: "https://prodref.supabase.co" }).ok).toBe(true);
+  });
+
+  it("blokkeert op een preview die de productiedatabase gebruikt", () => {
+    const item = omgeving({ VERCEL_ENV: "preview", NEXT_PUBLIC_SUPABASE_URL: "https://prodref.supabase.co" });
+    expect(item).toMatchObject({ ok: false, niveau: "verplicht" });
+    expect(item.detail).toContain("productiedatabase");
+  });
+
+  it("is in orde op een preview met een eigen database", () => {
+    expect(omgeving({ VERCEL_ENV: "preview", NEXT_PUBLIC_SUPABASE_URL: "https://testref.supabase.co" }).ok).toBe(true);
+  });
+
+  it("meldt op een preview zonder productie-ref dat het niet te controleren is", () => {
+    const item = omgeving({ VERCEL_ENV: "preview", PRODUCTIE_SUPABASE_REF: undefined, NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" });
+    expect(item).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(item.detail).toContain("PRODUCTIE_SUPABASE_REF");
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { meldBrowserFout } from "@/lib/fouten/browser";
 
 // Laatste vangnet: als zelfs de root-layout faalt. Vervangt de hele pagina, dus
 // eigen <html>/<body> en eenvoudige inline stijl in de huisstijlkleuren; geen
@@ -13,6 +14,8 @@ const ACCENT = "#a4634d";
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Serverfouten (met digest) staan al in de foutlog via instrumentation.ts.
+    if (!error.digest) meldBrowserFout(error, { soort: "foutpagina" });
   }, [error]);
 
   return (

@@ -16,6 +16,15 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL,
     trace: "retain-on-failure",
     locale: "nl-NL",
+    // Previews achter Vercel Deployment Protection (zie docs/testomgeving.md).
+    ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+      ? {
+          extraHTTPHeaders: {
+            "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+            "x-vercel-set-bypass-cookie": "true",
+          },
+        }
+      : {}),
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

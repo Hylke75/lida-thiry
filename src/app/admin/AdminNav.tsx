@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BerichtenTeller } from "./BerichtenTeller";
+import { PreviewWaarschuwing } from "./PreviewWaarschuwing";
 import { PwaRegistratie } from "./PwaRegistratie";
 import { ZoekVeld } from "./ZoekVeld";
 
@@ -89,6 +90,8 @@ const GROEPEN = [
       { href: "/admin/instellingen", label: "Algemeen" },
       { href: "/admin/beheerders", label: "Beheerders" },
       { href: "/admin/meldingen", label: "Meldingen" },
+      { href: "/admin/fouten", label: "Fouten" },
+      { href: "/admin/backup", label: "Back-up" },
     ],
   },
 ] as const satisfies readonly NavGroep[];
@@ -143,6 +146,7 @@ export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
   return (
     <header className="flex flex-col gap-3 border-b border-black/10 pb-4 dark:border-white/15">
       <PwaRegistratie />
+      <PreviewWaarschuwing />
       {/* Telefoon: compacte balk met uitklapmenu. */}
       <details className="group sm:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">

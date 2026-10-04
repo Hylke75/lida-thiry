@@ -5,6 +5,7 @@
 import { bevatPlaceholder, combineer, type Groep } from "./inhoud/schema";
 import { CATEGORIEEN, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
 import { vapidCompleet } from "./push/regels";
+import { databaseStatus, HANDLEIDING_TESTOMGEVING, type DatabaseOmgeving } from "./omgeving";
 
 export interface LivegangLink {
   href: string;
@@ -27,7 +28,7 @@ export interface LivegangItem {
   links: LivegangLink[];
 }
 
-export interface LivegangOmgeving {
+export interface LivegangOmgeving extends DatabaseOmgeving {
   GRATIS_TEST?: string;
   RESEND_VAN?: string;
   RESEND_API_KEY?: string;
@@ -316,6 +317,28 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
         ? `NEXT_PUBLIC_SITE_URL is nu ${siteAdres}. Koppel je eigen domein (bijv. lidathiry.nl) in Vercel → Settings → Domains en zet het adres in NEXT_PUBLIC_SITE_URL. Links in e-mails, zoekresultaten en gedeelde berichten tonen dan je eigen naam. ${VERCEL_UITLEG}`
         : `Stel eerst NEXT_PUBLIC_SITE_URL in op je eigen domein (bijv. https://lidathiry.nl). ${VERCEL_UITLEG}`,
     links: [],
+  });
+
+  // Aparte testdatabase voor previews. Alleen op een preview echt te controleren;
+  // elders telt of PRODUCTIE_SUPABASE_REF is ingesteld (dan waarschuwt een preview
+  // die toch de productiedatabase gebruikt met een rode balk in het beheer).
+  const handleiding: LivegangLink = { href: HANDLEIDING_TESTOMGEVING, label: "Handleiding testomgeving" };
+  const db = databaseStatus(env);
+  items.push({
+    id: "aparte-testdatabase",
+    label: "Previews gebruiken een aparte testdatabase",
+    ok: db === "preview-apart" || (db === "geen-preview" && gevuld(env.PRODUCTIE_SUPABASE_REF ?? env.PRODUCTIE_SUPABASE_URL)),
+    niveau: db === "preview-op-productie" ? "verplicht" : "aanbevolen",
+    detail:
+      db === "preview-op-productie"
+        ? "Deze preview gebruikt de productiedatabase: testbestellingen, mails en wijzigingen raken de echte site. Zet voor de Preview-omgeving in Vercel de gegevens van een apart Supabase-project. " +
+          VERCEL_UITLEG
+        : db === "preview-onbekend"
+          ? `Niet te controleren: PRODUCTIE_SUPABASE_REF ontbreekt. Zet die (de project-ref van de productiedatabase) voor Production én Preview. ${VERCEL_UITLEG}`
+          : db === "geen-preview" && !gevuld(env.PRODUCTIE_SUPABASE_REF ?? env.PRODUCTIE_SUPABASE_URL)
+            ? "Previews (testversies van de site bij elke wijziging) gebruiken standaard dezelfde database als de echte site. Maak een apart (gratis) Supabase-project voor previews en zet PRODUCTIE_SUPABASE_REF, zodat een preview die toch de productiedatabase gebruikt een rode waarschuwing toont. Controleren kan alleen in het beheer van een preview."
+            : undefined,
+    links: [handleiding],
   });
 
   // Nieuwsbrief --------------------------------------------------------------
