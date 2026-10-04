@@ -88,6 +88,9 @@ export function Opmaak({
             );
           case "blok":
             return <Fragment key={i}>{blokken?.[b.naam] ?? null}</Fragment>;
+          case "afbeelding":
+            // eslint-disable-next-line @next/next/no-img-element -- externe of geüploade afbeelding met vrije afmetingen
+            return <img key={i} src={b.url} alt={b.alt} loading="lazy" />;
         }
       })}
     </>

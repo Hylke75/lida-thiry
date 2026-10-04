@@ -26,7 +26,7 @@ function platteTekst(delen: Inline[]): string[] {
 }
 
 function inlineVan(blokken: Blok[]): Inline[][] {
-  return blokken.flatMap((b) => (b.soort === "lijst" ? b.items : b.soort === "blok" ? [] : [b.inhoud]));
+  return blokken.flatMap((b) => (b.soort === "lijst" ? b.items : b.soort === "blok" || b.soort === "afbeelding" ? [] : [b.inhoud]));
 }
 
 const SECTIES = GROEPEN.flatMap((g) => g.secties.map((s) => [`${g.sleutel}: ${s.sleutel}`, s] as const));

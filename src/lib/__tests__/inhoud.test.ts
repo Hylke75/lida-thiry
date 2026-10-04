@@ -82,3 +82,13 @@ describe("inhoud: opmaak", () => {
     expect(opmaakNaarTekst("## Kop\n\n**Vet** en [link](/a)")).toBe("Kop Vet en link");
   });
 });
+
+describe("inhoud: opmaak met afbeeldingen", () => {
+  it("herkent alleen https-afbeeldingen op een eigen regel", () => {
+    const blokken = parseerOpmaak("![Jurk](https://x.nl/a.png)\n\n![Fout](http://x.nl/a.png)\n\nTekst ![inline](https://x.nl/b.png)");
+    expect(blokken[0]).toEqual({ soort: "afbeelding", url: "https://x.nl/a.png", alt: "Jurk" });
+    expect(blokken.slice(1).every((b) => b.soort === "alinea")).toBe(true);
+    expect(opmaakNaarHtml('![A "b"](https://x.nl/a.png)')).toBe('<img src="https://x.nl/a.png" alt="A &quot;b&quot;">');
+    expect(opmaakNaarTekst("![A](https://x.nl/a.png)\n\nHoi")).toBe("Hoi");
+  });
+});

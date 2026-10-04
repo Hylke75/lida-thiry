@@ -144,7 +144,7 @@ export function BestelFormulier({
  */
 function VinkjeTekst({ tekst }: { tekst: string }) {
   const regels = parseerOpmaak(tekst).flatMap((b) =>
-    b.soort === "lijst" ? b.items : b.soort === "blok" ? [] : [b.inhoud],
+    b.soort === "lijst" ? b.items : b.soort === "blok" || b.soort === "afbeelding" ? [] : [b.inhoud],
   );
   return (
     <>

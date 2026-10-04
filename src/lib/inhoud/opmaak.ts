@@ -5,6 +5,7 @@
 //   [linktekst](https://…, mailto:… of /pad)
 //   {variabele}              (ingevuld door de pagina of e-mail)
 //   {blok} op een eigen regel (vervangen door een blok van de pagina, bijv. {bedrijfsgegevens})
+//   ![omschrijving](https://…) op een eigen regel = afbeelding (alleen https)
 // Lege regel = nieuwe alinea; een enkele regelovergang blijft een regelovergang.
 
 export type Inline =
@@ -18,7 +19,8 @@ export type Blok =
   | { soort: "kop"; niveau: 2 | 3; inhoud: Inline[] }
   | { soort: "alinea"; inhoud: Inline[] }
   | { soort: "lijst"; items: Inline[][] }
-  | { soort: "blok"; naam: string };
+  | { soort: "blok"; naam: string }
+  | { soort: "afbeelding"; url: string; alt: string };
 
 const VEILIGE_URL = /^(https?:\/\/|mailto:|\/(?!\/))/i;
 
@@ -98,6 +100,7 @@ export function parseerOpmaak(tekst: string): Blok[] {
     const kop = /^(#{2,3})\s+(.+)$/.exec(regel.trim());
     const item = /^\s*[-*]\s+(.+)$/.exec(regel);
     const blok = /^\{([a-z_]+)\}$/.exec(regel.trim());
+    const beeld = /^!\[([^\]\n]*)\]\((https:\/\/[^)\s]+)\)$/.exec(regel.trim());
     if (!regel.trim()) {
       sluitAlinea();
       sluitLijst();
@@ -108,6 +111,10 @@ export function parseerOpmaak(tekst: string): Blok[] {
     } else if (item) {
       sluitAlinea();
       lijst.push(item[1]);
+    } else if (beeld) {
+      sluitAlinea();
+      sluitLijst();
+      blokken.push({ soort: "afbeelding", url: beeld[2], alt: beeld[1].trim() });
     } else if (blok) {
       sluitAlinea();
       sluitLijst();
@@ -136,7 +143,7 @@ export interface HtmlOpties {
   /** Kant-en-klare HTML voor {blok}-regels (niet ge-escaped). */
   blokken?: Readonly<Record<string, string>>;
   /** Inline-stijlen per element (voor e-mail). */
-  stijl?: Partial<Record<"h2" | "h3" | "p" | "ul" | "li" | "a", string>>;
+  stijl?: Partial<Record<"h2" | "h3" | "p" | "ul" | "li" | "a" | "img", string>>;
 }
 
 function inlineHtml(delen: Inline[], o: HtmlOpties): string {
@@ -175,6 +182,8 @@ export function opmaakNaarHtml(tekst: string, o: HtmlOpties = {}): string {
           return `<ul${st("ul")}>${b.items.map((i) => `<li${st("li")}>${inlineHtml(i, o)}</li>`).join("")}</ul>`;
         case "blok":
           return o.blokken?.[b.naam] ?? "";
+        case "afbeelding":
+          return `<img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt)}"${st("img")}>`;
       }
     })
     .join("\n");
@@ -195,7 +204,13 @@ export function opmaakNaarTekst(tekst: string, variabelen: Readonly<Record<strin
       )
       .join("");
   return parseerOpmaak(tekst)
-    .map((b) => (b.soort === "lijst" ? b.items.map(plat).join(" ") : b.soort === "blok" ? "" : plat(b.inhoud)))
+    .map((b) =>
+      b.soort === "lijst"
+        ? b.items.map(plat).join(" ")
+        : b.soort === "blok" || b.soort === "afbeelding"
+          ? ""
+          : plat(b.inhoud),
+    )
     .filter(Boolean)
     .join(" ");
 }
