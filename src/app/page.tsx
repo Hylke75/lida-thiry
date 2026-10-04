@@ -1,3 +1,4 @@
+import { haalReviewSamenvatting } from "@/lib/reviews/publiek";
 import { Fragment } from "react";
 import { leesPrijsCent, leesInstelling, leesInstellingen } from "@/lib/instellingen";
 import { haalSilhouetten } from "@/lib/lichaamstypes";
@@ -133,9 +134,9 @@ async function structuur(o: {
   } catch {
     inst = {};
   }
-  // TODO(reviews): koppel hier haalReviewSamenvatting() uit @/lib/reviews/publiek
-  // zodra die bestaat, bijv. `beoordeling = await haalReviewSamenvatting().catch(() => null)`.
-  const beoordeling: ReviewSamenvatting | null = null;
+  // Gemiddelde score uit goedgekeurde reviews (met toestemming); zonder reviews geen score.
+  const samenvatting = await haalReviewSamenvatting().catch(() => null);
+  const beoordeling: ReviewSamenvatting | null = samenvatting && samenvatting.aantal > 0 ? samenvatting : null;
   const uit: Record<string, unknown>[] = [
     organisatieJsonLd({
       naam: echt(inst.bedrijfsnaam) ?? o.site.volledigeNaam,

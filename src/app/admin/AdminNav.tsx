@@ -19,7 +19,13 @@ interface NavGroep {
  * zodra je in die groep zit.
  */
 const GROEPEN = [
-  { label: "Overzicht", links: [{ href: "/admin", label: "Overzicht" }] },
+  {
+    label: "Overzicht",
+    links: [
+      { href: "/admin", label: "Overzicht" },
+      { href: "/admin/statistieken", label: "Statistieken" },
+    ],
+  },
   {
     label: "Relaties",
     links: [
@@ -66,6 +72,7 @@ const GROEPEN = [
       { href: "/admin/nieuwsbrief/contacten", label: "Contacten" },
       { href: "/admin/nieuwsbrief/formulieren", label: "Formulieren" },
       { href: "/admin/nieuwsbrief/automatisch", label: "Automatisch" },
+      { href: "/admin/nieuwsbrief/afleverbaarheid", label: "Afleverbaarheid" },
     ],
   },
   {
