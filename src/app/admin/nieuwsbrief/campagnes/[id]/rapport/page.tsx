@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
-import { haalCampagne } from "@/lib/nieuwsbrief/verzenden";
+import { haalCampagne, variantCijfers } from "@/lib/nieuwsbrief/verzenden";
+import { abUitCampagne } from "@/lib/nieuwsbrief/ab-test";
+import { AbTest } from "./AbTest";
 import {
   ONTVANGER_FILTERS,
   VERZEND_STATUS_LABEL,
@@ -38,7 +40,7 @@ interface Ontvanger {
   gebounced_op: string | null;
 }
 
-type Zoek = { q?: string; filter?: string; pagina?: string; opnieuw?: string };
+type Zoek = { q?: string; filter?: string; pagina?: string; opnieuw?: string; winnaar?: string };
 
 function Cijfer({ label, waarde, van, uitleg }: { label: string; waarde: number; van?: number; uitleg?: string }) {
   return (
@@ -69,7 +71,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
   const link = (w: Partial<Zoek>) => {
     const p = new URLSearchParams();
     const alles: Zoek = { q: q || undefined, filter: filter === "alle" ? undefined : filter, ...w };
-    for (const [k, v] of Object.entries(alles)) if (v && k !== "opnieuw") p.set(k, v);
+    for (const [k, v] of Object.entries(alles)) if (v && k !== "opnieuw" && k !== "winnaar") p.set(k, v);
     const s = p.toString();
     return s ? `${pad}?${s}` : pad;
   };
@@ -92,10 +94,12 @@ export default async function RapportPagina({ params, searchParams }: { params: 
   query = filters[filter](query);
   if (q) query = query.ilike("email", `%${q}%`);
   const van = (pagina - 1) * PER_PAGINA;
-  const [{ data: rijen, count }, stats, links] = await Promise.all([
+  const ab = c.soort === "campagne" ? abUitCampagne(c) : null;
+  const [{ data: rijen, count }, stats, links, abCijfers] = await Promise.all([
     query.order("email").range(van, van + PER_PAGINA - 1),
     statistiekPerCampagne([id]),
     kliksPerLink(id),
+    ab && c.status !== "concept" && c.status !== "ingepland" ? variantCijfers(id) : Promise.resolve(null),
   ]);
   const t = stats.get(id)!;
   const ontvangers = (rijen ?? []) as Ontvanger[];
@@ -128,6 +132,13 @@ export default async function RapportPagina({ params, searchParams }: { params: 
         ) : (
           <Melding soort="fout">Er waren geen mislukte mails om opnieuw te proberen.</Melding>
         ))}
+
+      {zoek.winnaar === "1" && <Melding soort="ok">De winnaar is gekozen; de rest van de doelgroep staat in de wachtrij.</Melding>}
+      {zoek.winnaar === "0" && <Melding soort="fout">De winnaar kon niet worden gekozen (mogelijk was dat al gebeurd).</Melding>}
+
+      {ab && abCijfers && (
+        <AbTest id={id} onderwerpA={c.onderwerp} ab={ab} winnaar={c.ab_winnaar} status={c.status} cijfers={abCijfers} />
+      )}
 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Resultaten</h2>

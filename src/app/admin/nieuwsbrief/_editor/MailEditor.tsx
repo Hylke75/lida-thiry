@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { controleerVoorVerzenden, valideerBlokken, VARIABELEN } from "@/lib/nieuwsbrief/blokken";
 import { normaliseerDoelgroep } from "@/lib/nieuwsbrief/doelgroep";
 import { TRIGGER_LABEL, TRIGGERS, beschrijfMoment, type Trigger } from "@/lib/nieuwsbrief/sjablonen";
+import { AB_PERCENTAGE, AB_WACHTUREN, testgroepGrootte, type AbInstelling } from "@/lib/nieuwsbrief/ab-test";
 import { BlokEditor } from "./BlokEditor";
 import { DoelgroepKiezer } from "./DoelgroepKiezer";
 import { Voorbeeld } from "./Voorbeeld";
@@ -37,6 +38,113 @@ function Melding({ soort, tekst }: { soort: "ok" | "fout"; tekst: string[] }) {
       {tekst.map((t) => (
         <p key={t}>{t}</p>
       ))}
+    </div>
+  );
+}
+
+const PERCENTAGES = [10, 20, 30, 40, 50].filter((p) => p >= AB_PERCENTAGE.min && p <= AB_PERCENTAGE.max);
+const WACHTUREN = [1, 2, 4, 8, 12, 24, 48].filter((u) => u >= AB_WACHTUREN.min && u <= AB_WACHTUREN.max);
+
+/** A/B-test van de onderwerpregel: tweede onderwerp, grootte van de testgroep en wachttijd. */
+function AbTestVelden({
+  ab,
+  aantal,
+  onChange,
+}: {
+  ab: AbInstelling | null;
+  aantal: number | null;
+  onChange: (ab: AbInstelling | null) => void;
+}) {
+  const perVariant = ab && aantal !== null ? testgroepGrootte(aantal, ab.percentage) : null;
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-black/10 px-4 py-3 dark:border-white/15">
+      <label className="flex items-start gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          checked={!!ab}
+          onChange={(e) =>
+            onChange(
+              e.target.checked
+                ? { onderwerpB: "", percentage: AB_PERCENTAGE.standaard, wachtUren: AB_WACHTUREN.standaard }
+                : null,
+            )
+          }
+          className="mt-0.5 accent-accent"
+        />
+        <span>
+          A/B-test met een tweede onderwerp
+          <span className={`block text-xs font-normal ${zacht}`}>
+            Een deel van de ontvangers krijgt onderwerp A, een even groot deel onderwerp B. Het onderwerp dat vaker wordt
+            geopend, gaat daarna naar de rest.
+          </span>
+        </span>
+      </label>
+      {ab && (
+        <>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <label htmlFor="onderwerp-b" className="text-sm font-medium">
+                Onderwerp B
+              </label>
+              <Teller waarde={ab.onderwerpB} max={LIMIETEN.onderwerp} />
+            </div>
+            <input
+              id="onderwerp-b"
+              value={ab.onderwerpB}
+              maxLength={LIMIETEN.onderwerp}
+              onChange={(e) => onChange({ ...ab, onderwerpB: e.target.value })}
+              className={invoerKlasse}
+              placeholder="Een andere formulering om te vergelijken"
+            />
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="ab-percentage" className="text-sm font-medium">
+                Testgroep
+              </label>
+              <select
+                id="ab-percentage"
+                value={ab.percentage}
+                onChange={(e) => onChange({ ...ab, percentage: Number(e.target.value) })}
+                className={`${invoerKlasse} w-auto`}
+              >
+                {PERCENTAGES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}% ({p / 2}% A, {p / 2}% B)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="ab-wachten" className="text-sm font-medium">
+                Wachttijd
+              </label>
+              <select
+                id="ab-wachten"
+                value={ab.wachtUren}
+                onChange={(e) => onChange({ ...ab, wachtUren: Number(e.target.value) })}
+                className={`${invoerKlasse} w-auto`}
+              >
+                {WACHTUREN.map((u) => (
+                  <option key={u} value={u}>
+                    {u} uur
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className={`text-xs ${zacht}`}>
+            {perVariant === null
+              ? ""
+              : perVariant < 1
+                ? "Te weinig ontvangers voor een test: iedereen krijgt dan onderwerp A. "
+                : `Ongeveer ${perVariant.toLocaleString("nl-NL")} ontvangers per onderwerp. `}
+            De winnaar wordt gekozen bij de eerste verzendronde nadat de testgroep is verstuurd en de wachttijd voorbij is
+            (de verzendronde loopt minstens dagelijks, en ook als je het beheer opent). Je kunt de winnaar ook eerder kiezen
+            met &lsquo;Kies winnaar nu&rsquo;. Wie geopend heeft, telt één keer; bij gelijkspel tellen de kliks.
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -192,6 +300,9 @@ export function MailEditor({
                   placeholder="Bijv. Jouw najaarsgarderobe, {voornaam}"
                 />
               </div>
+              {soort === "campagne" && (
+                <AbTestVelden ab={inhoud.ab} aantal={tellen ? null : aantal} onChange={(ab) => zet({ ab })} />
+              )}
               <div className="flex flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <label htmlFor="preheader" className="text-sm font-medium">

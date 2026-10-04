@@ -7,7 +7,15 @@ import { MailEditor, type EditorStaat } from "../../_editor/MailEditor";
 import type { MailInhoud, TypeKeuze } from "../../_editor/regels";
 import { invoerKlasse, kaart, knopHoofd, knopRand, zacht } from "../../_editor/stijl";
 import { toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/nieuwsbrief/tijd";
-import { annuleerPlanning, hervat, pauzeer, planIn, verzendNu } from "../acties";
+import { annuleerPlanning, hervat, kiesWinnaarNu, pauzeer, planIn, verzendNu } from "../acties";
+
+/** A/B-test van de opgeslagen campagne. */
+export interface AbStand {
+  /** Uren wachten; null = geen A/B-test. */
+  wachtUren: number | null;
+  percentage: number | null;
+  winnaar: "a" | "b" | null;
+}
 
 type Status = "concept" | "ingepland" | "bezig" | "verzonden" | "gepauzeerd";
 
@@ -18,6 +26,7 @@ function Verzenden({
   maxPerDag,
   standaardMoment,
   staat,
+  ab,
 }: {
   id: string;
   status: Status;
@@ -25,6 +34,7 @@ function Verzenden({
   maxPerDag: number;
   standaardMoment: string;
   staat: EditorStaat;
+  ab: AbStand;
 }) {
   const router = useRouter();
   const [bezig, start] = useTransition();
@@ -51,6 +61,9 @@ function Verzenden({
     }
     const tekst =
       `De nieuwsbrief nu versturen naar ${aantalTekst}?` +
+      (ab.wachtUren !== null
+        ? `\n\nA/B-test: eerst krijgt ${ab.percentage}% onderwerp A of B; na ${ab.wachtUren} uur krijgt de rest het winnende onderwerp.`
+        : "") +
       (meerDagen ? `\n\nJe kunt maximaal ${maxPerDag} mails per dag versturen; de rest gaat automatisch in de volgende dagen.` : "") +
       "\n\nDit kun je niet ongedaan maken.";
     if (!confirm(tekst)) return;
@@ -119,6 +132,35 @@ function Verzenden({
         </>
       )}
 
+      {(status === "bezig" || status === "gepauzeerd") && ab.wachtUren !== null && !ab.winnaar && (
+        <div className="flex flex-col gap-2 rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+          <p>
+            <strong>A/B-test loopt.</strong> De testgroep krijgt onderwerp A of B. Zodra die verstuurd is en {ab.wachtUren} uur
+            voorbij is, wordt bij de volgende verzendronde het onderwerp met de meeste opens gekozen en gaat de campagne naar
+            de rest.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={bezig}
+              onClick={() => {
+                if (confirm("Nu de winnaar kiezen op basis van de cijfers tot nu toe, en de rest van de doelgroep versturen?")) {
+                  voerUit(() => kiesWinnaarNu(id));
+                }
+              }}
+              className={knopHoofd}
+            >
+              Kies winnaar nu
+            </button>
+          </div>
+        </div>
+      )}
+      {(status === "bezig" || status === "gepauzeerd" || status === "verzonden") && ab.winnaar && ab.wachtUren !== null && (
+        <p className="text-sm">
+          A/B-test: onderwerp <strong>{ab.winnaar.toUpperCase()}</strong> heeft gewonnen.
+        </p>
+      )}
+
       {(status === "bezig" || status === "gepauzeerd") && (
         <>
           <p className="text-sm">
@@ -184,6 +226,7 @@ export function CampagneEditor(props: {
   tags: string[];
   typen: TypeKeuze[];
   testAdres: string;
+  ab: AbStand;
 }) {
   const alleenLezen = !(props.status === "concept" || props.status === "ingepland");
   return (
@@ -204,6 +247,7 @@ export function CampagneEditor(props: {
           maxPerDag={props.maxPerDag}
           standaardMoment={props.standaardMoment}
           staat={staat}
+          ab={props.ab}
         />
       )}
     />

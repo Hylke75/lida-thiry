@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
+import { leesPrijsCent, leesInstelling, leesInstellingen } from "@/lib/instellingen";
 import { haalSilhouetten } from "@/lib/lichaamstypes";
 import { STANDAARD_VORM } from "@/lib/lichaamstype-regels";
 import { leesSectie } from "@/lib/inhoud/lees";
@@ -18,6 +18,8 @@ import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { haalLaatste } from "@/lib/blog/publiek";
 import { leesWebsite } from "@/lib/website/lees";
 import { normaliseerIndeling } from "@/lib/website/homepage";
+import { siteUrl } from "@/lib/site";
+import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type ReviewSamenvatting } from "@/lib/seo/structuur";
 import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/Blokken";
 
 export const dynamic = "force-dynamic";
@@ -57,9 +59,12 @@ export default async function Home() {
       toontBlog ? haalLaatste(3) : Promise.resolve([]),
     ]);
   let prijsLabel: string | null = null;
+  let prijsCent: number | null = null;
+  let valuta = "EUR";
   try {
     const cent = await leesPrijsCent();
-    const valuta = (await leesInstelling("valuta")) || "EUR";
+    valuta = (await leesInstelling("valuta")) || "EUR";
+    prijsCent = cent;
     if (cent) prijsLabel = formatteerPrijs(cent, valuta);
   } catch {
     prijsLabel = null;
@@ -84,11 +89,70 @@ export default async function Home() {
     blogberichten,
   };
 
+  const jsonLd = await structuur({
+    site,
+    prijsCent,
+    valuta,
+    vragen: indeling.some((i) => i.blok === "vragen") ? vragen.vragen : [],
+  });
+
   return (
     <main className="flex w-full flex-1 flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: veiligeJson(jsonLd) }} />
       {indeling.map(({ blok }) => (
         <Fragment key={blok}>{HOMEPAGE_WEERGAVE[blok](gegevens)}</Fragment>
       ))}
     </main>
   );
+}
+
+/** Een ingevulde instelling zonder invulplek als "[adres]"; anders null. */
+function echt(w: string | null | undefined): string | null {
+  const t = w?.trim();
+  return t && !t.includes("[") ? t : null;
+}
+
+/**
+ * Gestructureerde gegevens voor zoekmachines: de organisatie, de test als
+ * product met prijs, en de veelgestelde vragen (alleen als dat blok zichtbaar is).
+ */
+async function structuur(o: {
+  site: Awaited<ReturnType<typeof leesWebsite>>;
+  prijsCent: number | null;
+  valuta: string;
+  vragen: readonly { vraag: string; antwoord: string }[];
+}): Promise<Record<string, unknown>[]> {
+  const basis = siteUrl();
+  let inst: Record<string, string | null> = {};
+  try {
+    inst = await leesInstellingen();
+  } catch {
+    inst = {};
+  }
+  // TODO(reviews): koppel hier haalReviewSamenvatting() uit @/lib/reviews/publiek
+  // zodra die bestaat, bijv. `beoordeling = await haalReviewSamenvatting().catch(() => null)`.
+  const beoordeling: ReviewSamenvatting | null = null;
+  const uit: Record<string, unknown>[] = [
+    organisatieJsonLd({
+      naam: echt(inst.bedrijfsnaam) ?? o.site.volledigeNaam,
+      url: basis,
+      omschrijving: o.site.omschrijving,
+      logo: o.site.logoUrl,
+      email: echt(inst.contact_email),
+      adres: echt(inst.bedrijf_adres),
+      sameAs: o.site.social.map((s) => s.url),
+    }),
+    testProductJsonLd({
+      naam: "Online kledingadviestest",
+      omschrijving: o.site.omschrijving,
+      url: basis,
+      prijsCent: o.prijsCent,
+      valuta: o.valuta,
+      afbeelding: o.site.deelAfbeeldingUrl ?? o.site.logoUrl,
+      beoordeling,
+    }),
+  ];
+  const faq = faqJsonLd(o.vragen);
+  if (faq) uit.push(faq);
+  return uit;
 }

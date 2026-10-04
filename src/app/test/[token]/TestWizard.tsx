@@ -1,5 +1,7 @@
 "use client";
 
+import { meet } from "@/lib/analytics/meet";
+import { GEBEURTENISSEN } from "@/lib/analytics/regels";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAAT_GROEPEN, type MaatVeld } from "@/lib/test-config";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
@@ -178,6 +180,7 @@ export function TestWizard({
       setToonFouten(true);
       return;
     }
+    if (stap === 0 && bereikt === 0) meet(GEBEURTENISSEN.testGestart);
     gaNaar(stap + 1);
   }
 
@@ -246,6 +249,7 @@ export function TestWizard({
         try {
           localStorage.removeItem(opslagSleutel);
         } catch {}
+        meet(GEBEURTENISSEN.testAfgerond);
         setResultaat(d);
       }
     } catch {

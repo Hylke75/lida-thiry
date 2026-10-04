@@ -1,5 +1,7 @@
 "use client";
 
+import { meet } from "@/lib/analytics/meet";
+import { GEBEURTENISSEN } from "@/lib/analytics/regels";
 import { Fragment, useRef, useState } from "react";
 import { parseerOpmaak, type Inline } from "@/lib/inhoud/opmaak";
 import type { SectieWaarden } from "@/lib/inhoud/schema";
@@ -58,6 +60,7 @@ export function BestelFormulier({
         setBezig(false);
         return;
       }
+      meet(GEBEURTENISSEN.bestellingGestart, { gratis: Boolean(gratis) });
       window.location.href = data.testUrl || data.checkoutUrl;
     } catch {
       setFout(teksten.foutVerbinding);

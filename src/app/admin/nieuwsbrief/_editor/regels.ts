@@ -3,6 +3,7 @@
 import type { Blok } from "@/lib/nieuwsbrief/blokken";
 import type { Doelgroep } from "@/lib/nieuwsbrief/doelgroep";
 import type { Trigger } from "@/lib/nieuwsbrief/sjablonen";
+import type { AbInstelling } from "@/lib/nieuwsbrief/ab-test";
 
 export interface MailInhoud {
   naam: string;
@@ -12,6 +13,8 @@ export interface MailInhoud {
   doelgroep: Doelgroep;
   trigger: Trigger | null;
   vertraging_dagen: number;
+  /** A/B-test van het onderwerp (alleen campagnes); null = geen test. */
+  ab: AbInstelling | null;
 }
 
 export const LIMIETEN = { naam: 120, onderwerp: 150, preheader: 200 } as const;

@@ -1,5 +1,7 @@
 "use client";
 
+import { meet } from "@/lib/analytics/meet";
+import { GEBEURTENISSEN } from "@/lib/analytics/regels";
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { NaamVeld } from "@/lib/nieuwsbrief/formulierregels";
 
@@ -71,7 +73,10 @@ export function NieuwsbriefFormulier({
       });
       const data = (await res.json().catch(() => ({}))) as { fout?: string };
       if (!res.ok) setFout(data.fout || foutTekst);
-      else setGelukt(true);
+      else {
+        setGelukt(true);
+        meet(GEBEURTENISSEN.nieuwsbriefAanmelding);
+      }
     } catch {
       setFout(foutTekst);
     } finally {

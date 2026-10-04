@@ -10,6 +10,7 @@ import { normaliseerEmail, zoekOntvangers } from "@/lib/nieuwsbrief/contacten";
 import { haalCampagne, stuurTestmail, verzendProblemen } from "@/lib/nieuwsbrief/verzenden";
 import { normaliseerVertraging, TRIGGERS, type Trigger } from "@/lib/nieuwsbrief/sjablonen";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
+import { doelgroepMetWachttijd, normaliseerAb } from "@/lib/nieuwsbrief/ab-test";
 import { AFBEELDING_MAX_BYTES, AFBEELDING_TYPES, BUCKET, LIMIETEN, type MailInhoud } from "./regels";
 
 type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
@@ -20,6 +21,10 @@ function leesInhoud(ruw: unknown): { inhoud: MailInhoud; fouten: string[] } {
   const o = ruw && typeof ruw === "object" ? (ruw as Record<string, unknown>) : {};
   const { blokken, fouten } = valideerBlokken(o.blokken);
   const trigger = TRIGGERS.includes(o.trigger as Trigger) ? (o.trigger as Trigger) : null;
+  // A/B-test aangezet maar zonder tweede onderwerp: liever een duidelijke fout dan stilletjes uitzetten.
+  const abRuw = o.ab && typeof o.ab === "object" ? (o.ab as Record<string, unknown>) : null;
+  const ab = normaliseerAb(abRuw, LIMIETEN.onderwerp);
+  if (abRuw && !ab) fouten.push("Vul onderwerp B in, of zet de A/B-test uit.");
   return {
     inhoud: {
       naam: tekst(o.naam, LIMIETEN.naam),
@@ -29,6 +34,7 @@ function leesInhoud(ruw: unknown): { inhoud: MailInhoud; fouten: string[] } {
       doelgroep: normaliseerDoelgroep(o.doelgroep),
       trigger,
       vertraging_dagen: normaliseerVertraging(o.vertraging_dagen),
+      ab,
     },
     fouten,
   };
@@ -61,7 +67,10 @@ export async function slaMailOp(id: string, ruw: unknown): Promise<OpslaanResult
         onderwerp: inhoud.onderwerp,
         preheader: inhoud.preheader,
         blokken: inhoud.blokken,
-        doelgroep: inhoud.doelgroep,
+        // De wachttijd van de A/B-test staat (zonder eigen kolom) in de doelgroep-JSON.
+        doelgroep: doelgroepMetWachttijd(inhoud.doelgroep, inhoud.ab),
+        onderwerp_b: inhoud.ab?.onderwerpB ?? null,
+        ab_percentage: inhoud.ab?.percentage ?? null,
       })
       .eq("id", id)
       .in("status", ["concept", "ingepland"])

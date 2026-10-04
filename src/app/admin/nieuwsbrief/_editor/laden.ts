@@ -4,6 +4,7 @@ import { leesInstellingen } from "@/lib/instellingen";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { valideerBlokken } from "@/lib/nieuwsbrief/blokken";
 import { normaliseerDoelgroep } from "@/lib/nieuwsbrief/doelgroep";
+import { abUitCampagne } from "@/lib/nieuwsbrief/ab-test";
 import type { Campagne } from "@/lib/nieuwsbrief/verzenden";
 import type { MailInhoud, TypeKeuze } from "./regels";
 
@@ -61,5 +62,6 @@ export function alsInhoud(c: Campagne): MailInhoud {
     doelgroep: normaliseerDoelgroep(c.doelgroep),
     trigger: c.trigger,
     vertraging_dagen: c.vertraging_dagen,
+    ab: c.soort === "campagne" ? abUitCampagne(c) : null,
   };
 }
