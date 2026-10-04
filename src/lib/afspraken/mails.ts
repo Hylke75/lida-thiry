@@ -1,5 +1,5 @@
-import { stuurPushMelding } from "../push/versturen";
 import "server-only";
+import { stuurPushMelding } from "../push/versturen";
 import { adminClient } from "../supabase/admin";
 import { leesInstellingen } from "../instellingen";
 import { leesSectie } from "../inhoud/lees";
