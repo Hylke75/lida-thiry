@@ -1,3 +1,10 @@
+import { Opmaak } from "@/components/Opmaak";
+import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
+import { AanmeldFormulier } from "@/components/AanmeldFormulier";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { haalActiefFormulier } from "@/lib/nieuwsbrief/formulieren";
+
 /**
  * Een nieuwsbrief-aanmeldformulier als blok op een pagina. Zonder slug het
  * standaard aanmeldblok ({nieuwsbrief}); met slug een formulier uit Beheer →
@@ -5,10 +12,14 @@
  * zelf zijn teksten. Rendert niets als het formulier niet bestaat of uit staat.
  */
 export async function NieuwsbriefFormulierBlok({ slug }: { slug?: string }) {
-  void slug;
-  return (
-    <div className="rounded-2xl border border-dashed border-foreground/20 p-6 text-sm text-foreground/60">
-      Nieuwsbriefformulier (volgt)
-    </div>
-  );
+  const teksten = await leesSectie(NIEUWSBRIEF_AANMELDEN);
+  if (!slug) {
+    return <NieuwsbriefAanmelden teksten={teksten} toestemming={<Opmaak tekst={teksten.toestemming_tekst} />} />;
+  }
+  const formulier = await haalActiefFormulier(slug).catch((e) => {
+    console.error(`Nieuwsbriefformulier ${slug} niet geladen`, e);
+    return null;
+  });
+  if (!formulier) return null;
+  return <AanmeldFormulier formulier={formulier} standaard={teksten} />;
 }

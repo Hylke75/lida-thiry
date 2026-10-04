@@ -3,6 +3,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { beschrijfDoelgroep, normaliseerDoelgroep } from "@/lib/nieuwsbrief/doelgroep";
+import { formulierNamen } from "@/lib/nieuwsbrief/formulieren";
 import { toonPercentage } from "@/lib/nieuwsbrief/rapport";
 import { statistiekPerCampagne } from "@/lib/nieuwsbrief/campagne-statistiek";
 import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
@@ -46,11 +47,13 @@ export default async function CampagnesPagina({ searchParams }: { searchParams: 
     .order("aangemaakt_op", { ascending: false })
     .limit(MAX);
   const campagnes = (data ?? []) as Rij[];
-  const [stats, types] = await Promise.all([
+  const [stats, types, formulieren] = await Promise.all([
     statistiekPerCampagne(campagnes.filter((c) => c.status !== "concept" && c.status !== "ingepland").map((c) => c.id)),
     haalLichaamstypes().catch(() => []),
+    formulierNamen().catch(() => new Map<string, { naam: string; slug: string }>()),
   ]);
   const typeNaam = (l: string) => types.find((t) => t.code === l)?.naam ?? l;
+  const formulierNaam = (id: string) => formulieren.get(id)?.naam ?? "verwijderd formulier";
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-4 sm:p-8">
@@ -90,7 +93,7 @@ export default async function CampagnesPagina({ searchParams }: { searchParams: 
                 </div>
                 <StatusBadge status={c.status} />
               </div>
-              <p className={`text-xs ${zacht}`}>{beschrijfDoelgroep(normaliseerDoelgroep(c.doelgroep), typeNaam)}</p>
+              <p className={`text-xs ${zacht}`}>{beschrijfDoelgroep(normaliseerDoelgroep(c.doelgroep), typeNaam, formulierNaam)}</p>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
                 <div>
                   <dt className={`text-xs ${zacht}`}>

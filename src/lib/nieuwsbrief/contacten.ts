@@ -24,10 +24,12 @@ export interface Contact {
   bevestigd_op: string | null;
   afgemeld_op: string | null;
   aangemaakt_op: string;
+  /** Het aanmeldformulier (Beheer → Nieuwsbrief → Formulieren) waarmee iemand zich aanmeldde. */
+  formulier_id: string | null;
 }
 
 export const CONTACT_VELDEN =
-  "id, email, naam, status, bron, tags, token, toestemming_op, toestemming_tekst, bevestigd_op, afgemeld_op, aangemaakt_op";
+  "id, email, naam, status, bron, tags, token, toestemming_op, toestemming_tekst, bevestigd_op, afgemeld_op, aangemaakt_op, formulier_id";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -89,6 +91,8 @@ export interface Aanmelding {
   tags?: string[];
   /** true = eerst bevestigen via e-mail (dubbele opt-in, voor het websiteformulier). */
   dubbeleOptIn: boolean;
+  /** Het aanmeldformulier waarmee iemand zich (opnieuw) aanmeldt; blijft anders ongewijzigd. */
+  formulierId?: string | null;
 }
 
 export type AanmeldUitkomst =
@@ -127,6 +131,7 @@ export async function meldAan(a: Aanmelding): Promise<AanmeldUitkomst> {
       tags: [...new Set([...c.tags, ...tags])],
       toestemming_op: nu,
       toestemming_tekst: a.toestemmingTekst,
+      ...(a.formulierId ? { formulier_id: a.formulierId } : {}),
       ...(a.dubbeleOptIn
         ? { status: "onbevestigd" as const }
         : { status: "aangemeld" as const, bevestigd_op: nu, afgemeld_op: null }),
@@ -147,6 +152,7 @@ export async function meldAan(a: Aanmelding): Promise<AanmeldUitkomst> {
       toestemming_tekst: a.toestemmingTekst,
       status: a.dubbeleOptIn ? "onbevestigd" : "aangemeld",
       bevestigd_op: a.dubbeleOptIn ? null : nu,
+      formulier_id: a.formulierId ?? null,
     })
     .select(CONTACT_VELDEN)
     .single();

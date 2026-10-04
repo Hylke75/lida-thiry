@@ -4,6 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { CONTACT_VELDEN, type Contact } from "@/lib/nieuwsbrief/contacten";
 import { alleTags } from "@/lib/nieuwsbrief/beheer";
+import { haalFormulier } from "@/lib/nieuwsbrief/formulieren";
 import { BRON_LABEL } from "@/lib/nieuwsbrief/doelgroep";
 import { datumTijd, likeLetterlijk } from "@/lib/nieuwsbrief/contactregels";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
@@ -71,7 +72,7 @@ export default async function ContactPagina({
   const c = data as Contact | null;
   if (!c) notFound();
 
-  const [{ data: verzendingen }, { data: orders }, tags] = await Promise.all([
+  const [{ data: verzendingen }, { data: orders }, tags, formulier] = await Promise.all([
     supabase
       .from("nb_verzendingen")
       .select(
@@ -87,6 +88,7 @@ export default async function ContactPagina({
       .order("aangemaakt_op", { ascending: false })
       .limit(50),
     alleTags().catch(() => [] as string[]),
+    c.formulier_id ? haalFormulier(c.formulier_id).catch(() => null) : Promise.resolve(null),
   ]);
   const ontvangen = (verzendingen ?? []) as unknown as Ontvangen[];
   const bestellingen = (orders ?? []) as Bestelling[];
@@ -103,7 +105,16 @@ export default async function ContactPagina({
           <StatusLabel status={c.status} />
         </div>
         <p className="text-sm text-black/60 dark:text-white/60">
-          {BRON_LABEL[c.bron]} · toegevoegd op {datum(c.aangemaakt_op)}
+          {BRON_LABEL[c.bron]}
+          {formulier && (
+            <>
+              {" "}via formulier{" "}
+              <Link href={`/admin/nieuwsbrief/formulieren/${formulier.id}`} className="underline underline-offset-4 hover:text-accent">
+                {formulier.naam}
+              </Link>
+            </>
+          )}{" "}
+          · toegevoegd op {datum(c.aangemaakt_op)}
         </p>
       </header>
 

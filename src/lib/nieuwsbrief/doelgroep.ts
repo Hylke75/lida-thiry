@@ -33,6 +33,8 @@ export interface Doelgroep {
   figuurtypes?: string[];
   /** ja = heeft ooit betaald besteld, nee = nooit. */
   besteld?: "ja" | "nee";
+  /** Alleen contacten die zich via een van deze aanmeldformulieren (ids) hebben aangemeld. */
+  formulieren?: string[];
 }
 
 export interface ContactVoorFilter {
@@ -40,6 +42,7 @@ export interface ContactVoorFilter {
   status: string;
   bron: string;
   tags: string[];
+  formulier_id?: string | null;
 }
 
 export interface Klantinfo {
@@ -51,6 +54,8 @@ const lijst = (v: unknown, max = 50): string[] =>
   Array.isArray(v)
     ? [...new Set(v.filter((x): x is string => typeof x === "string").map((x) => x.trim()).filter(Boolean))].slice(0, max)
     : [];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Maakt een veilige doelgroep van onbetrouwbare invoer. */
 export function normaliseerDoelgroep(ruw: unknown): Doelgroep {
@@ -68,6 +73,8 @@ export function normaliseerDoelgroep(ruw: unknown): Doelgroep {
   const figuurtypes = lijst(o.figuurtypes, 20).filter((f) => /^([A-Z]{1,3}|8)$/.test(f));
   if (figuurtypes.length) d.figuurtypes = figuurtypes;
   if (o.besteld === "ja" || o.besteld === "nee") d.besteld = o.besteld;
+  const formulieren = lijst(o.formulieren).filter((f) => UUID.test(f)).map((f) => f.toLowerCase());
+  if (formulieren.length) d.formulieren = [...new Set(formulieren)];
   return d;
 }
 
@@ -85,6 +92,7 @@ export function valtBinnen(c: ContactVoorFilter, d: Doelgroep, klant?: Klantinfo
   }
   if (d.zonderTags?.some((t) => c.tags.includes(t))) return false;
   if (d.bronnen?.length && !d.bronnen.includes(c.bron as Bron)) return false;
+  if (d.formulieren?.length && !(c.formulier_id && d.formulieren.includes(c.formulier_id))) return false;
   if (d.besteld === "ja" && !klant?.besteld) return false;
   if (d.besteld === "nee" && klant?.besteld) return false;
   if (d.figuurtypes?.length && !d.figuurtypes.some((f) => klant?.figuurtypes.has(f))) return false;
@@ -92,11 +100,19 @@ export function valtBinnen(c: ContactVoorFilter, d: Doelgroep, klant?: Klantinfo
 }
 
 /** Korte omschrijving van een doelgroep, bijv. voor het campagneoverzicht. */
-export function beschrijfDoelgroep(d: Doelgroep, typeNaam: (letter: string) => string = (l) => l): string {
+export function beschrijfDoelgroep(
+  d: Doelgroep,
+  typeNaam: (letter: string) => string = (l) => l,
+  formulierNaam: (id: string) => string = () => "onbekend formulier",
+): string {
   const delen: string[] = [];
   if (d.tags?.length) delen.push(`tag ${d.tags.join(d.tagsModus === "alle" ? " én " : " of ")}`);
   if (d.zonderTags?.length) delen.push(`zonder tag ${d.zonderTags.join(", ")}`);
   if (d.bronnen?.length) delen.push(`via ${d.bronnen.map((b) => BRON_LABEL[b].toLowerCase()).join(" of ")}`);
+  if (d.formulieren?.length) {
+    const namen = [...new Set(d.formulieren.map((f) => `‘${formulierNaam(f)}’`))];
+    delen.push(`via formulier ${namen.join(" of ")}`);
+  }
   if (d.besteld === "ja") delen.push("klanten");
   if (d.besteld === "nee") delen.push("nog geen klant");
   if (d.figuurtypes?.length) delen.push(`figuurtype ${d.figuurtypes.map(typeNaam).join(" of ")}`);

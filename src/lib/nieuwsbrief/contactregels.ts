@@ -24,6 +24,8 @@ export interface ContactFilter {
   status?: ContactStatus;
   tag?: string;
   bron?: Bron;
+  /** Id van een aanmeldformulier (Beheer → Nieuwsbrief → Formulieren). */
+  formulier?: string;
 }
 
 /** Leest de filters uit de URL; onbekende waarden vallen weg. */
@@ -41,6 +43,8 @@ export function leesFilter(p: Readonly<Record<string, string | string[] | undefi
   if (tag) f.tag = tag;
   const bron = een("bron");
   if ((BRONNEN as readonly string[]).includes(bron)) f.bron = bron as Bron;
+  const formulier = een("formulier").toLowerCase();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(formulier)) f.formulier = formulier;
   const pagina = Number(een("pagina"));
   if (Number.isInteger(pagina) && pagina > 1 && pagina < 100_000) f.pagina = pagina;
   return f;
@@ -53,6 +57,7 @@ export function filterQuery(f: ContactFilter & { pagina?: number }): string {
   if (f.status) p.set("status", f.status);
   if (f.tag) p.set("tag", f.tag);
   if (f.bron) p.set("bron", f.bron);
+  if (f.formulier) p.set("formulier", f.formulier);
   if (f.pagina && f.pagina > 1) p.set("pagina", String(f.pagina));
   return p.toString();
 }

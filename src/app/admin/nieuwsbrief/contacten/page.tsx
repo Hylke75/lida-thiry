@@ -2,6 +2,7 @@ import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import type { Contact } from "@/lib/nieuwsbrief/contacten";
 import { alleTags, contactenQuery, tellingPerStatus } from "@/lib/nieuwsbrief/beheer";
+import { formulierNamen } from "@/lib/nieuwsbrief/formulieren";
 import { BRON_LABEL, BRONNEN, STATUS_LABEL, STATUSSEN } from "@/lib/nieuwsbrief/doelgroep";
 import { filterQuery, leesFilter, PER_PAGINA } from "@/lib/nieuwsbrief/contactregels";
 import { AdminNav, Melding } from "../../AdminNav";
@@ -25,15 +26,16 @@ export default async function ContactenPagina({
   const fout = typeof zoek.fout === "string" ? zoek.fout : null;
 
   const van = (filter.pagina - 1) * PER_PAGINA;
-  const [lijst, tellingen, tags] = await Promise.all([
+  const [lijst, tellingen, tags, formulieren] = await Promise.all([
     contactenQuery(filter, { tellen: true }).range(van, van + PER_PAGINA - 1),
     tellingPerStatus(),
     alleTags().catch(() => [] as string[]),
+    formulierNamen().catch(() => new Map<string, { naam: string; slug: string }>()),
   ]);
   const contacten = (lijst.data ?? []) as Contact[];
   const totaal = lijst.count ?? 0;
   const paginas = Math.max(1, Math.ceil(totaal / PER_PAGINA));
-  const gefilterd = Boolean(filter.q || filter.status || filter.tag || filter.bron);
+  const gefilterd = Boolean(filter.q || filter.status || filter.tag || filter.bron || filter.formulier);
   const huidig = `${PAD}${filterQuery(filter) ? `?${filterQuery(filter)}` : ""}`;
   const link = (wijziging: Partial<typeof filter>) => {
     const q = filterQuery({ ...filter, pagina: 1, ...wijziging });
@@ -108,8 +110,21 @@ export default async function ContactenPagina({
             </option>
           ))}
         </select>
+        {filter.formulier && <input type="hidden" name="formulier" value={filter.formulier} />}
         <button className={hoofdknop}>Zoeken</button>
       </form>
+      {filter.formulier && (
+        <p className="-mt-3 text-sm">
+          Alleen aanmeldingen via formulier{" "}
+          <Link href={`/admin/nieuwsbrief/formulieren/${filter.formulier}`} className="font-medium underline underline-offset-4">
+            {formulieren.get(filter.formulier)?.naam ?? "(verwijderd formulier)"}
+          </Link>{" "}
+          ·{" "}
+          <Link href={link({ formulier: undefined })} className="underline underline-offset-4">
+            alle formulieren
+          </Link>
+        </p>
+      )}
       <p className="-mt-3 text-sm text-black/60 dark:text-white/60">
         {totaal} contact{totaal === 1 ? "" : "en"}
         {gefilterd && (
@@ -181,6 +196,11 @@ export default async function ContactenPagina({
                   </span>
                   <span className="flex flex-wrap items-center gap-1.5 text-xs text-black/50 dark:text-white/50">
                     <span>{BRON_LABEL[c.bron]}</span>
+                    {c.formulier_id && formulieren.has(c.formulier_id) && (
+                      <Link href={link({ formulier: c.formulier_id })} className="hover:text-accent hover:underline">
+                        · via formulier {formulieren.get(c.formulier_id)?.naam}
+                      </Link>
+                    )}
                     <span>· {datum(c.aangemaakt_op)}</span>
                     {c.tags.map((t) => (
                       <Link key={t} href={link({ tag: t })} className="rounded-full bg-accent-zacht px-2 py-0.5 text-accent">
