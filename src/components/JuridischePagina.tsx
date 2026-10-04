@@ -19,7 +19,7 @@ export function JuridischePagina({
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-12">
       <Link
         href="/"
-        className="text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
+        className="text-sm text-foreground/70 underline underline-offset-4 hover:text-accent"
       >
         ← Terug naar de startpagina
       </Link>
@@ -31,7 +31,7 @@ export function JuridischePagina({
       )}
       <header>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{titel}</h1>
-        <p className="mt-2 text-sm text-foreground/50">Laatst bijgewerkt: {bijgewerkt}</p>
+        <p className="mt-2 text-sm text-foreground/70">Laatst bijgewerkt: {bijgewerkt}</p>
       </header>
       <div className="flex flex-col gap-4 leading-relaxed text-foreground/80 [&_h2]:mt-6 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
         {children}

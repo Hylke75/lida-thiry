@@ -39,7 +39,7 @@ export default async function CadeaubonPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
       <div>
-        <Link href="/" className="text-sm text-foreground/50 underline underline-offset-4 hover:text-accent">
+        <Link href="/" className="text-sm text-foreground/70 underline underline-offset-4 hover:text-accent">
           ← Terug
         </Link>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">{t.titel}</h1>

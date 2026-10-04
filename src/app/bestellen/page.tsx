@@ -57,7 +57,7 @@ export default async function BestellenPage() {
       <div>
         <Link
           href="/"
-          className="text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
+          className="text-sm text-foreground/70 underline underline-offset-4 hover:text-accent"
         >
           ← Terug
         </Link>
@@ -65,7 +65,7 @@ export default async function BestellenPage() {
         {prijsLabel && (
           <p className="mt-2 text-foreground/70">
             {metPrijs(pagina.prijsregel, <strong className="text-accent">{prijsLabel}</strong>)}{" "}
-            <span className="text-sm text-foreground/50">{pagina.btw}</span>
+            <span className="text-sm text-foreground/70">{pagina.btw}</span>
           </p>
         )}
       </div>

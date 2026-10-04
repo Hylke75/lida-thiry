@@ -31,7 +31,7 @@ export default async function InloggenPage({
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 p-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Beheer — inloggen</h1>
-        <p className="mt-1 text-sm text-black/50 dark:text-white/50">
+        <p className="mt-1 text-sm text-black/70 dark:text-white/50">
           {codeVoor !== null
             ? "Vul de code van 6 cijfers uit je authenticator-app in."
             : "Log in met je e-mailadres en wachtwoord."}
@@ -51,11 +51,11 @@ export default async function InloggenPage({
           )}
           <CodeFormulier />
           <form action="/auth/uitloggen" method="post">
-            <button className="text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50 dark:hover:text-white/80">
+            <button className="text-sm text-black/70 underline underline-offset-4 hover:text-black/80 dark:text-white/50 dark:hover:text-white/80">
               Uitloggen of met een ander account inloggen
             </button>
           </form>
-          <p className="text-xs text-black/50 dark:text-white/50">
+          <p className="text-xs text-black/70 dark:text-white/50">
             Telefoon kwijt? Vraag een eigenaar om je tweestapsverificatie te resetten (Instellingen → Beheerders).
           </p>
         </>

@@ -12,7 +12,7 @@ export async function SiteFooter() {
   const jaar = new Date().getFullYear();
   const [{ footer }, site] = await Promise.all([haalMenu(), leesWebsite()]);
   return (
-    <footer className="mt-16 border-t border-foreground/10 px-6 py-8 text-sm text-foreground/60">
+    <footer className="mt-16 border-t border-foreground/10 px-6 py-8 text-sm text-foreground/70">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
         <div className="flex flex-col items-center gap-3 sm:items-start">
           <p>
@@ -41,7 +41,7 @@ export async function SiteFooter() {
           <Link href="/privacy" className="hover:text-accent">
             Privacyverklaring
           </Link>
-          <Link href="/admin/inloggen" className="text-foreground/40 hover:text-accent">
+          <Link href="/admin/inloggen" className="hover:text-accent">
             Beheer
           </Link>
         </nav>

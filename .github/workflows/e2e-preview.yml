@@ -1,0 +1,52 @@
+name: E2E op preview
+
+# Draait de rooktests en toegankelijkheidstests tegen een Vercel-preview zodra
+# die klaar is. Alleen lezen: de bestelflow met echte betaling en de ingelogde
+# beheertests draaien alleen als de bijbehorende secrets gezet zijn (zie
+# docs/testen.md). Nooit tegen productie.
+
+on:
+  deployment_status:
+
+concurrency:
+  group: e2e-preview-${{ github.event.deployment.sha }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'Production' &&
+      github.event.deployment.environment != 'production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Playwright-browser installeren (alleen Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tegen de preview
+        run: npx playwright test e2e/publiek.spec.ts e2e/formulieren.spec.ts e2e/toegankelijkheid.spec.ts e2e/admin.spec.ts e2e/bestellen.spec.ts
+        env:
+          E2E_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_WACHTWOORD: ${{ secrets.E2E_ADMIN_WACHTWOORD }}
+
+      - name: Playwright-resultaten bewaren bij een fout
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-resultaten-preview
+          path: test-results/
+          retention-days: 7

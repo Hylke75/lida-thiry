@@ -130,7 +130,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
                 <span className="rounded-full bg-accent-zacht px-3 py-1 font-medium text-accent">#{tag}</span>
                 <Link
                   href={blogHref({ categorie })}
-                  className="text-foreground/50 underline underline-offset-4 hover:text-accent"
+                  className="text-foreground/70 underline underline-offset-4 hover:text-accent"
                 >
                   filter wissen
                 </Link>
@@ -223,7 +223,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
 
         {tags.length > 0 && (
           <nav aria-label="Onderwerpen" className="border-t border-foreground/10 pt-8">
-            <h2 className="mb-3 text-sm font-medium text-foreground/60">Onderwerpen</h2>
+            <h2 className="mb-3 text-sm font-medium text-foreground/70">Onderwerpen</h2>
             <ul className="flex flex-wrap gap-2">
               {tags.slice(0, 20).map((tg) => (
                 <li key={tg.naam}>
@@ -244,7 +244,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
       <section className="bg-kaart">
         <div className="mx-auto w-full max-w-5xl px-6 py-16">
           <NieuwsbriefAanmelden teksten={nieuwsbrief} toestemming={<Opmaak tekst={nieuwsbrief.toestemming_tekst} />} />
-          <p className="mt-6 text-center text-xs text-foreground/50">
+          <p className="mt-6 text-center text-xs text-foreground/70">
             Liever een feedlezer?{" "}
             <a href="/blog/rss.xml" className="underline underline-offset-4 hover:text-accent">
               Volg de blog via RSS

@@ -10,6 +10,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Alleen unittests onder src/. De Playwright-specs (e2e/*.spec.ts) draaien apart.
     include: ["src/**/*.test.ts"],
   },
 });

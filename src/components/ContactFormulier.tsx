@@ -206,7 +206,7 @@ export function ContactFormulier({ teksten, privacy }: { teksten: ContactFormuli
               {veldFout("bericht") ?? <span />}
               <span
                 id={`${id}-teller`}
-                className={`shrink-0 text-xs tabular-nums ${lengte > MAX.bericht * 0.9 ? "text-accent" : "text-foreground/50"}`}
+                className={`shrink-0 text-xs tabular-nums ${lengte > MAX.bericht * 0.9 ? "text-accent" : "text-foreground/70"}`}
               >
                 {lengte.toLocaleString("nl-NL")} / {MAX.bericht.toLocaleString("nl-NL")} tekens
               </span>
@@ -225,7 +225,7 @@ export function ContactFormulier({ teksten, privacy }: { teksten: ContactFormuli
               {bezig ? "Bezig met versturen…" : teksten.knop}
             </button>
           </div>
-          <div className="text-xs text-foreground/50 [&_a]:text-accent [&_a]:underline [&_p]:mt-1">{privacy}</div>
+          <div className="text-xs text-foreground/70 [&_a]:text-accent [&_a]:underline [&_p]:mt-1">{privacy}</div>
         </form>
       )}
     </div>

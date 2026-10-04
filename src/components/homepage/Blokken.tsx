@@ -69,9 +69,9 @@ const Hero: Blok = ({ hero, ctaTekst, prijsLabel, vorm }) => (
             {ctaTekst}
           </Link>
           {prijsLabel ? (
-            <p className="text-xs text-foreground/50">{hero.prijsregel}</p>
+            <p className="text-xs text-foreground/70">{hero.prijsregel}</p>
           ) : (
-            <p className="text-xs text-foreground/50">{hero.geenPrijs}</p>
+            <p className="text-xs text-foreground/70">{hero.geenPrijs}</p>
           )}
         </div>
       </div>
@@ -113,7 +113,7 @@ const Figuurtypes: Blok = ({ figuurtypes, aantal, silhouetten }) => (
               <Lichaam vorm={s.vorm} armen={false} titel={`Silhouet ${s.naam}`} className="h-40 w-auto" />
             </div>
             <h3 className="mt-1 font-semibold">{s.naam}</h3>
-            <p className="text-sm text-foreground/60">{s.omschrijving}</p>
+            <p className="text-sm text-foreground/70">{s.omschrijving}</p>
           </li>
         ))}
       </ul>
@@ -151,7 +151,7 @@ const Advies: Blok = ({ advies, vorm }) => (
           <div className="h-2 w-3/4 rounded bg-foreground/10" />
         </div>
       </div>
-      <p className="mt-6 text-center text-xs text-foreground/40">Voorbeeldweergave</p>
+      <p className="mt-6 text-center text-xs text-foreground/70">Voorbeeldweergave</p>
     </div>
   </section>
 );
@@ -208,7 +208,7 @@ const Ervaringen: Blok = ({ ervaringen, reviews }) => {
                 </span>
               )}
               <blockquote className={`${e.sterren ? "" : "-mt-4 "}whitespace-pre-line text-foreground/80`}>{e.citaat}</blockquote>
-              <p className="mt-auto text-sm text-foreground/50">{e.naam}</p>
+              <p className="mt-auto text-sm text-foreground/70">{e.naam}</p>
             </li>
           ))}
         </ul>

@@ -101,7 +101,7 @@ export function NieuwsbriefFormulier({
         <div role="status" className="flex flex-col gap-2">
           <p className="whitespace-pre-line rounded-2xl bg-accent-zacht px-5 py-4 text-foreground/80">{succes}</p>
           {voorbeeld && (
-            <button type="button" onClick={() => setGelukt(false)} className="text-xs text-foreground/50 underline underline-offset-4">
+            <button type="button" onClick={() => setGelukt(false)} className="text-xs text-foreground/70 underline underline-offset-4">
               Voorbeeld: er is niets verstuurd. Terug naar het formulier
             </button>
           )}
@@ -152,7 +152,7 @@ export function NieuwsbriefFormulier({
           >
             {bezig ? "Bezig…" : knop}
           </button>
-          <div className="text-center text-xs text-foreground/50 [&_a]:text-accent [&_a]:underline [&_p]:mt-1">
+          <div className="text-center text-xs text-foreground/70 [&_a]:text-accent [&_a]:underline [&_p]:mt-1">
             {toestemming}
           </div>
         </form>

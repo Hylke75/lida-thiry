@@ -9,7 +9,7 @@ import { meldBrowserFout } from "@/lib/fouten/browser";
 
 const ACHTERGROND = "#faf8f5";
 const TEKST = "#2b2a28";
-const ACCENT = "#a4634d";
+const ACCENT = "#945843";
 
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {

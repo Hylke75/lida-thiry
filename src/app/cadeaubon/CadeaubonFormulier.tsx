@@ -137,7 +137,7 @@ export function CadeaubonFormulier({
             Let op: dit is meer dan de prijs van één test. De bon is één keer te gebruiken; het restbedrag vervalt.
           </p>
         )}
-        <p className="text-xs whitespace-pre-line text-foreground/50">{teksten.bedragUitleg}</p>
+        <p className="text-xs whitespace-pre-line text-foreground/70">{teksten.bedragUitleg}</p>
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">

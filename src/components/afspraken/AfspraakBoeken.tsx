@@ -94,7 +94,7 @@ function Kalender({
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-sm" role="grid">
         {DAGKOPPEN.map((d) => (
-          <span key={d} className="pb-1 text-xs text-foreground/50" role="columnheader">
+          <span key={d} className="pb-1 text-xs text-foreground/70" role="columnheader">
             {d}
           </span>
         ))}
@@ -331,7 +331,7 @@ export function AfspraakBoeken({
                   }`}
                 >
                   <span className="font-semibold">{s.naam}</span>
-                  <span className="text-sm text-foreground/60">
+                  <span className="text-sm text-foreground/70">
                     {duurLabel(s.duur_minuten)}
                     {s.prijs_cent > 0 ? ` · ${bedragLabel(s.prijs_cent)}` : ""}
                     {s.online ? " · online" : s.locatie ? ` · ${s.locatie}` : ""}
@@ -346,7 +346,7 @@ export function AfspraakBoeken({
       {soorten.length === 1 && soort && (
         <div className="flex flex-col gap-1 rounded-2xl border border-foreground/10 bg-kaart p-4">
           <span className="font-semibold">{soort.naam}</span>
-          <span className="text-sm text-foreground/60">
+          <span className="text-sm text-foreground/70">
             {duurLabel(soort.duur_minuten)}
             {soort.prijs_cent > 0 ? ` · ${bedragLabel(soort.prijs_cent)}` : ""}
             {soort.online ? " · online" : soort.locatie ? ` · ${soort.locatie}` : ""}
@@ -358,7 +358,7 @@ export function AfspraakBoeken({
       {soort && (
         <Stap nummer={soorten.length > 1 ? 2 : 1} titel={teksten.stap_datum}>
           {laden && !dagen ? (
-            <p className="text-sm text-foreground/60" role="status">
+            <p className="text-sm text-foreground/70" role="status">
               Beschikbare dagen laden…
             </p>
           ) : laadFout ? (
@@ -384,7 +384,7 @@ export function AfspraakBoeken({
 
       {soort && datum && tijden.length > 0 && (
         <Stap nummer={soorten.length > 1 ? 3 : 2} titel={teksten.stap_tijd}>
-          <p className="text-sm text-foreground/60 first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
+          <p className="text-sm text-foreground/70 first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5" role="radiogroup" aria-label={teksten.stap_tijd}>
             {tijden.map((t) => {
               const actief = tijd?.start === t.start;

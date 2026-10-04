@@ -16,6 +16,8 @@ export const metadata: Metadata = {
 export default function AfspraakPagina() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10 sm:py-14">
+      {/* Het blok heeft een eigen (zichtbare) h2; de pagina zelf heeft één h1 nodig. */}
+      <h1 className="sr-only">Afspraak maken</h1>
       <AfspraakBlok />
     </main>
   );
