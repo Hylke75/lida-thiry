@@ -28,6 +28,8 @@ import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import { blokVoorFormulier, onbekendeBlokken, PAGINA_BLOKKEN } from "@/lib/paginas/regels";
 import { paginaNaarConcept, publiceerPagina, slaPaginaOp, type PaginaUitkomst } from "../acties";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
+import { Geschiedenis } from "../../versies/Geschiedenis";
+import { zetPaginaVersieTerug } from "../../versies/acties";
 import { StatusBadge } from "./onderdelen";
 import { PaginaUpload } from "./PaginaUpload";
 import { PaginaVoorbeeld } from "./voorbeeld";
@@ -217,6 +219,14 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
 
   const opslaan = () => voerUit("opslaan", () => slaPaginaOp(id, alsInvoer(v)));
 
+  /** Zet een versie uit de geschiedenis terug; null = gelukt, anders de foutmeldingen. */
+  async function versieTerugzetten(versieId: string): Promise<string[] | null> {
+    const r = await zetPaginaVersieTerug(versieId);
+    if (!r.ok) return r.fouten;
+    verwerk(r);
+    return null;
+  }
+
   // Ctrl/Cmd+S = opslaan.
   const opToets = useEffectEvent((e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
@@ -300,6 +310,7 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
           <span className={gewijzigd ? "font-medium text-amber-700 dark:text-amber-300" : zacht}>{gewijzigd ? "● Niet opgeslagen" : "Alles opgeslagen"}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Geschiedenis soort="pagina" refId={id} onTerugzetten={versieTerugzetten} gewijzigd={gewijzigd} knopKlasse={knopRand} />
           {online && !gewijzigd ? (
             <a href={`/${opgeslagen.slug}`} target="_blank" rel="noopener noreferrer" className={knopRand}>
               Bekijken ↗

@@ -13,7 +13,7 @@ export default async function PaginaBewerken({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ nieuw?: string; gekopieerd?: string; sjabloon?: string }>;
+  searchParams: Promise<{ nieuw?: string; gekopieerd?: string; sjabloon?: string; hersteld?: string }>;
 }) {
   await vereisBeheerder();
   const { id } = await params;
@@ -30,6 +30,7 @@ export default async function PaginaBewerken({
           Startpagina aangemaakt als concept. Vul de plekken met [aan te vullen: …] in met je eigen gegevens en lees alles na voordat je publiceert.
         </Melding>
       )}
+      {sp.hersteld && <Melding soort="ok">De pagina is teruggezet uit de prullenbak, als concept. Controleer hem en publiceer opnieuw als dat nodig is.</Melding>}
       {sp.gekopieerd && <Melding soort="ok">Kopie gemaakt. Dit is een nieuw concept; het origineel is niet veranderd.</Melding>}
       <PaginaEditor key={pagina.id} pagina={pagina} formulieren={formulieren} site={siteUrl()} />
     </main>

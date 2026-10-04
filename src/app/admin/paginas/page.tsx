@@ -53,13 +53,26 @@ export default async function PaginasOverzicht({ searchParams }: { searchParams:
           <h1 className="text-2xl font-semibold tracking-tight">Pagina&apos;s</h1>
           <p className={`text-sm ${zacht}`}>Vaste pagina&apos;s op je website, zoals &quot;Over mij&quot; en &quot;Contact&quot;, met hun plek in het menu en de footer.</p>
         </div>
-        <form action={nieuwePagina}>
-          <button className={knopHoofd}>+ Nieuwe pagina</button>
-        </form>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/versies/prullenbak" className={knopRand}>
+            Prullenbak
+          </Link>
+          <form action={nieuwePagina}>
+            <button className={knopHoofd}>+ Nieuwe pagina</button>
+          </form>
+        </div>
       </div>
 
       {sp.fout && <Melding soort="fout">{FOUTEN[sp.fout] ?? "Er ging iets mis."}</Melding>}
-      {sp.verwijderd && <Melding soort="ok">De pagina is verwijderd.</Melding>}
+      {sp.verwijderd && (
+        <Melding soort="ok">
+          De pagina is verwijderd. Per ongeluk? Zet hem terug via de{" "}
+          <Link href="/admin/versies/prullenbak" className="underline underline-offset-4">
+            prullenbak
+          </Link>
+          .
+        </Melding>
+      )}
       {error && <Melding soort="fout">De pagina&apos;s konden niet worden geladen ({error.message}).</Melding>}
 
       {paginas.length === 0 && !error && (

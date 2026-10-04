@@ -82,6 +82,9 @@ export default async function BlogOverzicht({
           <p className={`text-sm ${zacht}`}>Schrijf berichten voor je website, zelf of met hulp van AI.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/admin/versies/prullenbak" className={knopRand}>
+            Prullenbak
+          </Link>
           <Link href="/admin/blog/ai" className={knopRand}>
             ✨ Schrijven met AI
           </Link>
@@ -92,7 +95,15 @@ export default async function BlogOverzicht({
       </div>
 
       {sp.fout && <Melding soort="fout">{FOUTEN[sp.fout] ?? "Er ging iets mis."}</Melding>}
-      {sp.verwijderd && <Melding soort="ok">Het bericht is verwijderd.</Melding>}
+      {sp.verwijderd && (
+        <Melding soort="ok">
+          Het bericht is verwijderd. Per ongeluk? Zet het terug via de{" "}
+          <Link href="/admin/versies/prullenbak" className="underline underline-offset-4">
+            prullenbak
+          </Link>
+          .
+        </Melding>
+      )}
       {error && <Melding soort="fout">De berichten konden niet worden geladen ({error.message}).</Melding>}
 
       {gebruik && (ai || gebruik.aanroepen > 0) && (

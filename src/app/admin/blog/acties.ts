@@ -19,6 +19,8 @@ import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
 import { siteUrl } from "@/lib/site";
 import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
+import { bewaarVersie } from "@/lib/versies/beheer";
+import { blogSnapshot, omschrijvingVoor } from "@/lib/versies/regels";
 import {
   aiFoutmelding,
   aiLimietFout,
@@ -83,9 +85,12 @@ export async function dupliceerBericht(formData: FormData) {
 }
 
 export async function verwijderBericht(formData: FormData) {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const id = leesId(formData);
   if (!id) redirect(`${BLOG_PAD}?fout=onbekend`);
+  // Eerst een momentopname, zodat het bericht via de prullenbak terug kan.
+  const weg = await haalBericht(id);
+  if (weg) await bewaarVersie({ soort: "blog", ref: id, inhoud: blogSnapshot(weg), omschrijving: "Verwijderd", door: user.email, forceer: true });
   const { data } = await adminClient().from("blog_berichten").delete().eq("id", id).select("slug");
   if (!data?.length) redirect(`${BLOG_PAD}?fout=verwijderen`);
   vernieuwBlog(data[0].slug as string);
@@ -98,9 +103,15 @@ export type BerichtUitkomst = Uitkomst<{ bericht: BlogBericht; zichtbaar: Zichtb
 
 const fout = (...fouten: string[]): { ok: false; fouten: string[] } => ({ ok: false, fouten });
 
+/** Bewaart de inhoud zoals die nu is opgeslagen in de geschiedenis (vóór het overschrijven). */
+function bewaarHuidig(huidig: BlogBericht, door: string | undefined) {
+  const inhoud = blogSnapshot(huidig);
+  return bewaarVersie({ soort: "blog", ref: huidig.id, inhoud, omschrijving: omschrijvingVoor(inhoud), door });
+}
+
 /** Slaat de velden op; een bericht dat online staat of is ingepland, moet daarbij publiceerbaar blijven. */
 export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
   const v = valideerBericht(ruw);
@@ -114,6 +125,7 @@ export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUit
       );
     }
   }
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient()
     .from("blog_berichten")
     .update(v.waarde)
@@ -140,7 +152,7 @@ export async function publiceer(
   ruw: unknown,
   opties: { moment: string | null; gecontroleerd: boolean },
 ): Promise<BerichtUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
   const v = valideerBericht(ruw);
@@ -161,6 +173,7 @@ export async function publiceer(
     moment = tijd;
   }
 
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient()
     .from("blog_berichten")
     .update({
@@ -192,9 +205,10 @@ export async function publiceer(
 
 /** Haalt een bericht offline (of annuleert de planning); de tekst blijft bewaard. */
 export async function naarConcept(id: string): Promise<BerichtUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient()
     .from("blog_berichten")
     .update({ status: "concept", gepubliceerd_op: null })

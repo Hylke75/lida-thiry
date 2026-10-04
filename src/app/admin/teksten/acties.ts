@@ -5,20 +5,30 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { vindSectie } from "@/lib/inhoud/register";
 import { combineer, standaardWaarden, valideer } from "@/lib/inhoud/schema";
+import { bewaarVersie } from "@/lib/versies/beheer";
+import { tekstSnapshot } from "@/lib/versies/regels";
 
 export type SectieResultaat =
   | { ok: true; bericht: string; waarden: Record<string, unknown>; aangepast: boolean }
   | { ok: false; fouten: string[] };
 
+/** Bewaart de tekst zoals die nu is opgeslagen in de geschiedenis (vóór het overschrijven). */
+async function bewaarHuidigeTekst(sleutel: string, door: string | undefined, omschrijving: string, forceer = false) {
+  const { data, error } = await adminClient().from("inhoud").select("waarde").eq("sleutel", sleutel).maybeSingle();
+  if (error) return console.error(`Teksten: ${sleutel} niet gelezen voor de geschiedenis.`, error);
+  await bewaarVersie({ soort: "tekst", ref: sleutel, inhoud: tekstSnapshot(data?.waarde ?? null), omschrijving: data?.waarde ? omschrijving : "Standaardtekst", door, forceer });
+}
+
 /** Slaat de teksten van één sectie op. */
 export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<SectieResultaat> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const gevonden = vindSectie(sleutel);
   if (!gevonden) return { ok: false, fouten: ["Onbekend onderdeel."] };
 
   const uitkomst = valideer(gevonden.sectie, waarden);
   if (!uitkomst.ok) return { ok: false, fouten: uitkomst.fouten };
 
+  await bewaarHuidigeTekst(sleutel, user.email, "Opgeslagen");
   const { error } = await adminClient()
     .from("inhoud")
     .upsert({ sleutel, waarde: uitkomst.waarde }, { onConflict: "sleutel" });
@@ -36,10 +46,11 @@ export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<Se
 
 /** Verwijdert de aanpassingen van een sectie, zodat de standaardtekst weer geldt. */
 export async function zetSectieTerug(sleutel: string): Promise<SectieResultaat> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const gevonden = vindSectie(sleutel);
   if (!gevonden) return { ok: false, fouten: ["Onbekend onderdeel."] };
 
+  await bewaarHuidigeTekst(sleutel, user.email, "Voor standaardtekst", true);
   const { error } = await adminClient().from("inhoud").delete().eq("sleutel", sleutel);
   if (error) return { ok: false, fouten: [`Terugzetten mislukt: ${error.message}`] };
 

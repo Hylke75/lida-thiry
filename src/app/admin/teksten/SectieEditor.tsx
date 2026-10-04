@@ -3,6 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { Opmaak } from "@/components/Opmaak";
 import { bevatPlaceholder, nieuweId, type EnkelVeld, type LijstVeld, type Sectie } from "@/lib/inhoud/schema";
+import { Geschiedenis } from "../versies/Geschiedenis";
+import { zetTekstVersieTerug } from "../versies/acties";
 import { slaSectieOp, zetSectieTerug } from "./acties";
 
 type Item = Record<string, string>;
@@ -192,6 +194,14 @@ export function SectieEditor({
   };
 
   const opslaan = () => start(async () => verwerk(await slaSectieOp(sectie.sleutel, waarden)));
+
+  /** Zet een versie uit de geschiedenis terug; null = gelukt, anders de foutmeldingen. */
+  async function versieTerugzetten(versieId: string): Promise<string[] | null> {
+    const r = await zetTekstVersieTerug(versieId);
+    if (!r.ok) return r.fouten;
+    verwerk(r);
+    return null;
+  }
   const terugzetten = () => {
     if (!confirm("De standaardtekst terugzetten? Je eigen tekst voor dit onderdeel gaat dan verloren.")) return;
     start(async () => verwerk(await zetSectieTerug(sectie.sleutel)));
@@ -292,6 +302,13 @@ export function SectieEditor({
             {bezig ? "Bezig…" : "Opslaan"}
           </button>
           {gewijzigd && <span className="text-xs text-black/50 dark:text-white/50">Niet opgeslagen wijzigingen</span>}
+          <Geschiedenis
+            soort="tekst"
+            refId={sectie.sleutel}
+            onTerugzetten={versieTerugzetten}
+            gewijzigd={gewijzigd}
+            knopKlasse="text-xs text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
+          />
           {aangepast && (
             <button
               type="button"

@@ -18,6 +18,8 @@ import {
 } from "@/lib/paginas/beheer";
 import { vindStartpagina } from "@/lib/paginas/sjablonen";
 import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
+import { bewaarVersie } from "@/lib/versies/beheer";
+import { omschrijvingVoor, paginaSnapshot } from "@/lib/versies/regels";
 import { haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
 
 type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
@@ -96,9 +98,12 @@ export async function dupliceerPagina(formData: FormData) {
 }
 
 export async function verwijderPagina(formData: FormData) {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const id = leesId(formData);
   if (!id) redirect(`${PAGINAS_PAD}?fout=onbekend`);
+  // Eerst een momentopname, zodat de pagina via de prullenbak terug kan.
+  const weg = await haalPaginaBeheer(id);
+  if (weg) await bewaarVersie({ soort: "pagina", ref: id, inhoud: paginaSnapshot(weg), omschrijving: "Verwijderd", door: user.email, forceer: true });
   const { data } = await adminClient().from("paginas").delete().eq("id", id).select("slug");
   if (!data?.length) redirect(`${PAGINAS_PAD}?fout=verwijderen`);
   vernieuwPaginas(data[0].slug as string);
@@ -123,11 +128,17 @@ export async function verplaatsPagina(formData: FormData) {
 
 // Editor ------------------------------------------------------------------------------
 
+/** Bewaart de inhoud zoals die nu is opgeslagen in de geschiedenis (vóór het overschrijven). */
+function bewaarHuidig(huidig: Pagina, door: string | undefined) {
+  const inhoud = paginaSnapshot(huidig);
+  return bewaarVersie({ soort: "pagina", ref: huidig.id, inhoud, omschrijving: omschrijvingVoor(inhoud), door });
+}
+
 export type PaginaUitkomst = Uitkomst<{ pagina: Pagina; melding: string }>;
 
 /** Slaat de velden op; een gepubliceerde pagina moet daarbij publiceerbaar blijven. */
 export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
   const v = valideerPagina(ruw);
@@ -138,6 +149,7 @@ export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitko
       return fout("Deze pagina staat online, dus hij moet compleet blijven. Los dit eerst op, of zet de pagina terug naar concept:", ...problemen);
     }
   }
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient().from("paginas").update(v.waarde).eq("id", id).select(PAGINA_VELDEN).single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Opslaan is niet gelukt (${error?.message ?? "onbekend"}).`);
@@ -151,13 +163,14 @@ export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitko
 
 /** Slaat op en zet de pagina online. */
 export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
   const v = valideerPagina(ruw);
   if (!v.ok) return fout(...v.fouten);
   const problemen = publicatieProblemen(v.waarde);
   if (problemen.length) return fout("De pagina is nog niet klaar om te publiceren:", ...problemen);
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient()
     .from("paginas")
     .update({ ...v.waarde, status: "gepubliceerd" })
@@ -176,9 +189,10 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
 
 /** Haalt een pagina offline; de tekst blijft bewaard. */
 export async function paginaNaarConcept(id: string): Promise<PaginaUitkomst> {
-  await vereisBeheerder();
+  const user = await vereisBeheerder();
   const huidig = await haalPaginaBeheer(id);
   if (!huidig) return fout("Deze pagina bestaat niet (meer).");
+  await bewaarHuidig(huidig, user.email);
   const { data, error } = await adminClient().from("paginas").update({ status: "concept" }).eq("id", id).select(PAGINA_VELDEN).single();
   if (error || !data) return fout(`Dat is niet gelukt (${error?.message ?? "onbekend"}).`);
   vernieuwPaginas(huidig.slug);

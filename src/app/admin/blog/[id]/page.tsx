@@ -26,7 +26,7 @@ export default async function BlogBewerken({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ai?: string; nieuw?: string; gekopieerd?: string; fout?: string }>;
+  searchParams: Promise<{ ai?: string; nieuw?: string; gekopieerd?: string; fout?: string; hersteld?: string }>;
 }) {
   await vereisBeheerder();
   const { id } = await params;
@@ -47,6 +47,7 @@ export default async function BlogBewerken({
         </p>
       )}
       {sp.nieuw && <Melding soort="ok">Nieuw concept aangemaakt. Begin met een titel en schrijf je tekst; vergeet niet op te slaan.</Melding>}
+      {sp.hersteld && <Melding soort="ok">Het bericht is teruggezet uit de prullenbak, als concept. Controleer het en publiceer opnieuw als dat nodig is.</Melding>}
       {sp.gekopieerd && <Melding soort="ok">Kopie gemaakt. Dit is een nieuw concept; het origineel is niet veranderd.</Melding>}
       {sp.fout && <Melding soort="fout">{FOUTEN[sp.fout] ?? "Er ging iets mis."}</Melding>}
       <BlogEditor

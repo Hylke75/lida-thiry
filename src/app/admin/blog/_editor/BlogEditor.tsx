@@ -29,6 +29,8 @@ import {
 import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
 import { aiBewerk, aiVoorstel, alsNieuwsbrief, naarConcept, publiceer, slaBerichtOp, type BerichtUitkomst } from "../acties";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
+import { Geschiedenis } from "../../versies/Geschiedenis";
+import { zetBerichtVersieTerug } from "../../versies/acties";
 import { ArtikelTekst } from "./Artikel";
 import { BlogUpload } from "./BlogUpload";
 import { AiBadge, ZichtbaarheidBadge } from "./onderdelen";
@@ -250,6 +252,14 @@ export function BlogEditor({
 
   const opslaan = () => voerUit("opslaan", () => slaBerichtOp(id, alsInvoer(v)));
 
+  /** Zet een versie uit de geschiedenis terug; null = gelukt, anders de foutmeldingen. */
+  async function versieTerugzetten(versieId: string): Promise<string[] | null> {
+    const r = await zetBerichtVersieTerug(versieId);
+    if (!r.ok) return r.fouten;
+    verwerk(r);
+    return null;
+  }
+
   // Ctrl/Cmd+S = opslaan.
   const opToets = useEffectEvent((e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
@@ -391,6 +401,7 @@ export function BlogEditor({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Geschiedenis soort="blog" refId={id} onTerugzetten={versieTerugzetten} gewijzigd={gewijzigd} knopKlasse={knopRand} />
           {zichtbaar === "online" && !gewijzigd ? (
             <a href={`/blog/${opgeslagen.slug}`} target="_blank" rel="noopener noreferrer" className={knopRand}>
               Bekijken ↗
