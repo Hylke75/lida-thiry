@@ -53,6 +53,8 @@ export interface LivegangGegevens {
   aangemeldeContacten?: number;
   /** Of er een gepubliceerde pagina is met het blok {contactformulier} (ontbreekt = nee). */
   contactformulierGepubliceerd?: boolean;
+  /** Aantal goedgekeurde reviews met toestemming (ontbreekt = punt niet tonen). */
+  goedgekeurdeReviews?: number;
 }
 
 export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
@@ -65,6 +67,8 @@ export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
 const INSTELLINGEN: LivegangLink = { href: "/admin/instellingen", label: "Naar instellingen" };
 const WEBSITE_INSTELLINGEN: LivegangLink = { href: "/admin/website", label: "Naar instellingen website" };
 const VERCEL_UITLEG = "Wijzigen in Vercel → Settings → Environment Variables, daarna opnieuw publiceren.";
+/** Aanbevolen minimum aantal goedgekeurde reviews voor de livegang. */
+const MIN_REVIEWS = 3;
 /** Hoeveel losse links we maximaal per punt tonen; de rest staat in de toelichting. */
 const MAX_LINKS = 6;
 
@@ -413,6 +417,22 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
         VERCEL_UITLEG,
     links: [{ href: "/admin/blog", label: "Naar de blog" }],
   });
+
+  // Reviews ----------------------------------------------------------------------
+  if (g.goedgekeurdeReviews !== undefined) {
+    const reviews = g.goedgekeurdeReviews;
+    items.push({
+      id: "reviews",
+      label: "Minstens 3 goedgekeurde reviews op de website",
+      ok: reviews >= MIN_REVIEWS,
+      niveau: "aanbevolen",
+      detail:
+        reviews >= MIN_REVIEWS
+          ? undefined
+          : `Nu ${reviews === 1 ? "1 review" : `${reviews} reviews`}. Echte ervaringen van klanten geven nieuwe bezoekers vertrouwen. Klanten krijgen na hun advies automatisch een uitnodiging; je kunt eerdere klanten ook zelf uitnodigen.`,
+      links: [{ href: "/admin/reviews", label: "Naar de reviews" }],
+    });
+  }
 
   return items;
 }

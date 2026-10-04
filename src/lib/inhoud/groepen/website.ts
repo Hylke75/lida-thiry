@@ -134,7 +134,7 @@ export const WEBSITE_ERVARINGEN = sectie({
   sleutel: "website.ervaringen",
   titel: "Ervaringen van klanten",
   uitleg:
-    "Gebruik alleen echte reacties, met toestemming van de klant. Zolang de lijst leeg is, wordt dit blok niet getoond.",
+    "Goedgekeurde reviews met toestemming (Beheer → Reviews, max. 6) staan automatisch bovenaan dit blok; de ervaringen hieronder komen daarna. Gebruik alleen echte reacties, met toestemming van de klant. Zonder reviews en ervaringen wordt dit blok niet getoond.",
   velden: {
     titel: { soort: "tekst", label: "Titel", standaard: "Ervaringen" },
     ervaringen: {

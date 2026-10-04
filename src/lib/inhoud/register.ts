@@ -7,9 +7,10 @@ import { EMAILS } from "./groepen/emails";
 import { NIEUWSBRIEF } from "./groepen/nieuwsbrief";
 import { JURIDISCH } from "./groepen/juridisch";
 import { BLOG } from "./groepen/blog";
+import { REVIEWS } from "./groepen/reviews";
 
 /** Alle groepen beheerbare teksten, in de volgorde van het beheerscherm. */
-export const GROEPEN: readonly Groep[] = [WEBSITE, CONTACT, BLOG, BESTELLEN, TEST, EMAILS, NIEUWSBRIEF, JURIDISCH];
+export const GROEPEN: readonly Groep[] = [WEBSITE, CONTACT, BLOG, BESTELLEN, TEST, EMAILS, NIEUWSBRIEF, JURIDISCH, REVIEWS];
 
 export function vindGroep(sleutel: string): Groep | undefined {
   return GROEPEN.find((g) => g.sleutel === sleutel);

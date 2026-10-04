@@ -11,6 +11,7 @@ import type {
   EMAILS_HERINNERING,
 } from "./inhoud/groepen/emails";
 import type { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import type { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
 
 export interface Mail {
   onderwerp: string;
@@ -160,6 +161,28 @@ export function nieuwsbriefBevestigingMail(
       ${alineas(t.tekst, w)}
       ${knop(opts.link, t.knop, "#a4634d", "28px 0")}
       ${klein(t.na_knop, w)}
+      ${reserveLink(t.knop_werkt_niet, opts.link)}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(t.onderwerp, w), html };
+}
+
+/**
+ * Vraag om een review, een paar dagen na het advies. Kort en persoonlijk; {naam}
+ * is de voornaam van de klant.
+ */
+export function reviewUitnodigingMail(
+  t: SectieWaarden<typeof REVIEWS_UITNODIGING>,
+  algemeen: Algemeen,
+  opts: { naam: string; link: string },
+): Mail {
+  const w = { naam: opts.naam.trim() || "daar" };
+  const html = omhulsel(
+    `
+      ${kop(t.kop, w)}
+      ${alineas(t.tekst, w)}
+      ${knop(opts.link, t.knop, "#a4634d", "28px 0")}
+      ${alineas(t.na_knop, w)}
       ${reserveLink(t.knop_werkt_niet, opts.link)}`,
     algemeen.voettekst,
   );

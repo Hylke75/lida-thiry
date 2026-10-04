@@ -16,6 +16,7 @@ import {
 } from "@/lib/inhoud/groepen/website";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { haalLaatste } from "@/lib/blog/publiek";
+import { haalGoedgekeurdeReviews } from "@/lib/reviews/publiek";
 import { leesWebsite } from "@/lib/website/lees";
 import { normaliseerIndeling } from "@/lib/website/homepage";
 import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/Blokken";
@@ -40,8 +41,9 @@ export default async function Home() {
   const site = await leesWebsite();
   const indeling = normaliseerIndeling(site.homepageIndeling).filter((i) => i.zichtbaar);
   const toontBlog = indeling.some((i) => i.blok === "blog");
+  const toontErvaringen = indeling.some((i) => i.blok === "ervaringen");
 
-  const [silhouetten, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten] =
+  const [silhouetten, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews] =
     await Promise.all([
       haalSilhouetten().catch(() => []),
       leesSectie(WEBSITE_HERO),
@@ -55,6 +57,7 @@ export default async function Home() {
       leesSectie(NIEUWSBRIEF_AANMELDEN),
       leesSectie(WEBSITE_BLOG),
       toontBlog ? haalLaatste(3) : Promise.resolve([]),
+      toontErvaringen ? haalGoedgekeurdeReviews(6) : Promise.resolve([]),
     ]);
   let prijsLabel: string | null = null;
   try {
@@ -77,6 +80,7 @@ export default async function Home() {
     advies,
     over,
     ervaringen,
+    reviews,
     vragen,
     afsluiting,
     nieuwsbrief,

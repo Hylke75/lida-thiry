@@ -11,12 +11,14 @@ import {
   EMAILS_HERINNERING,
 } from "./inhoud/groepen/emails";
 import { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
 import {
   adviesMail,
   bevestigingMail,
   herinneringMail,
   nieuwsbriefBevestigingMail,
   omhulsel,
+  reviewUitnodigingMail,
   type BestelOverzicht,
 } from "./email-html";
 
@@ -179,4 +181,15 @@ export async function stuurBeheerderMail(opts: { aan: string; link: string | nul
     html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">${inhoud}</div>`,
   });
   if (error) throw new Error(error.message);
+}
+
+/** Vraagt een klant om een review (link naar /review/<token>). Teksten: Beheer → Teksten → Reviews. */
+export async function stuurReviewUitnodiging(opts: { email: string; naam: string; token: string }) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(REVIEWS_UITNODIGING), leesSectie(EMAILS_ALGEMEEN)]);
+  const { onderwerp, html } = reviewUitnodigingMail(teksten, algemeen, {
+    naam: opts.naam,
+    link: `${siteUrl()}/review/${opts.token}`,
+  });
+  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend review-uitnodiging: ${error.message}`);
 }

@@ -44,7 +44,7 @@ export const BLOK_INFO: Readonly<Record<HomepageBlok, BlokInfo>> = {
   over: { naam: "Over Lida", tekstenHref: tekst("website", "website.over") },
   ervaringen: {
     naam: "Ervaringen van klanten",
-    uitleg: "Wordt alleen getoond als er ervaringen zijn ingevuld.",
+    uitleg: "Wordt alleen getoond als er goedgekeurde reviews (Beheer → Reviews) of ingevulde ervaringen zijn.",
     tekstenHref: tekst("website", "website.ervaringen"),
   },
   blog: {
