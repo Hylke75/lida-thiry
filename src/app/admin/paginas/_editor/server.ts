@@ -1,5 +1,6 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { PAGINA_VELDEN, uniekePaginaSlug, type FormulierKeuze, type Pagina } from "@/lib/paginas/beheer";
@@ -47,6 +48,7 @@ export const SLUG_BEZET = "Dit webadres wordt al gebruikt door een andere pagina
  * pagina zelf (ook het oude adres als de slug is veranderd) en de sitemap.
  */
 export function vernieuwPaginas(...slugs: (string | null | undefined)[]) {
+  vernieuwPubliekeData("paginas");
   revalidatePath(PAGINAS_PAD);
   revalidatePath("/", "layout");
   for (const s of new Set(slugs.filter(Boolean))) revalidatePath(`/${s}`);

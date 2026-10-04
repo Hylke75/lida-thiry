@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { leesInstellingen } from "@/lib/instellingen";
+import { leesPubliekeInstellingen } from "@/lib/instellingen";
 
 /** Gemeenschappelijke opmaak voor de voorwaarden en de privacyverklaring. */
 export function JuridischePagina({
@@ -46,12 +46,12 @@ export function JuridischePagina({
  */
 /** Het contact-e-mailadres uit de instellingen, of een zichtbare invulplek. */
 export async function contactEmail(): Promise<string> {
-  const inst = await leesInstellingen().catch(() => ({}) as Record<string, string | null>);
+  const inst = await leesPubliekeInstellingen().catch(() => ({}) as Record<string, string | null>);
   return inst.contact_email?.trim() || "[e-mailadres]";
 }
 
 export async function Identiteit() {
-  const inst = await leesInstellingen().catch(() => ({}) as Record<string, string | null>);
+  const inst = await leesPubliekeInstellingen().catch(() => ({}) as Record<string, string | null>);
   const waarde = (sleutel: string, placeholder: string) => inst[sleutel]?.trim() || placeholder;
   return (
     <div className="rounded-xl bg-kaart p-5 text-sm ring-1 ring-foreground/10">

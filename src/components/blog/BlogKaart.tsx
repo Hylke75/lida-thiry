@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Afbeelding } from "@/components/Afbeelding";
 import { eersteAfbeelding, leestijdMinuten, type BlogBericht } from "@/lib/blog/regels";
 import { formatteerDatum } from "@/lib/blog/lijst";
 
@@ -8,36 +9,42 @@ export function berichtBeeld(b: Pick<BlogBericht, "omslag_url" | "omslag_alt" | 
   return eersteAfbeelding(b.inhoud);
 }
 
+/** Breedte van een kaart in het raster (max-w-5xl, 3 / 2 / 1 kolommen). */
+export const KAART_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw";
+
 /**
- * Omslagbeeld met vaste verhouding (geen verspringende pagina). Gewone <img>:
- * de foto's staan in de openbare Supabase-bucket, maar een omslag mag ook een
- * ander https-adres zijn. next/image zou dan een fout geven voor onbekende hosts.
- * Zonder foto tonen we een rustige, gestileerde vlakvulling in de huisstijl.
+ * Omslagbeeld met vaste verhouding (geen verspringende pagina). Foto's uit onze
+ * eigen opslag gaan via next/image (verkleind tot de getoonde breedte, WebP/AVIF,
+ * lazy); een omslag van een ander https-adres blijft een gewone <img> (zie
+ * components/Afbeelding.tsx). Zonder foto tonen we een rustige, gestileerde
+ * vlakvulling in de huisstijl.
  */
 export function BlogBeeld({
   bericht,
   className = "",
   prioriteit = false,
   decoratief = false,
+  sizes = KAART_SIZES,
 }: {
   bericht: Pick<BlogBericht, "omslag_url" | "omslag_alt" | "inhoud" | "titel" | "categorie">;
   className?: string;
   prioriteit?: boolean;
   /** Op kaarten staat de titel er al naast: dan is de foto decoratief voor schermlezers. */
   decoratief?: boolean;
+  /** Getoonde breedte (next/image `sizes`); standaard die van een kaart. */
+  sizes?: string;
 }) {
   const beeld = berichtBeeld(bericht);
   if (beeld) {
     return (
-      <div className={`overflow-hidden bg-accent-zacht ${className}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- foto's met vrije herkomst (zie hierboven) */}
-        <img
+      <div className={`relative overflow-hidden bg-accent-zacht ${className}`}>
+        <Afbeelding
+          vullen
           src={beeld.url}
           alt={decoratief ? "" : beeld.alt}
-          loading={prioriteit ? "eager" : "lazy"}
-          fetchPriority={prioriteit ? "high" : undefined}
-          decoding="async"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          sizes={sizes}
+          prioriteit={prioriteit}
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
       </div>
     );

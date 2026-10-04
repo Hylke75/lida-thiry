@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
-import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
+import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
 import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { BestelFormulier } from "./BestelFormulier";
 
-export const dynamic = "force-dynamic";
+// Statisch met ISR: teksten (tag "inhoud") en de prijs (tag "instellingen") komen
+// uit de datacache; opslaan in het beheer vernieuwt de pagina direct. Het bedrag
+// dat de klant betaalt, bepaalt /api/bestellen altijd vers uit de database.
+// GRATIS_TEST is een omgevingsvariabele en verandert alleen met een nieuwe deploy.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Bestellen",
@@ -36,8 +40,7 @@ export default async function BestellenPage() {
   let prijsLabel: string | null = null;
   let prijsBekend = false;
   try {
-    const cent = await leesPrijsCent();
-    const valuta = (await leesInstelling("valuta")) || "EUR";
+    const { prijsCent: cent, valuta } = await leesPubliekePrijs();
     if (cent) {
       prijsBekend = true;
       prijsLabel = new Intl.NumberFormat("nl-NL", {

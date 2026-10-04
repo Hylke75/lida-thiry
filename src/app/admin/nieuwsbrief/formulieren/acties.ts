@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
@@ -31,6 +32,7 @@ async function slugBezet(slug: string, behalveId: string | null): Promise<boolea
 }
 
 function ververs(slug?: string) {
+  vernieuwPubliekeData("nb_formulieren");
   revalidatePath(PAD);
   if (slug) revalidatePath(`/nieuwsbrief/${slug}`);
 }

@@ -1,3 +1,4 @@
+import { afmetingenVoorUrls } from "@/lib/media/publiek";
 import { haalMenu } from "@/lib/paginas/publiek";
 import { leesWebsite } from "@/lib/website/lees";
 import { logoAlt } from "@/lib/website/instellingen";
@@ -15,11 +16,13 @@ import { SiteHeaderWeergave } from "./SiteHeaderWeergave";
  */
 export async function SiteHeader() {
   const [{ menu }, site] = await Promise.all([haalMenu(), leesWebsite()]);
+  // Met bekende afmetingen (logo uit de mediabibliotheek) gaat het logo via next/image.
+  const afm = site.logoUrl ? (await afmetingenVoorUrls([site.logoUrl]))[site.logoUrl] : undefined;
   return (
     <SiteHeaderWeergave
       paginas={menu}
       siteNaam={site.korteNaam}
-      logo={site.logoUrl ? { url: site.logoUrl, alt: logoAlt(site) } : null}
+      logo={site.logoUrl ? { url: site.logoUrl, alt: logoAlt(site), breedte: afm?.breedte ?? null, hoogte: afm?.hoogte ?? null } : null}
     />
   );
 }

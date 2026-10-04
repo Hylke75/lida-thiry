@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { stuurPushMelding } from "@/lib/push/versturen";
 import { adminClient } from "@/lib/supabase/admin";
 import { REVIEW_TOKEN_PATROON, valideerReview, type ReviewVeld } from "@/lib/reviews/regels";
@@ -47,6 +48,7 @@ export async function bewaarReview(
     console.error("Review opslaan mislukt", e);
     return { ok: false, fout: true };
   }
+  vernieuwPubliekeData("beoordelingen");
   revalidatePath("/admin/reviews");
   await stuurPushMelding("review", {
     titel: "Nieuwe review",

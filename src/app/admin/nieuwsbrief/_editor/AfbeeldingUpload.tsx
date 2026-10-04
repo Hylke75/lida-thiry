@@ -25,9 +25,10 @@ export function AfbeeldingUpload({ heeftAfbeelding, onUrl }: { heeftAfbeelding: 
         .storage.from(BUCKET)
         .uploadToSignedUrl(u.pad, u.token, bestand, { contentType: bestand.type });
       if (error) return setFout(`Uploaden is niet gelukt (${error.message}).`);
-      onUrl(u.url);
-      // Ook in de mediabibliotheek zetten (op de achtergrond; de upload zelf is al gelukt).
-      void registreerEditorUpload(bestand, "nieuwsbrief", u.pad, "nieuwsbrief");
+      // Ook in de mediabibliotheek zetten; de server maakt daarbij een verkleinde
+      // versie zonder EXIF/GPS. Die voegen we in; lukt dat niet, dan het origineel.
+      const webUrl = await registreerEditorUpload(bestand, "nieuwsbrief", u.pad, "nieuwsbrief");
+      onUrl(webUrl ?? u.url);
     } catch {
       setFout("Uploaden is niet gelukt. Controleer je internetverbinding en probeer het opnieuw.");
     } finally {

@@ -1,7 +1,32 @@
 import "server-only";
 import { cache } from "react";
 import { adminClient } from "../supabase/admin";
+import { publiekClient, publiekGecached } from "../cache/publiek";
 import { REVIEW_TOKEN_PATROON, reviewSamenvatting, type PubliekeReview } from "./regels";
+
+// Reviews op de website: gecachet onder de tag "reviews" (goedkeuren in Beheer →
+// Reviews vernieuwt direct). Alleen wat al publiek is: naam, sterren, tekst en
+// datum van goedgekeurde reviews met toestemming; nooit e-mailadres of token.
+
+const leesGoedgekeurd = publiekGecached("reviews", ["reviews"], async (max: number): Promise<PubliekeReview[]> => {
+  const { data, error } = await publiekClient()
+    .from("beoordelingen")
+    .select("id, naam, sterren, tekst, ingevuld_op")
+    .eq("status", "goedgekeurd")
+    .eq("toestemming_publicatie", true)
+    .not("tekst", "is", null)
+    .not("sterren", "is", null)
+    .order("ingevuld_op", { ascending: false, nullsFirst: false })
+    .limit(max);
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    naam: (r.naam as string | null)?.trim() || "Klant",
+    sterren: r.sterren as number,
+    tekst: r.tekst as string,
+    datum: (r.ingevuld_op as string | null) ?? null,
+  }));
+});
 
 /**
  * Goedgekeurde reviews met toestemming voor publicatie, nieuwste eerst.
@@ -9,28 +34,24 @@ import { REVIEW_TOKEN_PATROON, reviewSamenvatting, type PubliekeReview } from ".
  */
 export async function haalGoedgekeurdeReviews(max = 6): Promise<PubliekeReview[]> {
   try {
-    const { data, error } = await adminClient()
-      .from("beoordelingen")
-      .select("id, naam, sterren, tekst, ingevuld_op")
-      .eq("status", "goedgekeurd")
-      .eq("toestemming_publicatie", true)
-      .not("tekst", "is", null)
-      .not("sterren", "is", null)
-      .order("ingevuld_op", { ascending: false, nullsFirst: false })
-      .limit(max);
-    if (error) throw error;
-    return (data ?? []).map((r) => ({
-      id: r.id as string,
-      naam: (r.naam as string | null)?.trim() || "Klant",
-      sterren: r.sterren as number,
-      tekst: r.tekst as string,
-      datum: (r.ingevuld_op as string | null) ?? null,
-    }));
+    return await leesGoedgekeurd(max);
   } catch (e) {
     console.error("Reviews laden mislukt", e);
     return [];
   }
 }
+
+const leesSamenvatting = publiekGecached("reviews-samenvatting", ["reviews"], async () => {
+  const { data, error } = await publiekClient()
+    .from("beoordelingen")
+    .select("sterren")
+    .eq("status", "goedgekeurd")
+    .eq("toestemming_publicatie", true)
+    .not("sterren", "is", null)
+    .limit(10_000);
+  if (error) throw error;
+  return reviewSamenvatting((data ?? []).map((r) => r.sterren as number));
+});
 
 /**
  * Gemiddelde en aantal van de reviews die op de website mogen staan
@@ -38,15 +59,7 @@ export async function haalGoedgekeurdeReviews(max = 6): Promise<PubliekeReview[]
  */
 export const haalReviewSamenvatting = cache(async (): Promise<{ gemiddelde: number; aantal: number }> => {
   try {
-    const { data, error } = await adminClient()
-      .from("beoordelingen")
-      .select("sterren")
-      .eq("status", "goedgekeurd")
-      .eq("toestemming_publicatie", true)
-      .not("sterren", "is", null)
-      .limit(10_000);
-    if (error) throw error;
-    return reviewSamenvatting((data ?? []).map((r) => r.sterren as number));
+    return await leesSamenvatting();
   } catch (e) {
     console.error("Reviewsamenvatting laden mislukt", e);
     return { gemiddelde: 0, aantal: 0 };

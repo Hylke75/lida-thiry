@@ -214,16 +214,31 @@ export function gebruikZoektekst(m: { bucket: string; pad: string }): string {
   return `/${m.bucket}/${m.pad}`;
 }
 
+/** De gemaakte webversie/miniatuur staan op "/<bucket>/opt/<pad>…" (zie verkleinen-regels.ts). */
+function optZoektekst(m: { bucket: string; pad: string }): string {
+  return `/${m.bucket}/opt/${m.pad}`;
+}
+
 /** Escapet % en _ voor een (i)like-patroon en zet er % omheen. */
 export function likePatroon(tekst: string): string {
   return `%${tekst.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+/**
+ * Like-patroon dat zowel het origineel ("/<bucket>/<pad>") als de gemaakte
+ * versies ("/<bucket>/opt/<pad>…") vindt: "%/<bucket>/%<pad>%". Kan iets te veel
+ * vinden (dan wordt verwijderen voorzichtig geblokkeerd), nooit te weinig.
+ */
+export function gebruikPatroon(m: { bucket: string; pad: string }): string {
+  const esc = (t: string) => t.replace(/[\\%_]/g, (c) => `\\${c}`);
+  return `%/${esc(m.bucket)}/%${esc(m.pad)}%`;
 }
 
 /** Komt de afbeelding voor in `tekst` (inhoud, JSON van blokken, instelling)? */
 export function bevatVerwijzing(tekst: unknown, m: { bucket: string; pad: string }): boolean {
   if (tekst == null) return false;
   const s = typeof tekst === "string" ? tekst : JSON.stringify(tekst);
-  return s.includes(gebruikZoektekst(m));
+  return s.includes(gebruikZoektekst(m)) || s.includes(optZoektekst(m));
 }
 
 export interface Gebruik {

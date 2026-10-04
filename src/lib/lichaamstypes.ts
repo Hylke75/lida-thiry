@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { adminClient } from "./supabase/admin";
+import { publiekClient, publiekGecached } from "./cache/publiek";
 import { beeldUrls } from "./beeldbank";
 import { FFIT_NAAR_LETTER } from "@/rekenkern/config/ffit-naar-letter";
 import type { FfitType } from "@/rekenkern/types";
@@ -14,7 +15,7 @@ import {
 export const LICHAAMSTYPE_KOLOMMEN =
   "code, naam, alias, korte_omschrijving, uitleg, kenmerken, vorm, beeld_id, volgorde, actief";
 
-/** Alle lichaamstypes (per request gecachet), op volgorde. */
+/** Alle lichaamstypes (vers; per request gecachet), op volgorde. */
 export const haalLichaamstypes = cache(async (): Promise<Lichaamstype[]> => {
   const { data, error } = await adminClient()
     .from("lichaamstypes")
@@ -44,6 +45,23 @@ export const haalSilhouetten = cache(async (alleenActief = true): Promise<Silhou
   }
   const urls = await beeldUrls(Object.values(paden));
   return types.map((t) => alsSilhouet(t, t.beeld_id ? urls[paden[t.beeld_id]] : null));
+});
+
+/**
+ * De actieve silhouetten voor de website (homepage), gecachet onder de tag
+ * "lichaamstypes". Bewust ZONDER foto-URL (beeldUrl = null): die zijn ondertekend
+ * en verlopen na een uur, en horen dus niet in een gecachete pagina. De homepage
+ * tekent de silhouetten zelf. Gooit bij een databasefout.
+ */
+export const haalSilhouettenPubliek = publiekGecached("silhouetten", ["lichaamstypes"], async (): Promise<Silhouet[]> => {
+  const { data, error } = await publiekClient()
+    .from("lichaamstypes")
+    .select(LICHAAMSTYPE_KOLOMMEN)
+    .eq("actief", true)
+    .order("volgorde")
+    .order("code");
+  if (error) throw new Error(`Lichaamstypes lezen: ${error.message}`);
+  return ((data ?? []) as Lichaamstype[]).map((t) => alsSilhouet(t, null));
 });
 
 /** Het silhouet bij een adviestype-sleutel (bijv. 6A -> Peer / driehoek). */

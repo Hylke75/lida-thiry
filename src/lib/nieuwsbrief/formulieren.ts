@@ -1,12 +1,29 @@
 import "server-only";
 import { cache } from "react";
 import { adminClient } from "../supabase/admin";
+import { publiekClient, publiekGecached } from "../cache/publiek";
 import { blokkenInTekst } from "../paginas/regels";
 import { FORMULIER_VELDEN, telAanmeldingen, type AanmeldRij, type Formulier, type FormulierTelling } from "./formulierregels";
 
 /** Een actief formulier op slug (één keer per request), of null. */
 export const haalActiefFormulier = cache(async (slug: string): Promise<Formulier | null> => {
   const { data, error } = await adminClient()
+    .from("nb_formulieren")
+    .select(FORMULIER_VELDEN)
+    .eq("slug", slug)
+    .eq("actief", true)
+    .maybeSingle();
+  if (error) throw new Error(`formulier lezen: ${error.message}`);
+  return (data as Formulier | null) ?? null;
+});
+
+/**
+ * Als haalActiefFormulier, maar gecachet onder de tag "formulieren" (opslaan in
+ * Beheer → Nieuwsbrief → Formulieren vernieuwt direct), voor het renderen van de
+ * site. De aanmeld-API leest vers. Gooit bij een databasefout.
+ */
+export const haalActiefFormulierPubliek = publiekGecached("nb-formulier", ["formulieren"], async (slug: string): Promise<Formulier | null> => {
+  const { data, error } = await publiekClient()
     .from("nb_formulieren")
     .select(FORMULIER_VELDEN)
     .eq("slug", slug)

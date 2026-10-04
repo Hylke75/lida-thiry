@@ -1,5 +1,7 @@
 import { Fragment, type ReactNode } from "react";
+import { Afbeelding } from "@/components/Afbeelding";
 import { parseerOpmaak, type Inline } from "@/lib/inhoud/opmaak";
+import { TEKST_SIZES } from "@/lib/media/afbeelding";
 
 function InlineDelen({
   delen,
@@ -50,11 +52,21 @@ export function Opmaak({
   tekst,
   variabelen,
   blokken,
+  afmetingen,
+  beeldSizes = TEKST_SIZES,
 }: {
   tekst: string;
   variabelen?: Readonly<Record<string, ReactNode>>;
   /** Inhoud voor {blok}-regels, bijv. { bedrijfsgegevens: <Identiteit /> }. */
   blokken?: Readonly<Record<string, ReactNode>>;
+  /**
+   * Breedte en hoogte per afbeeldingsadres (uit de mediabibliotheek, zie
+   * lib/media/publiek.ts). Met afmetingen gaat een afbeelding uit onze opslag via
+   * next/image (verkleind, zonder verspringen); anders een gewone lazy <img>.
+   */
+  afmetingen?: Readonly<Record<string, { breedte: number; hoogte: number }>>;
+  /** Getoonde breedte van afbeeldingen (next/image `sizes`). */
+  beeldSizes?: string;
 }) {
   return (
     <>
@@ -88,9 +100,10 @@ export function Opmaak({
             );
           case "blok":
             return <Fragment key={i}>{blokken?.[b.naam] ?? null}</Fragment>;
-          case "afbeelding":
-            // eslint-disable-next-line @next/next/no-img-element -- externe of geüploade afbeelding met vrije afmetingen
-            return <img key={i} src={b.url} alt={b.alt} loading="lazy" />;
+          case "afbeelding": {
+            const afm = afmetingen?.[b.url];
+            return <Afbeelding key={i} src={b.url} alt={b.alt} breedte={afm?.breedte} hoogte={afm?.hoogte} sizes={beeldSizes} />;
+          }
         }
       })}
     </>

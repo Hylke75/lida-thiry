@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { zoekInMedia } from "@/app/admin/media/acties";
 import { formatAfmetingen, MAP_SUGGESTIES, normaliseerMap, STANDAARD_MAP, type MediaItem, type MediaSoort } from "@/lib/media/regels";
+import { Afbeelding } from "@/components/Afbeelding";
 import { MediaUploader } from "./MediaUploader";
 
 /** Wat de kiezer teruggeeft. */
@@ -256,9 +257,9 @@ function KiezerDialoog({
                           actief ? "border-accent ring-2 ring-accent" : "border-black/10 hover:border-accent/60 dark:border-white/15"
                         }`}
                       >
-                        <span className="flex aspect-square w-full items-center justify-center bg-[repeating-conic-gradient(#0000000d_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- willekeurige afbeelding uit de opslag */}
-                          <img src={m.url} alt="" loading="lazy" decoding="async" className="max-h-full max-w-full object-contain" />
+                        <span className="relative flex aspect-square w-full items-center justify-center bg-[repeating-conic-gradient(#0000000d_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+                          {/* Miniatuur via next/image (SVG/ICO als gewone <img>, zie components/Afbeelding.tsx). */}
+                          <Afbeelding vullen src={m.url} alt="" sizes="160px" className="object-contain" />
                         </span>
                         <span className="truncate px-2 py-1 text-xs">{m.naam}</span>
                       </button>

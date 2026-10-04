@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { leesInstelling, leesPrijsCent } from "@/lib/instellingen";
+import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { CADEAUBON_PAGINA } from "@/lib/inhoud/groepen/cadeaubon";
 import { vulIn } from "@/lib/inhoud/schema";
@@ -9,6 +9,8 @@ import { datumInNederland, plusDagen, MAX_VOORUIT_DAGEN, VASTE_BEDRAGEN } from "
 import { Opmaak } from "@/components/Opmaak";
 import { CadeaubonFormulier } from "./CadeaubonFormulier";
 
+// Per request: de kalender (vroegste en laatste verzenddatum) hangt af van de
+// datum van vandaag. De gegevens zelf (teksten, prijs) komen wel uit de datacache.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -23,8 +25,7 @@ export default async function CadeaubonPage() {
   let prijsCent: number | null = null;
   let valuta = "EUR";
   try {
-    prijsCent = await leesPrijsCent();
-    valuta = (await leesInstelling("valuta")) || "EUR";
+    ({ prijsCent, valuta } = await leesPubliekePrijs());
   } catch {
     prijsCent = null;
   }

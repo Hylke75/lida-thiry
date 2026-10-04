@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
@@ -33,6 +34,7 @@ export async function slaWebsiteOp(invoer: Partial<Record<WebsiteSleutel, string
   });
 
   // Naam, logo, favicon en social media staan op elke pagina.
+  vernieuwPubliekeData("instellingen");
   revalidatePath("/", "layout");
   const waarden = Object.fromEntries(WEBSITE_SLEUTELS.map((s) => [s, uitkomst.waarden[s] ?? ""])) as Record<WebsiteSleutel, string>;
   return { ok: true, bericht: "Opgeslagen. De wijzigingen zijn direct zichtbaar op de site.", waarden };
@@ -58,6 +60,7 @@ export async function slaIndelingOp(invoer: unknown): Promise<IndelingResultaat>
     gebruiker: ik,
   });
 
+  vernieuwPubliekeData("instellingen");
   revalidatePath("/");
   return { ok: true, bericht: "Opgeslagen. De homepage is bijgewerkt.", indeling };
 }

@@ -105,13 +105,18 @@ export async function uploadNaarMedia(
 
 /**
  * Zet een upload uit een bestaande editor (bucket "blog" of "nieuwsbrief") ook in de
- * bibliotheek. Mislukt dit, dan merkt de gebruiker er niets van: de upload zelf is gelukt.
+ * bibliotheek. Daarbij maakt de server een verkleinde webversie zonder EXIF/GPS
+ * (voor de nieuwsbrief in JPG/PNG); geeft het adres daarvan terug, zodat de editor
+ * die invoegt in plaats van het (grote) origineel. Mislukt dit, dan null: de editor
+ * gebruikt dan gewoon het origineel en de gebruiker merkt er niets van.
  */
-export async function registreerEditorUpload(bestand: File, bucket: "blog" | "nieuwsbrief", pad: string, map: string, alt = ""): Promise<void> {
+export async function registreerEditorUpload(bestand: File, bucket: "blog" | "nieuwsbrief", pad: string, map: string, alt = ""): Promise<string | null> {
   try {
     const afm = await leesAfmetingen(bestand);
-    await registreerUpload({ bucket, pad, naam: schoneBestandsnaam(bestand.name), alt, map, breedte: afm?.breedte ?? null, hoogte: afm?.hoogte ?? null });
+    const u = await registreerUpload({ bucket, pad, naam: schoneBestandsnaam(bestand.name), alt, map, breedte: afm?.breedte ?? null, hoogte: afm?.hoogte ?? null });
+    return u.ok ? u.webUrl : null;
   } catch {
     // Niet erg: met "Importeer bestaande afbeeldingen" komt hij er later alsnog in.
+    return null;
   }
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
+import { publiekClient, publiekGecached } from "../cache/publiek";
 import { leesInstellingen } from "../instellingen";
 import { centenNaarBedrag, mollie } from "../mollie";
 import { koppelRelatie } from "../relaties/koppel";
@@ -60,6 +61,22 @@ export async function haalSoorten(alleenActief: boolean): Promise<AfspraakSoort[
   if (error) throw new Error(`afspraaksoorten lezen: ${error.message}`);
   return (data ?? []) as AfspraakSoort[];
 }
+
+/**
+ * De actieve soorten voor het boekingsblok op de site: gecachet onder de tag
+ * "afspraken" (opslaan in Beheer → Afspraken vernieuwt direct), met een
+ * tijdslimiet op de database. Gooit bij een fout. Boeken zelf leest vers (haalSoort).
+ */
+export const haalActieveSoortenPubliek = publiekGecached("afspraak-soorten", ["afspraken"], async (): Promise<AfspraakSoort[]> => {
+  const { data, error } = await publiekClient()
+    .from("afspraak_soorten")
+    .select(SOORT_VELDEN)
+    .eq("actief", true)
+    .order("volgorde")
+    .order("naam");
+  if (error) throw new Error(`afspraaksoorten lezen: ${error.message}`);
+  return (data ?? []) as AfspraakSoort[];
+});
 
 export async function haalSoort(id: string): Promise<AfspraakSoort | null> {
   const { data, error } = await adminClient().from("afspraak_soorten").select(SOORT_VELDEN).eq("id", id).maybeSingle();

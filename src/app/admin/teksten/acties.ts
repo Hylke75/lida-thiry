@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
@@ -37,6 +38,7 @@ export async function slaSectieOp(sleutel: string, waarden: unknown): Promise<Se
   await logActie({ actie: "tekst.opslaan", onderwerpSoort: "tekst", onderwerpId: sleutel, omschrijving: `Teksten opgeslagen: ${sleutel}`, gebruiker: user });
 
   // Teksten worden op openbare pagina's, in de test en in e-mails gebruikt.
+  vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
   return {
     ok: true,
@@ -63,6 +65,7 @@ export async function zetSectieTerug(sleutel: string): Promise<SectieResultaat> 
     gebruiker: user,
   });
 
+  vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
   return {
     ok: true,

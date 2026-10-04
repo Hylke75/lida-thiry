@@ -1,5 +1,6 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
+import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { AiFout } from "@/lib/blog/ai";
 import { AI_LIMIET_PER_UUR, uniekeSlug } from "@/lib/blog/beheer";
@@ -33,6 +34,7 @@ export const SLUG_BEZET = "Dit webadres wordt al gebruikt door een ander bericht
 
 /** Ververs de openbare blogpagina's (en het oude adres als de slug is veranderd). */
 export function vernieuwBlog(...slugs: (string | null | undefined)[]) {
+  vernieuwPubliekeData("blog_berichten");
   revalidatePath(BLOG_PAD);
   revalidatePath("/blog");
   for (const s of new Set(slugs.filter(Boolean))) revalidatePath(`/blog/${s}`);
