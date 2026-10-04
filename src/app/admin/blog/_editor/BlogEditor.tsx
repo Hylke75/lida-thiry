@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import type { Suggesties } from "@/lib/blog/ai";
 import type { Bewerking } from "@/lib/blog/ai-prompt";
 import {
@@ -291,9 +292,9 @@ export function BlogEditor({
     setFoto({ alt: fotoplekBijCursor(v.inhoud, start, eind) ?? "" });
   }
 
-  function fotoIngevoegd(fotoUrl: string) {
+  function fotoIngevoegd(fotoUrl: string, altUitBibliotheek = "") {
     const { start, eind } = selectie();
-    const r = voegAfbeeldingIn(v.inhoud, start, eind, fotoUrl, foto?.alt ?? "");
+    const r = voegAfbeeldingIn(v.inhoud, start, eind, fotoUrl, foto?.alt.trim() || altUitBibliotheek);
     zet({ inhoud: r.tekst });
     setFoto(null);
     selecteer(r.eind, r.eind);
@@ -516,7 +517,8 @@ export function BlogEditor({
                   <input id="foto-alt" value={foto.alt} maxLength={200} onChange={(e) => setFoto({ alt: e.target.value })} className={invoerKlasse} placeholder="Bijv. Vrouw in een donkerblauwe wikkeljurk" />
                 </Veld>
                 <div className="flex flex-wrap items-start gap-2">
-                  <BlogUpload map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={fotoIngevoegd} />
+                  <BlogUpload map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={(u) => fotoIngevoegd(u)} />
+                  <MediaKiezer accept="foto" map="blog" knopTekst="Uit mediabibliotheek" titel="Foto invoegen" onKies={(m) => fotoIngevoegd(m.url, m.alt)} />
                   <button type="button" onClick={() => setFoto(null)} className={knopRand}>
                     Annuleren
                   </button>
@@ -661,6 +663,12 @@ export function BlogEditor({
             )}
             <div className="flex flex-wrap items-start gap-2">
               <BlogUpload map="omslag" label={v.omslag_url ? "Andere foto uploaden" : "Foto uploaden"} onUrl={(u) => zet({ omslag_url: u })} />
+              <MediaKiezer
+                accept="foto"
+                map="blog"
+                titel="Omslagfoto kiezen"
+                onKies={(m) => zet({ omslag_url: m.url, ...(v.omslag_alt.trim() || !m.alt ? {} : { omslag_alt: m.alt }) })}
+              />
               {v.omslag_url && (
                 <button type="button" onClick={() => zet({ omslag_url: "", omslag_alt: "" })} className={`${knopRand} text-red-700 dark:text-red-300`}>
                   Foto weghalen

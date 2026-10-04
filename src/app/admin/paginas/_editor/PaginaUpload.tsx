@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { registreerEditorUpload } from "@/components/admin/mediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
 import { maakPaginaUpload } from "../acties";
@@ -35,6 +36,8 @@ export function PaginaUpload({
         .uploadToSignedUrl(u.pad, u.token, bestand, { contentType: bestand.type });
       if (error) return setFout(`Uploaden is niet gelukt (${error.message}).`);
       onUrl(u.url);
+      // Ook in de mediabibliotheek zetten (op de achtergrond; de upload zelf is al gelukt).
+      void registreerEditorUpload(bestand, "blog", u.pad, "paginas");
     } catch {
       setFout("Uploaden is niet gelukt. Controleer je internetverbinding en probeer het opnieuw.");
     } finally {

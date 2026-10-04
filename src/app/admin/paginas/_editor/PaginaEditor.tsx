@@ -24,6 +24,7 @@ import {
   type FormulierKeuze,
   type Pagina,
 } from "@/lib/paginas/beheer";
+import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import { blokVoorFormulier, onbekendeBlokken, PAGINA_BLOKKEN } from "@/lib/paginas/regels";
 import { paginaNaarConcept, publiceerPagina, slaPaginaOp, type PaginaUitkomst } from "../acties";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
@@ -266,9 +267,9 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
     setFoto({ alt: fotoplekBijCursor(v.inhoud, start, eind) ?? "" });
   }
 
-  function fotoIngevoegd(fotoUrl: string) {
+  function fotoIngevoegd(fotoUrl: string, altUitBibliotheek = "") {
     const { start, eind } = selectie();
-    const r = voegAfbeeldingIn(v.inhoud, start, eind, fotoUrl, foto?.alt ?? "");
+    const r = voegAfbeeldingIn(v.inhoud, start, eind, fotoUrl, foto?.alt.trim() || altUitBibliotheek);
     zet({ inhoud: r.tekst });
     setFoto(null);
     selecteer(r.eind, r.eind);
@@ -410,7 +411,8 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
                   <input id="foto-alt" value={foto.alt} maxLength={200} onChange={(e) => setFoto({ alt: e.target.value })} className={invoerKlasse} placeholder="Bijv. Lida bij een rek met kleding" />
                 </Veld>
                 <div className="flex flex-wrap items-start gap-2">
-                  <PaginaUpload map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={fotoIngevoegd} />
+                  <PaginaUpload map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={(u) => fotoIngevoegd(u)} />
+                  <MediaKiezer accept="foto" map="paginas" knopTekst="Uit mediabibliotheek" titel="Foto invoegen" onKies={(m) => fotoIngevoegd(m.url, m.alt)} />
                   <button type="button" onClick={() => setFoto(null)} className={knopRand}>
                     Annuleren
                   </button>
@@ -523,6 +525,12 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
             )}
             <div className="flex flex-wrap items-start gap-2">
               <PaginaUpload map="omslag" label={v.omslag_url ? "Andere foto uploaden" : "Foto uploaden"} onUrl={(u) => zet({ omslag_url: u })} />
+              <MediaKiezer
+                accept="foto"
+                map="paginas"
+                titel="Omslagfoto kiezen"
+                onKies={(m) => zet({ omslag_url: m.url, ...(v.omslag_alt.trim() || !m.alt ? {} : { omslag_alt: m.alt }) })}
+              />
               {v.omslag_url && (
                 <button type="button" onClick={() => zet({ omslag_url: "", omslag_alt: "" })} className={`${knopRand} text-red-700 dark:text-red-300`}>
                   Foto weghalen

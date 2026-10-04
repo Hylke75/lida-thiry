@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { registreerEditorUpload } from "@/components/admin/mediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { maakAfbeeldingUpload } from "./acties";
 import { AFBEELDING_MAX_BYTES, AFBEELDING_TYPES, BUCKET } from "./regels";
@@ -25,6 +26,8 @@ export function AfbeeldingUpload({ heeftAfbeelding, onUrl }: { heeftAfbeelding: 
         .uploadToSignedUrl(u.pad, u.token, bestand, { contentType: bestand.type });
       if (error) return setFout(`Uploaden is niet gelukt (${error.message}).`);
       onUrl(u.url);
+      // Ook in de mediabibliotheek zetten (op de achtergrond; de upload zelf is al gelukt).
+      void registreerEditorUpload(bestand, "nieuwsbrief", u.pad, "nieuwsbrief");
     } catch {
       setFout("Uploaden is niet gelukt. Controleer je internetverbinding en probeer het opnieuw.");
     } finally {

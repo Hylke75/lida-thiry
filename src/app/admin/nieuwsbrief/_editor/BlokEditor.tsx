@@ -1,6 +1,7 @@
 "use client";
 
 import { BLOK_SOORTEN, MAX_BLOKKEN, nieuwBlok, type Blok, type BlokSoort } from "@/lib/nieuwsbrief/blokken";
+import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import { AfbeeldingUpload } from "./AfbeeldingUpload";
 import { invoerKlasse, knopKlein, zacht } from "./stijl";
 
@@ -60,7 +61,15 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
             // eslint-disable-next-line @next/next/no-img-element -- willekeurige externe URL, alleen als voorbeeld
             <img src={blok.url} alt={blok.alt} className="max-h-40 w-auto max-w-full self-start rounded-lg border border-black/10 object-contain dark:border-white/15" />
           )}
-          <AfbeeldingUpload heeftAfbeelding={Boolean(blok.url)} onUrl={(url) => onChange({ ...blok, url })} />
+          <div className="flex flex-wrap items-start gap-2">
+            <AfbeeldingUpload heeftAfbeelding={Boolean(blok.url)} onUrl={(url) => onChange({ ...blok, url })} />
+            <MediaKiezer
+              accept="foto"
+              map="nieuwsbrief"
+              titel="Afbeelding voor de nieuwsbrief"
+              onKies={(m) => onChange({ ...blok, url: m.url, alt: blok.alt.trim() ? blok.alt : m.alt })}
+            />
+          </div>
           <Veld id={`${id}-url`} label="Of plak het adres van een afbeelding" uitleg="Moet beginnen met https://">
             <input
               id={`${id}-url`}
