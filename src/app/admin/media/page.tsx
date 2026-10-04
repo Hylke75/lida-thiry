@@ -40,7 +40,7 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-8">
       {/* "Media" staat (nog) niet in de navigatie; daarom geen actieve link. */}
-      <AdminNav />
+      <AdminNav actief="/admin/media" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Mediabibliotheek</h1>

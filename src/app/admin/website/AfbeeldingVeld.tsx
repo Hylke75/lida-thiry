@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { MediaKiezer } from "@/components/admin/MediaKiezer";
 
 /**
- * Invoerveld voor een afbeelding: een https-adres met voorbeeld.
- *
- * >>> PLEK VOOR DE MEDIAKIEZER <<<
- * Zodra src/components/admin/MediaKiezer.tsx bestaat, kan die hieronder bij
- * "Kiezer" worden ingeplugd, bijvoorbeeld:
- *
- *   <MediaKiezer onKies={({ url }) => onChange(url)} />
- *
- * Het tekstveld blijft daarnaast bestaan (handig voor een adres van elders).
+ * Invoerveld voor een afbeelding: kiezen uit de mediabibliotheek (of uploaden),
+ * of een https-adres van elders plakken; met voorbeeld.
  */
 export function AfbeeldingVeld({
   id,
@@ -22,6 +16,7 @@ export function AfbeeldingVeld({
   fout,
   voorbeeldKlasse = "h-16 w-auto max-w-[16rem]",
   voorbeeldAlt,
+  soort = "afbeelding",
 }: {
   id: string;
   label: string;
@@ -32,6 +27,8 @@ export function AfbeeldingVeld({
   /** Grootte/vorm van het voorbeeld, bijv. een vierkantje voor de favicon. */
   voorbeeldKlasse?: string;
   voorbeeldAlt?: string;
+  /** Welke bestanden de mediakiezer toont: favicon = "icoon", deelafbeelding = "foto". */
+  soort?: "afbeelding" | "icoon" | "foto";
 }) {
   const [kapot, setKapot] = useState<string | null>(null);
   const url = waarde.trim();
@@ -54,7 +51,14 @@ export function AfbeeldingVeld({
           aria-describedby={`${id}-uitleg`}
           className="w-full rounded-lg border border-black/15 bg-kaart px-3 py-2 outline-none focus:border-accent aria-[invalid=true]:border-red-400 dark:border-white/20"
         />
-        {/* Kiezer: hier komt later de MediaKiezer (zie de uitleg bovenaan dit bestand). */}
+        <MediaKiezer
+          onKies={({ url: gekozen }) => onChange(gekozen)}
+          accept={soort}
+          map={soort === "foto" ? "algemeen" : "logo"}
+          knopTekst="Kies of upload"
+          titel={label}
+          knopKlasse="shrink-0 self-start rounded-full border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent-zacht sm:self-auto"
+        />
         {waarde && (
           <button
             type="button"

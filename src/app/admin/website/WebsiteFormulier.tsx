@@ -174,6 +174,7 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
         />
         <AfbeeldingVeld
           id="favicon_url"
+          soort="icoon"
           label="Favicon (pictogram in het tabblad)"
           waarde={w.favicon_url}
           onChange={(u) => zet("favicon_url", u)}
@@ -183,6 +184,7 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
         />
         <AfbeeldingVeld
           id="deel_afbeelding_url"
+          soort="foto"
           label="Deelafbeelding (social media)"
           waarde={w.deel_afbeelding_url}
           onChange={(u) => zet("deel_afbeelding_url", u)}

@@ -26,7 +26,7 @@ export default async function MediaBekijken({ params }: { params: Promise<{ id: 
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 sm:p-8">
-      <AdminNav />
+      <AdminNav actief="/admin/media" />
       <nav aria-label="Kruimelpad" className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-black/55 dark:text-white/55">
         <Link href="/admin/media" className="hover:text-accent hover:underline">
           Mediabibliotheek

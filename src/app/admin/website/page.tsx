@@ -15,7 +15,7 @@ export default async function WebsiteInstellingenPagina() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
-      <AdminNav actief="/admin/teksten" />
+      <AdminNav actief="/admin/website" />
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Instellingen website</h1>
         <p className="text-sm text-black/60 dark:text-white/60">

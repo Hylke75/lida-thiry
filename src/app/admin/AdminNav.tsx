@@ -45,9 +45,13 @@ const GROEPEN = [
     label: "Website",
     links: [
       { href: "/admin/paginas", label: "Pagina's" },
+      { href: "/admin/website/homepage", label: "Homepage" },
       { href: "/admin/blog", label: "Blog" },
       { href: "/admin/blog/ai", label: "Schrijven met AI" },
       { href: "/admin/teksten", label: "Teksten" },
+      { href: "/admin/media", label: "Media" },
+      { href: "/admin/doorverwijzingen", label: "Doorverwijzingen" },
+      { href: "/admin/website", label: "Instellingen" },
     ],
   },
   {
