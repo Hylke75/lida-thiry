@@ -73,6 +73,7 @@ export function contactenQuery(f: ContactFilter, opties: { tellen?: boolean } = 
   if (zoek) q = q.or(`email.ilike.*${zoek}*,naam.ilike.*${zoek}*`);
   if (f.status) q = q.eq("status", f.status);
   if (f.bron) q = q.eq("bron", f.bron);
+  if (f.formulier) q = q.eq("formulier_id", f.formulier);
   if (f.tag) q = q.contains("tags", [f.tag]);
   return q;
 }

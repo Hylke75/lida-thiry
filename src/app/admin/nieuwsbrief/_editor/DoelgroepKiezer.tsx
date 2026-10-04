@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { BRONNEN, BRON_LABEL, beschrijfDoelgroep, type Bron, type Doelgroep } from "@/lib/nieuwsbrief/doelgroep";
+import { formulierKeuzes } from "../formulieren/acties";
 import type { TypeKeuze } from "./regels";
 import { zacht } from "./stijl";
 
@@ -20,6 +22,7 @@ function schoon(d: Doelgroep): Doelgroep {
   if (d.bronnen?.length) uit.bronnen = d.bronnen;
   if (d.figuurtypes?.length) uit.figuurtypes = d.figuurtypes;
   if (d.besteld) uit.besteld = d.besteld;
+  if (d.formulieren?.length) uit.formulieren = d.formulieren;
   return uit;
 }
 
@@ -76,6 +79,20 @@ export function DoelgroepKiezer({
     return t ? `${t.naam} (${l})` : l;
   };
   const leeg = Object.keys(doelgroep).length === 0;
+  // Aanmeldformulieren (Beheer → Nieuwsbrief → Formulieren) om op te filteren.
+  const [formulieren, setFormulieren] = useState<{ id: string; naam: string; actief: boolean }[]>([]);
+  useEffect(() => {
+    let weg = false;
+    formulierKeuzes()
+      .then((f) => {
+        if (!weg) setFormulieren(f);
+      })
+      .catch(() => {});
+    return () => {
+      weg = true;
+    };
+  }, []);
+  const formulierNaam = (id: string) => formulieren.find((f) => f.id === id)?.naam ?? "verwijderd formulier";
 
   return (
     <div className="flex flex-col gap-5">
@@ -87,7 +104,7 @@ export function DoelgroepKiezer({
               ? "1 ontvanger"
               : `${aantal.toLocaleString("nl-NL")} ontvangers`}
         </p>
-        <p className={`text-xs ${zacht}`}>{beschrijfDoelgroep(doelgroep, typeNaam)}</p>
+        <p className={`text-xs ${zacht}`}>{beschrijfDoelgroep(doelgroep, typeNaam, formulierNaam)}</p>
       </div>
 
       <p className={`text-xs ${zacht}`}>
@@ -144,6 +161,26 @@ export function DoelgroepKiezer({
           ))}
         </div>
       </Groep>
+
+      {(formulieren.length > 0 || (doelgroep.formulieren?.length ?? 0) > 0) && (
+        <Groep titel="Via aanmeldformulier" uitleg="Alleen contacten die zich via een van deze formulieren hebben aangemeld.">
+          <div className="flex flex-wrap gap-1.5">
+            {formulieren.map((f) => (
+              <Chip key={f.id} aan={Boolean(doelgroep.formulieren?.includes(f.id))} onClick={() => zet({ formulieren: wissel(doelgroep.formulieren, f.id) })}>
+                {f.naam}
+                {f.actief ? "" : " (uit)"}
+              </Chip>
+            ))}
+            {(doelgroep.formulieren ?? [])
+              .filter((id) => !formulieren.some((f) => f.id === id))
+              .map((id) => (
+                <Chip key={id} aan onClick={() => zet({ formulieren: wissel(doelgroep.formulieren, id) })}>
+                  {formulieren.length ? "Verwijderd formulier" : "Formulier…"}
+                </Chip>
+              ))}
+          </div>
+        </Groep>
+      )}
 
       <Groep titel="Klant" uitleg="Op basis van betaalde bestellingen met hetzelfde e-mailadres.">
         <div className="flex flex-wrap gap-4 text-sm">
