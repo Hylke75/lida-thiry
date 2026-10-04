@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/voorwaarden" },
 };
 
+export const dynamic = "force-dynamic";
+
 export default function VoorwaardenPage() {
   return (
     <JuridischePagina titel="Algemene voorwaarden" bijgewerkt="[datum]">

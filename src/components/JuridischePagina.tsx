@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { leesInstellingen } from "@/lib/instellingen";
 
 /** Gemeenschappelijke opmaak voor de voorwaarden en de privacyverklaring. */
 export function JuridischePagina({
@@ -34,17 +35,23 @@ export function JuridischePagina({
   );
 }
 
-/** Identiteitsblok van de ondernemer, met duidelijk gemarkeerde placeholders. */
-export function Identiteit() {
+/**
+ * Identiteitsblok van de ondernemer, gevuld uit de instellingen (Beheer → Instellingen).
+ * Wat nog niet is ingevuld, blijft zichtbaar als gemarkeerde placeholder.
+ */
+export async function Identiteit() {
+  const inst = await leesInstellingen().catch(() => ({}) as Record<string, string | null>);
+  const waarde = (sleutel: string, placeholder: string) => inst[sleutel]?.trim() || placeholder;
   return (
     <div className="rounded-xl bg-kaart p-5 text-sm ring-1 ring-foreground/10">
-      <p className="font-semibold text-foreground">Lida Thiry Imago &amp; Kledingadvies</p>
+      <p className="font-semibold text-foreground">
+        {waarde("bedrijfsnaam", "Lida Thiry Imago & Kledingadvies")}
+      </p>
       <p>Eigenaar: Lida Thiry</p>
-      <p>Adres: [adres], [postcode] [plaats]</p>
-      <p>E-mail: [e-mailadres]</p>
-      <p>Telefoon: [telefoonnummer]</p>
-      <p>KvK-nummer: [KvK-nummer]</p>
-      <p>Btw-identificatienummer: [btw-id]</p>
+      <p className="whitespace-pre-line">Adres: {waarde("bedrijf_adres", "[adres], [postcode] [plaats]")}</p>
+      <p>E-mail: {waarde("contact_email", "[e-mailadres]")}</p>
+      <p>KvK-nummer: {waarde("kvk_nummer", "[KvK-nummer]")}</p>
+      <p>Btw-identificatienummer: {waarde("btw_nummer", "[btw-id]")}</p>
     </div>
   );
 }
