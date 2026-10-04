@@ -93,7 +93,7 @@ export default async function ContactPagina({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
-      <AdminNav />
+      <AdminNav actief="/admin/nieuwsbrief/contacten" />
       <header className="flex flex-col gap-2">
         <Link href={PAD} className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">
           ← Alle contacten
