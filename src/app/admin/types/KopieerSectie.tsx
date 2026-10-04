@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { LETTERS } from "@/lib/adviestypes-beheer";
+import type { LetterKeuze } from "@/lib/adviestypes-beheer";
 import { kopieerSectie } from "./acties";
 import type { Uitkomst } from "./uitkomst";
 
@@ -22,6 +22,7 @@ export function KopieerSectie({
   kop,
   categorie,
   types,
+  letters,
 }: {
   sleutel: string;
   sectieId: string;
@@ -29,6 +30,8 @@ export function KopieerSectie({
   categorie: number;
   /** Alle types behalve het huidige. */
   types: TypeKeuze[];
+  /** De lichaamstypes (code + naam). */
+  letters: LetterKeuze[];
 }) {
   const [gekozen, setGekozen] = useState<Set<string>>(new Set());
   const [uitkomst, setUitkomst] = useState<Uitkomst | null>(null);
@@ -80,7 +83,7 @@ export function KopieerSectie({
           <strong>wordt vervangen</strong>; je kunt het daarna per type nog aanpassen.
         </p>
         <div className="flex flex-wrap gap-2">
-          {LETTERS.map((l) => (
+          {letters.map((l) => (
             <button
               key={l.letter}
               type="button"
@@ -102,7 +105,7 @@ export function KopieerSectie({
           </button>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-5">
-          {LETTERS.map((l) => (
+          {letters.map((l) => (
             <fieldset key={l.letter} className="flex flex-col gap-0.5">
               <legend className="mb-1 text-xs font-medium text-black/50 dark:text-white/50">
                 {l.letter} · {l.naam}

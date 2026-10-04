@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   MAAT_VELDEN,
   MAAT_GROEPEN,
-  SILHOUETTEN,
   PASVORMVRAGEN,
   MEET_TIP,
   type MaatVeld,
@@ -12,6 +11,7 @@ import {
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Lichaam } from "./Lichaam";
+import { ontleedTypeSleutel, type Silhouet } from "@/lib/lichaamstype-regels";
 import { TypeOnthulling } from "./TypeOnthulling";
 
 interface Bevinding {
@@ -98,9 +98,12 @@ export function TestWizard({
   token,
   klantnaam,
   meetBeelden = {},
+  silhouetten,
 }: {
   token: string;
   klantnaam: string;
+  /** De kiesbare lichaamstypes (uit beheer). */
+  silhouetten: Silhouet[];
   /** Door de adviseur geüploade meetfoto's per maat (publieke URL); anders de tekening. */
   meetBeelden?: Record<string, string>;
 }) {
@@ -210,8 +213,8 @@ export function TestWizard({
         gaNaar(EERSTE_MATEN_STAP);
         // Bijv. "Je heupen zijn duidelijk breder dan je borst (12 cm verschil).
         // Dat past meer bij Peer / driehoek dan bij Zandloper."
-        const gekozen = SILHOUETTEN.find((x) => x.letter === a.silhouet)?.naam;
-        const berekend = SILHOUETTEN.find((x) => x.letter === d.berekendeLetter)?.naam;
+        const gekozen = silhouetten.find((x) => x.letter === a.silhouet)?.naam;
+        const berekend = silhouetten.find((x) => x.letter === d.berekendeLetter)?.naam;
         const reden: string =
           d.reden ??
           (gekozen && berekend
@@ -238,6 +241,7 @@ export function TestWizard({
         token={token}
         sleutel={resultaat.sleutel}
         titel={resultaat.titel}
+        silhouet={silhouetten.find((s) => s.letter === ontleedTypeSleutel(resultaat.sleutel)?.code)}
         kop={`Klaar, ${klantnaam}! Jouw type is`}
         intro="Op basis van je maten en antwoorden hebben we je figuurtype bepaald. Hieronder lees je wat dat betekent."
       />
@@ -345,7 +349,7 @@ export function TestWizard({
               wat het dichtst in de buurt komt.
             </legend>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {SILHOUETTEN.map((s) => {
+              {silhouetten.map((s) => {
                 const gekozen = a.silhouet === s.letter;
                 return (
                   <label
@@ -364,7 +368,12 @@ export function TestWizard({
                       onChange={() => setA((x) => ({ ...x, silhouet: s.letter }))}
                       className="sr-only"
                     />
-                    <Lichaam vorm={s.vorm} armen={false} titel={s.naam} className="h-40" />
+                    {s.beeldUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- tijdelijke (signed) URL uit de beeldbank
+                      <img src={s.beeldUrl} alt={s.naam} className="h-40 w-auto object-contain" />
+                    ) : (
+                      <Lichaam vorm={s.vorm} armen={false} titel={s.naam} className="h-40" />
+                    )}
                     <strong>{s.naam}</strong>
                     <span className="text-xs text-black/50 dark:text-white/50">{s.omschrijving}</span>
                   </label>
@@ -409,7 +418,7 @@ export function TestWizard({
           </div>
         )}
 
-        {huidig.soort === "controle" && <Overzicht a={a} gaNaar={gaNaar} />}
+        {huidig.soort === "controle" && <Overzicht a={a} gaNaar={gaNaar} silhouetten={silhouetten} />}
 
         {fout && (
           <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
@@ -571,10 +580,18 @@ function MaatKaart({
   );
 }
 
-function Overzicht({ a, gaNaar }: { a: Antwoorden; gaNaar: (i: number) => void }) {
+function Overzicht({
+  a,
+  gaNaar,
+  silhouetten,
+}: {
+  a: Antwoorden;
+  gaNaar: (i: number) => void;
+  silhouetten: Silhouet[];
+}) {
   const stapVan = (sleutel: string) =>
     STAPPEN.findIndex((s) => s.soort === "maten" && s.velden.some((v) => v.sleutel === sleutel));
-  const silhouet = SILHOUETTEN.find((s) => s.letter === a.silhouet);
+  const silhouet = silhouetten.find((s) => s.letter === a.silhouet);
   const n = (v: string | undefined) => Number(v);
   const meldingen = logischeChecks({
     borst: n(a.maten.borst),

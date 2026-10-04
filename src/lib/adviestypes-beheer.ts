@@ -1,19 +1,27 @@
 // Pure hulpfuncties voor het beheer van de adviestypes (lijst + editor).
 // Geen server- of browserafhankelijkheden, zodat ze getest kunnen worden.
 
-/** De vijf figuren, in de vaste volgorde X, A, V, H, 8. */
-export const LETTERS = [
+import { ontleedTypeSleutel } from "./lichaamstype-regels";
+
+/** Een lichaamstype als keuze in de editor (code + naam). */
+export interface LetterKeuze {
+  letter: string;
+  naam: string;
+}
+
+/** Terugval als de lichaamstypes niet uit de database komen. */
+export const LETTERS: LetterKeuze[] = [
   { letter: "X", naam: "Zandloper" },
   { letter: "A", naam: "Peer/driehoek" },
   { letter: "V", naam: "Omgekeerde driehoek" },
   { letter: "H", naam: "Rechthoek" },
   { letter: "8", naam: "De 8" },
-] as const;
+];
 
-export type Letter = (typeof LETTERS)[number]["letter"];
+export type Letter = string;
 
-export function letterNaam(letter: string): string {
-  return LETTERS.find((l) => l.letter === letter)?.naam ?? letter;
+export function letterNaam(letter: string, lijst: LetterKeuze[] = LETTERS): string {
+  return lijst.find((l) => l.letter === letter)?.naam ?? letter;
 }
 
 /** Gangbare sectiekoppen (keuzelijst in de editor; vrije tekst mag ook). */
@@ -137,9 +145,6 @@ export function veiligeZoekterm(tekst: string): string {
 
 /** Splitst een sleutel als "12A" in categorie en letter; null als ongeldig. */
 export function ontleedSleutel(sleutel: string): { categorie: number; letter: Letter } | null {
-  const m = sleutel.match(/^(\d{1,2})([XAVH8])$/);
-  if (!m) return null;
-  const categorie = Number(m[1]);
-  if (categorie < 1 || categorie > 12) return null;
-  return { categorie, letter: m[2] as Letter };
+  const o = ontleedTypeSleutel(sleutel);
+  return o ? { categorie: o.categorie, letter: o.code } : null;
 }

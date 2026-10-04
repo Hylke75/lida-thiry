@@ -2,7 +2,7 @@
 
 import { bepaalCategorie } from "@/rekenkern/categorie";
 import { bepaalFiguurtype } from "@/rekenkern/figuurtype";
-import { bepaalLetter, vergelijkSilhouet } from "@/rekenkern/letter";
+import { bepaalLetter, vergelijkSilhouet, type FfitToewijzing } from "@/rekenkern/letter";
 import {
   controleerHardeGrenzen,
   controleerControlemeting,
@@ -45,6 +45,7 @@ const CONTROLE_MAP: Record<string, keyof Maten> = {
 export function verwerkTest(
   invoer: TestInvoer,
   variant: ZandloperVariant,
+  toewijzing?: FfitToewijzing,
 ): TestUitkomst {
   const { maten } = invoer;
 
@@ -65,7 +66,7 @@ export function verwerkTest(
   // A + B + C.
   const categorie = bepaalCategorie(invoer.lengte_cm, invoer.gewicht_kg).nummer;
   const ffit = bepaalFiguurtype(maten, variant);
-  const letter = bepaalLetter(ffit);
+  const letter = bepaalLetter(ffit, toewijzing);
 
   // Geen passend figuurtype: het door de klant gekozen silhouet bepaalt de letter.
   if (letter === null) {

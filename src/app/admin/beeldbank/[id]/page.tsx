@@ -10,6 +10,7 @@ import { BeeldUpload } from "../BeeldUpload";
 import { StatusBadge, TeKleinBadge } from "../badges";
 import { zetTerug } from "../acties";
 import { GegevensFormulier } from "./GegevensFormulier";
+import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { VerwijderKnop } from "./VerwijderKnop";
 
 export const dynamic = "force-dynamic";
@@ -151,7 +152,10 @@ export default async function BeeldPagina({
 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Gegevens</h2>
-        <GegevensFormulier beeld={beeld} />
+        <GegevensFormulier
+          beeld={beeld}
+          figuren={(await haalLichaamstypes()).map((t) => ({ code: t.code, naam: t.naam }))}
+        />
       </section>
 
       <section className={kaart}>

@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AdviesPdf, type PdfMaten, type PdfSectie, type PdfSilhouet } from "./document";
 import { haalAdviesInhoud } from "@/lib/advies-inhoud";
 import { BEELD_BUCKET } from "@/lib/beeldbank-regels";
-import { silhouetVoorSleutel } from "@/lib/test-config";
+import { silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { vormUitMaten } from "@/lib/lichaam-pad";
 
 const BUCKET = "adviezen-pdf";
@@ -55,7 +55,7 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
   const inhoud = await haalAdviesInhoud(sleutel);
   if (!inhoud) return null;
   const secties = await pdfSecties(supabase, inhoud);
-  const optie = silhouetVoorSleutel(sleutel);
+  const optie = await silhouetVoorSleutel(sleutel);
   const maten: PdfMaten = {
     lengte_cm: null,
     gewicht_kg: null,
@@ -106,7 +106,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
 
   // Silhouet op de voorpagina: getekend naar de eigen maten als die er (nog)
   // zijn; na anonimisering valt het terug op het standaardsilhouet van de letter.
-  const optie = silhouetVoorSleutel(order.toegekend_type);
+  const optie = await silhouetVoorSleutel(order.toegekend_type);
   const eigenMaten =
     res?.borst != null && res.taille != null && res.hoge_heup != null && res.heup != null;
   const silhouet: PdfSilhouet | null = optie

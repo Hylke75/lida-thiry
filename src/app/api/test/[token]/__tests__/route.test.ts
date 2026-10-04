@@ -37,6 +37,17 @@ vi.mock("@/lib/supabase/admin", () => {
 });
 
 const beoordeelToken = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/lichaamstypes", async () => {
+  const { FFIT_NAAR_LETTER } = await import("@/rekenkern/config/ffit-naar-letter");
+  const vorm = { schouder: 36, borst: 34, taille: 27, hogeHeup: 32, heup: 37 };
+  const namen: [string, string][] = [["X", "Zandloper"], ["A", "Peer / driehoek"], ["V", "Omgekeerde driehoek"], ["H", "Rechthoek"], ["8", "De 8"]];
+  return {
+    haalSilhouetten: vi.fn().mockResolvedValue(
+      namen.map(([letter, naam]) => ({ letter, naam, alias: null, omschrijving: "", uitleg: "", kenmerken: [], vorm, beeldUrl: null })),
+    ),
+    haalFfitToewijzing: vi.fn().mockResolvedValue({ ...FFIT_NAAR_LETTER }),
+  };
+});
 vi.mock("@/lib/test-order", () => ({
   beoordeelToken,
   haalTypeTitel: vi.fn().mockResolvedValue("Testtitel"),

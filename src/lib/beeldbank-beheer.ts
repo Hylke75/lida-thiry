@@ -4,11 +4,11 @@
 
 import {
   ADVIEZEN,
-  FIGUREN,
   NAAM_PATROON,
   isTeKlein,
   minFormaat,
 } from "./beeldbank-regels";
+import { CODE_PATROON } from "./lichaamstype-regels";
 
 export const PER_PAGINA = 48;
 
@@ -199,7 +199,7 @@ export function controleerMetadata(fd: FormData): { waarden: Metadata; fouten: s
     );
   }
   const figuur = tekstOfNull(fd.get("figuur"));
-  if (figuur && !(FIGUREN as readonly string[]).includes(figuur)) fouten.push("Kies een geldig figuur.");
+  if (figuur && !CODE_PATROON.test(figuur)) fouten.push("Kies een geldig lichaamstype.");
   const advies = tekstOfNull(fd.get("advies"));
   if (advies && !(ADVIEZEN as readonly string[]).includes(advies)) fouten.push("Kies een geldig advies.");
   const status = String(fd.get("status") ?? "");

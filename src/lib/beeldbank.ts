@@ -1,6 +1,7 @@
 import "server-only";
 import sharp, { type Metadata } from "sharp";
 import { adminClient } from "./supabase/admin";
+import { sorteerWaarde } from "./lichaamstype-regels";
 import {
   BEELD_BUCKET,
   MAX_UPLOAD_BYTES,
@@ -86,11 +87,9 @@ export async function gebruikVan(beeldId: string): Promise<Gebruik[]> {
     .sort((a, b) => sorteerSleutel(a.type_sleutel) - sorteerSleutel(b.type_sleutel));
 }
 
-/** Sorteert typesleutels als 1X, 1A, ... 12-8 (categorie, dan letter). */
+/** Sorteert typesleutels als 1X, 1A, ... 12-8 (categorie, dan lichaamstype). */
 export function sorteerSleutel(sleutel: string): number {
-  const m = sleutel.match(/^(\d+)(.)$/);
-  if (!m) return 9999;
-  return Number(m[1]) * 10 + "XAVH8".indexOf(m[2]);
+  return sorteerWaarde(sleutel);
 }
 
 /** Aantal koppelingen per beeld (voor de lijst in de beeldbank). */

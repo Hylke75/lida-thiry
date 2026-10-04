@@ -138,7 +138,7 @@ describe("invoer controleren", () => {
     expect(goed.fouten).toEqual([]);
     expect(goed.waarden).toMatchObject({ naam: "tops-v-hals-goed", omschrijving: null, status: "goedgekeurd" });
 
-    const fout = controleerMetadata(formulier({ naam: "tops v hals", figuur: "Q", status: "x" }));
+    const fout = controleerMetadata(formulier({ naam: "tops v hals", figuur: "q?", status: "x" }));
     expect(fout.fouten).toHaveLength(3);
   });
 

@@ -11,24 +11,27 @@ import {
  * Geeft de letter voor een FFIT-type, of null wanneer er (nog) geen letter is.
  * null bij "Geen type"; dan bepaalt het gekozen silhouet de letter.
  */
-export function bepaalLetter(ffitType: FfitType): Figuurletter | null {
+export type FfitToewijzing = Partial<Record<Exclude<FfitType, "Geen type">, Figuurletter | null>>;
+
+export function bepaalLetter(
+  ffitType: FfitType,
+  toewijzing: FfitToewijzing = FFIT_NAAR_LETTER,
+): Figuurletter | null {
   if (ffitType === "Geen type") return null;
-  return FFIT_NAAR_LETTER[ffitType] ?? null;
+  return toewijzing[ffitType] ?? null;
 }
 
 /**
  * Is de FFIT-naar-letter-tabel compleet? De app mag niet naar productie zolang
  * er een reeel FFIT-type zonder letter is (productie-vlag).
  */
-export function isMappingCompleet(): boolean {
-  return Object.values(FFIT_NAAR_LETTER).every((letter) => letter !== null);
+export function isMappingCompleet(toewijzing: FfitToewijzing = FFIT_NAAR_LETTER): boolean {
+  return (Object.keys(FFIT_NAAR_LETTER) as (keyof typeof FFIT_NAAR_LETTER)[]).every((t) => Boolean(toewijzing[t]));
 }
 
 /** FFIT-types die nog geen letter hebben (voor de open-punten-/productie-check). */
-export function ontbrekendeLetters(): FfitType[] {
-  return (Object.keys(FFIT_NAAR_LETTER) as Exclude<FfitType, "Geen type">[]).filter(
-    (type) => FFIT_NAAR_LETTER[type] === null,
-  );
+export function ontbrekendeLetters(toewijzing: FfitToewijzing = FFIT_NAAR_LETTER): FfitType[] {
+  return (Object.keys(FFIT_NAAR_LETTER) as Exclude<FfitType, "Geen type">[]).filter((type) => !toewijzing[type]);
 }
 
 export type SilhouetVergelijking = "gelijk" | "verschil";

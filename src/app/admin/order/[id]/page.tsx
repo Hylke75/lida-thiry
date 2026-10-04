@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { leverAdvies } from "@/lib/advies-leveren";
+import { TYPE_SLEUTEL_PATROON } from "@/lib/lichaamstype-regels";
 import { signedFactuurUrl } from "@/lib/factuur";
 import { leesInstelling } from "@/lib/instellingen";
 import { stuurTestlinkMail } from "@/lib/resend";
@@ -14,7 +15,7 @@ import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
 export const dynamic = "force-dynamic";
 
 /** Geldige typesleutel: categorie 1–12 gevolgd door X, A, V, H of 8. */
-const TYPE_PATROON = /^(1[0-2]|[1-9])[XAVH8]$/;
+const TYPE_PATROON = TYPE_SLEUTEL_PATROON;
 
 const MELDINGEN: Record<string, { soort: "ok" | "fout"; tekst: string }> = {
   type_ok: { soort: "ok", tekst: "Het type is aangepast en het advies is opnieuw verstuurd." },

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { sorteerSleutel } from "@/lib/beeldbank";
-import { LETTERS, letterNaam, telPerType } from "@/lib/adviestypes-beheer";
+import { letterNaam, telPerType } from "@/lib/adviestypes-beheer";
+import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { AdminNav } from "../AdminNav";
 import { formatteerMoment, alleRijen } from "./gedeeld";
 
@@ -41,6 +42,7 @@ export default async function TypesPagina({
   await vereisBeheerder();
   const { q = "", letter = "", categorie = "", aandacht } = await searchParams;
   const { types, telling } = await laad();
+  const letters = (await haalLichaamstypes()).map((t) => ({ letter: t.code, naam: t.naam }));
 
   const zoek = q.trim().toLowerCase();
   const cat = Number(categorie) || null;
@@ -109,7 +111,7 @@ export default async function TypesPagina({
           <Link href={link({ letter: undefined })} className={chip(!letter)}>
             Alle figuren
           </Link>
-          {LETTERS.map((l) => (
+          {letters.map((l) => (
             <Link key={l.letter} href={link({ letter: l.letter })} className={chip(letter === l.letter)}>
               {l.letter} · {l.naam}
             </Link>
@@ -164,7 +166,7 @@ export default async function TypesPagina({
                         {t.sleutel}
                       </Link>
                       <span className="block text-xs text-black/45 dark:text-white/45">
-                        cat. {t.categorie} · {letterNaam(t.letter)}
+                        cat. {t.categorie} · {letterNaam(t.letter, letters)}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">

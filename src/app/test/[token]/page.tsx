@@ -2,6 +2,7 @@ import Link from "next/link";
 import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { leesMeetBeelden } from "@/lib/meetbeelden";
 import { TestWizard } from "./TestWizard";
+import { haalSilhouetten, silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { TypeOnthulling } from "./TypeOnthulling";
 
 export const dynamic = "force-dynamic";
@@ -52,12 +53,20 @@ export default async function TestPage({
           token={token}
           sleutel={sleutel}
           titel={titel}
+          silhouet={await silhouetVoorSleutel(sleutel)}
           kop={`Welkom terug, ${b.order.klantnaam}. Jouw type is`}
           intro="Je hebt de test al afgerond. Hieronder zie je nog eens je uitslag en kun je je persoonlijke advies downloaden."
         />
       );
     }
     case "geldig":
-      return <TestWizard token={token} klantnaam={b.order.klantnaam} meetBeelden={await leesMeetBeelden()} />;
+      return (
+        <TestWizard
+          token={token}
+          klantnaam={b.order.klantnaam}
+          meetBeelden={await leesMeetBeelden()}
+          silhouetten={await haalSilhouetten()}
+        />
+      );
   }
 }

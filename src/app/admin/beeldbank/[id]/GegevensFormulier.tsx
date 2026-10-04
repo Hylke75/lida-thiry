@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { FIGUREN, NAAM_PATROON, ONDERDELEN, naamSuggestie } from "@/lib/beeldbank-regels";
+import { NAAM_PATROON, ONDERDELEN, naamSuggestie } from "@/lib/beeldbank-regels";
 import { STATUSSEN, STATUS_LABELS } from "@/lib/beeldbank-beheer";
 import type { Beeld } from "@/lib/beeldbank";
 import { slaGegevensOp, type FormulierStatus } from "../acties";
@@ -13,7 +13,14 @@ const uitlegKlasse = "text-xs leading-relaxed text-black/50 dark:text-white/50";
 
 const BEGIN: FormulierStatus = { ok: false, fouten: [] };
 
-export function GegevensFormulier({ beeld }: { beeld: Beeld }) {
+export function GegevensFormulier({
+  beeld,
+  figuren,
+}: {
+  beeld: Beeld;
+  /** Lichaamstypes (code + naam) uit beheer. */
+  figuren: { code: string; naam: string }[];
+}) {
   const [status, actie, bezig] = useActionState(slaGegevensOp, BEGIN);
   const [naam, setNaam] = useState(beeld.naam ?? "");
   const [onderdeel, setOnderdeel] = useState(beeld.onderdeel ?? "");
@@ -76,10 +83,10 @@ export function GegevensFormulier({ beeld }: { beeld: Beeld }) {
             Figuur
           </label>
           <select id="figuur" name="figuur" value={figuur} onChange={(e) => setFiguur(e.target.value)} className={invoerKlasse}>
-            <option value="">Alle figuren</option>
-            {FIGUREN.map((f) => (
-              <option key={f} value={f}>
-                {f}
+            <option value="">Alle lichaamstypes</option>
+            {figuren.map((f) => (
+              <option key={f.code} value={f.code}>
+                {f.code} · {f.naam}
               </option>
             ))}
           </select>

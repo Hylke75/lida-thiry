@@ -128,7 +128,8 @@ describe("overig", () => {
     expect(ontleedSleutel("6-8")).toBeNull();
     expect(ontleedSleutel("68")).toEqual({ categorie: 6, letter: "8" });
     expect(ontleedSleutel("13X")).toBeNull();
-    expect(ontleedSleutel("1Z")).toBeNull();
+    expect(ontleedSleutel("1Z")).toEqual({ categorie: 1, letter: "Z" }); // eigen lichaamstype
+    expect(ontleedSleutel("1z")).toBeNull();
   });
   it("geeft lettername", () => {
     expect(letterNaam("V")).toBe("Omgekeerde driehoek");

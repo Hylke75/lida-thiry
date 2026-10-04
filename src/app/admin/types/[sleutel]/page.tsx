@@ -5,6 +5,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { beeldUrls, sorteerSleutel } from "@/lib/beeldbank";
 import { letterNaam } from "@/lib/adviestypes-beheer";
+import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { AdminNav } from "../../AdminNav";
 import { ActieFormulier, GroeiendTekstvak } from "../ActieFormulier";
 import { BeeldKiezer } from "../BeeldKiezer";
@@ -194,6 +195,7 @@ export default async function TypeEditor({
   );
   const overige = secties.filter((s) => !s.veld_sleutel);
   const groepen = [...new Set(velden.map((v) => v.groep))];
+  const letters = (await haalLichaamstypes()).map((t) => ({ letter: t.code, naam: t.naam }));
 
   const plek = alle.findIndex((t) => t.sleutel === sleutel);
   const vorige = plek > 0 ? alle[plek - 1] : null;
@@ -236,7 +238,7 @@ export default async function TypeEditor({
         <div className="flex flex-col gap-1">
           <p className="text-sm text-black/50 dark:text-white/50">
             Type {type.sleutel} · categorie {type.categorie} ·{" "}
-            {letterNaam(type.letter)}
+            {letterNaam(type.letter, letters)}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
             {type.titel}
@@ -558,6 +560,7 @@ export default async function TypeEditor({
                       kop={s.kop}
                       categorie={type.categorie}
                       types={andereTypes}
+                      letters={letters}
                     />
                   </section>
                 </div>
@@ -745,6 +748,7 @@ export default async function TypeEditor({
                   kop={s.kop}
                   categorie={type.categorie}
                   types={andereTypes}
+                  letters={letters}
                 />
               </section>
             );
