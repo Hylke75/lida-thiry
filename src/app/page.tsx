@@ -41,7 +41,8 @@ function formatteerPrijs(cent: number, valuta: string): string {
 }
 
 const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen", "tien"];
-const telwoord = (n: number) => TELWOORDEN[n] ?? String(n);
+// Zonder figuurtypes (bijv. database onbereikbaar) liever "De verschillende figuurtypes" dan "De nul".
+const telwoord = (n: number) => (n === 0 ? "verschillende" : (TELWOORDEN[n] ?? String(n)));
 
 /**
  * De homepage. De blokken staan in components/homepage/Blokken.tsx; volgorde en
