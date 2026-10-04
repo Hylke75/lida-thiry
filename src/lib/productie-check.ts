@@ -57,6 +57,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
       RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
       NIEUWSBRIEF_GEHEIM: process.env.NIEUWSBRIEF_GEHEIM,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     },
     aangemeldeContacten: aangemeld,
   });

@@ -210,10 +210,20 @@ export const WEBSITE_AFSLUITING = sectie({
   },
 });
 
+export const WEBSITE_BLOG = sectie({
+  sleutel: "website.blog",
+  titel: "Laatste blogberichten",
+  uitleg: "Blok op de homepage met de drie nieuwste blogberichten. Wordt alleen getoond als er berichten zijn.",
+  velden: {
+    titel: { soort: "tekst", label: "Titel", standaard: "Laatste blogberichten" },
+    linktekst: { soort: "tekst", label: "Linktekst naar het overzicht", max: 60, standaard: "Alle berichten" },
+  },
+});
+
 export const WEBSITE: Groep = {
   sleutel: "website",
   titel: "Website",
-  omschrijving: "De teksten op de homepage: introductie, stappen, Over Lida, ervaringen en veelgestelde vragen.",
+  omschrijving: "De teksten op de homepage: introductie, stappen, Over Lida, ervaringen, laatste blogberichten en veelgestelde vragen.",
   bekijkUrl: "/",
   secties: [
     WEBSITE_HERO,
@@ -222,6 +232,7 @@ export const WEBSITE: Groep = {
     WEBSITE_ADVIES,
     WEBSITE_OVER,
     WEBSITE_ERVARINGEN,
+    WEBSITE_BLOG,
     WEBSITE_VRAGEN,
     WEBSITE_AFSLUITING,
   ],

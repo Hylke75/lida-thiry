@@ -9,6 +9,7 @@ import { vulIn } from "@/lib/inhoud/schema";
 import {
   WEBSITE_ADVIES,
   WEBSITE_AFSLUITING,
+  WEBSITE_BLOG,
   WEBSITE_ERVARINGEN,
   WEBSITE_FIGUURTYPES,
   WEBSITE_HERO,
@@ -18,6 +19,8 @@ import {
 } from "@/lib/inhoud/groepen/website";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
+import { BlogKaart } from "@/components/blog/BlogKaart";
+import { haalLaatste } from "@/lib/blog/publiek";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +34,7 @@ const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeve
 const telwoord = (n: number) => TELWOORDEN[n] ?? String(n);
 
 export default async function Home() {
-  const [SILHOUETTEN, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief] = await Promise.all([
+  const [SILHOUETTEN, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten] = await Promise.all([
     haalSilhouetten().catch(() => []),
     leesSectie(WEBSITE_HERO),
     leesSectie(WEBSITE_STAPPEN),
@@ -42,6 +45,8 @@ export default async function Home() {
     leesSectie(WEBSITE_VRAGEN),
     leesSectie(WEBSITE_AFSLUITING),
     leesSectie(NIEUWSBRIEF_AANMELDEN),
+    leesSectie(WEBSITE_BLOG),
+    haalLaatste(3),
   ]);
   const aantal = { aantal: telwoord(SILHOUETTEN.length) };
   const vorm = (i: number) => SILHOUETTEN[i]?.vorm ?? STANDAARD_VORM;
@@ -198,6 +203,32 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Laatste blogberichten (alleen als er gepubliceerde berichten zijn) */}
+      {blogberichten.length > 0 && (
+        <section aria-labelledby="laatste-blog" className="bg-accent-zacht/40">
+          <div className="mx-auto w-full max-w-5xl px-6 py-16">
+            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+              <h2 id="laatste-blog" className="text-3xl font-semibold tracking-tight">
+                {blog.titel}
+              </h2>
+              <Link
+                href="/blog"
+                className="text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+              >
+                {blog.linktekst} →
+              </Link>
+            </div>
+            <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {blogberichten.map((b) => (
+                <li key={b.id}>
+                  <BlogKaart bericht={b} />
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
 

@@ -34,6 +34,7 @@ export interface LivegangOmgeving {
   NEXT_PUBLIC_SITE_URL?: string;
   RESEND_WEBHOOK_SECRET?: string;
   NIEUWSBRIEF_GEHEIM?: string;
+  ANTHROPIC_API_KEY?: string;
 }
 
 export interface LivegangGegevens {
@@ -315,6 +316,20 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
       : "Kliklinks in nieuwsbrieven worden nu ondertekend met een ander geheim (CRON_SECRET of de Supabase-sleutel). Werkt, maar wisselt dat geheim ooit, dan werken oude kliklinks niet meer. Zet een eigen lange willekeurige waarde. " +
         VERCEL_UITLEG,
     links: [],
+  });
+
+  // Blog -------------------------------------------------------------------------
+  items.push({
+    id: "ai-schrijfhulp",
+    label: "AI-schrijfhulp ingesteld (ANTHROPIC_API_KEY)",
+    ok: gevuld(env.ANTHROPIC_API_KEY),
+    niveau: "aanbevolen",
+    detail: gevuld(env.ANTHROPIC_API_KEY)
+      ? undefined
+      : "Zonder deze sleutel werkt de AI-schrijfhulp in het blogbeheer niet; zelf berichten schrijven en publiceren kan wel. " +
+        "Maak een API-sleutel aan op console.anthropic.com en zet die in ANTHROPIC_API_KEY. " +
+        VERCEL_UITLEG,
+    links: [{ href: "/admin/blog", label: "Naar de blog" }],
   });
 
   return items;

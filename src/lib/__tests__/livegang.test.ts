@@ -50,6 +50,7 @@ function compleet(): LivegangGegevens {
       NEXT_PUBLIC_SITE_URL: "https://lidathiry.nl",
       RESEND_WEBHOOK_SECRET: "whsec_abc",
       NIEUWSBRIEF_GEHEIM: "geheim",
+      ANTHROPIC_API_KEY: "sk-ant-123",
     },
     aangemeldeContacten: 12,
   };
@@ -176,10 +177,11 @@ describe("evalueerLivegang", () => {
       "nieuwsbrief-afzender",
       "nieuwsbrief-webhook",
       "nieuwsbrief-geheim",
+      "ai-schrijfhulp",
     ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 2 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 3 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
@@ -211,6 +213,19 @@ describe("nieuwsbrief in de controlelijst", () => {
     expect(webhook?.detail).toContain("bounces");
     expect(items.find((i) => i.id === "nieuwsbrief-geheim")).toMatchObject({ ok: false, niveau: "aanbevolen" });
     expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 2 });
+  });
+});
+
+describe("blog in de controlelijst", () => {
+  it("een ontbrekende AI-sleutel is een aanbeveling, geen blokkade", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, ANTHROPIC_API_KEY: " " };
+    const items = evalueerLivegang(g);
+    const item = items.find((i) => i.id === "ai-schrijfhulp");
+    expect(item).toMatchObject({ ok: false, niveau: "aanbevolen", links: [{ href: "/admin/blog" }] });
+    expect(item?.detail).toContain("ANTHROPIC_API_KEY");
+    expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 1 });
+    expect(vind(compleet(), "ai-schrijfhulp").ok).toBe(true);
   });
 });
 

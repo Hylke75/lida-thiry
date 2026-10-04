@@ -5,9 +5,10 @@ import { TEST } from "./groepen/test";
 import { EMAILS } from "./groepen/emails";
 import { NIEUWSBRIEF } from "./groepen/nieuwsbrief";
 import { JURIDISCH } from "./groepen/juridisch";
+import { BLOG } from "./groepen/blog";
 
 /** Alle groepen beheerbare teksten, in de volgorde van het beheerscherm. */
-export const GROEPEN: readonly Groep[] = [WEBSITE, BESTELLEN, TEST, EMAILS, NIEUWSBRIEF, JURIDISCH];
+export const GROEPEN: readonly Groep[] = [WEBSITE, BLOG, BESTELLEN, TEST, EMAILS, NIEUWSBRIEF, JURIDISCH];
 
 export function vindGroep(sleutel: string): Groep | undefined {
   return GROEPEN.find((g) => g.sleutel === sleutel);
