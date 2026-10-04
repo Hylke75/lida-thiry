@@ -48,7 +48,10 @@ function compleet(): LivegangGegevens {
       RESEND_API_KEY: "re_123",
       MOLLIE_API_KEY: "live_abc",
       NEXT_PUBLIC_SITE_URL: "https://lidathiry.nl",
+      RESEND_WEBHOOK_SECRET: "whsec_abc",
+      NIEUWSBRIEF_GEHEIM: "geheim",
     },
+    aangemeldeContacten: 12,
   };
 }
 
@@ -164,14 +167,50 @@ describe("evalueerLivegang", () => {
     g.omgeving = { MOLLIE_API_KEY: "test_abc", GRATIS_TEST: "1" };
     const items = evalueerLivegang(g);
     const open = items.filter((i) => !i.ok).map((i) => i.id);
-    expect(open).toEqual(["gratis-test", "mollie", "resend-sleutel", "resend-van", "site-url"]);
+    expect(open).toEqual([
+      "gratis-test",
+      "mollie",
+      "resend-sleutel",
+      "resend-van",
+      "site-url",
+      "nieuwsbrief-afzender",
+      "nieuwsbrief-webhook",
+      "nieuwsbrief-geheim",
+    ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 5 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 2 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
     );
+  });
+});
+
+describe("nieuwsbrief in de controlelijst", () => {
+  it("waarschuwt voor de testafzender van resend.dev zodra er aangemelde contacten zijn", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, RESEND_VAN: "Lida <onboarding@resend.dev>" };
+    const item = vind(g, "nieuwsbrief-afzender");
+    expect(item).toMatchObject({ ok: false, niveau: "verplicht" });
+    expect(item.detail).toContain("12 aangemelde contacten");
+
+    expect(vind({ ...g, aangemeldeContacten: 0 }, "nieuwsbrief-afzender").ok).toBe(true);
+    expect(vind({ ...g, aangemeldeContacten: undefined }, "nieuwsbrief-afzender").ok).toBe(true);
+    // Geen RESEND_VAN: dan wordt ook het testadres gebruikt.
+    expect(vind({ ...g, omgeving: { ...g.omgeving, RESEND_VAN: "" } }, "nieuwsbrief-afzender").ok).toBe(false);
+    expect(vind(compleet(), "nieuwsbrief-afzender").ok).toBe(true);
+  });
+
+  it("webhookgeheim en linkgeheim zijn aanbevelingen met uitleg", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, RESEND_WEBHOOK_SECRET: "", NIEUWSBRIEF_GEHEIM: undefined };
+    const items = evalueerLivegang(g);
+    const webhook = items.find((i) => i.id === "nieuwsbrief-webhook");
+    expect(webhook).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(webhook?.detail).toContain("bounces");
+    expect(items.find((i) => i.id === "nieuwsbrief-geheim")).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(livegangStatus(items)).toMatchObject({ klaar: true, allesKlaar: false, openAanbevolen: 2 });
   });
 });
 

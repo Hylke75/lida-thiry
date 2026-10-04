@@ -32,6 +32,8 @@ export interface LivegangOmgeving {
   RESEND_API_KEY?: string;
   MOLLIE_API_KEY?: string;
   NEXT_PUBLIC_SITE_URL?: string;
+  RESEND_WEBHOOK_SECRET?: string;
+  NIEUWSBRIEF_GEHEIM?: string;
 }
 
 export interface LivegangGegevens {
@@ -46,6 +48,8 @@ export interface LivegangGegevens {
   /** Uitkomsten van de berekening zonder lichaamstype (leeg = compleet). */
   ontbrekendeKoppelingen: readonly string[];
   omgeving: LivegangOmgeving;
+  /** Aantal aangemelde nieuwsbriefcontacten (ontbreekt = 0). */
+  aangemeldeContacten?: number;
 }
 
 export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
@@ -269,6 +273,47 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
     detail: gevuld(env.NEXT_PUBLIC_SITE_URL)
       ? undefined
       : `Nodig voor de links in e-mails en voor de terugkeer na betalen. ${VERCEL_UITLEG}`,
+    links: [],
+  });
+
+  // Nieuwsbrief --------------------------------------------------------------
+  const aangemeld = g.aangemeldeContacten ?? 0;
+  const afzender = (env.RESEND_VAN ?? "").trim() || "onboarding@resend.dev";
+  const testAfzender = /@resend\.dev\b/i.test(afzender);
+  items.push({
+    id: "nieuwsbrief-afzender",
+    label: "Nieuwsbrief gaat van een eigen afzenderadres",
+    ok: !(testAfzender && aangemeld > 0),
+    niveau: "verplicht",
+    detail:
+      testAfzender && aangemeld > 0
+        ? `Er ${aangemeld === 1 ? "is 1 aangemeld contact" : `zijn ${aangemeld} aangemelde contacten`}, maar de afzender is het testadres van resend.dev: nieuwsbrieven komen dan niet aan. Zet RESEND_VAN op een adres van je eigen (in Resend geverifieerde) domein. ${VERCEL_UITLEG}`
+        : undefined,
+    links: [{ href: "/admin/nieuwsbrief", label: "Naar de nieuwsbrief" }],
+  });
+
+  items.push({
+    id: "nieuwsbrief-webhook",
+    label: "Bounces en klachten automatisch verwerken (RESEND_WEBHOOK_SECRET)",
+    ok: gevuld(env.RESEND_WEBHOOK_SECRET),
+    niveau: "aanbevolen",
+    detail: gevuld(env.RESEND_WEBHOOK_SECRET)
+      ? undefined
+      : "Zonder deze koppeling blijven onbestaande adressen (bounces) en mensen die je mail als spam markeren (klachten) op je lijst staan. Dat schaadt de bezorging van al je mails. " +
+        "Maak in Resend → Webhooks een webhook naar /api/nb/webhook (gebeurtenissen email.bounced en email.complained) en zet het geheim (whsec_…) in RESEND_WEBHOOK_SECRET. " +
+        VERCEL_UITLEG,
+    links: [],
+  });
+
+  items.push({
+    id: "nieuwsbrief-geheim",
+    label: "Eigen geheim voor nieuwsbrieflinks (NIEUWSBRIEF_GEHEIM)",
+    ok: gevuld(env.NIEUWSBRIEF_GEHEIM),
+    niveau: "aanbevolen",
+    detail: gevuld(env.NIEUWSBRIEF_GEHEIM)
+      ? undefined
+      : "Kliklinks in nieuwsbrieven worden nu ondertekend met een ander geheim (CRON_SECRET of de Supabase-sleutel). Werkt, maar wisselt dat geheim ooit, dan werken oude kliklinks niet meer. Zet een eigen lange willekeurige waarde. " +
+        VERCEL_UITLEG,
     links: [],
   });
 

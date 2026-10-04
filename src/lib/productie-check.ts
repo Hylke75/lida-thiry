@@ -15,7 +15,7 @@ import { alleRijen } from "@/app/admin/types/gedeeld";
  */
 export async function productieCheck(): Promise<{ items: LivegangItem[] } & ReturnType<typeof livegangStatus>> {
   const supabase = adminClient();
-  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties] = await Promise.all([
+  const [instellingen, prijsCent, opgeslagenTeksten, lichaamstypes, toewijzing, typesRes, secties, aangemeld] = await Promise.all([
     leesInstellingen(),
     leesPrijsCent(),
     leesAlleInhoud().catch(() => new Map<string, unknown>()),
@@ -24,6 +24,13 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
     supabase.from("adviestypes").select("sleutel"),
     alleRijen<{ type_sleutel: string }>((van, tot) =>
       supabase.from("adviessecties").select("type_sleutel").order("id").range(van, tot),
+    ),
+    // Nieuwsbrief: een fout (bijv. tabel nog niet aanwezig) mag de lijst niet breken.
+    Promise.resolve(
+      supabase.from("nb_contacten").select("id", { count: "exact", head: true }).eq("status", "aangemeld"),
+    ).then(
+      (r) => r.count ?? 0,
+      () => 0,
     ),
   ]);
   if (typesRes.error) throw new Error(`adviestypes lezen: ${typesRes.error.message}`);
@@ -48,7 +55,10 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       RESEND_API_KEY: process.env.RESEND_API_KEY,
       MOLLIE_API_KEY: process.env.MOLLIE_API_KEY,
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+      NIEUWSBRIEF_GEHEIM: process.env.NIEUWSBRIEF_GEHEIM,
     },
+    aangemeldeContacten: aangemeld,
   });
   return { items, ...livegangStatus(items) };
 }

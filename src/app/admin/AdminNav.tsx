@@ -34,6 +34,15 @@ const GROEPEN = [
     ],
   },
   { label: "Test", links: [{ href: "/admin/meetinstructies", label: "Meetinstructies" }] },
+  {
+    label: "Nieuwsbrief",
+    links: [
+      { href: "/admin/nieuwsbrief", label: "Overzicht" },
+      { href: "/admin/nieuwsbrief/campagnes", label: "Campagnes" },
+      { href: "/admin/nieuwsbrief/contacten", label: "Contacten" },
+      { href: "/admin/nieuwsbrief/automatisch", label: "Automatisch" },
+    ],
+  },
   { label: "Teksten", links: [{ href: "/admin/teksten", label: "Teksten" }] },
   {
     label: "Instellingen",
@@ -45,6 +54,21 @@ const GROEPEN = [
 ] as const satisfies readonly NavGroep[];
 
 export type AdminPagina = (typeof GROEPEN)[number]["links"][number]["href"];
+
+/** Een beheerpagina of een pagina daaronder (bijv. "/admin/nieuwsbrief/campagnes/123"). */
+export type AdminPad = AdminPagina | `${AdminPagina}/${string}`;
+
+const ALLE_HREFS: readonly string[] = GROEPEN.flatMap((g) => g.links.map((l) => l.href));
+
+/**
+ * De navigatielink die bij `pad` hoort: een exacte match, anders de langste link
+ * waar het pad onder valt ("/admin/nieuwsbrief/campagnes/123" → Campagnes).
+ */
+export function actieveLink(pad: string | undefined): string | undefined {
+  if (!pad) return undefined;
+  if (ALLE_HREFS.includes(pad)) return pad;
+  return ALLE_HREFS.filter((h) => h !== "/admin" && pad.startsWith(`${h}/`)).sort((a, b) => b.length - a.length)[0];
+}
 
 function groepIsActief(g: NavGroep, actief: string | undefined): boolean {
   return g.links.some((l) => l.href === actief);
@@ -69,7 +93,8 @@ function Uitloggen({ className }: { className?: string }) {
 }
 
 /** Navigatiebalk bovenaan elke beheerpagina. */
-export function AdminNav({ actief }: { actief?: AdminPagina }) {
+export function AdminNav({ actief: pad }: { actief?: AdminPad }) {
+  const actief = actieveLink(pad);
   const groepen: readonly NavGroep[] = GROEPEN;
   const huidigeGroep = groepen.find((g) => groepIsActief(g, actief));
   const huidigeLink = huidigeGroep?.links.find((l) => l.href === actief);
