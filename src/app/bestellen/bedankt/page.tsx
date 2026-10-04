@@ -3,6 +3,7 @@ import Link from "next/link";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_BETAALD, BESTELLEN_MISLUKT, BESTELLEN_VERWERKEN } from "@/lib/inhoud/groepen/bestellen";
+import { MIJN_ADVIES_PAGINA } from "@/lib/inhoud/groepen/mijn-advies";
 import { AutoVernieuwen } from "./AutoVernieuwen";
 
 export const dynamic = "force-dynamic";
@@ -37,10 +38,11 @@ export default async function BedanktPage({
 
   const betaald = status === "betaald" || status === "test_afgerond" || status === "advies_verzonden";
   const mislukt = status === "betaling_mislukt" || status === "verlopen";
-  const [tBetaald, tMislukt, tVerwerken] = await Promise.all([
+  const [tBetaald, tMislukt, tVerwerken, tMijnAdvies] = await Promise.all([
     leesSectie(BESTELLEN_BETAALD),
     leesSectie(BESTELLEN_MISLUKT),
     leesSectie(BESTELLEN_VERWERKEN),
+    leesSectie(MIJN_ADVIES_PAGINA),
   ]);
 
   return (
@@ -56,6 +58,11 @@ export default async function BedanktPage({
               className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
             >
               {tBetaald.knop}
+            </Link>
+          )}
+          {tMijnAdvies.verwijzing.trim() && (
+            <Link href="/mijn-advies" className="mx-auto text-sm text-foreground/60 underline underline-offset-4 hover:text-accent">
+              {tMijnAdvies.verwijzing}
             </Link>
           )}
         </>

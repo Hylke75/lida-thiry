@@ -7,20 +7,27 @@ import { escapeHtml } from "./inhoud/opmaak";
 import {
   EMAILS_ADVIES,
   EMAILS_ALGEMEEN,
+  EMAILS_BETAALHERINNERING,
   EMAILS_BEVESTIGING,
   EMAILS_HERINNERING,
+  EMAILS_MIJN_ADVIES,
 } from "./inhoud/groepen/emails";
 import { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
 import { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
 import {
   adviesMail,
+  betaalherinneringMail,
   bevestigingMail,
+  cadeaubonKoperMail,
+  cadeaubonMail,
   herinneringMail,
+  mijnAdviesMail,
   nieuwsbriefBevestigingMail,
   omhulsel,
-  reviewUitnodigingMail,
   type BestelOverzicht,
-} from "./email-html";
+  type BonGegevens,
+  type MijnAdviesMailLinks, reviewUitnodigingMail } from "./email-html";
 
 export type { BestelOverzicht } from "./email-html";
 
@@ -146,6 +153,7 @@ export async function stuurAdviesMail(opts: {
     naam: opts.naam,
     sleutel: opts.sleutel,
     downloadUrl: opts.downloadUrl,
+    basisUrl: siteUrl(),
   });
 
   const { error } = await resend().emails.send({
@@ -181,6 +189,106 @@ export async function stuurBeheerderMail(opts: { aan: string; link: string | nul
     html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">${inhoud}</div>`,
   });
   if (error) throw new Error(error.message);
+}
+
+interface Bijlage {
+  bestandsnaam: string;
+  pdf: Buffer;
+}
+
+function bijlagen(lijst: readonly (Bijlage | null | undefined)[]) {
+  const echt = lijst.filter((b): b is Bijlage => Boolean(b));
+  return echt.length
+    ? { attachments: echt.map((b) => ({ filename: b.bestandsnaam, content: b.pdf.toString("base64") })) }
+    : {};
+}
+
+/**
+ * De mail met de cadeaubon (en de bon als PDF), aan de koper of de ontvanger.
+ * Aan de koper gaat ook de factuur mee, als die er is.
+ * Teksten: Beheer → Teksten → Cadeaubon.
+ */
+export async function stuurCadeaubonMail(opts: {
+  aan: "koper" | "ontvanger";
+  email: string;
+  bon: BonGegevens;
+  bonPdf: Bijlage | null;
+  factuur?: (Bijlage & { factuurnummer: string }) | null;
+}) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(CADEAUBON_MAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const basisUrl = siteUrl();
+  const { onderwerp, html } = cadeaubonMail(teksten, algemeen, {
+    aan: opts.aan,
+    bon: opts.bon,
+    bestelUrl: `${basisUrl}/bestellen`,
+    basisUrl,
+    factuurnummer: opts.aan === "koper" ? opts.factuur?.factuurnummer : null,
+  });
+  const { error } = await resend().emails.send({
+    from: afzender(),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+    ...bijlagen([opts.bonPdf, opts.aan === "koper" ? opts.factuur : null]),
+  });
+  if (error) throw new Error(`Resend cadeaubon: ${error.message}`);
+}
+
+/** Bevestiging aan de koper als de bon naar de ontvanger gaat (met de factuur). */
+export async function stuurCadeaubonKoperMail(opts: {
+  email: string;
+  bon: BonGegevens;
+  ontvangerEmail: string;
+  verzendOp: string | null;
+  factuur?: (Bijlage & { factuurnummer: string }) | null;
+}) {
+  const [teksten, bonTeksten, algemeen] = await Promise.all([
+    leesSectie(CADEAUBON_KOPERMAIL),
+    leesSectie(CADEAUBON_MAIL),
+    leesSectie(EMAILS_ALGEMEEN),
+  ]);
+  const { onderwerp, html } = cadeaubonKoperMail(teksten, bonTeksten, algemeen, {
+    bon: opts.bon,
+    ontvangerEmail: opts.ontvangerEmail,
+    verzendOp: opts.verzendOp,
+    basisUrl: siteUrl(),
+    factuurnummer: opts.factuur?.factuurnummer,
+  });
+  const { error } = await resend().emails.send({
+    from: afzender(),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+    ...bijlagen([opts.factuur]),
+  });
+  if (error) throw new Error(`Resend cadeaubon-bevestiging: ${error.message}`);
+}
+
+/** Eenmalige herinnering om een niet-afgeronde betaling alsnog af te ronden. */
+export async function stuurBetaalherinneringMail(opts: {
+  naam: string;
+  email: string;
+  bedragCent: number;
+  valuta: string;
+  link: string;
+}) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BETAALHERINNERING), leesSectie(EMAILS_ALGEMEEN)]);
+  const { onderwerp, html } = betaalherinneringMail(teksten, algemeen, { ...opts, basisUrl: siteUrl() });
+  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend betaalherinnering: ${error.message}`);
+}
+
+/** Nieuwe links naar het advies en/of de nog niet afgeronde test (pagina Mijn advies). */
+export async function stuurMijnAdviesMail(opts: { email: string; naam: string | null } & MijnAdviesMailLinks) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_MIJN_ADVIES), leesSectie(EMAILS_ALGEMEEN)]);
+  const { onderwerp, html } = mijnAdviesMail(teksten, algemeen, {
+    naam: opts.naam,
+    adviezen: opts.adviezen,
+    tests: opts.tests,
+    basisUrl: siteUrl(),
+  });
+  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend mijn advies: ${error.message}`);
 }
 
 /** Vraagt een klant om een review (link naar /review/<token>). Teksten: Beheer → Teksten → Reviews. */

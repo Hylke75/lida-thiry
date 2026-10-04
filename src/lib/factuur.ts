@@ -121,6 +121,67 @@ export async function maakFactuur(orderId: string): Promise<Factuur | null> {
   return { factuurnummer, bestandsnaam: `factuur-${factuurnummer}.pdf`, pdf };
 }
 
+/**
+ * Factuur voor een gekochte cadeaubon: doorlopend nummer uit dezelfde reeks als de
+ * bestellingen, PDF in de bucket 'facturen' en het pad op de cadeaubonbestelling.
+ * Het factuurnummer is de bestandsnaam van het pad (LT-2026-0001.pdf), zodat
+ * een herhaalde aanroep hetzelfde nummer houdt. Gooit bij fouten.
+ */
+export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
+  const supabase = adminClient();
+  const { data: bon, error } = await supabase
+    .from("cadeaubon_bestellingen")
+    .select("id, koper_naam, koper_email, ontvanger_naam, bedrag_cent, valuta, betaald_op, factuur_pad")
+    .eq("id", bonId)
+    .single();
+  if (error || !bon) throw new Error(`Cadeaubon ${bonId} niet gevonden: ${error?.message ?? ""}`);
+
+  const betaaldOp = bon.betaald_op ? new Date(bon.betaald_op) : new Date();
+  let factuurnummer = typeof bon.factuur_pad === "string" ? bon.factuur_pad.replace(/\.pdf$/, "") : null;
+  if (!factuurnummer) {
+    const jaar = jaarInNederland(betaaldOp);
+    const { data: volgnummer, error: e1 } = await supabase.rpc("volgend_factuurvolgnummer", { p_jaar: jaar });
+    if (e1 || typeof volgnummer !== "number") {
+      throw new Error(`Factuurnummer reserveren mislukt: ${e1?.message ?? "geen nummer"}`);
+    }
+    factuurnummer = formatteerFactuurnummer(jaar, volgnummer);
+  }
+
+  const inst = await leesInstellingen();
+  const pdf = await maakFactuurPdf({
+    factuurnummer,
+    factuurdatum: datumNl(betaaldOp),
+    betaaldOp: datumNl(betaaldOp),
+    verkoper: {
+      naam: inst.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+      adres: inst.bedrijf_adres?.trim() || null,
+      kvk: inst.kvk_nummer?.trim() || null,
+      btw: inst.btw_nummer?.trim() || null,
+      email: inst.contact_email?.trim() || null,
+    },
+    koper: { naam: bon.koper_naam, email: bon.koper_email, adresregels: [] },
+    omschrijving: bon.ontvanger_naam
+      ? `Cadeaubon kledingadviestest (voor ${bon.ontvanger_naam})`
+      : "Cadeaubon kledingadviestest",
+    prijsCent: bon.bedrag_cent,
+    kortingCent: 0,
+    kortingscode: null,
+    totaalCent: bon.bedrag_cent,
+    valuta: bon.valuta || "EUR",
+    btwProcent: BTW_PROCENT,
+  });
+
+  const pad = `${factuurnummer}.pdf`;
+  const { error: e2 } = await supabase.storage
+    .from(BUCKET)
+    .upload(pad, pdf, { contentType: "application/pdf", upsert: true });
+  if (e2) throw new Error(`Factuur uploaden mislukt: ${e2.message}`);
+  const { error: e3 } = await supabase.from("cadeaubon_bestellingen").update({ factuur_pad: pad }).eq("id", bonId);
+  if (e3) throw new Error(`Factuurpad opslaan mislukt: ${e3.message}`);
+
+  return { factuurnummer, bestandsnaam: `factuur-${factuurnummer}.pdf`, pdf };
+}
+
 /** Tijdelijke signed URL voor een factuur (bijv. voor het beheer). */
 export async function signedFactuurUrl(pad: string, secondenGeldig = 3600): Promise<string | null> {
   const { data } = await adminClient().storage.from(BUCKET).createSignedUrl(pad, secondenGeldig);

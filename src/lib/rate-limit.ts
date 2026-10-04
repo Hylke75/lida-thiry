@@ -28,8 +28,15 @@ export async function magDoor(
   max: number,
   vensterSeconden: number,
 ): Promise<boolean> {
+  return magDoorOpSleutel(`${naam}:${hashIp(clientIp(request))}`, max, vensterSeconden);
+}
+
+/**
+ * Zoals magDoor, maar op een eigen sleutel (bijv. per e-mailadres). Hash
+ * persoonsgegevens vooraf met hashIp. true = verzoek toegestaan.
+ */
+export async function magDoorOpSleutel(sleutel: string, max: number, vensterSeconden: number): Promise<boolean> {
   try {
-    const sleutel = `${naam}:${hashIp(clientIp(request))}`;
     const { data, error } = await adminClient().rpc("rate_limit_hit", {
       p_sleutel: sleutel,
       p_venster_seconden: vensterSeconden,

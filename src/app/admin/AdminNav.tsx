@@ -39,6 +39,7 @@ const GROEPEN = [
     links: [
       { href: "/admin/bestellingen", label: "Bestellingen" },
       { href: "/admin/kortingscodes", label: "Kortingscodes" },
+      { href: "/admin/cadeaubonnen", label: "Cadeaubonnen" },
     ],
   },
   {

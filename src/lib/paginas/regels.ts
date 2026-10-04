@@ -6,6 +6,8 @@ export const GERESERVEERDE_SLUGS = new Set([
   "api",
   "auth",
   "bestellen",
+  "cadeaubon",
+  "mijn-advies",
   "blog",
   "nieuwsbrief",
   "privacy",

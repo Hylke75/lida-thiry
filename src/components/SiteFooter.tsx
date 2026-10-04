@@ -29,6 +29,12 @@ export async function SiteFooter() {
           <Link href="/blog" className="hover:text-accent">
             Blog
           </Link>
+          <Link href="/cadeaubon" className="hover:text-accent">
+            Cadeaubon
+          </Link>
+          <Link href="/mijn-advies" className="hover:text-accent">
+            Mijn advies
+          </Link>
           <Link href="/voorwaarden" className="hover:text-accent">
             Algemene voorwaarden
           </Link>

@@ -7,10 +7,13 @@ import { vulIn, type SectieWaarden } from "./inhoud/schema";
 import type {
   EMAILS_ADVIES,
   EMAILS_ALGEMEEN,
+  EMAILS_BETAALHERINNERING,
   EMAILS_BEVESTIGING,
   EMAILS_HERINNERING,
+  EMAILS_MIJN_ADVIES,
 } from "./inhoud/groepen/emails";
 import type { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import type { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
 import type { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
 
 export interface Mail {
@@ -128,18 +131,37 @@ export function herinneringMail(
   return { onderwerp: vulIn(t.onderwerp, w), html };
 }
 
+/**
+ * Maakt links naar een pagina van de site (zoals "[Mijn advies](/mijn-advies)")
+ * volledig, zodat ze in een e-mail werken.
+ */
+export function absoluteLinks(tekst: string, basisUrl: string): string {
+  const basis = basisUrl.replace(/\/$/, "");
+  return tekst.replace(/\]\(\/(?!\/)/g, `](${basis}/`);
+}
+
+function herkomst(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
+
 /** Levert het persoonlijke advies; de PDF zelf gaat als bijlage mee. */
 export function adviesMail(
   t: SectieWaarden<typeof EMAILS_ADVIES>,
   algemeen: Algemeen,
-  opts: { naam: string; sleutel: string; downloadUrl: string },
+  opts: { naam: string; sleutel: string; downloadUrl: string; basisUrl?: string },
 ): Mail {
   const w = { naam: opts.naam, type: opts.sleutel };
+  const basis = opts.basisUrl ?? herkomst(opts.downloadUrl);
   const html = omhulsel(
     `
     ${kop(t.kop, w)}
     ${alineas(t.tekst, w)}
-    ${knop(opts.downloadUrl, t.knop, "#1a1a1a", "24px 0")}`,
+    ${knop(opts.downloadUrl, t.knop, "#1a1a1a", "24px 0")}
+    ${t.na_knop?.trim() ? klein(absoluteLinks(t.na_knop, basis), w) : ""}`,
     algemeen.voettekst,
   );
   return { onderwerp: vulIn(t.onderwerp, w), html };
@@ -162,6 +184,191 @@ export function nieuwsbriefBevestigingMail(
       ${knop(opts.link, t.knop, "#a4634d", "28px 0")}
       ${klein(t.na_knop, w)}
       ${reserveLink(t.knop_werkt_niet, opts.link)}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(t.onderwerp, w), html };
+}
+
+// Cadeaubon -----------------------------------------------------------------------------
+
+/** De gegevens op de bon (in de mail en de PDF). */
+export interface BonGegevens {
+  koperNaam: string;
+  ontvangerNaam: string | null;
+  bedragCent: number;
+  valuta: string;
+  code: string;
+  /** ISO-moment of yyyy-mm-dd. */
+  geldigTot: string;
+  boodschap: string | null;
+}
+
+export function datumLang(waarde: string): string {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(waarde) ? `${waarde}T12:00:00Z` : waarde;
+  return new Date(iso).toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Amsterdam",
+  });
+}
+
+/** De bon als kader in de mail: bedrag, code, geldigheid en de boodschap. */
+export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
+  const voorVan = [
+    b.ontvangerNaam ? `Voor ${escapeHtml(b.ontvangerNaam)}` : "",
+    b.koperNaam ? `van ${escapeHtml(b.koperNaam)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const boodschap = b.boodschap?.trim()
+    ? `<tr><td style="padding:0 28px 24px;text-align:left">
+          <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#a4634d">${escapeHtml(boodschapLabel)}</p>
+          <p style="margin:0;font-style:italic;color:#333">“${escapeHtml(b.boodschap.trim()).replace(/\n/g, "<br>")}”</p>
+        </td></tr>`
+    : "";
+  return `
+      <table role="presentation" style="width:100%;border-collapse:separate;margin:24px 0;background:#f6efe9;border:2px dashed #a4634d;border-radius:16px">
+        <tr><td style="padding:28px 28px 20px;text-align:center">
+          <p style="margin:0;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:#a4634d">Cadeaubon</p>
+          <p style="margin:6px 0 0;font-size:13px;color:#555">Persoonlijk kledingadvies · Lida Thiry</p>
+          <p style="margin:18px 0 0;font-size:36px;font-weight:700;color:#1a1a1a">${bedrag(b.bedragCent, b.valuta)}</p>
+          ${voorVan ? `<p style="margin:6px 0 0;font-size:14px;color:#555">${voorVan}</p>` : ""}
+          <p style="margin:20px 0 4px;font-size:12px;color:#555">Code</p>
+          <p style="margin:0;font-family:Menlo,Consolas,monospace;font-size:22px;letter-spacing:2px;font-weight:700;color:#1a1a1a">${escapeHtml(b.code)}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#555">Geldig tot en met ${escapeHtml(datumLang(b.geldigTot))}</p>
+        </td></tr>${boodschap}
+      </table>`;
+}
+
+function bonWaarden(b: BonGegevens) {
+  return {
+    koper: b.koperNaam,
+    ontvanger: b.ontvangerNaam?.trim() || "daar",
+    bedrag: bedrag(b.bedragCent, b.valuta),
+    code: b.code,
+    geldig_tot: datumLang(b.geldigTot),
+  };
+}
+
+/** De mail met de cadeaubon, aan de koper of direct aan de ontvanger. */
+export function cadeaubonMail(
+  t: SectieWaarden<typeof CADEAUBON_MAIL>,
+  algemeen: Algemeen,
+  opts: { aan: "koper" | "ontvanger"; bon: BonGegevens; bestelUrl: string; basisUrl: string; factuurnummer?: string | null },
+): Mail {
+  const w = bonWaarden(opts.bon);
+  const naarKoper = opts.aan === "koper";
+  const factuur = naarKoper && opts.factuurnummer
+    ? `<p style="${KLEIN}">Factuurnummer ${escapeHtml(opts.factuurnummer)} — de factuur vind je als bijlage bij deze mail.</p>`
+    : "";
+  const html = omhulsel(
+    `
+      ${kop(naarKoper ? t.kopKoper : t.kopOntvanger, w)}
+      ${alineas(absoluteLinks(naarKoper ? t.tekstKoper : t.tekstOntvanger, opts.basisUrl), w)}
+      ${bonHtml(opts.bon, t.boodschapLabel)}
+      ${alineas(absoluteLinks(t.gebruik, opts.basisUrl), w)}
+      ${knop(opts.bestelUrl, t.knop, "#a4634d", "28px 0")}
+      ${factuur}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(naarKoper ? t.onderwerpKoper : t.onderwerpOntvanger, w), html };
+}
+
+/** Bevestiging aan de koper als de bon (nu of later) naar de ontvanger gaat. */
+export function cadeaubonKoperMail(
+  t: SectieWaarden<typeof CADEAUBON_KOPERMAIL>,
+  bon: SectieWaarden<typeof CADEAUBON_MAIL>,
+  algemeen: Algemeen,
+  opts: {
+    bon: BonGegevens;
+    ontvangerEmail: string;
+    /** yyyy-mm-dd als de bon later wordt verstuurd, anders null. */
+    verzendOp: string | null;
+    basisUrl: string;
+    factuurnummer?: string | null;
+  },
+): Mail {
+  const w = {
+    koper: opts.bon.koperNaam,
+    ontvanger: opts.bon.ontvangerNaam?.trim() || opts.ontvangerEmail,
+    ontvanger_email: opts.ontvangerEmail,
+    datum: opts.verzendOp ? datumLang(opts.verzendOp) : "",
+  };
+  const factuur = opts.factuurnummer
+    ? `<p style="${KLEIN}">Factuurnummer ${escapeHtml(opts.factuurnummer)}</p>`
+    : "";
+  const html = omhulsel(
+    `
+      ${kop(t.kop, w)}
+      ${alineas(absoluteLinks(opts.verzendOp ? t.tekstGepland : t.tekstVerzonden, opts.basisUrl), w)}
+      ${bonHtml(opts.bon, bon.boodschapLabel)}
+      ${alineas(absoluteLinks(t.naBon, opts.basisUrl), w)}
+      ${factuur}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(t.onderwerp, w), html };
+}
+
+// Betaalherinnering en Mijn advies --------------------------------------------------
+
+/** Eenmalige herinnering als een bestelling is begonnen maar niet betaald. */
+export function betaalherinneringMail(
+  t: SectieWaarden<typeof EMAILS_BETAALHERINNERING>,
+  algemeen: Algemeen,
+  opts: { naam: string; bedragCent: number; valuta: string; link: string; basisUrl: string },
+): Mail {
+  const w = { naam: opts.naam, bedrag: bedrag(opts.bedragCent, opts.valuta) };
+  const html = omhulsel(
+    `
+      ${kop(t.kop, w)}
+      ${alineas(absoluteLinks(t.tekst, opts.basisUrl), w)}
+      ${knop(opts.link, t.knop, "#a4634d", "28px 0")}
+      ${klein(absoluteLinks(t.na_knop, opts.basisUrl), w)}
+      ${reserveLink(t.knop_werkt_niet, opts.link)}`,
+    algemeen.voettekst,
+  );
+  return { onderwerp: vulIn(t.onderwerp, w), html };
+}
+
+export interface MijnAdviesMailLinks {
+  adviezen: readonly { type: string; afgerondOp: string | null; url: string }[];
+  tests: readonly { besteldOp: string; verlooptOp: string | null; url: string }[];
+}
+
+/** Mail met nieuwe links naar de adviezen en de nog niet afgeronde tests. */
+export function mijnAdviesMail(
+  t: SectieWaarden<typeof EMAILS_MIJN_ADVIES>,
+  algemeen: Algemeen,
+  opts: { naam: string | null; basisUrl: string } & MijnAdviesMailLinks,
+): Mail {
+  const w = { naam: opts.naam?.trim() || "klant" };
+  const subkop = (tekst: string) => `<h2 style="font-size:16px;margin:28px 0 8px">${escapeHtml(tekst)}</h2>`;
+  const adviezen = opts.adviezen.length
+    ? `${subkop(t.adviezen_kop)}${opts.adviezen
+        .map(
+          (a) => `<p style="margin:0 0 4px">Type <strong>${escapeHtml(a.type)}</strong>${
+            a.afgerondOp ? ` <span style="color:#555">(afgerond op ${escapeHtml(datumLang(a.afgerondOp))})</span>` : ""
+          }</p>${knop(a.url, t.advies_knop, "#1a1a1a", "12px 0 20px")}`,
+        )
+        .join("")}`
+    : "";
+  const tests = opts.tests.length
+    ? `${subkop(t.tests_kop)}${opts.tests
+        .map(
+          (x) => `<p style="margin:0 0 4px">Besteld op ${escapeHtml(datumLang(x.besteldOp))}${
+            x.verlooptOp ? ` <span style="color:#555">(link geldig t/m ${escapeHtml(datumLang(x.verlooptOp))})</span>` : ""
+          }</p>${knop(x.url, t.test_knop, "#a4634d", "12px 0 20px")}`,
+        )
+        .join("")}`
+    : "";
+  const html = omhulsel(
+    `
+      ${kop(t.kop, w)}
+      ${alineas(absoluteLinks(t.tekst, opts.basisUrl), w)}
+      ${adviezen}
+      ${tests}
+      ${klein(absoluteLinks(t.na, opts.basisUrl), w)}`,
     algemeen.voettekst,
   );
   return { onderwerp: vulIn(t.onderwerp, w), html };

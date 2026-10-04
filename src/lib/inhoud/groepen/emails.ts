@@ -124,12 +124,85 @@ export const EMAILS_ADVIES = sectie({
         "Beste {naam},\n\nJe advies is klaar! Op basis van je antwoorden is jouw type **{type}**. Je vindt je persoonlijke advies in de bijgevoegde PDF.",
     },
     knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Bekijk je advies (PDF)" },
+    na_knop: {
+      soort: "opmaak",
+      label: "Kleine letters onder de knop",
+      uitleg: "Links naar een pagina van de site (zoals /mijn-advies) worden in de mail automatisch volledig gemaakt.",
+      regels: 2,
+      standaard: "Deze mail later kwijt? Via [Mijn advies](/mijn-advies) vraag je eenvoudig een nieuwe downloadlink aan.",
+    },
+  },
+});
+
+export const EMAILS_BETAALHERINNERING = sectie({
+  sleutel: "emails.betaalherinnering",
+  titel: "Betaalherinnering (betaling niet afgerond)",
+  uitleg:
+    "Wordt één keer verstuurd als iemand wel een bestelling begon, maar de betaling niet afrondde (na het aantal uur uit Instellingen, binnen 7 dagen). Niet als er op hetzelfde e-mailadres inmiddels is betaald. De knop maakt een nieuwe betaling aan.",
+  variabelen: {
+    naam: "naam van de klant",
+    bedrag: "het te betalen bedrag, bijv. € 49,00",
+  },
+  velden: {
+    onderwerp: { soort: "tekst", label: "Onderwerp", standaard: "Je bestelling staat nog voor je klaar" },
+    kop: { soort: "tekst", label: "Kop", standaard: "Je bestelling is nog niet afgerond" },
+    tekst: {
+      soort: "opmaak",
+      label: "Tekst (boven de knop)",
+      uitleg: OPMAAK_UITLEG,
+      regels: 5,
+      standaard:
+        "Beste {naam},\n\nJe was bezig met het bestellen van de kledingadviestest, maar de betaling is niet afgerond. Misschien werd je gestoord of ging er iets mis bij de bank? Geen probleem: met de knop hieronder rond je je bestelling van {bedrag} alsnog af.",
+    },
+    knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Bestelling afronden" },
+    na_knop: {
+      soort: "opmaak",
+      label: "Kleine letters onder de knop",
+      regels: 2,
+      standaard:
+        "Heb je inmiddels al besteld, of wil je de test toch niet? Dan kun je deze mail negeren. We sturen je hierover geen herinnering meer.",
+    },
+    knop_werkt_niet: {
+      soort: "tekst",
+      label: "Kleine letters: regel boven de reservelink",
+      standaard: "Werkt de knop niet? Kopieer deze link:",
+    },
+  },
+});
+
+export const EMAILS_MIJN_ADVIES = sectie({
+  sleutel: "emails.mijn_advies",
+  titel: "Advies opnieuw ontvangen (Mijn advies)",
+  uitleg:
+    "Wordt verstuurd als iemand op de pagina ‘Mijn advies’ zijn of haar e-mailadres invult en er bestellingen op dat adres zijn. Onder de tekst staan automatisch de links.",
+  variabelen: { naam: "naam van de klant" },
+  velden: {
+    onderwerp: { soort: "tekst", label: "Onderwerp", standaard: "Je links voor je kledingadvies" },
+    kop: { soort: "tekst", label: "Kop", standaard: "Hier zijn je links" },
+    tekst: {
+      soort: "opmaak",
+      label: "Tekst (boven de links)",
+      uitleg: OPMAAK_UITLEG,
+      regels: 4,
+      standaard: "Beste {naam},\n\nJe vroeg om nieuwe links voor je kledingadvies. Hieronder vind je ze.",
+    },
+    adviezen_kop: { soort: "tekst", label: "Kop boven de adviezen", standaard: "Je persoonlijke advies" },
+    advies_knop: { soort: "tekst", label: "Knoptekst bij een advies", max: 60, standaard: "Download je advies (PDF)" },
+    tests_kop: { soort: "tekst", label: "Kop boven de nog niet afgeronde tests", standaard: "Verder met je test" },
+    test_knop: { soort: "tekst", label: "Knoptekst bij een test", max: 60, standaard: "Ga verder met de test" },
+    na: {
+      soort: "opmaak",
+      label: "Kleine letters onderaan",
+      regels: 2,
+      standaard: "Heb je dit niet zelf aangevraagd? Dan kun je deze mail negeren; er is niets veranderd.",
+    },
   },
 });
 
 export const EMAILS: Groep = {
   sleutel: "emails",
   titel: "E-mails",
-  omschrijving: "De e-mails aan klanten: bevestiging met testlink, herinnering en het persoonlijke advies.",
-  secties: [EMAILS_BEVESTIGING, EMAILS_HERINNERING, EMAILS_ADVIES, EMAILS_ALGEMEEN],
+  omschrijving:
+    "De e-mails aan klanten: bevestiging met testlink, herinnering, het persoonlijke advies, de betaalherinnering en ‘Mijn advies’.",
+  secties: [EMAILS_BEVESTIGING, EMAILS_HERINNERING, EMAILS_ADVIES, EMAILS_BETAALHERINNERING, EMAILS_MIJN_ADVIES, EMAILS_ALGEMEEN],
 };
