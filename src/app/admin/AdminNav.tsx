@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/admin/lichaamstypes", label: "Lichaamstypes" },
   { href: "/admin/types", label: "Adviestypes" },
   { href: "/admin/beeldbank", label: "Beeldbank" },
+  { href: "/admin/teksten", label: "Teksten" },
   { href: "/admin/instellingen", label: "Instellingen" },
   { href: "/admin/meetinstructies", label: "Meetinstructies" },
   { href: "/admin/kortingscodes", label: "Kortingscodes" },
