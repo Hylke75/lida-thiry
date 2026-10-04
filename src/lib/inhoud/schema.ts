@@ -201,7 +201,7 @@ export function vulIn(tekst: string, waarden: Readonly<Record<string, string | n
   );
 }
 
-/** Of een tekst nog een duidelijke invulplek bevat, zoals "[aan te vullen: …]". */
+/** Of een tekst nog een invulplek tussen blokhaken bevat, zoals "[datum]" of "[aan te vullen: …]". */
 export function bevatPlaceholder(waarden: Readonly<Record<string, unknown>>): boolean {
   const teksten = Object.values(waarden).flatMap((v) =>
     typeof v === "string"
@@ -210,5 +210,6 @@ export function bevatPlaceholder(waarden: Readonly<Record<string, unknown>>): bo
         ? v.flatMap((i) => (i && typeof i === "object" ? Object.values(i as Record<string, unknown>) : []))
         : [],
   );
-  return teksten.some((t) => typeof t === "string" && /\[(aan te vullen|invullen)/i.test(t));
+  // Tekst tussen [blokhaken] die geen link is, zoals [datum] of [aan te vullen: …].
+  return teksten.some((t) => typeof t === "string" && /\[[^\]\n]{2,}\](?!\()/.test(t));
 }

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Identiteit, JuridischePagina } from "@/components/JuridischePagina";
+import { contactEmail, Identiteit, JuridischePagina } from "@/components/JuridischePagina";
 import { Opmaak } from "@/components/Opmaak";
 import { leesSectie } from "@/lib/inhoud/lees";
+import { bevatPlaceholder } from "@/lib/inhoud/schema";
 import { JURIDISCH_VOORWAARDEN } from "@/lib/inhoud/groepen/juridisch";
 
 export const metadata: Metadata = {
@@ -14,10 +15,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function VoorwaardenPage() {
-  const waarden = await leesSectie(JURIDISCH_VOORWAARDEN);
+  const [waarden, email] = await Promise.all([leesSectie(JURIDISCH_VOORWAARDEN), contactEmail()]);
   return (
-    <JuridischePagina titel="Algemene voorwaarden" bijgewerkt={waarden.bijgewerkt}>
-      <Opmaak tekst={waarden.tekst} blokken={{ bedrijfsgegevens: <Identiteit /> }} />
+    <JuridischePagina titel="Algemene voorwaarden" bijgewerkt={waarden.bijgewerkt}
+      concept={bevatPlaceholder(waarden) || email.startsWith("[")}
+    >
+      <Opmaak tekst={waarden.tekst} variabelen={{ contact_email: email }} blokken={{ bedrijfsgegevens: <Identiteit /> }} />
     </JuridischePagina>
   );
 }

@@ -4,6 +4,7 @@ const UITLEG =
   "Juridische teksten: laat wijzigingen controleren door een deskundige. Gegevens tussen [blokhaken] moeten nog worden ingevuld. " +
   "Een regel met alleen {bedrijfsgegevens} toont het blok met de bedrijfsgegevens (naam, adres, e-mail, KvK- en btw-nummer) uit Beheer → Instellingen.";
 
+const CONTACT_EMAIL = "het contact-e-mailadres (Beheer → Instellingen); zolang dat leeg is staat hier [e-mailadres]";
 const BEDRIJFSGEGEVENS =
   "op een eigen regel: het blok met de bedrijfsgegevens uit Beheer → Instellingen";
 
@@ -34,7 +35,7 @@ Het aanbod bestaat uit eenmalige toegang tot de online test en het daarop gebase
 - De prijs staat vermeld op de website en op de bestelpagina. Alle prijzen zijn in euro's en **inclusief btw**. Er komen geen verzend- of andere kosten bij.
 - Betaling vindt vooraf plaats via onze betaaldienstverlener **Mollie**, met de betaalmethoden die daar worden aangeboden (zoals iDEAL).
 - De overeenkomst komt tot stand op het moment dat je betaling is ontvangen. Je ontvangt daarvan een bevestiging per e-mail.
-- Op verzoek ontvang je een factuur. Neem daarvoor contact op via [e-mailadres].
+- Op verzoek ontvang je een factuur. Neem daarvoor contact op via {contact_email}.
 
 ## 6. Levering
 
@@ -56,7 +57,7 @@ Wij doen ons best om een zorgvuldig en bruikbaar advies te geven. Het advies is 
 
 ## 10. Klachten
 
-Ben je niet tevreden of werkt er iets niet zoals het hoort? Laat het ons binnen een redelijke termijn weten via [e-mailadres], met een duidelijke omschrijving. We reageren binnen 14 dagen. Komen we er samen niet uit, dan kun je het geschil voorleggen aan de bevoegde rechter.
+Ben je niet tevreden of werkt er iets niet zoals het hoort? Laat het ons binnen een redelijke termijn weten via {contact_email}, met een duidelijke omschrijving. We reageren binnen 14 dagen. Komen we er samen niet uit, dan kun je het geschil voorleggen aan de bevoegde rechter.
 
 ## 11. Privacy
 
@@ -141,11 +142,11 @@ Je hebt het recht om:
 - de verwerking te laten **beperken** of er **bezwaar** tegen te maken;
 - je gegevens in een gangbaar formaat te ontvangen (**dataportabiliteit**).
 
-Stuur je verzoek naar [e-mailadres]. We reageren binnen een maand. Om zeker te weten dat het verzoek van jou komt, kunnen we je vragen je identiteit te bevestigen, bijvoorbeeld door te mailen vanaf het e-mailadres waarmee je hebt besteld.
+Stuur je verzoek naar {contact_email}. We reageren binnen een maand. Om zeker te weten dat het verzoek van jou komt, kunnen we je vragen je identiteit te bevestigen, bijvoorbeeld door te mailen vanaf het e-mailadres waarmee je hebt besteld.
 
 ## 10. Contact en klachten
 
-Heb je vragen over deze privacyverklaring of over hoe we met je gegevens omgaan? Neem contact op via [e-mailadres]. Ben je niet tevreden over hoe wij met je gegevens omgaan, dan heb je het recht een klacht in te dienen bij de [Autoriteit Persoonsgegevens](https://autoriteitpersoonsgegevens.nl). We stellen het op prijs als je eerst contact met ons opneemt, zodat we samen naar een oplossing kunnen zoeken.
+Heb je vragen over deze privacyverklaring of over hoe we met je gegevens omgaan? Neem contact op via {contact_email}. Ben je niet tevreden over hoe wij met je gegevens omgaan, dan heb je het recht een klacht in te dienen bij de [Autoriteit Persoonsgegevens](https://autoriteitpersoonsgegevens.nl). We stellen het op prijs als je eerst contact met ons opneemt, zodat we samen naar een oplossing kunnen zoeken.
 
 ## 11. Wijzigingen
 
@@ -155,7 +156,7 @@ export const JURIDISCH_VOORWAARDEN = sectie({
   sleutel: "juridisch.voorwaarden",
   titel: "Algemene voorwaarden",
   uitleg: UITLEG,
-  variabelen: { bedrijfsgegevens: BEDRIJFSGEGEVENS },
+  variabelen: { bedrijfsgegevens: BEDRIJFSGEGEVENS, contact_email: CONTACT_EMAIL },
   velden: {
     bijgewerkt: { soort: "tekst", label: "Laatst bijgewerkt", standaard: "[datum]" },
     tekst: { soort: "opmaak", label: "Tekst", regels: 30, standaard: VOORWAARDEN_TEKST },
@@ -170,6 +171,7 @@ export const JURIDISCH_PRIVACY = sectie({
     bewaartermijn_dagen:
       "het aantal dagen waarna lichaamsmaten worden geanonimiseerd (Beheer → Instellingen, bewaartermijn maten)",
     bedrijfsgegevens: BEDRIJFSGEGEVENS,
+    contact_email: CONTACT_EMAIL,
   },
   velden: {
     bijgewerkt: { soort: "tekst", label: "Laatst bijgewerkt", standaard: "[datum]" },

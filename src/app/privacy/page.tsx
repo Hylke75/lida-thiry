@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Identiteit, JuridischePagina } from "@/components/JuridischePagina";
+import { contactEmail, Identiteit, JuridischePagina } from "@/components/JuridischePagina";
 import { Opmaak } from "@/components/Opmaak";
 import { leesInstelling } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
+import { bevatPlaceholder } from "@/lib/inhoud/schema";
 import { JURIDISCH_PRIVACY } from "@/lib/inhoud/groepen/juridisch";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +27,19 @@ async function bewaartermijnMatenDagen(): Promise<number> {
 }
 
 export default async function PrivacyPage() {
-  const [dagen, waarden] = await Promise.all([bewaartermijnMatenDagen(), leesSectie(JURIDISCH_PRIVACY)]);
+  const [dagen, waarden, email] = await Promise.all([
+    bewaartermijnMatenDagen(),
+    leesSectie(JURIDISCH_PRIVACY),
+    contactEmail(),
+  ]);
 
   return (
-    <JuridischePagina titel="Privacyverklaring" bijgewerkt={waarden.bijgewerkt}>
+    <JuridischePagina titel="Privacyverklaring" bijgewerkt={waarden.bijgewerkt}
+      concept={bevatPlaceholder(waarden) || email.startsWith("[")}
+    >
       <Opmaak
         tekst={waarden.tekst}
-        variabelen={{ bewaartermijn_dagen: dagen }}
+        variabelen={{ bewaartermijn_dagen: dagen, contact_email: email }}
         blokken={{ bedrijfsgegevens: <Identiteit /> }}
       />
     </JuridischePagina>

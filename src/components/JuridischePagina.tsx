@@ -6,10 +6,13 @@ import { leesInstellingen } from "@/lib/instellingen";
 export function JuridischePagina({
   titel,
   bijgewerkt,
+  concept,
   children,
 }: {
   titel: string;
   bijgewerkt: string;
+  /** Toon de conceptmelding (zolang er nog [invulplekken] in de tekst staan). */
+  concept: boolean;
   children: ReactNode;
 }) {
   return (
@@ -20,10 +23,12 @@ export function JuridischePagina({
       >
         ← Terug naar de startpagina
       </Link>
+      {concept && (
       <p className="rounded-lg border border-accent/30 bg-accent-zacht px-4 py-3 text-sm font-medium text-accent">
         Concept — laten controleren. Deze tekst is een concept en moet nog juridisch
         worden nagekeken en aangevuld (zie de gegevens tussen [blokhaken]).
       </p>
+      )}
       <header>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{titel}</h1>
         <p className="mt-2 text-sm text-foreground/50">Laatst bijgewerkt: {bijgewerkt}</p>
@@ -39,6 +44,12 @@ export function JuridischePagina({
  * Identiteitsblok van de ondernemer, gevuld uit de instellingen (Beheer → Instellingen).
  * Wat nog niet is ingevuld, blijft zichtbaar als gemarkeerde placeholder.
  */
+/** Het contact-e-mailadres uit de instellingen, of een zichtbare invulplek. */
+export async function contactEmail(): Promise<string> {
+  const inst = await leesInstellingen().catch(() => ({}) as Record<string, string | null>);
+  return inst.contact_email?.trim() || "[e-mailadres]";
+}
+
 export async function Identiteit() {
   const inst = await leesInstellingen().catch(() => ({}) as Record<string, string | null>);
   const waarde = (sleutel: string, placeholder: string) => inst[sleutel]?.trim() || placeholder;
