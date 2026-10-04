@@ -115,7 +115,8 @@ async function verwijderBestelling(formData: FormData) {
   const { data } = await supabase.from("orders").select("pdf_pad").eq("id", id).single();
   if (data?.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
   await supabase.from("orders").delete().eq("id", id);
-  redirect("/admin");
+  revalidatePath("/admin/bestellingen");
+  redirect("/admin/bestellingen");
 }
 
 function Regel({ label, waarde }: { label: string; waarde: React.ReactNode }) {
@@ -146,9 +147,9 @@ export default async function OrderDetail({
   if (!order) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6 sm:p-8">
-        <AdminNav />
+        <AdminNav actief="/admin/bestellingen" />
         <p>Bestelling niet gevonden.</p>
-        <Link href="/admin" className="text-sm underline">← Terug</Link>
+        <Link href="/admin/bestellingen" className="text-sm underline">← Terug</Link>
       </main>
     );
   }
@@ -165,8 +166,8 @@ export default async function OrderDetail({
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-6 sm:p-8">
-      <AdminNav />
-      <Link href="/admin" className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">← Terug naar overzicht</Link>
+      <AdminNav actief="/admin/bestellingen" />
+      <Link href="/admin/bestellingen" className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">← Terug naar bestellingen</Link>
       <h1 className="text-2xl font-semibold tracking-tight">{order.klantnaam}</h1>
 
       {m && <Melding soort={m.soort}>{m.tekst}</Melding>}

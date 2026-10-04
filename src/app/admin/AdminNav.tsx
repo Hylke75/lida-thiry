@@ -1,47 +1,174 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-const LINKS = [
-  { href: "/admin", label: "Overzicht" },
-  { href: "/admin/lichaamstypes", label: "Lichaamstypes" },
-  { href: "/admin/types", label: "Adviestypes" },
-  { href: "/admin/beeldbank", label: "Beeldbank" },
-  { href: "/admin/teksten", label: "Teksten" },
-  { href: "/admin/instellingen", label: "Instellingen" },
-  { href: "/admin/meetinstructies", label: "Meetinstructies" },
-  { href: "/admin/kortingscodes", label: "Kortingscodes" },
-] as const;
+interface NavLink {
+  href: string;
+  label: string;
+}
 
-export type AdminPagina = (typeof LINKS)[number]["href"];
+interface NavGroep {
+  label: string;
+  links: readonly NavLink[];
+}
+
+/**
+ * De beheernavigatie in groepen. Een groep met één pagina is een gewone link;
+ * bij een groep met meer pagina's verschijnt een tweede rij met die pagina's
+ * zodra je in die groep zit.
+ */
+const GROEPEN = [
+  { label: "Overzicht", links: [{ href: "/admin", label: "Overzicht" }] },
+  {
+    label: "Verkoop",
+    links: [
+      { href: "/admin/bestellingen", label: "Bestellingen" },
+      { href: "/admin/kortingscodes", label: "Kortingscodes" },
+    ],
+  },
+  {
+    label: "Advies",
+    links: [
+      { href: "/admin/lichaamstypes", label: "Lichaamstypes" },
+      { href: "/admin/types", label: "Adviestypes" },
+      { href: "/admin/beeldbank", label: "Beeldbank" },
+    ],
+  },
+  { label: "Test", links: [{ href: "/admin/meetinstructies", label: "Meetinstructies" }] },
+  { label: "Teksten", links: [{ href: "/admin/teksten", label: "Teksten" }] },
+  {
+    label: "Instellingen",
+    links: [
+      { href: "/admin/instellingen", label: "Algemeen" },
+      { href: "/admin/beheerders", label: "Beheerders" },
+    ],
+  },
+] as const satisfies readonly NavGroep[];
+
+export type AdminPagina = (typeof GROEPEN)[number]["links"][number]["href"];
+
+function groepIsActief(g: NavGroep, actief: string | undefined): boolean {
+  return g.links.some((l) => l.href === actief);
+}
+
+function pil(actief: boolean): string {
+  return `rounded-full px-3 py-1.5 ${
+    actief
+      ? "bg-accent-zacht font-medium text-accent"
+      : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"
+  }`;
+}
+
+function Uitloggen({ className }: { className?: string }) {
+  return (
+    <form action="/auth/uitloggen" method="post" className={className}>
+      <button className="px-2 py-1.5 text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50 dark:hover:text-white/80">
+        Uitloggen
+      </button>
+    </form>
+  );
+}
 
 /** Navigatiebalk bovenaan elke beheerpagina. */
 export function AdminNav({ actief }: { actief?: AdminPagina }) {
+  const groepen: readonly NavGroep[] = GROEPEN;
+  const huidigeGroep = groepen.find((g) => groepIsActief(g, actief));
+  const huidigeLink = huidigeGroep?.links.find((l) => l.href === actief);
+  const subLinks = huidigeGroep && huidigeGroep.links.length > 1 ? huidigeGroep.links : null;
+
   return (
-    <header className="flex flex-col gap-3 border-b border-black/10 pb-4 dark:border-white/15 sm:flex-row sm:items-center sm:justify-between">
-      <Link href="/admin" className="font-serif text-xl tracking-tight">
-        Beheer
-      </Link>
-      <nav className="flex flex-wrap items-center gap-1 text-sm">
-        {LINKS.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            aria-current={actief === l.href ? "page" : undefined}
-            className={`rounded-full px-3 py-1.5 ${
-              actief === l.href
-                ? "bg-accent-zacht font-medium text-accent"
-                : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"
-            }`}
-          >
-            {l.label}
+    <header className="flex flex-col gap-3 border-b border-black/10 pb-4 dark:border-white/15">
+      {/* Telefoon: compacte balk met uitklapmenu. */}
+      <details className="group sm:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="font-serif text-xl tracking-tight">Beheer</span>
+            {huidigeLink && (
+              <span className="truncate text-sm text-black/50 dark:text-white/50">
+                {huidigeGroep && huidigeGroep.links.length > 1 ? `${huidigeGroep.label} · ` : ""}
+                {huidigeLink.label}
+              </span>
+            )}
+          </span>
+          <span className="shrink-0 rounded-full border border-black/15 px-3 py-1.5 text-sm dark:border-white/20">
+            <span className="group-open:hidden">Menu ☰</span>
+            <span className="hidden group-open:inline">Sluiten ✕</span>
+          </span>
+        </summary>
+        <nav aria-label="Beheer" className="mt-3 flex flex-col gap-3 text-sm">
+          {groepen.map((g) =>
+            g.links.length === 1 ? (
+              <Link
+                key={g.label}
+                href={g.links[0].href}
+                aria-current={actief === g.links[0].href ? "page" : undefined}
+                className={`${pil(actief === g.links[0].href)} w-fit`}
+              >
+                {g.label}
+              </Link>
+            ) : (
+              <div key={g.label} className="flex flex-col gap-1">
+                <span className="px-3 text-xs uppercase tracking-wide text-black/40 dark:text-white/40">{g.label}</span>
+                <div className="flex flex-wrap gap-1">
+                  {g.links.map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      aria-current={actief === l.href ? "page" : undefined}
+                      className={pil(actief === l.href)}
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ),
+          )}
+          <Uitloggen className="border-t border-black/10 pt-2 dark:border-white/15" />
+        </nav>
+      </details>
+
+      {/* Groter scherm: groepen op één rij, de pagina's van de actieve groep eronder. */}
+      <div className="hidden flex-col gap-2 sm:flex">
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/admin" className="font-serif text-xl tracking-tight">
+            Beheer
           </Link>
-        ))}
-        <form action="/auth/uitloggen" method="post" className="ml-2">
-          <button className="px-2 py-1.5 text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50">
-            Uitloggen
-          </button>
-        </form>
-      </nav>
+          <nav aria-label="Beheer" className="flex flex-wrap items-center justify-end gap-1 text-sm">
+            {groepen.map((g) => {
+              const isActief = groepIsActief(g, actief);
+              return (
+                <Link
+                  key={g.label}
+                  href={g.links[0].href}
+                  aria-current={isActief ? (g.links.length === 1 ? "page" : "true") : undefined}
+                  className={pil(isActief)}
+                >
+                  {g.label}
+                </Link>
+              );
+            })}
+            <Uitloggen className="ml-2" />
+          </nav>
+        </div>
+        {subLinks && (
+          <nav aria-label={huidigeGroep?.label} className="flex flex-wrap gap-1 text-sm">
+            {subLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={actief === l.href ? "page" : undefined}
+                className={`rounded-full border px-3 py-1 ${
+                  actief === l.href
+                    ? "border-accent/40 font-medium text-accent"
+                    : "border-black/10 text-black/60 hover:bg-black/5 dark:border-white/15 dark:text-white/60 dark:hover:bg-white/5"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </div>
     </header>
   );
 }
