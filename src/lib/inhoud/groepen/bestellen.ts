@@ -108,10 +108,49 @@ export const BESTELLEN_MISLUKT = sectie({
   },
 });
 
+export const BESTELLEN_HERVAT = sectie({
+  sleutel: "bestellen.hervat",
+  titel: "Bestelling afronden (link uit de betaalherinnering)",
+  uitleg: "De pagina achter de knop in de betaalherinnering. De knop maakt een nieuwe betaling aan.",
+  variabelen: { naam: "naam van de klant", bedrag: "het te betalen bedrag, bijv. € 49,00" },
+  velden: {
+    titel: { soort: "tekst", label: "Titel", standaard: "Je bestelling afronden" },
+    tekst: {
+      soort: "tekstvak",
+      label: "Tekst",
+      regels: 3,
+      standaard: "Hoi {naam}, je bestelling van de kledingadviestest ({bedrag}) staat nog voor je klaar. Met de knop ga je naar de betaling.",
+    },
+    knop: { soort: "tekst", label: "Knoptekst", standaard: "Verder naar betalen" },
+    alBetaaldTitel: { soort: "tekst", label: "Titel als er al betaald is", standaard: "Deze bestelling is al betaald" },
+    alBetaaldTekst: {
+      soort: "tekstvak",
+      label: "Tekst als er al betaald is",
+      regels: 2,
+      standaard: "Je hoeft niets meer te doen. De link naar je test staat in de bevestigingsmail; kwijt? Vraag hem opnieuw aan via ‘Mijn advies’.",
+    },
+    ongeldigTitel: { soort: "tekst", label: "Titel als de link niet (meer) werkt", standaard: "Deze link werkt niet meer" },
+    ongeldigTekst: {
+      soort: "tekstvak",
+      label: "Tekst als de link niet (meer) werkt",
+      regels: 2,
+      standaard: "De link is verlopen of de bestelling kan niet meer worden afgerond. Je kunt de test gewoon opnieuw bestellen.",
+    },
+    opnieuwKnop: { soort: "tekst", label: "Knop naar de bestelpagina", standaard: "Opnieuw bestellen" },
+  },
+});
+
 export const BESTELLEN: Groep = {
   sleutel: "bestellen",
   titel: "Bestellen",
   omschrijving: "De bestelpagina, het bestelformulier en de bedankpagina na het betalen.",
   bekijkUrl: "/bestellen",
-  secties: [BESTELLEN_PAGINA, BESTELLEN_FORMULIER, BESTELLEN_BETAALD, BESTELLEN_VERWERKEN, BESTELLEN_MISLUKT],
+  secties: [
+    BESTELLEN_PAGINA,
+    BESTELLEN_FORMULIER,
+    BESTELLEN_BETAALD,
+    BESTELLEN_VERWERKEN,
+    BESTELLEN_MISLUKT,
+    BESTELLEN_HERVAT,
+  ],
 };

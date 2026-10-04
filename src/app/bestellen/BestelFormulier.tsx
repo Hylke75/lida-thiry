@@ -142,7 +142,7 @@ export function BestelFormulier({
  * koppen en opsommingen worden als losse regels getoond (binnen een label past
  * geen blokopmaak).
  */
-function VinkjeTekst({ tekst }: { tekst: string }) {
+export function VinkjeTekst({ tekst }: { tekst: string }) {
   const regels = parseerOpmaak(tekst).flatMap((b) =>
     b.soort === "lijst" ? b.items : b.soort === "blok" || b.soort === "afbeelding" ? [] : [b.inhoud],
   );

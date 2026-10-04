@@ -96,6 +96,14 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
       { waarde: "nee", label: "Nee, niet meten" },
     ],
   },
+  betaalherinnering_na_uren: {
+    label: "Betaalherinnering na (uren)",
+    uitleg:
+      "Na zoveel uur krijgt iemand die een bestelling begon maar niet betaalde één vriendelijke herinnering (binnen 7 dagen; niet als er op hetzelfde adres al betaald is). Standaard 24.",
+    soort: "geheel_getal",
+    min: 1,
+    max: 144,
+  },
   contact_email: {
     label: "Contact-e-mailadres",
     uitleg: "Het adres dat klanten op de website zien om contact op te nemen.",

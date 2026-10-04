@@ -4,6 +4,8 @@ import { leesInstelling } from "@/lib/instellingen";
 import { leverAdvies } from "@/lib/advies-leveren";
 import { stuurHerinneringMail } from "@/lib/resend";
 import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
+import { stuurBetaalherinneringen } from "@/lib/betaalherinnering";
+import { verstuurGeplandeCadeaubonnen } from "@/lib/cadeaubon/verwerken";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -56,6 +58,9 @@ export async function GET(request: Request) {
   }
 
   const herinnering = await stuurHerinneringen(supabase);
+  // Eigen beheermeldingen bij fouten; gooien nooit.
+  const betaalherinneringen = await stuurBetaalherinneringen();
+  const cadeaubonnen = await verstuurGeplandeCadeaubonnen();
 
   const nogOpen = (open?.length ?? 0) - opnieuwGeleverd;
   if (nogOpen > 0 || herinnering.mislukt.length > 0) {
@@ -81,6 +86,8 @@ export async function GET(request: Request) {
     nog_open: nogOpen,
     herinneringen_verstuurd: herinnering.verstuurd,
     herinneringen_mislukt: herinnering.mislukt.length,
+    betaalherinneringen,
+    cadeaubonnen,
   });
 }
 
