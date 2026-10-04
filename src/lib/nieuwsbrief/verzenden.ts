@@ -26,12 +26,14 @@ export interface Campagne {
   trigger: "aanmelding" | "advies" | null;
   vertraging_dagen: number;
   actief: boolean;
+  /** Sinds wanneer de automatisering aanstaat (gezet door de database). */
+  actief_sinds: string | null;
   aangemaakt_op: string;
   bijgewerkt_op: string;
 }
 
 export const CAMPAGNE_VELDEN =
-  "id, soort, naam, onderwerp, preheader, blokken, doelgroep, status, ingepland_op, gestart_op, verzonden_op, trigger, vertraging_dagen, actief, aangemaakt_op, bijgewerkt_op";
+  "id, soort, naam, onderwerp, preheader, blokken, doelgroep, status, ingepland_op, gestart_op, verzonden_op, trigger, vertraging_dagen, actief, actief_sinds, aangemaakt_op, bijgewerkt_op";
 
 function resend(): Resend {
   const key = process.env.RESEND_API_KEY;
@@ -127,8 +129,8 @@ export async function startIngeplande(): Promise<number> {
 /**
  * Plant automatische mails in: voor elke actieve automatisering de aangemelde
  * contacten bij wie het startmoment + vertraging voorbij is en die deze mail nog
- * niet kregen. Kijkt maximaal 30 dagen terug, zodat een nieuwe automatisering niet
- * ineens alle oude contacten mailt.
+ * niet kregen. Alleen startmomenten sinds het aanzetten tellen mee, zodat een
+ * nieuwe automatisering niet ineens alle oude contacten mailt.
  */
 export async function planAutomatiseringen(): Promise<number> {
   const supabase = adminClient();
@@ -141,7 +143,9 @@ export async function planAutomatiseringen(): Promise<number> {
   for (const a of (autos ?? []) as Campagne[]) {
     if (verzendProblemen(a).length) continue;
     const grens = new Date(Date.now() - a.vertraging_dagen * 86_400_000);
-    const vanaf = new Date(Math.max(grens.getTime() - 30 * 86_400_000, new Date(a.bijgewerkt_op).getTime() - 86_400_000));
+    if (!a.actief_sinds) continue;
+    const vanaf = new Date(a.actief_sinds);
+    if (vanaf > grens) continue;
     let kandidaten: { id: string; email: string }[] = [];
 
     if (a.trigger === "aanmelding") {
