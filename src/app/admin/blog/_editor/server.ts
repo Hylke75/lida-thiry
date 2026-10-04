@@ -37,6 +37,8 @@ export function vernieuwBlog(...slugs: (string | null | undefined)[]) {
   revalidatePath("/blog");
   for (const s of new Set(slugs.filter(Boolean))) revalidatePath(`/blog/${s}`);
   revalidatePath("/");
+  revalidatePath("/blog/rss.xml");
+  revalidatePath("/sitemap.xml");
 }
 
 /**
