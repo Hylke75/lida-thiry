@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site";
+import { leesWebsite } from "@/lib/website/lees";
+import { bouwSiteMetadata } from "@/lib/website/metadata";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,32 +17,15 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
-const beschrijving =
-  "Ontdek je figuurtype met de online kledingadviestest van Lida Thiry, imago- en kledingadviseur. Meet jezelf op, beantwoord een paar vragen en ontvang direct je persoonlijke advies als PDF.";
-
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl()),
-  title: {
-    default: "Online kledingadviestest · Lida Thiry",
-    template: "%s · Lida Thiry",
-  },
-  description: beschrijving,
-  applicationName: "Lida Thiry Imago & Kledingadvies",
-  authors: [{ name: "Lida Thiry" }],
-  openGraph: {
-    type: "website",
-    locale: "nl_NL",
-    siteName: "Lida Thiry Imago & Kledingadvies",
-    title: "Ontdek je figuurtype · Lida Thiry",
-    description: beschrijving,
-    url: "/",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Ontdek je figuurtype · Lida Thiry",
-    description: beschrijving,
-  },
-};
+/**
+ * Standaard-metadata voor alle pagina's, uit Beheer → Website → Instellingen
+ * (naam, omschrijving, favicon, deelafbeelding). Zonder instellingen of zonder
+ * database gelden de standaardwaarden uit de code. Pagina's die zelf een titel of
+ * deelafbeelding opgeven, gaan voor (zie lib/website/metadata.ts).
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return bouwSiteMetadata(await leesWebsite(), siteUrl());
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
