@@ -10,7 +10,15 @@ import {
   EMAILS_BEVESTIGING,
   EMAILS_HERINNERING,
 } from "./inhoud/groepen/emails";
-import { adviesMail, bevestigingMail, herinneringMail, omhulsel, type BestelOverzicht } from "./email-html";
+import { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import {
+  adviesMail,
+  bevestigingMail,
+  herinneringMail,
+  nieuwsbriefBevestigingMail,
+  omhulsel,
+  type BestelOverzicht,
+} from "./email-html";
 
 export type { BestelOverzicht } from "./email-html";
 
@@ -83,6 +91,22 @@ export async function stuurHerinneringMail(opts: {
     html,
   });
   if (error) throw new Error(`Resend herinnering: ${error.message}`);
+}
+
+/**
+ * Bevestigingsmail voor de nieuwsbrief (dubbele opt-in) met de persoonlijke
+ * bevestigingslink. Teksten: Beheer → Teksten → Nieuwsbrief.
+ */
+export async function stuurNieuwsbriefBevestiging(opts: { email: string; naam?: string | null; link: string }) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(NIEUWSBRIEF_BEVESTIGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const { onderwerp, html } = nieuwsbriefBevestigingMail(teksten, algemeen, { naam: opts.naam, link: opts.link });
+  const { error } = await resend().emails.send({
+    from: afzender(),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+  });
+  if (error) throw new Error(`Resend nieuwsbrief-bevestiging: ${error.message}`);
 }
 
 /**

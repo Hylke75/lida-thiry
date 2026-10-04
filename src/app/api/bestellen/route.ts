@@ -11,7 +11,7 @@ import {
   normaliseerCode,
   type Kortingscode,
 } from "@/lib/prijs";
-import { naBetaling } from "@/lib/bestelling-betaald";
+import { naBetaling, nieuwsbriefNaBetaling } from "@/lib/bestelling-betaald";
 
 export const runtime = "nodejs";
 
@@ -24,6 +24,7 @@ interface BestelInvoer {
   gratis?: boolean;
   website?: string;
   kortingscode?: string;
+  nieuwsbrief?: boolean;
 }
 
 function geldigEmail(email: string): boolean {
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
   }
 
   const valuta = (await leesInstelling("valuta")) || "EUR";
+  // Vinkje voor de nieuwsbrief (standaard uit); aanmelden gebeurt pas na betaling.
+  const nieuwsbrief = body.nieuwsbrief === true ? { nieuwsbrief_akkoord: true } : {};
 
   // Gratis testmodus (env-gated): sla Mollie over, maak direct een betaalde order
   // met testtoken aan en stuur de gebruiker rechtstreeks naar de test.
@@ -78,6 +81,7 @@ export async function POST(request: Request) {
         factuurgegevens: body.factuurgegevens ?? {},
         voorwaarden_akkoord: true,
         directe_levering_akkoord: true,
+        ...nieuwsbrief,
         bedrag_cent: 0,
         valuta,
         status: "betaald",
@@ -90,6 +94,8 @@ export async function POST(request: Request) {
     if (error || !order) {
       return NextResponse.json({ fout: "Testbestelling aanmaken mislukt." }, { status: 500 });
     }
+    // Geen mails in de gratis testmodus, maar wel hetzelfde nieuwsbriefgedrag als na betaling.
+    await nieuwsbriefNaBetaling(order.id);
     return NextResponse.json({ testUrl: `${siteUrl()}/test/${token}` });
   }
 
@@ -149,6 +155,7 @@ export async function POST(request: Request) {
         factuurgegevens: body.factuurgegevens ?? {},
         voorwaarden_akkoord: true,
         directe_levering_akkoord: true,
+        ...nieuwsbrief,
         bedrag_cent: 0,
         korting_cent: kortingCent,
         kortingscode,
@@ -177,6 +184,7 @@ export async function POST(request: Request) {
       factuurgegevens: body.factuurgegevens ?? {},
       voorwaarden_akkoord: true,
       directe_levering_akkoord: true,
+      ...nieuwsbrief,
       bedrag_cent: teBetalenCent,
       korting_cent: kortingCent,
       kortingscode,

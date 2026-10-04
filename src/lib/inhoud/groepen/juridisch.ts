@@ -124,15 +124,25 @@ Resend en Vercel zijn Amerikaanse bedrijven. Waar gegevens buiten de Europese Ec
 
 We verstrekken je gegevens verder alleen aan anderen als we daartoe wettelijk verplicht zijn.
 
-## 7. Cookies
+## 7. Nieuwsbrief
+
+Als je je aanmeldt voor onze nieuwsbrief, via het formulier op de website of met het vinkje bij je bestelling, verwerken we het volgende:
+
+- **Wat we bewaren**: je e-mailadres, je naam (als je die invult), labels waarmee we de nieuwsbrief op je interesses afstemmen, en het bewijs van je toestemming: wanneer je je hebt aangemeld en met welke tekst.
+- **Toestemming** (artikel 6 lid 1 sub a AVG): we sturen je de nieuwsbrief alleen als je daar zelf om hebt gevraagd. Meld je je aan via de website, dan vragen we je dat eerst te bevestigen via een link in een e-mail (dubbele opt-in).
+- **Afmelden kan altijd**, met één klik op de link onderaan elke nieuwsbrief. Dat heeft geen gevolgen voor je bestelling of advies. Na het afmelden bewaren we alleen je e-mailadres met de afmelding, zodat je niet opnieuw wordt gemaild; op verzoek verwijderen we ook dat.
+- **Meten van opens en kliks**: we meten of een nieuwsbrief is geopend en op welke links is geklikt, om de nieuwsbrief te verbeteren. Dat gebeurt met een klein, onzichtbaar plaatje en via doorstuurlinks; er worden geen cookies gebruikt. Deze meting kan in onze instellingen worden uitgezet; staat ze uit, dan meten we niets. Je kunt het zelf ook voorkomen door afbeeldingen in je mailprogramma niet automatisch te laten laden.
+- De nieuwsbrief wordt verstuurd via **Resend** (zie hierboven).
+
+## 8. Cookies
 
 Deze website gebruikt geen tracking- of advertentiecookies. We gebruiken alleen functionele cookies die nodig zijn om de website en de beveiligde beheeromgeving te laten werken.
 
-## 8. Beveiliging
+## 9. Beveiliging
 
 We nemen passende technische en organisatorische maatregelen om je gegevens te beschermen, zoals versleutelde verbindingen (https), toegangsbeperking tot de beheeromgeving en persoonlijke, moeilijk te raden testlinks.
 
-## 9. Jouw rechten
+## 10. Jouw rechten
 
 Je hebt het recht om:
 
@@ -144,11 +154,11 @@ Je hebt het recht om:
 
 Stuur je verzoek naar {contact_email}. We reageren binnen een maand. Om zeker te weten dat het verzoek van jou komt, kunnen we je vragen je identiteit te bevestigen, bijvoorbeeld door te mailen vanaf het e-mailadres waarmee je hebt besteld.
 
-## 10. Contact en klachten
+## 11. Contact en klachten
 
 Heb je vragen over deze privacyverklaring of over hoe we met je gegevens omgaan? Neem contact op via {contact_email}. Ben je niet tevreden over hoe wij met je gegevens omgaan, dan heb je het recht een klacht in te dienen bij de [Autoriteit Persoonsgegevens](https://autoriteitpersoonsgegevens.nl). We stellen het op prijs als je eerst contact met ons opneemt, zodat we samen naar een oplossing kunnen zoeken.
 
-## 11. Wijzigingen
+## 12. Wijzigingen
 
 We kunnen deze privacyverklaring aanpassen. De meest actuele versie staat altijd op deze pagina. Zie ook onze [algemene voorwaarden](/voorwaarden).`;
 

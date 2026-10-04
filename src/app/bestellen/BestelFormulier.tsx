@@ -11,10 +11,13 @@ export function BestelFormulier({
   prijsBekend,
   gratisTest,
   teksten,
+  nieuwsbriefVinkje,
 }: {
   prijsBekend: boolean;
   gratisTest: boolean;
   teksten: BestelFormulierTeksten;
+  /** Tekst bij het (optionele) vinkje voor de nieuwsbrief (Beheer → Teksten → Nieuwsbrief). */
+  nieuwsbriefVinkje: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [bezig, setBezig] = useState(false);
@@ -41,6 +44,7 @@ export function BestelFormulier({
       gratis,
       website: String(f.get("website") || ""),
       kortingscode: String(f.get("kortingscode") || "").trim(),
+      nieuwsbrief: f.get("nieuwsbrief") === "on",
     };
     try {
       const res = await fetch("/api/bestellen", {
@@ -93,6 +97,14 @@ export function BestelFormulier({
           <VinkjeTekst tekst={teksten.akkoordLevering} />
         </span>
       </label>
+      {nieuwsbriefVinkje.trim() && (
+        <label className="flex items-start gap-3 text-sm text-foreground/70">
+          <input type="checkbox" name="nieuwsbrief" className="mt-1 accent-accent" />
+          <span>
+            <VinkjeTekst tekst={nieuwsbriefVinkje} />
+          </span>
+        </label>
+      )}
 
       {fout && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">

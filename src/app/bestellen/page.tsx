@@ -4,6 +4,7 @@ import { Fragment, type ReactNode } from "react";
 import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
+import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { BestelFormulier } from "./BestelFormulier";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,11 @@ function metPrijs(tekst: string, prijs: ReactNode): ReactNode {
 }
 
 export default async function BestellenPage() {
-  const [pagina, formulier] = await Promise.all([leesSectie(BESTELLEN_PAGINA), leesSectie(BESTELLEN_FORMULIER)]);
+  const [pagina, formulier, nieuwsbrief] = await Promise.all([
+    leesSectie(BESTELLEN_PAGINA),
+    leesSectie(BESTELLEN_FORMULIER),
+    leesSectie(NIEUWSBRIEF_BESTELLING),
+  ]);
   const gratisTest = Boolean(process.env.GRATIS_TEST);
   let prijsLabel: string | null = null;
   let prijsBekend = false;
@@ -64,7 +69,7 @@ export default async function BestellenPage() {
 
       {prijsBekend || gratisTest ? (
         <div className="rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5 sm:p-8">
-          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} teksten={formulier} />
+          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} teksten={formulier} nieuwsbriefVinkje={nieuwsbrief.vinkje} />
         </div>
       ) : (
         <p className="rounded-lg border border-accent/20 bg-accent-zacht px-4 py-3 text-sm whitespace-pre-line text-foreground/70">
