@@ -61,9 +61,20 @@ export function isGereserveerd(pad: string): boolean {
   return GERESERVEERDE_VOORVOEGSELS.some((v) => klein === v || klein.startsWith(`${v}/`));
 }
 
-/** Of `naar` een intern pad is (begint met één /). */
+/**
+ * Of `naar` een intern pad is (begint met één /). Een backslash telt niet als
+ * intern: browsers lezen "/\evil.com" als "//evil.com" (een ander domein).
+ */
 export function isIntern(naar: string): boolean {
-  return naar.startsWith("/") && !naar.startsWith("//");
+  return naar.startsWith("/") && !naar.startsWith("//") && !naar.includes("\\");
+}
+
+/**
+ * Paden die de proxy niet ziet (zie de matcher in src/proxy.ts): beeldbestanden
+ * en favicon.ico. Een doorverwijzing vanaf zo'n pad zou nooit werken.
+ */
+export function buitenProxy(pad: string): boolean {
+  return /\.(?:svg|png|jpg|jpeg|gif|webp)$/.test(pad) || pad.startsWith("/favicon.ico");
 }
 
 /** Het (genormaliseerde) pad van een interne bestemming, of null voor een extern adres. */
@@ -108,19 +119,29 @@ export function valideerDoorverwijzing(ruw: { van?: unknown; naar?: unknown; per
   if (!vanRuw) fouten.push("Vul het oude adres in (bijv. /oude-pagina).");
   else if (!vanRuw.startsWith("/") || vanRuw.startsWith("//")) fouten.push("Het oude adres moet met één / beginnen, bijv. /oude-pagina (zonder https:// en domeinnaam).");
   else if (/[?#]/.test(vanRuw)) fouten.push("Het oude adres mag geen ? of # bevatten; alleen het pad telt.");
+  else if (vanRuw.includes("\\")) fouten.push("Het oude adres mag geen \\ bevatten.");
   else {
     van = normaliseerPad(vanRuw);
     if (van === "/") fouten.push("De homepage (/) kan niet worden doorverwezen.");
     else if (isGereserveerd(van)) fouten.push(`Adressen onder ${GERESERVEERDE_VOORVOEGSELS.join(", ")} kunnen niet worden doorverwezen.`);
     else if (/\s/.test(van)) fouten.push("Het oude adres mag geen spaties bevatten.");
+    else if (van.includes("\\")) fouten.push("Het oude adres mag geen \\ bevatten.");
     else if (van.length > MAX_VAN_LENGTE) fouten.push(`Het oude adres is te lang (maximaal ${MAX_VAN_LENGTE} tekens).`);
+    else if (buitenProxy(van)) {
+      fouten.push(
+        "Adressen van afbeeldingen (.svg, .png, .jpg, .jpeg, .gif, .webp) en favicon.ico kunnen niet worden doorverwezen: de site levert die altijd direct als bestand.",
+      );
+    }
   }
 
   let naar = "";
   if (!naarRuw) fouten.push("Vul het nieuwe adres in (een pad zoals /nieuwe-pagina of een https://-adres).");
+  else if (naarRuw.includes("\\")) fouten.push("Het nieuwe adres mag geen \\ bevatten.");
   else if (isIntern(naarRuw)) {
     naar = normaliseerNaar(naarRuw);
     if (/\s/.test(naar)) fouten.push("Het nieuwe adres mag geen spaties bevatten.");
+    // %5C wordt bij het normaliseren een backslash.
+    else if (!isIntern(naar)) fouten.push("Het nieuwe adres mag geen \\ bevatten.");
   } else if (/^https:\/\//i.test(naarRuw)) {
     try {
       const url = new URL(naarRuw);
@@ -139,20 +160,47 @@ export function valideerDoorverwijzing(ruw: { van?: unknown; naar?: unknown; per
 }
 
 /**
- * Volgt vanaf `start` de doorverwijzingen (maximaal `max` stappen). Geeft de
- * gevolgde regels terug en of er een lus is (een pad komt twee keer voor).
+ * Een treffer op kleine letters telt niet als de bestemming het opgevraagde pad
+ * zelf is: "/Over → /over" zou anders bij een bezoek aan /over eindeloos naar
+ * /over sturen. (/OVER gaat wél naar /over; daar stopt het dan.)
+ */
+function bruikbaarOpKlein(r: Pick<Doorverwijzing, "naar">, pad: string): boolean {
+  return bestemmingsPad(r.naar) !== pad;
+}
+
+/** Opzoeken zoals de proxy dat doet (zie `zoek`): eerst exact, dan op kleine letters. */
+function maakOpzoeker<T extends Pick<Doorverwijzing, "van" | "naar">>(regels: readonly T[]): (pad: string) => T | undefined {
+  const exact = new Map<string, T>();
+  const klein = new Map<string, T>();
+  for (const r of regels) {
+    exact.set(r.van, r);
+    const k = r.van.toLowerCase();
+    if (!klein.has(k)) klein.set(k, r);
+  }
+  return (pad) => {
+    const e = exact.get(pad);
+    if (e) return e;
+    const k = klein.get(pad.toLowerCase());
+    return k && bruikbaarOpKlein(k, pad) ? k : undefined;
+  };
+}
+
+/**
+ * Volgt vanaf `start` de doorverwijzingen (maximaal `max` stappen), zoals de
+ * proxy dat doet (dus ook via kleine letters). Geeft de gevolgde regels terug en
+ * of er een lus is (een pad komt twee keer voor).
  */
 export function volgKeten(
   regels: readonly Pick<Doorverwijzing, "van" | "naar">[],
   start: string,
   max = 10,
 ): { stappen: Pick<Doorverwijzing, "van" | "naar">[]; lus: boolean } {
-  const perVan = new Map(regels.map((r) => [r.van, r]));
+  const opzoeken = maakOpzoeker(regels);
   const gezien = new Set<string>([start]);
   const stappen: Pick<Doorverwijzing, "van" | "naar">[] = [];
   let pad: string | null = start;
   while (pad !== null && stappen.length < max) {
-    const r = perVan.get(pad);
+    const r = opzoeken(pad);
     if (!r) break;
     stappen.push(r);
     pad = bestemmingsPad(r.naar);
@@ -201,9 +249,12 @@ export function controleerTegenBestaande(
   return { fouten, waarschuwingen };
 }
 
-/** Van-paden die in een lus zitten of erin uitkomen (lineair, ook voor duizenden regels). */
+/**
+ * Van-paden die in een lus zitten of erin uitkomen (lineair, ook voor duizenden
+ * regels). Volgt de regels zoals de proxy (dus ook via kleine letters).
+ */
 export function vanInLus(regels: readonly Pick<Doorverwijzing, "van" | "naar">[]): Set<string> {
-  const perVan = new Map(regels.map((r) => [r.van, r]));
+  const opzoeken = maakOpzoeker(regels);
   const status = new Map<string, "bezig" | "goed" | "lus">();
   for (const r of regels) {
     if (status.has(r.van)) continue;
@@ -220,7 +271,7 @@ export function vanInLus(regels: readonly Pick<Doorverwijzing, "van" | "naar">[]
         uitkomst = s;
         break;
       }
-      const regel = perVan.get(pad);
+      const regel = opzoeken(pad);
       if (!regel) break;
       status.set(pad, "bezig");
       stapel.push(pad);
@@ -228,7 +279,9 @@ export function vanInLus(regels: readonly Pick<Doorverwijzing, "van" | "naar">[]
     }
     for (const p of stapel) status.set(p, uitkomst);
   }
-  return new Set([...status].filter(([, s]) => s === "lus").map(([p]) => p));
+  // Alleen echte van-paden (niet de tussenpaden die via kleine letters liepen).
+  const vanPaden = new Set(regels.map((r) => r.van));
+  return new Set([...status].filter(([p, s]) => s === "lus" && vanPaden.has(p)).map(([p]) => p));
 }
 
 /** Opzoektabel voor de proxy: exact en (als terugval) op kleine letters. */
@@ -252,10 +305,14 @@ export function bouwIndex(regels: readonly Doorverwijzing[]): Index {
     if (bestemmingsPad(r.naar) === van) continue;
     geldig.push({ van, naar: r.naar, permanent: r.permanent !== false });
   }
-  const lus = vanInLus(geldig);
+  // Regels in een lus vallen weg; dat kan het opzoeken op kleine letters
+  // veranderen, dus opnieuw controleren tot er geen lus meer over is.
+  let over = geldig;
+  for (let lus = vanInLus(over); lus.size; lus = vanInLus(over)) {
+    over = over.filter((r) => !lus.has(r.van));
+  }
   const index: Index = { exact: new Map(), klein: new Map() };
-  for (const r of geldig) {
-    if (lus.has(r.van)) continue;
+  for (const r of over) {
     index.exact.set(r.van, r);
     const k = r.van.toLowerCase();
     if (!index.klein.has(k)) index.klein.set(k, r);
@@ -263,11 +320,17 @@ export function bouwIndex(regels: readonly Doorverwijzing[]): Index {
   return index;
 }
 
-/** Zoekt de doorverwijzing voor een (ruw of gecodeerd) pad: eerst exact, dan op kleine letters. */
+/**
+ * Zoekt de doorverwijzing voor een (ruw of gecodeerd) pad: eerst exact, dan op
+ * kleine letters (behalve als die treffer naar dit pad zelf zou sturen).
+ */
 export function zoek(index: Index, pathname: string): Doorverwijzing | null {
   const pad = normaliseerPad(pathname);
   if (pad === "/" || isGereserveerd(pad)) return null;
-  return index.exact.get(pad) ?? index.klein.get(pad.toLowerCase()) ?? null;
+  const exact = index.exact.get(pad);
+  if (exact) return exact;
+  const klein = index.klein.get(pad.toLowerCase());
+  return klein && bruikbaarOpKlein(klein, pad) ? klein : null;
 }
 
 /**

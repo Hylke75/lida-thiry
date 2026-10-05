@@ -3,6 +3,10 @@ import { revalidatePath } from "next/cache";
 import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
+import { werkDoorverwijzingenBij } from "@/lib/doorverwijzingen/beheer";
+import { vrijeSlugIn } from "@/lib/paginas/vrije-slug";
+
+export { isDubbel } from "@/lib/paginas/vrije-slug";
 import { PAGINA_VELDEN, uniekePaginaSlug, type FormulierKeuze, type Pagina } from "@/lib/paginas/beheer";
 
 export const PAGINAS_PAD = "/admin/paginas";
@@ -15,12 +19,8 @@ export async function haalPaginaBeheer(id: string): Promise<Pagina | null> {
 }
 
 /** Een slug op basis van `basis` die nog door geen enkele pagina gebruikt wordt (en niet gereserveerd is). */
-export async function vrijePaginaSlug(basis: string, behalveId?: string): Promise<string> {
-  const kandidaat = uniekePaginaSlug(basis, []);
-  let q = adminClient().from("paginas").select("slug").like("slug", `${kandidaat.slice(0, 70)}%`).limit(1000);
-  if (behalveId) q = q.neq("id", behalveId);
-  const { data } = await q;
-  return uniekePaginaSlug(kandidaat, (data ?? []).map((r) => r.slug as string));
+export function vrijePaginaSlug(basis: string, behalveId?: string): Promise<string> {
+  return vrijeSlugIn("paginas", uniekePaginaSlug, 70, basis, behalveId);
 }
 
 /** Actieve nieuwsbriefformulieren (voor "Blok invoegen" en het voorbeeld). Faalt zacht. */
@@ -35,12 +35,17 @@ export async function haalFormulieren(): Promise<FormulierKeuze[]> {
   }
 }
 
-/** Postgres-fout voor een dubbele waarde (de slug is uniek). */
-export function isDubbel(error: { code?: string } | null): boolean {
-  return error?.code === "23505";
-}
-
 export const SLUG_BEZET = "Dit webadres wordt al gebruikt door een andere pagina. Kies een ander webadres (of pas de titel aan).";
+
+/**
+ * Na opslaan: staat de pagina (nu) online, dan verwijst een oud online adres door
+ * naar het nieuwe en vervalt een doorverwijzing vanaf het eigen adres (anders
+ * blijft de pagina verborgen). Geeft een waarschuwing of null.
+ */
+export async function doorverwijzingenNaOpslaan(oud: Pagina, nieuw: Pagina): Promise<string | null> {
+  if (nieuw.status !== "gepubliceerd") return null;
+  return werkDoorverwijzingenBij(`/${nieuw.slug}`, oud.status === "gepubliceerd" ? `/${oud.slug}` : null);
+}
 
 /**
  * Ververst de site na een wijziging. Het menu en de footer staan op elke

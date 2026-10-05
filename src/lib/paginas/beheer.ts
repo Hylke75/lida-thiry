@@ -4,7 +4,7 @@
 
 import { opmaakNaarTekst } from "../inhoud/opmaak";
 import { maakSlug } from "../blog/regels";
-import { blokkenInTekst, formulierSlugUitBlok, GERESERVEERDE_SLUGS, geldigePaginaSlug, PAGINA_BLOKKEN } from "./regels";
+import { blokkenInTekst, formulierSlugUitBlok, GERESERVEERDE_SLUGS, geldigePaginaSlug, PAGINA_BLOK_LABELS } from "./regels";
 
 export interface Pagina {
   id: string;
@@ -209,16 +209,7 @@ export interface FormulierKeuze {
 
 /** Leesbaar label voor een blok in het voorbeeld van de editor. */
 export function blokLabel(naam: string, formulieren: readonly FormulierKeuze[]): { label: string; bekend: boolean } {
-  const vast: Record<string, string> = {
-    contactformulier: "Contactformulier",
-    afspraak: "Afspraak maken (boekingsformulier)",
-    nieuwsbrief: "Aanmeldblok nieuwsbrief",
-    test: "Uitnodiging voor de test (knop naar /bestellen)",
-    laatste_blogs: "De drie nieuwste blogberichten",
-    bedrijfsgegevens: "Bedrijfsgegevens (uit de instellingen)",
-  };
-  if (naam in vast) return { label: vast[naam], bekend: true };
-  if (naam in PAGINA_BLOKKEN) return { label: PAGINA_BLOKKEN[naam], bekend: true };
+  if (naam in PAGINA_BLOK_LABELS) return { label: PAGINA_BLOK_LABELS[naam], bekend: true };
   const f = formulierSlugUitBlok(naam);
   const formulier = f ? formulieren.find((x) => x.slug === f) : undefined;
   if (formulier) return { label: `Nieuwsbriefformulier: ${formulier.naam}`, bekend: true };

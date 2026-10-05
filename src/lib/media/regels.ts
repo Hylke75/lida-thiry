@@ -157,6 +157,19 @@ export function isMediaBucket(b: unknown): b is MediaBucket {
   return typeof b === "string" && (MEDIA_BUCKETS as readonly string[]).includes(b);
 }
 
+export const SVG_MIME = "image/svg+xml";
+
+/**
+ * SVG-bestanden worden niet opgeschoond en staan in een openbare bucket; een SVG
+ * kan scripts bevatten. Daarom mag alleen de eigenaar ze uploaden (andere rollen
+ * kunnen wel bestaande SVG's gebruiken).
+ */
+export const SVG_ALLEEN_EIGENAAR = "Alleen de eigenaar kan SVG-bestanden uploaden (die kunnen code bevatten). Kies een JPG, PNG, GIF of WebP.";
+
+export function isSvg(mime: string | null | undefined): boolean {
+  return (mime ?? "").toLowerCase() === SVG_MIME;
+}
+
 /** Controle vóór het uploaden; geeft een foutmelding of null. */
 export function controleerBestand(bestand: { type: string; size: number }, soort: MediaSoort = "afbeelding"): string | null {
   if (!SOORT_MIMES[soort].includes(bestand.type)) return `Dit bestandstype kan hier niet. Kies een ${SOORT_UITLEG[soort]}-bestand.`;
@@ -242,7 +255,7 @@ export function bevatVerwijzing(tekst: unknown, m: { bucket: string; pad: string
 }
 
 export interface Gebruik {
-  soort: "pagina" | "blog" | "nieuwsbrief" | "instelling";
+  soort: "pagina" | "blog" | "nieuwsbrief" | "tekst" | "instelling";
   titel: string;
   href: string;
 }
@@ -251,6 +264,7 @@ export const GEBRUIK_LABEL: Record<Gebruik["soort"], string> = {
   pagina: "Pagina",
   blog: "Blogbericht",
   nieuwsbrief: "Nieuwsbrief",
+  tekst: "Tekst",
   instelling: "Website-instelling",
 };
 

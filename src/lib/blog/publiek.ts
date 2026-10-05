@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { publiekClient, publiekGecached } from "../cache/publiek";
-import { BERICHT_VELDEN, type BlogBericht } from "./regels";
+import { BERICHT_VELDEN, geldigeSlug, type BlogBericht } from "./regels";
 import { kiesGerelateerd, telWaarden } from "./lijst";
 
 // Gepubliceerde blogberichten lezen voor de publieke site.
@@ -95,7 +95,7 @@ const leesBericht = publiekGecached("blog-bericht", ["blog"], async (slug: strin
 
 /** Eén zichtbaar bericht, of null (ook voor concepten en ingeplande berichten). */
 export const haalBericht = cache(async (slug: string): Promise<BlogBericht | null> => {
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length > 100) return null;
+  if (!geldigeSlug(slug)) return null;
   try {
     return await leesBericht(slug);
   } catch (e) {

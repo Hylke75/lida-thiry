@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Ververst de Supabase-sessie bij elke request en synchroniseert de auth-cookies.
- * Wordt aangeroepen vanuit src/middleware.ts.
+ * Wordt aangeroepen vanuit src/proxy.ts.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

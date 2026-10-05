@@ -9,6 +9,8 @@ import { blogHref, leesFilter, leesPagina, paginaNummers, paginering, PER_PAGINA
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_OVERZICHT } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { deelMetadata } from "@/lib/seo/delen";
+import { leesWebsite } from "@/lib/website/lees";
 
 // Per request gerenderd: de pagina hangt af van ?categorie, ?tag en ?pagina. De
 // gegevens zelf komen wel uit de datacache (tag "blog", levensduur 120 s), dus
@@ -20,7 +22,7 @@ type Zoek = Promise<Record<string, string | string[] | undefined>>;
 const RSS = { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Blog · Lida Thiry" }] };
 
 export async function generateMetadata({ searchParams }: { searchParams: Zoek }): Promise<Metadata> {
-  const [zoek, t] = await Promise.all([searchParams, leesSectie(BLOG_OVERZICHT)]);
+  const [zoek, t, site] = await Promise.all([searchParams, leesSectie(BLOG_OVERZICHT), leesWebsite()]);
   const categorie = leesFilter(zoek.categorie);
   const tag = leesFilter(zoek.tag, 40);
   const pagina = leesPagina(zoek.pagina);
@@ -30,15 +32,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Zoek })
     title: `Blog: ${titel}`,
     description: t.intro,
     alternates: { canonical: blogHref({ categorie, tag, pagina }), types: RSS },
-    openGraph: {
-      type: "website",
-      locale: "nl_NL",
-      siteName: "Lida Thiry Imago & Kledingadvies",
-      title: titel,
-      description: t.intro,
-      url: "/blog",
-    },
-    twitter: { card: "summary_large_image", title: titel, description: t.intro },
+    ...deelMetadata(site, { titel, omschrijving: t.intro, url: "/blog" }),
   };
 }
 

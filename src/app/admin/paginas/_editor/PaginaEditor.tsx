@@ -31,7 +31,7 @@ import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../.
 import { Geschiedenis } from "../../versies/Geschiedenis";
 import { zetPaginaVersieTerug } from "../../versies/acties";
 import { StatusBadge } from "./onderdelen";
-import { PaginaUpload } from "./PaginaUpload";
+import { FotoUpload } from "../../blog/_editor/FotoUpload";
 import { PaginaVoorbeeld } from "./voorbeeld";
 
 interface Velden {
@@ -422,7 +422,7 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
                   <input id="foto-alt" value={foto.alt} maxLength={200} onChange={(e) => setFoto({ alt: e.target.value })} className={invoerKlasse} placeholder="Bijv. Lida bij een rek met kleding" />
                 </Veld>
                 <div className="flex flex-wrap items-start gap-2">
-                  <PaginaUpload map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={(u) => fotoIngevoegd(u)} />
+                  <FotoUpload soort="paginas" map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={(u) => fotoIngevoegd(u)} />
                   <MediaKiezer accept="foto" map="paginas" knopTekst="Uit mediabibliotheek" titel="Foto invoegen" onKies={(m) => fotoIngevoegd(m.url, m.alt)} />
                   <button type="button" onClick={() => setFoto(null)} className={knopRand}>
                     Annuleren
@@ -486,7 +486,7 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
                   {slugMelding && <span className="mt-1 block font-medium text-red-700 dark:text-red-400">{slugMelding}</span>}
                   {online && v.slug !== opgeslagen.slug && (
                     <span className="mt-1 block font-medium text-amber-700 dark:text-amber-300">
-                      Let op: deze pagina staat al online. Met een nieuw webadres werken bestaande links naar het oude adres niet meer.
+                      Let op: deze pagina staat al online. Bij opslaan stuurt het oude adres bezoekers automatisch door naar het nieuwe (zie Doorverwijzingen); werk links op andere plekken liefst ook bij.
                     </span>
                   )}
                 </>
@@ -535,7 +535,7 @@ export function PaginaEditor({ pagina, formulieren, site }: { pagina: Pagina; fo
               <img src={v.omslag_url} alt={v.omslag_alt} className="aspect-[16/9] w-full rounded-xl object-cover" />
             )}
             <div className="flex flex-wrap items-start gap-2">
-              <PaginaUpload map="omslag" label={v.omslag_url ? "Andere foto uploaden" : "Foto uploaden"} onUrl={(u) => zet({ omslag_url: u })} />
+              <FotoUpload soort="paginas" map="omslag" label={v.omslag_url ? "Andere foto uploaden" : "Foto uploaden"} onUrl={(u) => zet({ omslag_url: u })} />
               <MediaKiezer
                 accept="foto"
                 map="paginas"

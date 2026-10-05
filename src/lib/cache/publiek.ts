@@ -60,14 +60,29 @@ export function publiekClient(): SupabaseClient {
   return client;
 }
 
-// Laatst bekende goede resultaten, per leesfunctie + argumenten (begrensd).
+// Laatst bekende goede resultaten, per leesfunctie + argumenten (begrensd), met
+// de tags van de leesfunctie: vernieuwPubliekeData vergeet ze per tag, zodat iets
+// dat in het beheer offline is gehaald niet terugkomt als de database even weg is.
 const MAX_ONTHOUDEN = 300;
-const laatstBekend = new Map<string, unknown>();
+const laatstBekend = new Map<string, { waarde: unknown; tags: readonly CacheTag[] }>();
 
-function onthoud(sleutel: string, waarde: unknown) {
+function onthoud(sleutel: string, waarde: unknown, tags: readonly CacheTag[]) {
   laatstBekend.delete(sleutel);
-  laatstBekend.set(sleutel, waarde);
+  laatstBekend.set(sleutel, { waarde, tags });
   if (laatstBekend.size > MAX_ONTHOUDEN) laatstBekend.delete(laatstBekend.keys().next().value!);
+}
+
+/**
+ * Vergeet de laatst bekende resultaten van leesfuncties met een van deze tags
+ * (alleen in dit serverproces; andere instanties vergeten ze na hun eigen
+ * herstart of overschrijven ze bij de volgende geslaagde lezing).
+ */
+export function vergeetLaatstBekend(tags: readonly string[]): void {
+  if (!tags.length) return;
+  const weg = new Set(tags);
+  for (const [sleutel, item] of laatstBekend) {
+    if (item.tags.some((t) => weg.has(t))) laatstBekend.delete(sleutel);
+  }
 }
 
 const kortLeven = unstable_cache(async () => true, ["publiek", "noodvoorziening"], {
@@ -109,13 +124,13 @@ export function publiekGecached<A extends unknown[], R>(
     const sleutel = `${naam}:${JSON.stringify(args)}`;
     try {
       const waarde = await gecached(...args);
-      onthoud(sleutel, waarde);
+      onthoud(sleutel, waarde, tags);
       return waarde;
     } catch (e) {
       await noodvoorziening();
       if (laatstBekend.has(sleutel)) {
         console.error(`${naam}: database niet bereikbaar; laatst bekende gegevens gebruikt.`, e instanceof Error ? e.message : e);
-        return laatstBekend.get(sleutel) as R;
+        return laatstBekend.get(sleutel)!.waarde as R;
       }
       throw e;
     }

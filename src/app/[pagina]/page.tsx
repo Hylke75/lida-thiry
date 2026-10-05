@@ -16,6 +16,8 @@ import { haalPagina } from "@/lib/paginas/publiek";
 import { afmetingenVoorTekst } from "@/lib/media/publiek";
 import { formulierSlugUitBlok } from "@/lib/paginas/regels";
 import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
+import { deelMetadata } from "@/lib/seo/delen";
+import { leesWebsite } from "@/lib/website/lees";
 import { siteUrl } from "@/lib/site";
 
 // Beheerbare pagina's op /<slug> ("Over mij", "Contact", …).
@@ -48,31 +50,21 @@ type Params = Promise<{ pagina: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { pagina: slug } = await params;
-  const p = await haalPagina(slug);
+  const [p, site] = await Promise.all([haalPagina(slug), leesWebsite()]);
   if (!p) return { title: "Pagina niet gevonden", robots: { index: false } };
   const titel = p.seo_titel.trim() || p.titel;
-  const omschrijving = paginaOmschrijving(p);
-  const beeld = p.omslag_url ? [{ url: p.omslag_url, alt: p.omslag_alt || p.titel }] : undefined;
+  const omschrijving = paginaOmschrijving(p) || undefined;
   return {
     title: titel,
-    description: omschrijving || undefined,
+    description: omschrijving,
     alternates: { canonical: `/${p.slug}` },
     ...(p.niet_indexeren ? { robots: { index: false, follow: true } } : {}),
-    openGraph: {
-      type: "website",
-      locale: "nl_NL",
-      siteName: "Lida Thiry Imago & Kledingadvies",
+    ...deelMetadata(site, {
+      titel,
+      omschrijving,
       url: `/${p.slug}`,
-      title: titel,
-      description: omschrijving || undefined,
-      ...(beeld ? { images: beeld } : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: titel,
-      description: omschrijving || undefined,
-      ...(beeld ? { images: beeld.map((b) => b.url) } : {}),
-    },
+      beeld: p.omslag_url ? { url: p.omslag_url, alt: p.omslag_alt || p.titel } : null,
+    }),
   };
 }
 

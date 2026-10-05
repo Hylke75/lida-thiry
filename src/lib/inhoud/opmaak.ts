@@ -24,8 +24,14 @@ export type Blok =
 
 const VEILIGE_URL = /^(https?:\/\/|mailto:|\/(?!\/))/i;
 
+/**
+ * Of een link veilig is: http(s), mailto of een intern pad (één /). Backslashes,
+ * tabs en regeleinden zijn nooit toegestaan: browsers lezen "/\evil.com" (en
+ * "/<tab>/evil.com") als "//evil.com", een ander domein.
+ */
 export function veiligeUrl(url: string): boolean {
-  return VEILIGE_URL.test(url.trim());
+  const u = url.trim();
+  return VEILIGE_URL.test(u) && !/[\\\t\n\r]/.test(u);
 }
 
 /** Zet een regel tekst om in inline-onderdelen. */
