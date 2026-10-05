@@ -6,8 +6,6 @@ import { CX, HOOFD, STANDAARD_VORM, Y, armPad, lichaamsPad } from "@/lib/lichaam
 
 const LINT = "var(--accent)";
 
-export { STANDAARD_VORM };
-
 /** Meetlint rond het lichaam: voorkant doorgetrokken, achterkant gestippeld. */
 function Lint({ y, r }: { y: number; r: number }) {
   const ry = 6;

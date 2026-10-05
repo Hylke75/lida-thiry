@@ -9,7 +9,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Hoe oud (of hoe ver in de toekomst) een tijdstempel mag zijn, in seconden. */
-export const WEBHOOK_TOLERANTIE_S = 5 * 60;
+const WEBHOOK_TOLERANTIE_S = 5 * 60;
 
 function sleutel(geheim: string): Buffer {
   const ruw = geheim.trim().startsWith("whsec_") ? geheim.trim().slice("whsec_".length) : geheim.trim();

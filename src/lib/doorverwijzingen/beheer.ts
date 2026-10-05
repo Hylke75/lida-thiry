@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { legeDoorverwijzingCache } from "./cache";
 import { bestemmingsPad, isGereserveerd, MAX_DOORVERWIJZINGEN, normaliseerPad, slugWijziging, type DoorverwijzingRij } from "./regels";
 
-export const DOORVERWIJZING_VELDEN = "id, van, naar, permanent, automatisch, aantal_gebruikt, laatst_gebruikt_op, aangemaakt_op";
+const DOORVERWIJZING_VELDEN = "id, van, naar, permanent, automatisch, aantal_gebruikt, laatst_gebruikt_op, aangemaakt_op";
 
 /** Alle doorverwijzingen, nieuwste eerst. */
 export async function alleDoorverwijzingen(): Promise<DoorverwijzingRij[]> {
@@ -27,7 +27,7 @@ function letterlijk(pad: string): string {
  * Hoofdletterongevoelig, net als het opzoeken in de proxy. Faalt zacht; geeft
  * terug of het lukte.
  */
-export async function ruimDoorverwijzingOp(pad: string): Promise<boolean> {
+async function ruimDoorverwijzingOp(pad: string): Promise<boolean> {
   const van = normaliseerPad(pad);
   if (van === "/" || isGereserveerd(van)) return true;
   try {

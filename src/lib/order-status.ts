@@ -30,7 +30,7 @@ export function gratisTestAan(waarde: string | undefined = process.env.GRATIS_TE
 }
 
 /** Zo lang na betalen toont de bedankpagina de startknop (met testlink). */
-export const TESTLINK_ZICHTBAAR_UREN = 2;
+const TESTLINK_ZICHTBAAR_UREN = 2;
 
 /** Is de bestelling zo recent betaald dat de bedankpagina de testlink nog toont? */
 export function testlinkNogTonen(betaaldOp: string | null, nu: Date = new Date()): boolean {

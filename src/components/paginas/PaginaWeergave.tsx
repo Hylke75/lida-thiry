@@ -5,7 +5,7 @@ import { Opmaak } from "@/components/Opmaak";
 // Typografie voor de paginatekst. Bewust met kind-selectors ([&>h2], [&>p_a], …):
 // zo krijgen de blokken (formulieren, kaarten, knoppen) die tussen de tekst
 // staan géén tekstopmaak opgedrongen.
-export const PAGINA_PROZA = [
+const PAGINA_PROZA = [
   "flex min-w-0 flex-col gap-5 text-[1.0625rem] leading-[1.8] text-foreground/85 [overflow-wrap:anywhere]",
   "[&>h2]:mt-8 [&>h2]:font-serif [&>h2]:text-2xl [&>h2]:leading-snug [&>h2]:font-semibold [&>h2]:text-foreground sm:[&>h2]:text-3xl",
   "[&>h3]:mt-4 [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-foreground",

@@ -6,7 +6,7 @@ import { HERVAT_DOEL } from "./betaalherinnering";
 import { UUID_PATROON } from "./nieuwsbrief/links";
 import { controleerKortingscode, zonderEigenClaim, type Kortingscode } from "./prijs";
 
-export interface HervatOrder {
+interface HervatOrder {
   id: string;
   klantnaam: string;
   email: string;

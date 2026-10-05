@@ -10,7 +10,7 @@ export function berichtBeeld(b: Pick<BlogBericht, "omslag_url" | "omslag_alt" | 
 }
 
 /** Breedte van een kaart in het raster (max-w-5xl, 3 / 2 / 1 kolommen). */
-export const KAART_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw";
+const KAART_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw";
 
 /**
  * Omslagbeeld met vaste verhouding (geen verspringende pagina). Foto's uit onze

@@ -42,7 +42,7 @@ export interface PubliekeReview {
 
 export type ReviewVeld = "sterren" | "tekst" | "naam";
 
-export interface ReviewInvoer {
+interface ReviewInvoer {
   sterren: number;
   tekst: string;
   naam: string;
@@ -180,9 +180,9 @@ export function isTestbestelling(o: TestbestellingVelden): boolean {
   return domein === "voorbeeld.nl" || /^example\.(com|org|net)$/.test(domein);
 }
 
-export const REVIEW_STANDAARD_DAGEN = 7;
+const REVIEW_STANDAARD_DAGEN = 7;
 /** Bestellingen die langer geleden zijn afgerond, krijgen geen automatische uitnodiging meer. */
-export const REVIEW_MAX_DAGEN = 60;
+const REVIEW_MAX_DAGEN = 60;
 
 /** Het aantal dagen uit de instelling review_na_dagen (ongeldig of leeg = 7, hooguit 180). */
 export function leesReviewDagen(waarde: string | null | undefined): number {

@@ -8,7 +8,7 @@ import { combineer, type Sectie } from "../inhoud/schema";
 
 export type VersieSoort = "pagina" | "blog" | "tekst";
 
-export const VERSIE_SOORTEN: readonly VersieSoort[] = ["pagina", "blog", "tekst"];
+const VERSIE_SOORTEN: readonly VersieSoort[] = ["pagina", "blog", "tekst"];
 
 /** Hoeveel versies per pagina/bericht/tekst bewaard blijven. */
 export const MAX_VERSIES = 50;
@@ -80,7 +80,7 @@ export function beslisVersie(
 
 // Momentopnames -------------------------------------------------------------------------
 
-export const PAGINA_SNAPSHOT_VELDEN = [
+const PAGINA_SNAPSHOT_VELDEN = [
   "titel",
   "slug",
   "intro",
@@ -97,7 +97,7 @@ export const PAGINA_SNAPSHOT_VELDEN = [
   "niet_indexeren",
 ] as const satisfies readonly (keyof Pagina)[];
 
-export const BLOG_SNAPSHOT_VELDEN = [
+const BLOG_SNAPSHOT_VELDEN = [
   "titel",
   "slug",
   "samenvatting",

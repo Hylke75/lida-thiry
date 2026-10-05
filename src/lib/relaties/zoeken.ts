@@ -14,7 +14,7 @@ export const SORTERING_LABEL: Record<Sortering, string> = {
   plaats: "Plaats",
 };
 
-export type JaNee = "ja" | "nee";
+type JaNee = "ja" | "nee";
 
 export interface RelatieFilter {
   q?: string;

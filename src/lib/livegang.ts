@@ -8,7 +8,7 @@ import { vapidCompleet } from "./push/regels";
 import { mfaVerplicht } from "./mfa-regels";
 import { databaseStatus, HANDLEIDING_TESTOMGEVING, type DatabaseOmgeving } from "./omgeving";
 
-export interface LivegangLink {
+interface LivegangLink {
   href: string;
   label: string;
 }
@@ -29,7 +29,7 @@ export interface LivegangItem {
   links: LivegangLink[];
 }
 
-export interface LivegangOmgeving extends DatabaseOmgeving {
+interface LivegangOmgeving extends DatabaseOmgeving {
   GRATIS_TEST?: string;
   RESEND_VAN?: string;
   RESEND_API_KEY?: string;
@@ -66,7 +66,7 @@ export interface LivegangGegevens {
   goedgekeurdeReviews?: number;
 }
 
-export const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
+const BEDRIJFSGEGEVENS: readonly { sleutel: string; label: string }[] = [
   { sleutel: "bedrijfsnaam", label: "bedrijfsnaam" },
   { sleutel: "bedrijf_adres", label: "adres" },
   { sleutel: "kvk_nummer", label: "KvK-nummer" },
@@ -112,7 +112,7 @@ export function sectieAnker(sleutel: string): string {
 }
 
 /** Secties waarvan de (opgeslagen of standaard)tekst nog een invulplek bevat. */
-export function tekstenMetPlaceholder(
+function tekstenMetPlaceholder(
   groepen: readonly Groep[],
   opgeslagen: ReadonlyMap<string, unknown>,
 ): { groep: Groep; sleutel: string; titel: string; href: string }[] {

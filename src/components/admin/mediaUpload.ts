@@ -4,7 +4,7 @@ import { maakMediaUpload, registreerUpload } from "@/app/admin/media/acties";
 import { altUitNaam, controleerBestand, mimeVoorNaam, schoneBestandsnaam, type MediaItem, type MediaSoort } from "@/lib/media/regels";
 
 /** Leest de afmetingen van een afbeelding in de browser; null als dat niet lukt (bijv. sommige SVG/ICO). */
-export async function leesAfmetingen(bestand: Blob): Promise<{ breedte: number; hoogte: number } | null> {
+async function leesAfmetingen(bestand: Blob): Promise<{ breedte: number; hoogte: number } | null> {
   if (typeof createImageBitmap === "function" && bestand.type !== "image/svg+xml") {
     try {
       const bitmap = await createImageBitmap(bestand);
@@ -29,7 +29,7 @@ export async function leesAfmetingen(bestand: Blob): Promise<{ breedte: number; 
 }
 
 /** Het MIME-type; sommige browsers geven bij .ico een leeg type. */
-export function bestandsType(bestand: File): string {
+function bestandsType(bestand: File): string {
   return bestand.type || mimeVoorNaam(bestand.name) || "";
 }
 

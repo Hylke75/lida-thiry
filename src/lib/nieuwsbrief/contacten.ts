@@ -41,7 +41,7 @@ export function normaliseerEmail(email: string): string | null {
 }
 
 /** Per e-mailadres: heeft betaald besteld en welke figuurtypes (letters) eruit kwamen. */
-export async function klantinfoPerEmail(): Promise<Map<string, Klantinfo>> {
+async function klantinfoPerEmail(): Promise<Map<string, Klantinfo>> {
   const supabase = adminClient();
   const rijen = await alles<{ email: string; status: string; toegekend_type: string | null }>((van, tot) =>
     supabase
@@ -174,7 +174,7 @@ export async function bevestig(token: string): Promise<Contact | null> {
 }
 
 /** Na hoeveel dagen een nooit bevestigde aanmelding wordt verwijderd. */
-export const ONBEVESTIGD_BEWAREN_DAGEN = 30;
+const ONBEVESTIGD_BEWAREN_DAGEN = 30;
 
 /**
  * Verwijdert aanmeldingen die na 30 dagen nog steeds niet bevestigd zijn en ook

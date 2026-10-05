@@ -153,3 +153,19 @@ Zet in GitHub → Settings → Secrets and variables → Actions:
   Project → Settings → Deployment Protection → Protection Bypass for Automation);
 - optioneel `E2E_ADMIN_EMAIL` en `E2E_ADMIN_WACHTWOORD` voor de ingelogde
   beheertests (alleen een testbeheerder op de testdatabase).
+
+## 5. Laadtijd meten: `npm run snelheid`
+
+Geen test, maar een handige meting (`scripts/meet-snelheid.mjs`): vraagt een paar
+publieke pagina's een aantal keer op (na één opwarmverzoek) en toont per pagina de
+p50, p95 en het maximum in milliseconden. Alleen GET-verzoeken zonder cookies, na
+elkaar; elk verzoek heeft een tijdslimiet van 60 s (`MEET_TIJDSLIMIET_MS`).
+
+```bash
+npm run snelheid                                            # http://localhost:3000, 10× per pagina
+npm run snelheid -- https://preview.example.vercel.app 20   # andere omgeving, 20×
+npm run snelheid -- http://localhost:3000 10 / /blog        # alleen deze paden
+```
+
+Het basisadres kan ook via `MEET_BASIS`. Meet bij voorkeur tegen een productiebuild
+(`npm run build && npm start`) of een Vercel-preview; `npm run dev` is veel trager.

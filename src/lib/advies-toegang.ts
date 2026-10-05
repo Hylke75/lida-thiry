@@ -3,7 +3,7 @@
 import { ADVIES_STATUSSEN } from "./order-status";
 
 /** Zo lang na het afronden van de test blijft de PDF via de testlink beschikbaar. */
-export const PDF_BESCHIKBAAR_DAGEN = 365;
+const PDF_BESCHIKBAAR_DAGEN = 365;
 
 const AFGEROND: readonly string[] = ADVIES_STATUSSEN;
 

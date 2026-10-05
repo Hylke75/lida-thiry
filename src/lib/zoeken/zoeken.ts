@@ -7,9 +7,9 @@ import { STATUS_LABEL as NB_STATUS, type ContactStatus } from "@/lib/nieuwsbrief
 import { fragment, metZoekterm, orGroepen, zoekWoorden } from "./regels";
 
 /** Hoeveel treffers per soort we tonen; de rest via "meer". */
-export const PER_GROEP = 8;
+const PER_GROEP = 8;
 
-export interface ZoekTreffer {
+interface ZoekTreffer {
   id: string;
   href: string;
   titel: string;

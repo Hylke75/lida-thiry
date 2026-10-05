@@ -1,7 +1,7 @@
 import "server-only";
 import { adminClient } from "./supabase/admin";
 
-export interface InhoudBeeld {
+interface InhoudBeeld {
   beeld_id: string;
   code: string;
   pad: string;
@@ -10,7 +10,7 @@ export interface InhoudBeeld {
   naam: string | null;
 }
 
-export interface InhoudSectie {
+interface InhoudSectie {
   id: string;
   volgorde: number;
   kop: string;

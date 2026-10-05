@@ -111,7 +111,7 @@ const ALLE_HREFS: readonly string[] = GROEPEN.flatMap((g) => g.links.map((l) => 
  * De navigatielink die bij `pad` hoort: een exacte match, anders de langste link
  * waar het pad onder valt ("/admin/nieuwsbrief/campagnes/123" → Campagnes).
  */
-export function actieveLink(pad: string | undefined): string | undefined {
+function actieveLink(pad: string | undefined): string | undefined {
   if (!pad) return undefined;
   if (ALLE_HREFS.includes(pad)) return pad;
   return ALLE_HREFS.filter((h) => h !== "/admin" && pad.startsWith(`${h}/`)).sort((a, b) => b.length - a.length)[0];

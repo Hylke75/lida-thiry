@@ -33,7 +33,7 @@ export async function nieuwsbriefNaBetaling(orderId: string): Promise<void> {
 }
 
 /** Zo lang geldt een gestarte afhandeling als 'bezig' (daarna mag een herhaling). */
-export const NABETALING_SLOT_MINUTEN = 10;
+const NABETALING_SLOT_MINUTEN = 10;
 
 /**
  * Claimt (atomair) het recht om de afhandeling na betaling voor deze order

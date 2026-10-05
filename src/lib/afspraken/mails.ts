@@ -86,10 +86,10 @@ function antwoordAdres(i: Record<string, string | null>): string | null {
   return gevuld(i.contact_email) ?? gevuld(i.adviseur_email);
 }
 
-export const afspraakLink = (token: string) => `${siteUrl()}/afspraak/${token}`;
+const afspraakLink = (token: string) => `${siteUrl()}/afspraak/${token}`;
 
 /** Het agendabestand bij een afspraak (ook te downloaden via /afspraak/[token]/ics). */
-export function icsVoor(a: MailbareAfspraak, m: MailAfspraak, instellingen: Record<string, string | null>, geannuleerd = false): string {
+function icsVoor(a: MailbareAfspraak, m: MailAfspraak, instellingen: Record<string, string | null>, geannuleerd = false): string {
   let host = "lidathiry.nl";
   try {
     host = new URL(siteUrl()).host || host;
@@ -151,7 +151,7 @@ export async function stuurBevestiging(a: MailbareAfspraak): Promise<void> {
 }
 
 /** Ontvangstbevestiging van een aanvraag (zonder agendabestand). Gooit bij een fout. */
-export async function stuurAanvraag(a: MailbareAfspraak): Promise<void> {
+async function stuurAanvraag(a: MailbareAfspraak): Promise<void> {
   const c = await context(a);
   const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_AANVRAAGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
   await verstuurKlant(a, c, afspraakAanvraagMail(t, algemeen, c.mail, afspraakLink(a.token)), null);

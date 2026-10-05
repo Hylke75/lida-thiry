@@ -12,7 +12,7 @@ import {
   type Silhouet,
 } from "./lichaamstype-regels";
 
-export const LICHAAMSTYPE_KOLOMMEN =
+const LICHAAMSTYPE_KOLOMMEN =
   "code, naam, alias, korte_omschrijving, uitleg, kenmerken, vorm, beeld_id, volgorde, actief";
 
 /** Alle lichaamstypes (vers; per request gecachet), op volgorde. */
@@ -27,10 +27,6 @@ export const haalLichaamstypes = cache(async (): Promise<Lichaamstype[]> => {
 });
 
 /** Volgorde per code, voor het sorteren van adviestype-sleutels. */
-export async function volgordePerCode(): Promise<Record<string, number>> {
-  return Object.fromEntries((await haalLichaamstypes()).map((t) => [t.code, t.volgorde]));
-}
-
 /**
  * Silhouetten voor de test, uitslag en website (met de URL van de foto als die
  * gekoppeld is). Standaard alleen de actieve types.

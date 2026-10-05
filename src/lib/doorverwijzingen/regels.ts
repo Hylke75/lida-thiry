@@ -3,10 +3,10 @@
 // Next-API's, zodat dit zowel in de proxy, in beheer als in tests werkt.
 
 /** Paden die nooit worden doorverwezen (beheer, API, inloggen, Next zelf). */
-export const GERESERVEERDE_VOORVOEGSELS = ["/admin", "/api", "/auth", "/_next"] as const;
+const GERESERVEERDE_VOORVOEGSELS = ["/admin", "/api", "/auth", "/_next"] as const;
 
-export const MAX_VAN_LENGTE = 300;
-export const MAX_NAAR_LENGTE = 1000;
+const MAX_VAN_LENGTE = 300;
+const MAX_NAAR_LENGTE = 1000;
 /** Bovengrens voor het aantal doorverwijzingen dat de proxy in het geheugen laadt. */
 export const MAX_DOORVERWIJZINGEN = 5000;
 
@@ -65,7 +65,7 @@ export function isGereserveerd(pad: string): boolean {
  * Of `naar` een intern pad is (begint met één /). Een backslash telt niet als
  * intern: browsers lezen "/\evil.com" als "//evil.com" (een ander domein).
  */
-export function isIntern(naar: string): boolean {
+function isIntern(naar: string): boolean {
   return naar.startsWith("/") && !naar.startsWith("//") && !naar.includes("\\");
 }
 
@@ -73,7 +73,7 @@ export function isIntern(naar: string): boolean {
  * Paden die de proxy niet ziet (zie de matcher in src/proxy.ts): beeldbestanden
  * en favicon.ico. Een doorverwijzing vanaf zo'n pad zou nooit werken.
  */
-export function buitenProxy(pad: string): boolean {
+function buitenProxy(pad: string): boolean {
   return /\.(?:svg|png|jpg|jpeg|gif|webp)$/.test(pad) || pad.startsWith("/favicon.ico");
 }
 
@@ -417,7 +417,7 @@ export function filterDoorverwijzingen<T extends Pick<Doorverwijzing, "van" | "n
 
 // CSV ------------------------------------------------------------------------------
 
-export const CSV_KOLOMMEN = ["van", "naar", "permanent"] as const;
+const CSV_KOLOMMEN = ["van", "naar", "permanent"] as const;
 export const MAX_IMPORT_RIJEN = 2000;
 
 export interface ImportAnalyse {

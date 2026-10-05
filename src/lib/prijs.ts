@@ -85,7 +85,7 @@ export function cadeauboncode(bytes: Uint8Array): string {
 }
 
 /** Mollie-bedrag ("24.95") naar centen; ontbrekend of ongeldig = 0. */
-export function bedragNaarCenten(bedrag: { value?: string } | null | undefined): number {
+function bedragNaarCenten(bedrag: { value?: string } | null | undefined): number {
   const n = Number(bedrag?.value ?? 0);
   return Number.isFinite(n) ? Math.round(n * 100) : 0;
 }

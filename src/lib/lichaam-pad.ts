@@ -33,7 +33,7 @@ export const Y = {
 } as const;
 
 /** Catmull-Rom door de punten -> gesloten, vloeiend SVG-pad. */
-export function vloeiendPad(p: [number, number][]): string {
+function vloeiendPad(p: [number, number][]): string {
   const n = p.length;
   let d = `M${p[0][0]},${p[0][1]}`;
   for (let i = 0; i < n; i++) {

@@ -24,7 +24,7 @@ export function isBron(w: unknown): w is FoutBron {
 /** Maximale lengtes van wat we opslaan (de database kapt zelf ook af). */
 export const MAX_BERICHT = 2000;
 export const MAX_STACK = 8000;
-export const MAX_PAD = 500;
+const MAX_PAD = 500;
 
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
@@ -191,7 +191,7 @@ export function isBrowserRuis(bericht: string, stack?: string | null, bestand?: 
 }
 
 /** Drempels van het aantal waarbij we opnieuw mailen. */
-export const MELD_DREMPELS = [10, 100, 1000] as const;
+const MELD_DREMPELS = [10, 100, 1000] as const;
 const DAG_MS = 24 * 60 * 60 * 1000;
 
 /** De hoogste drempel die `aantal` heeft bereikt (0 = nog geen). */
@@ -212,7 +212,7 @@ export interface FoutRijStaat {
 /** Sleutel in `details` waarin we bijhouden bij welk aantal we het laatst mailden. */
 export const GEMELD_BIJ = "_gemeld_bij_aantal";
 
-export function gemeldBijAantal(details: unknown): number {
+function gemeldBijAantal(details: unknown): number {
   if (details && typeof details === "object" && !Array.isArray(details)) {
     const n = (details as Record<string, unknown>)[GEMELD_BIJ];
     if (typeof n === "number" && Number.isFinite(n)) return n;

@@ -196,7 +196,7 @@ export function naamLabel(standaard: string, modus: NaamVeld): string {
 }
 
 /** De toestemmingstekst van een formulier, of de standaardtekst als die leeg is. */
-export function toestemmingVan(f: Pick<Formulier, "toestemming_tekst">, standaard: string): string {
+function toestemmingVan(f: Pick<Formulier, "toestemming_tekst">, standaard: string): string {
   return f.toestemming_tekst.trim() || standaard;
 }
 

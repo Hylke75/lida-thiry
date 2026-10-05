@@ -149,7 +149,7 @@ export interface PushPayload {
   tijd: number;
 }
 
-export const MAX_TITEL = 80;
+const MAX_TITEL = 80;
 export const MAX_TEKST = 240;
 
 function kort(s: string, max: number): string {

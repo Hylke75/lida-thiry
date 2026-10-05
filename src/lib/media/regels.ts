@@ -18,14 +18,14 @@ export interface MediaItem {
 
 export const MEDIA_BUCKET = "media";
 /** Buckets waarvan bestanden in de bibliotheek mogen staan (oudere uploads: blog, nieuwsbrief). */
-export const MEDIA_BUCKETS = ["media", "blog", "nieuwsbrief"] as const;
+const MEDIA_BUCKETS = ["media", "blog", "nieuwsbrief"] as const;
 export type MediaBucket = (typeof MEDIA_BUCKETS)[number];
 
 /** Gelijk aan de limiet van de bucket "media". */
 export const MEDIA_MAX_BYTES = 10 * 1024 * 1024;
 export const MEDIA_PER_PAGINA = 48;
 
-export const MIME_EXTENSIE: Record<string, string> = {
+const MIME_EXTENSIE: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/gif": "gif",
@@ -157,7 +157,7 @@ export function isMediaBucket(b: unknown): b is MediaBucket {
   return typeof b === "string" && (MEDIA_BUCKETS as readonly string[]).includes(b);
 }
 
-export const SVG_MIME = "image/svg+xml";
+const SVG_MIME = "image/svg+xml";
 
 /**
  * SVG-bestanden worden niet opgeschoond en staan in een openbare bucket; een SVG

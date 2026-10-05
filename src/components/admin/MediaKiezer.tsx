@@ -8,7 +8,7 @@ import { Afbeelding } from "@/components/Afbeelding";
 import { MediaUploader } from "./MediaUploader";
 
 /** Wat de kiezer teruggeeft. */
-export interface GekozenMedia {
+interface GekozenMedia {
   id: string;
   url: string;
   alt: string;

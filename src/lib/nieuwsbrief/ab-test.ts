@@ -14,7 +14,7 @@ export type Variant = "a" | "b";
 
 export const AB_PERCENTAGE = { min: 10, max: 50, standaard: 20 } as const;
 export const AB_WACHTUREN = { min: 1, max: 72, standaard: 4 } as const;
-export const AB_WACHT_SLEUTEL = "abWachtUren";
+const AB_WACHT_SLEUTEL = "abWachtUren";
 
 export interface AbInstelling {
   onderwerpB: string;

@@ -41,7 +41,7 @@ export interface AfspraakRij {
 
 export const AFSPRAAK_VELDEN =
   "id, soort_id, relatie_id, naam, email, telefoon, opmerking, start_op, eind_op, status, token, aanbetaling_cent, mollie_payment_id, betaald_op, herinnering_op, notitie, aangemaakt_op";
-export const SOORT_VELDEN =
+const SOORT_VELDEN =
   "id, naam, omschrijving, duur_minuten, prijs_cent, aanbetaling_cent, locatie, online, buffer_minuten, actief, volgorde";
 
 /** De afspraakinstellingen; standaardwaarden als de database niet bereikbaar is. */
@@ -134,7 +134,7 @@ export async function haalBeschikbaarheid(): Promise<{ id: string; weekdag: numb
 }
 
 /** Alle invoer voor de rekenkern voor deze soort, vanaf nu tot het einde van de boekingshorizon. */
-export async function slotInvoerVoor(
+async function slotInvoerVoor(
   soort: Pick<AfspraakSoort, "duur_minuten" | "buffer_minuten">,
   inst: AfspraakInstellingen,
   nu: Date,

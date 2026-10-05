@@ -1,6 +1,6 @@
 // RSS 2.0-feed van de blog. Puur: krijgt kant-en-klare items en geeft XML terug.
 
-export interface RssItem {
+interface RssItem {
   titel: string;
   /** Absolute URL van het bericht (ook gebruikt als guid). */
   url: string;

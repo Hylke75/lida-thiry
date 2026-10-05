@@ -13,12 +13,12 @@ export const BERICHT_STATUS_LABEL: Record<BerichtStatus, string> = {
   spam: "Spam",
 };
 
-export function isBerichtStatus(s: unknown): s is BerichtStatus {
+function isBerichtStatus(s: unknown): s is BerichtStatus {
   return typeof s === "string" && (BERICHT_STATUSSEN as readonly string[]).includes(s);
 }
 
 export const MAX = { naam: 120, email: 254, telefoon: 30, onderwerp: 120, bericht: 5_000, antwoord: 20_000 } as const;
-export const MIN_BERICHT = 10;
+const MIN_BERICHT = 10;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TELEFOON = /^[0-9+()\-.\s/]{6,30}$/;
@@ -79,7 +79,7 @@ export function valideerContact(ruw: Readonly<Record<string, unknown>>, onderwer
 // Spam --------------------------------------------------------------------------------
 
 /** Woorden die in een contactbericht voor deze site vrijwel altijd op spam wijzen. */
-export const SPAMWOORDEN = [
+const SPAMWOORDEN = [
   "viagra",
   "cialis",
   "casino",

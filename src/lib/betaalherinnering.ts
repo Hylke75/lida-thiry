@@ -19,7 +19,7 @@ import {
 export const HERVAT_DOEL = "hervat";
 
 /** Ondertekende link naar de pagina waar de klant de betaling hervat. */
-export function hervatLink(orderId: string, nu: Date = new Date()): string {
+function hervatLink(orderId: string, nu: Date = new Date()): string {
   const verloopt = new Date(nu.getTime() + LINK_GELDIG_DAGEN * 24 * 60 * 60 * 1000);
   const t = ondertekenLink(HERVAT_DOEL, orderId, verloopt);
   return `${siteUrl()}/bestellen/hervat/${orderId}?t=${encodeURIComponent(t)}`;

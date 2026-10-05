@@ -4,16 +4,16 @@
 import { formatteerBedrag } from "../prijs";
 
 /** Vaste bedragen op het formulier (centen). */
-export const VASTE_BEDRAGEN = [2000, 3500, 5000] as const;
+const VASTE_BEDRAGEN = [2000, 3500, 5000] as const;
 /**
  * Minimaal en (absoluut) maximaal bedrag van een cadeaubon (centen); de database
  * staat 5–1000 euro toe. De bon is één keer te gebruiken en dekt hooguit de prijs
  * van de test, dus het werkelijke maximum is de prijs van de test (maxBedragCent).
  */
-export const MIN_BEDRAG_CENT = 500;
-export const MAX_BEDRAG_CENT = 50_000;
+const MIN_BEDRAG_CENT = 500;
+const MAX_BEDRAG_CENT = 50_000;
 /** Zo lang is een cadeaubon geldig na betaling (of na de geplande verzenddatum). */
-export const GELDIG_MAANDEN = 12;
+const GELDIG_MAANDEN = 12;
 /** Zo ver vooruit mag de bon gepland worden. */
 export const MAX_VOORUIT_DAGEN = 183;
 export const MAX_BOODSCHAP = 500;

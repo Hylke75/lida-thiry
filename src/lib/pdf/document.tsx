@@ -25,7 +25,7 @@ export interface PdfMaten {
   schouder: number | null;
 }
 
-export interface PdfBeeld {
+interface PdfBeeld {
   /** Data-URI van het beeld. */
   src: string;
   bijschrift?: string | null;

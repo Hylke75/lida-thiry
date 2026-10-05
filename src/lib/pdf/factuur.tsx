@@ -78,7 +78,7 @@ const s = StyleSheet.create({
   },
 });
 
-export function FactuurPdf({ f }: { f: FactuurGegevens }) {
+function FactuurPdf({ f }: { f: FactuurGegevens }) {
   const b = (cent: number) => formatteerBedrag(cent, f.valuta);
   const split = btwSplitsing(f.totaalCent, f.btwProcent);
   const verkoperRegels = [

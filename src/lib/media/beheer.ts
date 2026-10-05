@@ -34,7 +34,7 @@ import {
 
 export type { MediaItem };
 
-export const MEDIA_VELDEN = "id, bucket, pad, url, naam, alt, mime, grootte, breedte, hoogte, map, aangemaakt_op";
+const MEDIA_VELDEN = "id, bucket, pad, url, naam, alt, mime, grootte, breedte, hoogte, map, aangemaakt_op";
 
 export interface ZoekOpties {
   q?: string;

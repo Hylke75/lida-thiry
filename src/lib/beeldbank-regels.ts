@@ -5,7 +5,7 @@
 export const BEELD_BUCKET = "advies-beelden";
 
 /** Kortste zijde die een (nieuw) beeld minimaal moet hebben, in pixels. */
-export const MIN_KORTE_ZIJDE = 600;
+const MIN_KORTE_ZIJDE = 600;
 
 /**
  * Standaardverhouding van alle beelden: 2:3 staand. Gekozen na analyse van de
@@ -13,7 +13,7 @@ export const MIN_KORTE_ZIJDE = 600;
  * zonder bijsnijden gecentreerd op een wit kader van deze verhouding gezet, zodat
  * alle beelden in de PDF even groot in een strak raster staan.
  */
-export const STANDAARD_VERHOUDING: [number, number] = [2, 3];
+const STANDAARD_VERHOUDING: [number, number] = [2, 3];
 export const IDEAAL_FORMAAT = { breedte: 1000, hoogte: 1500 } as const;
 
 /** Maximale bestandsgrootte van een upload (15 MB). */

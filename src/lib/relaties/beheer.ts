@@ -332,7 +332,7 @@ export interface VergeetResultaat {
 }
 
 /** Wat er van een afspraak overblijft na vergeten: tijden, status en betaalde bedragen blijven. */
-export const GEANONIMISEERDE_AFSPRAAK = {
+const GEANONIMISEERDE_AFSPRAAK = {
   relatie_id: null,
   naam: "Verwijderd",
   email: "verwijderd@verwijderd.invalid",

@@ -11,8 +11,8 @@
 // De leesfuncties falen al zacht (standaardteksten, lege lijsten); dit zorgt
 // alleen dat dat snel gebeurt.
 
-export const STANDAARD_TIJDSLIMIET_MS = 3_000;
-export const STANDAARD_PAUZE_MS = 15_000;
+const STANDAARD_TIJDSLIMIET_MS = 3_000;
+const STANDAARD_PAUZE_MS = 15_000;
 
 export interface Stroomonderbreker {
   /** true = verzoeken nu overslaan (de database gaf net een fout). */

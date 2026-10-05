@@ -52,7 +52,7 @@ export interface Campagne {
   ab_winnaar: Variant | null;
 }
 
-export const CAMPAGNE_VELDEN =
+const CAMPAGNE_VELDEN =
   "id, soort, naam, onderwerp, preheader, blokken, doelgroep, status, ingepland_op, gestart_op, verzonden_op, trigger, vertraging_dagen, actief, actief_sinds, aangemaakt_op, bijgewerkt_op, onderwerp_b, ab_percentage, ab_winnaar";
 
 interface Huisstijl {
@@ -261,7 +261,7 @@ export async function kiesAbWinnaar(id: string, opties: { direct?: boolean } = {
 }
 
 /** Kiest de winnaar voor lopende A/B-tests waarvan de wachttijd voorbij is. */
-export async function beslisAbTesten(): Promise<number> {
+async function beslisAbTesten(): Promise<number> {
   const { data } = await adminClient()
     .from("nb_campagnes")
     .select("id")
@@ -283,7 +283,7 @@ export async function beslisAbTesten(): Promise<number> {
 }
 
 /** Start ingeplande campagnes waarvan het moment is aangebroken. */
-export async function startIngeplande(): Promise<number> {
+async function startIngeplande(): Promise<number> {
   const { data } = await adminClient()
     .from("nb_campagnes")
     .select("id")
@@ -309,7 +309,7 @@ export async function startIngeplande(): Promise<number> {
  * niet kregen. Alleen startmomenten sinds het aanzetten tellen mee, zodat een
  * nieuwe automatisering niet ineens alle oude contacten mailt.
  */
-export async function planAutomatiseringen(): Promise<number> {
+async function planAutomatiseringen(): Promise<number> {
   const supabase = adminClient();
   const { data: autos } = await supabase
     .from("nb_campagnes")

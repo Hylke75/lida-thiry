@@ -103,7 +103,7 @@ export interface ImportRij {
   tags: string[];
 }
 
-export interface OngeldigeRij {
+interface OngeldigeRij {
   regel: number;
   waarde: string;
   reden: string;

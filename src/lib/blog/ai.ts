@@ -16,7 +16,7 @@ import {
 } from "./ai-prompt";
 import { maakSlug, normaliseerTags } from "./regels";
 
-export const AI_MODEL = "claude-opus-5-5";
+const AI_MODEL = "claude-opus-5-5";
 
 export class AiFout extends Error {}
 

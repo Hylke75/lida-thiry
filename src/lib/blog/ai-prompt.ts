@@ -55,7 +55,7 @@ export function normaliseerOpdracht(ruw: unknown): { ok: true; opdracht: Schrijf
   };
 }
 
-export const OPMAAK_UITLEG = `Gebruik uitsluitend deze eenvoudige opmaak in de tekst (geen HTML, geen andere Markdown):
+const OPMAAK_UITLEG = `Gebruik uitsluitend deze eenvoudige opmaak in de tekst (geen HTML, geen andere Markdown):
 - "## " aan het begin van een regel voor een tussenkop, "### " voor een kleinere kop (geen # voor de hoofdtitel: die staat apart)
 - "- " aan het begin van een regel voor een opsommingsteken
 - **vet** voor nadruk (spaarzaam)

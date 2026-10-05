@@ -2,7 +2,7 @@ import "server-only";
 import { adminClient } from "./supabase/admin";
 import { adviesDownloadbaar, tokenVerlopen } from "./advies-toegang";
 
-export interface TestOrder {
+interface TestOrder {
   id: string;
   klantnaam: string;
   email: string;

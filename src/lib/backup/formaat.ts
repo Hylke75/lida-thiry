@@ -75,7 +75,7 @@ export function backupBestandsnaam(nu: Date): string {
   return `${BACKUP_FORMAAT}-${d}.json.gz`;
 }
 
-export interface TabelControle {
+interface TabelControle {
   naam: string;
   inBestand: number;
   /** Aantal volgens het manifest. */

@@ -9,7 +9,7 @@ import {
 } from "./beeldbank-regels";
 import { CODE_PATROON } from "./lichaamstype-regels";
 
-export const PER_PAGINA = 48;
+const PER_PAGINA = 48;
 
 export const STATUSSEN = ["origineel", "vervangen", "goedgekeurd"] as const;
 export type BeeldStatus = (typeof STATUSSEN)[number];

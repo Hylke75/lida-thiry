@@ -24,7 +24,7 @@ export interface TekstvakVeld extends VeldBasis {
 }
 
 /** Tekst met eenvoudige opmaak (## kop, - opsomming, **vet**, [link](url)). */
-export interface OpmaakVeld extends VeldBasis {
+interface OpmaakVeld extends VeldBasis {
   soort: "opmaak";
   standaard: string;
   regels?: number;
@@ -46,7 +46,7 @@ export interface LijstVeld {
   max?: number;
 }
 
-export type Veld = EnkelVeld | LijstVeld;
+type Veld = EnkelVeld | LijstVeld;
 
 export interface Sectie {
   /** Unieke sleutel, bijv. "website.hero" (ook de rij in de tabel inhoud). */
@@ -72,7 +72,7 @@ export function sectie<const S extends Sectie>(s: S): S {
   return s;
 }
 
-export type LijstItem<V extends LijstVeld> = { _id: string } & { [K in keyof V["velden"]]: string };
+type LijstItem<V extends LijstVeld> = { _id: string } & { [K in keyof V["velden"]]: string };
 
 type WaardeVan<V> = V extends LijstVeld ? LijstItem<V>[] : string;
 
@@ -81,12 +81,12 @@ export type SectieWaarden<S extends Sectie> = {
   -readonly [K in keyof S["velden"]]: WaardeVan<S["velden"][K]>;
 };
 
-export const STANDAARD_MAX = { tekst: 300, tekstvak: 5_000, opmaak: 60_000 } as const;
-export const STANDAARD_LIJST_MAX = 50;
+const STANDAARD_MAX = { tekst: 300, tekstvak: 5_000, opmaak: 60_000 } as const;
+const STANDAARD_LIJST_MAX = 50;
 
 const ID_PATROON = /^[A-Za-z0-9_-]{1,40}$/;
 
-export function geldigeId(id: unknown): id is string {
+function geldigeId(id: unknown): id is string {
   return typeof id === "string" && ID_PATROON.test(id);
 }
 

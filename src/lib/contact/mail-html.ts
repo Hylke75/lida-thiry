@@ -31,7 +31,7 @@ export function platteTekstHtml(tekst: string, pStijl = ""): string {
 }
 
 /** Het oorspronkelijke bericht als citaat (grijze balk links). */
-export function citaatHtml(kop: string, bericht: string): string {
+function citaatHtml(kop: string, bericht: string): string {
   return `<div style="margin:24px 0 0">
       <p style="${KLEIN};margin:0 0 6px">${escapeHtml(kop)}</p>
       <blockquote style="margin:0;padding:4px 0 4px 14px;border-left:3px solid #e5ddd5;color:#555">${platteTekstHtml(bericht, "margin:0 0 10px")}</blockquote>

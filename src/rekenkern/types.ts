@@ -1,7 +1,7 @@
 // Gedeelde types voor de rekenkern. Puur; geen UI- of database-afhankelijkheden.
 
 export type Lengtegroep = "kort" | "gemiddeld" | "lang";
-export type Gewichtsklasse = "tenger" | "gemiddeld" | "vol" | "plus";
+type Gewichtsklasse = "tenger" | "gemiddeld" | "vol" | "plus";
 
 /** De acht mogelijke FFIT-uitkomsten. Bij "Geen type" bepaalt het gekozen silhouet de letter. */
 export type FfitType =
@@ -27,7 +27,7 @@ export interface Maten {
 }
 
 /** Eén lengte-subband met de bijbehorende gewichtsgrenzen (kg). */
-export interface CategorieSegment {
+interface CategorieSegment {
   lengteMin: number;
   /** Bovengrens van de lengteband; gebruik Infinity voor "en hoger". */
   lengteMax: number;

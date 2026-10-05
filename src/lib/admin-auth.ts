@@ -120,8 +120,3 @@ export async function vereisBeheerder(recht?: Recht, opties: VereisOpties = {}):
   if (recht && !heeftRecht(s.rol, recht)) redirect(`/admin/geen-toegang?recht=${encodeURIComponent(recht)}`);
   return Object.assign(s.user, { rol: s.rol });
 }
-
-/** Kortere vorm: vereisRecht("blog") is vereisBeheerder("blog"). */
-export function vereisRecht(recht: Recht): Promise<Beheerder> {
-  return vereisBeheerder(recht);
-}

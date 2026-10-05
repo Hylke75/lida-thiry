@@ -29,34 +29,6 @@ export const LEGE_TOTALEN: Totalen = {
   gebounced: 0,
 };
 
-export interface VerzendStatusRij {
-  campagne_id: string;
-  status: string;
-  geopend_op: string | null;
-  geklikt_op: string | null;
-  afgemeld_op: string | null;
-  gebounced_op: string | null;
-}
-
-/** Telt verzendingen per campagne. */
-export function telVerzendingen(rijen: readonly VerzendStatusRij[]): Map<string, Totalen> {
-  const uit = new Map<string, Totalen>();
-  for (const r of rijen) {
-    const t = uit.get(r.campagne_id) ?? { ...LEGE_TOTALEN };
-    t.totaal++;
-    if (r.status === "wachtrij" || r.status === "verwerken") t.wachtrij++;
-    else if (r.status === "verzonden") t.verzonden++;
-    else if (r.status === "mislukt") t.mislukt++;
-    else if (r.status === "overgeslagen") t.overgeslagen++;
-    if (r.geopend_op) t.geopend++;
-    if (r.geklikt_op) t.geklikt++;
-    if (r.afgemeld_op) t.afgemeld++;
-    if (r.gebounced_op) t.gebounced++;
-    uit.set(r.campagne_id, t);
-  }
-  return uit;
-}
-
 /** Zet een rij uit de databasefunctie nb_campagne_statistiek om (getallen kunnen als tekst komen). */
 export function totalenUitRij(r: Record<string, unknown>): Totalen {
   const n = (k: keyof Totalen) => {
@@ -89,31 +61,12 @@ export function toonPercentage(deel: number, geheel: number): string {
   return p === null ? "—" : `${p.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}%`;
 }
 
-export interface KlikRij {
-  url: string;
-  verzending_id: string;
-}
-
 export interface LinkTelling {
   url: string;
   /** Unieke ontvangers die erop klikten. */
   uniek: number;
   /** Totaal aantal kliks. */
   totaal: number;
-}
-
-/** Kliks per link, meest geklikt eerst. */
-export function telKliks(rijen: readonly KlikRij[]): LinkTelling[] {
-  const perUrl = new Map<string, { ontvangers: Set<string>; totaal: number }>();
-  for (const r of rijen) {
-    const t = perUrl.get(r.url) ?? { ontvangers: new Set<string>(), totaal: 0 };
-    t.ontvangers.add(r.verzending_id);
-    t.totaal++;
-    perUrl.set(r.url, t);
-  }
-  return [...perUrl.entries()]
-    .map(([url, t]) => ({ url, uniek: t.ontvangers.size, totaal: t.totaal }))
-    .sort((a, b) => b.uniek - a.uniek || b.totaal - a.totaal || a.url.localeCompare(b.url));
 }
 
 // Filters voor de ontvangerslijst in het rapport ------------------------------------

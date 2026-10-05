@@ -5,7 +5,7 @@
 
 import { bouwIndex, MAX_DOORVERWIJZINGEN, type Doorverwijzing, type Index } from "./regels";
 
-export const CACHE_MS = 60_000;
+const CACHE_MS = 60_000;
 /** Na een fout korter wachten met opnieuw proberen, maar niet bij elk verzoek. */
 const FOUT_CACHE_MS = 15_000;
 const LAAD_TIMEOUT_MS = 1_500;

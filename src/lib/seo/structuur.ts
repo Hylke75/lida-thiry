@@ -28,7 +28,7 @@ export function absoluteUrl(url: string | null | undefined, basis: string): stri
   }
 }
 
-export function organisatieId(basis: string): string {
+function organisatieId(basis: string): string {
   return `${zonderSlash(basis)}/#organisatie`;
 }
 

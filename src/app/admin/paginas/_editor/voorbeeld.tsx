@@ -3,7 +3,7 @@ import { BlokRuimte, PaginaWeergave } from "@/components/paginas/PaginaWeergave"
 import { blokLabel, gebruikteBlokken, type FormulierKeuze } from "@/lib/paginas/beheer";
 
 /** In het beheer: elk blok als gemarkeerd vak met een label, niet het echte formulier. */
-export function voorbeeldBlokken(inhoud: string, formulieren: readonly FormulierKeuze[]): Record<string, ReactNode> {
+function voorbeeldBlokken(inhoud: string, formulieren: readonly FormulierKeuze[]): Record<string, ReactNode> {
   const uit: Record<string, ReactNode> = {};
   for (const naam of gebruikteBlokken(inhoud)) {
     const { label, bekend } = blokLabel(naam, formulieren);

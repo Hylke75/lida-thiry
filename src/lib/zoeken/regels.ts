@@ -3,9 +3,9 @@
 // het ophalen staat in zoeken.ts.
 
 /** Maximale lengte van een zoekterm (tekens). */
-export const MAX_ZOEKTERM = 100;
+const MAX_ZOEKTERM = 100;
 /** Maximaal aantal losse woorden waarop gezocht wordt (elk woord moet ergens voorkomen). */
-export const MAX_WOORDEN = 5;
+const MAX_WOORDEN = 5;
 /** Kortste zoekterm waarmee gezocht wordt. */
 export const MIN_ZOEKTERM = 2;
 

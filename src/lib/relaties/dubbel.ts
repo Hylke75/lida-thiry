@@ -28,7 +28,7 @@ export function naamSleutel(r: Pick<Relatie, "voornaam" | "achternaam">): string
   return normaliseerZoektekst(volledigeNaam(r)).replace(/[^a-z0-9 ]/g, "");
 }
 
-export function postcodeSleutel(p: string | null | undefined): string {
+function postcodeSleutel(p: string | null | undefined): string {
   return (p ?? "").replace(/\s/g, "").toUpperCase();
 }
 
@@ -120,7 +120,7 @@ export function standaardKeuzes(blijft: Relatie, weg: Relatie): Keuzes {
 }
 
 /** Twee notitieteksten samen: de notitie over het samenvoegen bovenaan, dan beide (nieuwste eerst). */
-export function voegNotitiesSamen(blijft: string, weg: string, kop: string): string {
+function voegNotitiesSamen(blijft: string, weg: string, kop: string): string {
   return [kop, blijft.trim(), weg.trim()].filter(Boolean).join("\n\n");
 }
 

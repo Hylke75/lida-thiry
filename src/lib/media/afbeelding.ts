@@ -6,7 +6,7 @@
 // een tekst) tonen we als gewone <img loading="lazy">, anders zou next/image een fout geven.
 
 /** Pad van openbare bestanden in Supabase Storage. */
-export const OPENBARE_OPSLAG = "/storage/v1/object/public/";
+const OPENBARE_OPSLAG = "/storage/v1/object/public/";
 
 /** Typen die de beeldoptimalisatie mag bewerken (geen SVG/ICO/GIF: die laten we zoals ze zijn). */
 const RASTER = /\.(jpe?g|png|webp|avif)$/i;

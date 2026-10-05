@@ -2,7 +2,7 @@
 // met binnen gewijzigde regels een woord-voor-woord-markering. Puur: geen
 // database of netwerk, bruikbaar in de browser, op de server en in tests.
 
-export type DiffSoort = "gelijk" | "weg" | "erbij";
+type DiffSoort = "gelijk" | "weg" | "erbij";
 
 /** Een stukje van een regel; `gewijzigd` = dit woord is anders dan in de andere versie. */
 export interface DiffDeel {

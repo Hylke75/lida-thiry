@@ -57,7 +57,7 @@ export const BLOK_INFO: Readonly<Record<HomepageBlok, BlokInfo>> = {
   afsluiting: { naam: "Afsluiting onderaan (met knop)", tekstenHref: tekst("website", "website.afsluiting") },
 };
 
-export function isHomepageBlok(w: unknown): w is HomepageBlok {
+function isHomepageBlok(w: unknown): w is HomepageBlok {
   return typeof w === "string" && (HOMEPAGE_BLOKKEN as readonly string[]).includes(w);
 }
 

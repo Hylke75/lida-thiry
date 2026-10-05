@@ -35,7 +35,7 @@ export function veiligeUrl(url: string): boolean {
 }
 
 /** Zet een regel tekst om in inline-onderdelen. */
-export function parseerInline(tekst: string): Inline[] {
+function parseerInline(tekst: string): Inline[] {
   const uit: Inline[] = [];
   let buffer = "";
   const spoel = () => {

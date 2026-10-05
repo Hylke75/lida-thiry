@@ -3,7 +3,7 @@ import { splitsVoorVoorbeeld } from "@/lib/blog/beheer";
 import { leestijdMinuten } from "@/lib/blog/regels";
 
 /** Opmaak van de artikeltekst, zoals op de openbare blogpagina. */
-export const ARTIKEL_TEKST =
+const ARTIKEL_TEKST =
   "flex min-w-0 flex-col gap-4 break-words leading-relaxed text-foreground/80 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-6 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_img]:my-2 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-xl [&_li]:pl-1 [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6";
 
 /** De tekst, met opvallende vakken op de plekken waar nog een foto moet komen (alleen in het beheer). */

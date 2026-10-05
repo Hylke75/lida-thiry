@@ -105,7 +105,7 @@ export const AFGEROND = ["test_afgerond", "advies_verzonden", "handmatige_beoord
 /** Statussen die meetellen voor de omzet: dezelfde als BETAALD. */
 export const OMZET = BETAALD;
 
-export type StapSleutel = "aangemaakt" | "betaald" | "afgerond" | "advies";
+type StapSleutel = "aangemaakt" | "betaald" | "afgerond" | "advies";
 
 export interface TrechterStap {
   sleutel: StapSleutel;

@@ -16,7 +16,7 @@
 
 import { datumPlusDagen, eindtijdNaarMinuten, naarAmsterdam, tijdNaarMinuten, vandaagAmsterdam, vanAmsterdam, weekdagVan } from "./tijd";
 
-export const RASTER_MINUTEN = 15;
+const RASTER_MINUTEN = 15;
 export const BETAALTERMIJN_MINUTEN = 30;
 const MINUUT = 60_000;
 

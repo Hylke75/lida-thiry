@@ -4,7 +4,7 @@
 
 import { INSTELLING_SLEUTELS as AFSPRAAK_SLEUTELS } from "./afspraken/regels";
 
-export type VeldSoort = "euro" | "geheel_getal" | "email" | "tekst" | "tekstvak" | "keuze";
+type VeldSoort = "euro" | "geheel_getal" | "email" | "tekst" | "tekstvak" | "keuze";
 
 export interface InstellingVeld {
   label: string;

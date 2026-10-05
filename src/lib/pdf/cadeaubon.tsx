@@ -42,7 +42,7 @@ const s = StyleSheet.create({
 });
 
 /** De cadeaubon als PDF (A4 liggend), om te printen of door te sturen. */
-export function CadeaubonPdf({ b, bestelUrl }: { b: BonGegevens; bestelUrl: string }) {
+function CadeaubonPdf({ b, bestelUrl }: { b: BonGegevens; bestelUrl: string }) {
   const voorVan = [b.ontvangerNaam ? `Voor ${b.ontvangerNaam}` : "", b.koperNaam ? `van ${b.koperNaam}` : ""]
     .filter(Boolean)
     .join(" · ");

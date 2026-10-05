@@ -19,7 +19,7 @@ export const MAIL_MAX_PX = 1200;
 export const MINI_MAX_PX = 400;
 export const WEBP_KWALITEIT = 80;
 export const JPEG_KWALITEIT = 82;
-export const OPT_MAP = "opt";
+const OPT_MAP = "opt";
 
 export type DoelFormaat = "webp" | "jpeg" | "png";
 

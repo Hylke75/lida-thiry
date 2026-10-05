@@ -94,7 +94,7 @@ const kortLeven = unstable_cache(async () => true, ["publiek", "noodvoorziening"
  * bereikbaar). Een statische pagina blijft dan maar kort (30 s) bewaard, zodat
  * de echte inhoud snel terugkomt. Werkt via de kortste revalidate van de pagina.
  */
-export async function noodvoorziening(): Promise<void> {
+async function noodvoorziening(): Promise<void> {
   try {
     await kortLeven();
   } catch {

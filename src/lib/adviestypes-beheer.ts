@@ -10,7 +10,7 @@ export interface LetterKeuze {
 }
 
 /** Terugval als de lichaamstypes niet uit de database komen. */
-export const LETTERS: LetterKeuze[] = [
+const LETTERS: LetterKeuze[] = [
   { letter: "X", naam: "Zandloper" },
   { letter: "A", naam: "Peer/driehoek" },
   { letter: "V", naam: "Omgekeerde driehoek" },

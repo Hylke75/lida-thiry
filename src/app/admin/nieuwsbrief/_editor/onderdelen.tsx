@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdminNav, type AdminPagina } from "../../AdminNav";
 
-export const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<string, string> = {
   concept: "Concept",
   ingepland: "Ingepland",
   bezig: "Wordt verzonden",

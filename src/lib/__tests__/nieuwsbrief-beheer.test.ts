@@ -4,8 +4,6 @@ import {
   leesFilter,
   naarCsv,
   percentage,
-  telKliks,
-  telVerzendingen,
   toonPercentage,
   totalenUitRij,
   veiligeZoekterm,
@@ -15,40 +13,6 @@ import { SJABLONEN, beschrijfMoment, normaliseerVertraging, vindSjabloon } from 
 import { controleerVoorVerzenden, valideerBlokken } from "../nieuwsbrief/blokken";
 
 describe("nieuwsbrief: statistiek", () => {
-  it("telt verzendingen per campagne", () => {
-    const rij = (campagne_id: string, status: string, extra: Partial<Record<string, string>> = {}) => ({
-      campagne_id,
-      status,
-      geopend_op: null,
-      geklikt_op: null,
-      afgemeld_op: null,
-      gebounced_op: null,
-      ...extra,
-    });
-    const t = telVerzendingen([
-      rij("a", "verzonden", { geopend_op: "x", geklikt_op: "x" }),
-      rij("a", "verzonden", { geopend_op: "x" }),
-      rij("a", "verzonden", { afgemeld_op: "x" }),
-      rij("a", "wachtrij"),
-      rij("a", "verwerken"),
-      rij("a", "mislukt"),
-      rij("a", "overgeslagen"),
-      rij("b", "verzonden", { gebounced_op: "x" }),
-    ]);
-    expect(t.get("a")).toEqual({
-      totaal: 7,
-      wachtrij: 2,
-      verzonden: 3,
-      mislukt: 1,
-      overgeslagen: 1,
-      geopend: 2,
-      geklikt: 1,
-      afgemeld: 1,
-      gebounced: 0,
-    });
-    expect(t.get("b")).toMatchObject({ totaal: 1, verzonden: 1, gebounced: 1 });
-  });
-
   it("leest rijen van de databasefunctie, ook met getallen als tekst", () => {
     expect(totalenUitRij({ totaal: "10", verzonden: 8, geopend: "3", mislukt: null, geklikt: -1 })).toMatchObject({
       totaal: 10,
@@ -66,20 +30,6 @@ describe("nieuwsbrief: statistiek", () => {
     expect(toonPercentage(1, 8)).toBe("12,5%");
     expect(toonPercentage(0, 0)).toBe("—");
     expect(toonPercentage(3, 3)).toBe("100%");
-  });
-
-  it("telt kliks per link: unieke personen en totaal", () => {
-    expect(
-      telKliks([
-        { url: "https://a.nl", verzending_id: "1" },
-        { url: "https://a.nl", verzending_id: "1" },
-        { url: "https://b.nl", verzending_id: "1" },
-        { url: "https://b.nl", verzending_id: "2" },
-      ]),
-    ).toEqual([
-      { url: "https://b.nl", uniek: 2, totaal: 2 },
-      { url: "https://a.nl", uniek: 1, totaal: 2 },
-    ]);
   });
 
   it("filtert en zoekt veilig", () => {

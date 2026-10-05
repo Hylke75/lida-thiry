@@ -9,7 +9,7 @@ import { kenmerken, type Koppelingen } from "./zoeken";
 
 export { MAX_IMPORT_BYTES, MAX_IMPORT_RIJEN };
 
-export const IMPORT_KOLOMMEN = [
+const IMPORT_KOLOMMEN = [
   "voornaam",
   "achternaam",
   "naam",
@@ -23,7 +23,7 @@ export const IMPORT_KOLOMMEN = [
   "land",
   "tags",
 ] as const;
-export type ImportKolom = (typeof IMPORT_KOLOMMEN)[number];
+type ImportKolom = (typeof IMPORT_KOLOMMEN)[number];
 
 /** Herkende kolomkoppen (kleine letters, _ en - als spatie). */
 const KOPPEN: Record<ImportKolom, RegExp> = {
@@ -83,7 +83,7 @@ export interface RelatieImportAnalyse {
 }
 
 /** Eén rij uit het bestand naar schone gegevens (null als er geen geldig e-mailadres in staat). */
-export function rijNaarGegevens(cellen: readonly string[], kolommen: KolomIndex): { gegevens: Partial<RelatieGegevens>; tags: string[]; ruwEmail: string } {
+function rijNaarGegevens(cellen: readonly string[], kolommen: KolomIndex): { gegevens: Partial<RelatieGegevens>; tags: string[]; ruwEmail: string } {
   const cel = (k: ImportKolom) => (kolommen[k] === undefined ? "" : ontsnapCel(cellen[kolommen[k]!] ?? ""));
   let voornaam = cel("voornaam");
   let achternaam = cel("achternaam");
@@ -174,7 +174,7 @@ export function planImport(
 
 // Export ---------------------------------------------------------------------------
 
-export const EXPORT_KOP = [
+const EXPORT_KOP = [
   "voornaam",
   "achternaam",
   "email",

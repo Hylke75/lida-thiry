@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Kenmerken } from "@/lib/relaties/zoeken";
 
 export { invoer, hoofdknop, kleineKnop, datum } from "../nieuwsbrief/contacten/stijl";
@@ -35,15 +34,6 @@ export function Badges({ k }: { k: Kenmerken }) {
         </span>
       ))}
     </span>
-  );
-}
-
-export function Veld({ label, children, breed }: { label: string; children: ReactNode; breed?: boolean }) {
-  return (
-    <label className={`flex min-w-0 flex-col gap-1 text-sm ${breed ? "sm:col-span-2" : ""}`}>
-      <span className="text-black/70 dark:text-white/70">{label}</span>
-      {children}
-    </label>
   );
 }
 

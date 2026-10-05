@@ -29,7 +29,7 @@ export interface Pagina {
 export const PAGINA_VELDEN =
   "id, slug, titel, intro, inhoud, omslag_url, omslag_alt, status, in_menu, in_footer, menu_label, volgorde, seo_titel, seo_omschrijving, niet_indexeren, aangemaakt_op, bijgewerkt_op";
 
-export const SLUG_MAX = 80;
+const SLUG_MAX = 80;
 export const INTRO_MAX = 1000;
 export const MENU_LABEL_MAX = 40;
 
