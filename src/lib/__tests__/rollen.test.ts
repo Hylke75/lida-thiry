@@ -56,11 +56,11 @@ describe("leesRol en controles", () => {
   it("leest geldige rollen", () => {
     for (const r of ROLLEN) expect(leesRol(r)).toBe(r);
   });
-  it("onbekende waarde: minste rechten; ontbrekende kolom: eigenaar (zoals vóór de rollen)", () => {
+  it("onbekende of ontbrekende waarde: minste rechten", () => {
     expect(leesRol("baas")).toBe("redacteur");
     expect(leesRol(42)).toBe("redacteur");
-    expect(leesRol(null)).toBe("eigenaar");
-    expect(leesRol(undefined)).toBe("eigenaar");
+    expect(leesRol(null)).toBe("redacteur");
+    expect(leesRol(undefined)).toBe("redacteur");
   });
   it("isRol en isRecht", () => {
     expect(isRol("beheerder")).toBe(true);

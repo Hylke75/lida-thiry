@@ -88,12 +88,10 @@ export function isRecht(v: unknown): v is Recht {
 }
 
 /**
- * De rol uit de database. Onbekende waarden krijgen de minste rechten
- * (redacteur); null/undefined (kolom bestaat nog niet) gedraagt zich als vóór de
- * rollen: eigenaar.
+ * De rol uit de database. Onbekende of ontbrekende waarden krijgen de minste
+ * rechten (redacteur); de kolom is verplicht, dus dat gebeurt alleen bij een fout.
  */
 export function leesRol(v: unknown): Rol {
-  if (v == null) return "eigenaar";
   return isRol(v) ? v : "redacteur";
 }
 

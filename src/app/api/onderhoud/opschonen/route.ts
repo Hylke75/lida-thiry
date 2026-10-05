@@ -11,6 +11,7 @@ import { stuurAfspraakHerinneringen } from "@/lib/afspraken/data";
 import { registreerFout } from "@/lib/fouten/registreer";
 import { ruimLogboekOp } from "@/lib/beheer-log";
 import { herstelNaBetalingen } from "@/lib/bestelling-betaald";
+import { isGeldigeCron } from "@/lib/cron-auth";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -29,8 +30,7 @@ export async function GET(request: Request) {
   if (!geheim) {
     return NextResponse.json({ fout: "CRON_SECRET niet ingesteld." }, { status: 503 });
   }
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${geheim}`) {
+  if (!isGeldigeCron(request, geheim)) {
     return NextResponse.json({ fout: "Niet geautoriseerd." }, { status: 401 });
   }
 
