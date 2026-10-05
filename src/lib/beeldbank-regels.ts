@@ -16,26 +16,10 @@ export const MIN_KORTE_ZIJDE = 600;
 export const STANDAARD_VERHOUDING: [number, number] = [2, 3];
 export const IDEAAL_FORMAAT = { breedte: 1000, hoogte: 1500 } as const;
 
-/** Toegestane afwijking van de vereiste verhouding (3%). */
-export const VERHOUDING_TOLERANTIE = 0.03;
-
 /** Maximale bestandsgrootte van een upload (15 MB). */
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 export const TOEGESTANE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-
-/** Gangbare verhoudingen waar een origineel naartoe wordt afgerond. */
-export const STANDAARD_VERHOUDINGEN: [number, number][] = [
-  [1, 1],
-  [4, 3],
-  [3, 4],
-  [3, 2],
-  [2, 3],
-  [16, 9],
-  [9, 16],
-  [2, 1],
-  [1, 2],
-];
 
 /** Onderdelen (gelijk aan de hoofdstukken van de hand-outs). */
 export const ONDERDELEN = [
@@ -59,7 +43,6 @@ export const ONDERDELEN = [
   "overig",
 ] as const;
 
-export const FIGUREN = ["X", "A", "V", "H", "8"] as const;
 export const ADVIEZEN = ["goed", "vermijd"] as const;
 
 export interface Eisen {
@@ -67,38 +50,6 @@ export interface Eisen {
   verhouding_h: number;
   min_breedte: number;
   min_hoogte: number;
-}
-
-function ggd(a: number, b: number): number {
-  return b === 0 ? a : ggd(b, a % b);
-}
-
-/**
- * Rondt de verhouding van een bestaand beeld af naar een gangbare verhouding
- * (binnen 6%), anders naar de eigen verhouding in hele getallen (bijv. 7:5).
- */
-export function snapVerhouding(breedte: number, hoogte: number): [number, number] {
-  const r = breedte / hoogte;
-  let beste: [number, number] = [1, 1];
-  let afstand = Infinity;
-  for (const [b, h] of STANDAARD_VERHOUDINGEN) {
-    const d = Math.abs(Math.log(r / (b / h)));
-    if (d < afstand) {
-      afstand = d;
-      beste = [b, h];
-    }
-  }
-  if (afstand <= Math.log(1.06)) return beste;
-  // Eigen verhouding, vereenvoudigd tot kleine gehele getallen.
-  for (let noemer = 2; noemer <= 12; noemer++) {
-    const teller = Math.round(r * noemer);
-    if (Math.abs(teller / noemer - r) / r <= VERHOUDING_TOLERANTIE) {
-      const g = ggd(teller, noemer);
-      return [teller / g, noemer / g];
-    }
-  }
-  const g = ggd(breedte, hoogte);
-  return [breedte / g, hoogte / g];
 }
 
 /** Minimaal formaat bij een verhouding: de kortste zijde is MIN_KORTE_ZIJDE. */
@@ -154,28 +105,6 @@ export function controleerUpload(breedte: number, hoogte: number): { fouten: str
 export function verhoudingLabel(vb: number, vh: number): string {
   const vorm = vb === vh ? "vierkant" : vb > vh ? "liggend" : "staand";
   return `${vb}:${vh} (${vorm})`;
-}
-
-/**
- * Controleert een (nieuw) beeld tegen de eisen. Geeft een lijst met
- * begrijpelijke foutmeldingen terug; leeg = goedgekeurd.
- */
-export function controleerAfmetingen(breedte: number, hoogte: number, eisen: Eisen): string[] {
-  const fouten: string[] = [];
-  const vereist = eisen.verhouding_b / eisen.verhouding_h;
-  const werkelijk = breedte / hoogte;
-  if (Math.abs(werkelijk - vereist) / vereist > VERHOUDING_TOLERANTIE) {
-    const [wb, wh] = snapVerhouding(breedte, hoogte);
-    fouten.push(
-      `De verhouding is ${verhoudingLabel(wb, wh)}, maar moet ${verhoudingLabel(eisen.verhouding_b, eisen.verhouding_h)} zijn. Snijd het beeld bij of pas het canvas aan.`,
-    );
-  }
-  if (breedte < eisen.min_breedte || hoogte < eisen.min_hoogte) {
-    fouten.push(
-      `Het beeld is ${breedte} × ${hoogte} px; minimaal ${eisen.min_breedte} × ${eisen.min_hoogte} px is nodig voor een scherpe PDF.`,
-    );
-  }
-  return fouten;
 }
 
 /** Is het huidige beeld kleiner dan het vereiste minimum? */

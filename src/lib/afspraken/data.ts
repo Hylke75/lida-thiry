@@ -7,7 +7,7 @@ import { koppelRelatie } from "../relaties/koppel";
 import { foutTekst, stuurBeheerMelding } from "../beheermelding";
 import { siteUrl } from "../site";
 import { BETAALTERMIJN_MINUTEN, beschikbareDagen, conflicten, isVrij, laatsteDatum, type BezetteAfspraak, type Dag, type SlotInvoer } from "./slots";
-import { datumPlusDagen, datumLabel, tijdLabel, vandaagAmsterdam, vanAmsterdam } from "./tijd";
+import { datumPlusDagen, datumLabel, herinneringVenster, tijdLabel, vandaagAmsterdam, vanAmsterdam } from "./tijd";
 import {
   leesAfspraakInstellingen,
   magAnnuleren,
@@ -328,10 +328,35 @@ export async function boekAfspraak(invoer: BoekInvoer): Promise<BoekResultaat> {
 // Betaling ------------------------------------------------------------------------------
 
 /**
+ * Staat er (inmiddels) een andere afspraak op de tijd van `a`? Voor een betaling
+ * die pas na de betaaltermijn binnenkwam, toen de tijd al was vrijgegeven.
+ * null = controle mislukt.
+ */
+async function conflictNaLateBetaling(a: AfspraakRij): Promise<boolean | null> {
+  try {
+    const soort = a.soort_id ? await haalSoort(a.soort_id) : null;
+    const s = new Date(a.start_op);
+    const t = new Date(a.eind_op);
+    const ruim = { van: new Date(s.getTime() - 86_400_000), tot: new Date(t.getTime() + 86_400_000) };
+    const c = conflicten(
+      { afspraken: await haalBezetting(ruim.van, ruim.tot), blokkades: [], bufferMinuten: soort?.buffer_minuten ?? 0, nu: new Date(), negeerId: a.id },
+      s,
+      t,
+    );
+    return c.afspraken.length > 0;
+  } catch (e) {
+    console.error("Controle na late betaling mislukt", e);
+    return null;
+  }
+}
+
+/**
  * Verwerkt de status van een Mollie-betaling voor een aanbetaling (webhook én
  * de pagina /afspraak/[token] als terugval). Idempotent: alleen de eerste
- * overgang wacht_op_betaling → bevestigd stuurt mails. Geeft false bij een
- * databasefout (dan moet Mollie het opnieuw proberen).
+ * overgang vanuit wacht_op_betaling stuurt mails. Kwam de betaling pas na de
+ * betaaltermijn binnen en is de tijd intussen bezet (of is dat niet na te gaan),
+ * dan wordt de afspraak "aangevraagd" (handmatig bevestigen) i.p.v. bevestigd.
+ * Geeft false bij een databasefout (dan moet Mollie het opnieuw proberen).
  */
 export async function verwerkAfspraakBetaling(betaling: { id: string; status: string }, afspraakId: string): Promise<boolean> {
   const supabase = adminClient();
@@ -344,37 +369,35 @@ export async function verwerkAfspraakBetaling(betaling: { id: string; status: st
   if (betaling.status === "paid") {
     const betaaldOp = new Date().toISOString();
     if (a.status === "wacht_op_betaling") {
+      // Laat betaald: is de tijd intussen door een ander geboekt? Dan niet
+      // bevestigen maar als aanvraag laten beoordelen.
+      const laat = Date.parse(a.aangemaakt_op) < Date.now() - BETAALTERMIJN_MINUTEN * 60_000;
+      const conflict = laat ? await conflictNaLateBetaling(a) : false;
+      const nietBevestigen = conflict !== false;
+      const notitie = conflict
+        ? "Aanbetaling kwam na de betaaltermijn binnen en de tijd is intussen bezet: niet automatisch bevestigd."
+        : "Aanbetaling kwam na de betaaltermijn binnen; controle op een dubbele boeking mislukte: niet automatisch bevestigd.";
       const { data: bijgewerkt, error: e } = await supabase
         .from("afspraken")
-        .update({ status: "bevestigd", betaald_op: betaaldOp, mollie_payment_id: betaling.id })
+        .update({
+          status: nietBevestigen ? "aangevraagd" : "bevestigd",
+          betaald_op: betaaldOp,
+          mollie_payment_id: betaling.id,
+          ...(nietBevestigen ? { notitie: `${a.notitie ? `${a.notitie}\n` : ""}${notitie}` } : {}),
+        })
         .eq("id", a.id)
         .eq("status", "wacht_op_betaling")
         .select(AFSPRAAK_VELDEN);
       if (e) return false;
       const rij = (bijgewerkt as AfspraakRij[] | null)?.[0];
       if (rij) {
-        // Laat betaald: is de tijd intussen door een ander geboekt? Dan de beheerder waarschuwen.
-        if (Date.parse(a.aangemaakt_op) < Date.now() - BETAALTERMIJN_MINUTEN * 60_000) {
-          try {
-            const soort = rij.soort_id ? await haalSoort(rij.soort_id) : null;
-            const s = new Date(rij.start_op);
-            const t = new Date(rij.eind_op);
-            const ruim = { van: new Date(s.getTime() - 86_400_000), tot: new Date(t.getTime() + 86_400_000) };
-            const c = conflicten(
-              { afspraken: await haalBezetting(ruim.van, ruim.tot), blokkades: [], bufferMinuten: soort?.buffer_minuten ?? 0, nu: new Date(), negeerId: rij.id },
-              s,
-              t,
-            );
-            if (c.afspraken.length) {
-              await stuurBeheerMelding(
-                "Dubbele afspraak na late betaling",
-                `De aanbetaling van ${rij.naam} <${rij.email}> kwam pas binnen nadat de tijd was vrijgegeven, en er staat intussen een andere afspraak op dat moment.\n\nBekijk: ${siteUrl()}/admin/afspraken/${rij.id}`,
-              );
-            }
-          } catch (e) {
-            console.error("Controle na late betaling mislukt", e);
-          }
+        if (nietBevestigen) {
+          await stuurBeheerMelding(
+            "Dubbele afspraak na late betaling",
+            `De aanbetaling van ${rij.naam} <${rij.email}> kwam pas binnen nadat de tijd was vrijgegeven${conflict ? ", en er staat intussen een andere afspraak op dat moment" : " (controle op een andere afspraak mislukte)"}. De afspraak staat daarom op "aangevraagd": bevestig hem of verplaats/annuleer hem met de klant.\n\nBekijk: ${siteUrl()}/admin/afspraken/${rij.id}`,
+          );
         }
+        // Bij "aangevraagd" krijgt de klant de ontvangstmail i.p.v. een bevestiging.
         await naNieuweAfspraak(rij);
       }
       return true;
@@ -456,33 +479,42 @@ export async function annuleerDoorKlant(token: string): Promise<"ok" | "te_laat"
 // Nachtelijke controle -------------------------------------------------------------------
 
 /**
- * Herinneringen voor de bevestigde afspraken van morgen (Nederlandse datum),
- * eenmalig per afspraak. Ruimt ook onbetaalde afspraken op waarvan de betaling
- * al lang verlopen is. Gooit nooit.
+ * Herinneringen voor de bevestigde afspraken van nu tot en met morgen
+ * (Nederlandse datum), eenmalig per afspraak: ook afspraken die na de vorige
+ * run zijn geboekt of bevestigd, krijgen er dus nog een. Ruimt ook onbetaalde
+ * afspraken op waarvan de betaling al lang verlopen is (de notitie wordt
+ * aangevuld, niet overschreven). Gooit nooit.
  */
 export async function stuurAfspraakHerinneringen(nu = new Date()): Promise<{ verstuurd: number; mislukt: string[] }> {
   const mislukt: string[] = [];
   let verstuurd = 0;
   try {
     const supabase = adminClient();
-    await supabase
+    const { data: verlopen, error: verlopenFout } = await supabase
       .from("afspraken")
-      .update({ status: "geannuleerd", notitie: "Aanbetaling niet ontvangen; automatisch vervallen." })
+      .select("id, notitie")
       .eq("status", "wacht_op_betaling")
       .lt("aangemaakt_op", new Date(nu.getTime() - 24 * 3_600_000).toISOString())
-      .then(
-        () => undefined,
-        () => undefined,
-      );
+      .limit(200);
+    if (verlopenFout) mislukt.push(`Verlopen aanbetalingen ophalen mislukt: ${verlopenFout.message}`);
+    for (const v of (verlopen ?? []) as { id: string; notitie: string | null }[]) {
+      const { error: e } = await supabase
+        .from("afspraken")
+        .update({ status: "geannuleerd", notitie: `${v.notitie ? `${v.notitie}\n` : ""}Aanbetaling niet ontvangen; automatisch vervallen.` })
+        .eq("id", v.id)
+        .eq("status", "wacht_op_betaling");
+      if (e) mislukt.push(`Afspraak ${v.id} laten vervallen mislukt: ${e.message}`);
+    }
 
-    const morgen = datumPlusDagen(vandaagAmsterdam(nu), 1);
+    const { van, tot } = herinneringVenster(nu);
     const { data, error } = await supabase
       .from("afspraken")
       .select(AFSPRAAK_VELDEN)
       .eq("status", "bevestigd")
       .is("herinnering_op", null)
-      .gte("start_op", vanAmsterdam(morgen, 0).toISOString())
-      .lt("start_op", vanAmsterdam(datumPlusDagen(morgen, 1), 0).toISOString())
+      .gte("start_op", van.toISOString())
+      .lt("start_op", tot.toISOString())
+      .order("start_op")
       .limit(200);
     if (error) return { verstuurd, mislukt: [`Afspraken ophalen mislukt: ${error.message}`] };
     for (const a of (data ?? []) as AfspraakRij[]) {

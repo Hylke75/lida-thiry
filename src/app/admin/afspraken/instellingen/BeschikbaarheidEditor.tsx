@@ -31,7 +31,13 @@ export function BeschikbaarheidEditor({
   actie: (fd: FormData) => Promise<void>;
 }) {
   const [blokken, setBlokken] = useState<Blok[]>(() =>
-    begin.map((b) => ({ sleutel: nieuweSleutel(), weekdag: b.weekdag, van: b.van.slice(0, 5), tot: b.tot.slice(0, 5) })),
+    begin.map((b) => ({
+      sleutel: nieuweSleutel(),
+      weekdag: b.weekdag,
+      van: b.van.slice(0, 5),
+      // Een tijdveld kent geen 24:00; de server leest 23:59 weer als einde van de dag.
+      tot: b.tot.startsWith("24:00") ? "23:59" : b.tot.slice(0, 5),
+    })),
   );
 
   const wijzig = (sleutel: number, veld: "van" | "tot", waarde: string) =>

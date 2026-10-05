@@ -268,26 +268,38 @@ async function afmetingenVan(pad: string): Promise<{ breedte: number; hoogte: nu
 
 /**
  * Bepaalt afmetingen (en, als die nog ontbreken, de eisen) van beelden waarvan
- * die nog onbekend zijn. Verwerkt maximaal `aantal` beelden per aanroep.
- * Geeft terug hoeveel er verwerkt zijn en hoeveel er nog openstaan.
+ * die nog onbekend zijn. Verwerkt maximaal `aantal` beelden per aanroep, de
+ * langst niet bijgewerkte eerst. Een onleesbaar beeld (beschadigd of ontbrekend
+ * bestand) krijgt een nieuwe bijgewerkt_op en schuift zo achteraan de rij, zodat
+ * de volgende aanroep met de andere beelden verdergaat i.p.v. vast te lopen.
+ * Geeft terug hoeveel er verwerkt zijn, hoeveel er onleesbaar waren en hoeveel
+ * er nog openstaan.
  */
 export async function bepaalOntbrekendeAfmetingen(
   aantal = 150,
-): Promise<{ verwerkt: number; open: number }> {
+): Promise<{ verwerkt: number; onleesbaar: number; open: number }> {
   const supabase = adminClient();
   const { data } = await supabase
     .from("beelden")
     .select("id, pad, verhouding_b")
     .is("breedte", null)
+    .order("bijgewerkt_op", { ascending: true })
+    .order("id", { ascending: true })
     .limit(aantal);
   let verwerkt = 0;
+  let onleesbaar = 0;
   const rijen = data ?? [];
   // In kleine groepen parallel om de opslag niet te overbelasten.
   for (let i = 0; i < rijen.length; i += 10) {
     await Promise.all(
       rijen.slice(i, i + 10).map(async (r) => {
         const afm = await afmetingenVan(r.pad);
-        if (!afm) return;
+        if (!afm) {
+          onleesbaar++;
+          // Achteraan de rij zetten (de trigger zet bijgewerkt_op op nu).
+          await supabase.from("beelden").update({ bijgewerkt_op: new Date().toISOString() }).eq("id", r.id);
+          return;
+        }
         const eisen = r.verhouding_b ? {} : STANDAARD_EISEN;
         const { error } = await supabase
           .from("beelden")
@@ -301,5 +313,5 @@ export async function bepaalOntbrekendeAfmetingen(
     .from("beelden")
     .select("id", { count: "exact", head: true })
     .is("breedte", null);
-  return { verwerkt, open: count ?? 0 };
+  return { verwerkt, onleesbaar, open: count ?? 0 };
 }

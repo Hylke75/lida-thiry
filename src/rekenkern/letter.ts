@@ -29,7 +29,7 @@ export function isMappingCompleet(toewijzing: FfitToewijzing = FFIT_NAAR_LETTER)
   return (Object.keys(FFIT_NAAR_LETTER) as (keyof typeof FFIT_NAAR_LETTER)[]).every((t) => Boolean(toewijzing[t]));
 }
 
-/** FFIT-types die nog geen letter hebben (voor de open-punten-/productie-check). */
+/** FFIT-types die nog geen letter hebben (voor de productie-check). */
 export function ontbrekendeLetters(toewijzing: FfitToewijzing = FFIT_NAAR_LETTER): FfitType[] {
   return (Object.keys(FFIT_NAAR_LETTER) as Exclude<FfitType, "Geen type">[]).filter((type) => !toewijzing[type]);
 }

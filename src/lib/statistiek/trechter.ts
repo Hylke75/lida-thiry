@@ -3,6 +3,7 @@
 // dagen zijn kalenderdagen in Nederland (yyyy-mm-dd).
 
 import { nlDag } from "../nieuwsbrief/statistiek";
+import { isTestbestelling } from "../reviews/regels";
 
 const DAG_MS = 86_400_000;
 /** Langste eigen periode die we tonen. */
@@ -90,28 +91,21 @@ export interface TrechterOrder {
   kortingscode: string | null;
   mollie_payment_id: string | null;
   toegekend_type: string | null;
-  /** Of er een testresultaat (maten) is opgeslagen. */
-  heeftMeting: boolean;
+  /** Voor het herkennen van testbestellingen (voorbeeldadressen). */
+  email?: string | null;
 }
 
-/** Statussen waarbij er betaald is (gelijk aan admin/status.ts). */
+/**
+ * Statussen waarbij er betaald is. Ook "handmatige_beoordeling" (oud) is betaald,
+ * dus telt die overal hier mee: in de trechter, de omzet en de betalingen per dag.
+ */
 export const BETAALD = ["betaald", "test_afgerond", "advies_verzonden", "handmatige_beoordeling"];
 /** Statussen waarbij de test is ingevuld. */
 export const AFGEROND = ["test_afgerond", "advies_verzonden", "handmatige_beoordeling"];
-/** Statussen die meetellen voor de omzet (gelijk aan het dashboard). */
-export const OMZET = ["betaald", "test_afgerond", "advies_verzonden"];
+/** Statussen die meetellen voor de omzet: dezelfde als BETAALD. */
+export const OMZET = BETAALD;
 
-/**
- * Testbestellingen: zonder bedrag, zonder kortingscode en zonder Mollie-betaling.
- * Zo maken de gratis testmodus (GRATIS_TEST) en de knop "Nieuwe test" in het
- * beheer ze aan. Een bestelling die met een cadeaubon/kortingscode op € 0 uitkomt,
- * telt wél mee (die heeft een kortingscode).
- */
-export function isTestbestelling(o: Pick<TrechterOrder, "bedrag_cent" | "kortingscode" | "mollie_payment_id">): boolean {
-  return (o.bedrag_cent ?? 0) === 0 && !o.kortingscode && !o.mollie_payment_id;
-}
-
-export type StapSleutel = "aangemaakt" | "betaald" | "gestart" | "afgerond" | "advies";
+export type StapSleutel = "aangemaakt" | "betaald" | "afgerond" | "advies";
 
 export interface TrechterStap {
   sleutel: StapSleutel;
@@ -126,7 +120,6 @@ export interface TrechterStap {
 const LABELS: Record<StapSleutel, string> = {
   aangemaakt: "Bestelling aangemaakt",
   betaald: "Betaald",
-  gestart: "Test gestart",
   afgerond: "Test afgerond",
   advies: "Advies verzonden",
 };
@@ -137,7 +130,6 @@ function pct(deel: number, geheel: number): number | null {
 
 const isBetaald = (o: TrechterOrder) => BETAALD.includes(o.status);
 const isAfgerond = (o: TrechterOrder) => AFGEROND.includes(o.status);
-const isGestart = (o: TrechterOrder) => o.heeftMeting || isAfgerond(o);
 
 /**
  * De trechter over de bestellingen die in de periode zijn aangemaakt (een cohort):
@@ -150,7 +142,6 @@ export function berekenTrechter(orders: readonly TrechterOrder[], p: Periode): T
   const aantallen: [StapSleutel, number][] = [
     ["aangemaakt", cohort.length],
     ["betaald", betaald.length],
-    ["gestart", betaald.filter(isGestart).length],
     ["afgerond", betaald.filter(isAfgerond).length],
     ["advies", betaald.filter((o) => o.status === "advies_verzonden").length],
   ];

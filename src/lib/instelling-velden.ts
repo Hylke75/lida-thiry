@@ -2,6 +2,8 @@
 // invoer per bekende sleutel, plus validatie. Onbekende sleutels krijgen een
 // gewoon tekstveld met de omschrijving uit de database als uitleg.
 
+import { INSTELLING_SLEUTELS as AFSPRAAK_SLEUTELS } from "./afspraken/regels";
+
 export type VeldSoort = "euro" | "geheel_getal" | "email" | "tekst" | "tekstvak" | "keuze";
 
 export interface InstellingVeld {
@@ -149,6 +151,12 @@ export const WEBSITE_INSTELLINGEN = new Set([
   "social_tiktok",
   "homepage_indeling",
 ]);
+
+/**
+ * Instellingen met een eigen, gevalideerd beheerscherm (Afspraken → Instellingen);
+ * niet als vrije tekst op de algemene pagina.
+ */
+export const AFSPRAAK_INSTELLINGEN: ReadonlySet<string> = new Set(Object.values(AFSPRAAK_SLEUTELS));
 
 /** Veld voor een sleutel; onbekende sleutels worden een gewoon tekstveld. */
 export function veldVoor(sleutel: string, omschrijving?: string | null): InstellingVeld {

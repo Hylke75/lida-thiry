@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   afwijkingMinuten,
   dagenTussen,
+  herinneringVenster,
   datumPlusDagen,
   leesDatum,
   maandagVan,
@@ -84,5 +85,16 @@ describe("afspraken/tijd: Europe/Amsterdam", () => {
 
   it("naarAmsterdam geeft datum, tijd en weekdag", () => {
     expect(naarAmsterdam(new Date("2026-10-05T07:15:00Z"))).toEqual({ datum: "2026-10-05", tijd: "09:15", minuten: 555, weekdag: 1 });
+  });
+});
+
+describe("afspraken/tijd: herinneringVenster", () => {
+  it("loopt van nu tot het einde van morgen (Nederlandse datum)", () => {
+    // 14:00 Nederlandse zomertijd op 5 oktober: tot 7 oktober 00:00 (22:00 UTC op de 6e).
+    const nu = new Date("2026-10-05T12:00:00Z");
+    expect(herinneringVenster(nu)).toEqual({ van: nu, tot: new Date("2026-10-06T22:00:00Z") });
+    // 00:30 Nederlandse tijd is al de nieuwe dag (6 oktober): tot 8 oktober 00:00.
+    const laat = new Date("2026-10-05T22:30:00Z");
+    expect(iso(herinneringVenster(laat).tot)).toBe("2026-10-07T22:00:00.000Z");
   });
 });

@@ -5,7 +5,7 @@ export const FFIT_GRENZEN = {
   tweeEnHalveCm: 2.54, // 1 inch
   vijfCm: 5.08, // 2 inch
   negenCm: 9.14, // 3,6 inch
-  vijftienCm: 25.4, // 10 inch
+  tienInch: 25.4, // 10 inch
   drieEnTwintigCm: 22.86, // 9 inch
   zeventienCm: 17.78, // 7 inch
   hogeHeupTailleRatio: 1.193,

@@ -143,6 +143,7 @@ export default async function BeeldbankPagina({
 
   const bepaald = typeof sp.bepaald === "string" ? Number(sp.bepaald) : null;
   const open = typeof sp.open === "string" ? Number(sp.open) : null;
+  const onleesbaar = typeof sp.onleesbaar === "string" ? Number(sp.onleesbaar) || 0 : 0;
   const verwijderd = typeof sp.verwijderd === "string" ? sp.verwijderd : null;
 
   return (
@@ -166,6 +167,8 @@ export default async function BeeldbankPagina({
         <Melding soort="ok">
           Van {bepaald} beelden zijn de afmetingen bepaald.{" "}
           {open > 0 ? `Er zijn er nog ${open} te gaan; klik nog een keer op de knop.` : "Alle afmetingen zijn nu bekend."}
+          {onleesbaar > 0 &&
+            ` ${onleesbaar} ${onleesbaar === 1 ? "beeld kon" : "beelden konden"} niet worden gelezen (beschadigd of ontbrekend bestand); vervang ${onleesbaar === 1 ? "het" : "ze"} via de detailpagina.`}
         </Melding>
       )}
 

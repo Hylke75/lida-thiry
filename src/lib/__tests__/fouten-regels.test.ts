@@ -151,6 +151,13 @@ describe("meldReden", () => {
 
   it("meldt een nieuwe fout", () => {
     expect(meldReden({ aantal: 1, gemeld_op: null }, nu)).toBe("nieuw");
+    expect(meldReden({ bron: "server", aantal: 1, gemeld_op: null }, nu)).toBe("nieuw");
+  });
+
+  it("browserfouten (openbaar endpoint): geen mail bij nieuw, wel bij een drempel", () => {
+    expect(meldReden({ bron: "browser", aantal: 1, gemeld_op: null }, nu)).toBeNull();
+    expect(meldReden({ bron: "browser", aantal: 9, gemeld_op: null }, nu)).toBeNull();
+    expect(meldReden({ bron: "browser", aantal: 10, gemeld_op: null }, nu)).toBe("drempel");
   });
 
   it("meldt een fout die terug is na 'opgelost' (gemeld_op gewist)", () => {

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
 import { stuurBeheerMelding } from "@/lib/beheermelding";
 import { siteUrl } from "@/lib/site";
+import { magDoorOpSleutel } from "@/lib/rate-limit";
 import {
   BRON_LABEL,
   GEMELD_BIJ,
@@ -103,9 +104,15 @@ export async function registreerFout(invoer: FoutInvoer): Promise<FoutRij | null
   }
 }
 
+const MAX_FOUTMAILS_PER_DAG = 20;
+
 async function meldAlsNodig(rij: FoutRij): Promise<void> {
   const reden = meldReden(rij);
   if (!reden) return;
+  // Globale rem: hooguit 20 foutmails per dag, ook als er veel verschillende
+  // fouten binnenkomen (bijv. een vloed via het openbare browser-endpoint).
+  // Faalt dicht: liever een gemiste mail dan een volgelopen inbox.
+  if (!(await magDoorOpSleutel("fouten-mail", MAX_FOUTMAILS_PER_DAG, 86400, { bijFout: "weigeren" }))) return;
   const bron = BRON_LABEL[rij.bron as FoutBron] ?? rij.bron;
   const regels = [
     `${REDEN_TEKST[reden]} (${bron}), ${rij.aantal}× gezien.`,

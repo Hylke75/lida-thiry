@@ -71,6 +71,17 @@ export function tijdNaarMinuten(tijd: string): number | null {
   return uur * 60 + minuut;
 }
 
+/**
+ * Eindtijd van een beschikbaarheidsblok → minuten (0 … 1440). Middernacht aan
+ * het eind van de dag mag als "24:00", "00:00" of "23:59" (een tijdveld in de
+ * browser kent geen 24:00): dat is allemaal 1440, zodat het laatste slot van de
+ * dag niet wegvalt.
+ */
+export function eindtijdNaarMinuten(tijd: string): number | null {
+  const m = tijdNaarMinuten(tijd);
+  return m === 0 || m === 1439 ? 1440 : m;
+}
+
 /** Minuten na middernacht → "09:30". */
 export function minutenNaarTijd(minuten: number): string {
   return `${tweeCijfers(Math.floor(minuten / 60))}:${tweeCijfers(minuten % 60)}`;
@@ -139,6 +150,15 @@ export function vanAmsterdam(datum: string, minuten: number): Date {
 /** Vandaag in Nederland ("2026-10-04"). */
 export function vandaagAmsterdam(nu: Date): string {
   return naarAmsterdam(nu).datum;
+}
+
+/**
+ * Het venster voor afspraakherinneringen: vanaf nu tot het einde van morgen
+ * (Nederlandse datum). Afspraken die na de vorige run zijn geboekt of bevestigd,
+ * vallen er zo ook nog in.
+ */
+export function herinneringVenster(nu: Date): { van: Date; tot: Date } {
+  return { van: nu, tot: vanAmsterdam(datumPlusDagen(vandaagAmsterdam(nu), 2), 0) };
 }
 
 const DATUM_LANG = new Intl.DateTimeFormat("nl-NL", {

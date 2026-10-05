@@ -19,6 +19,9 @@ type OrderRij = KandidaatOrder & { factuurgegevens: Record<string, unknown> | nu
 
 /** Maximaal aantal uitnodigingen per nacht (ruim; voorkomt een mailpiek). */
 const PER_RONDE = 100;
+/** Bestellingen per pagina, en het maximale aantal pagina's per ronde. */
+const PAGINA = 200;
+const MAX_PAGINAS = 25;
 
 /** Voornaam en plaats uit het adresboek, per e-mailadres (kleine letters). */
 async function adresboek(
@@ -88,35 +91,49 @@ export async function nodigUitVoorReviews(
     const naDagen = leesReviewDagen(await leesInstelling("review_na_dagen"));
     const nu = new Date();
     const { van, tot } = reviewVenster(nu, naDagen);
-    const { data: orders, error } = await supabase
-      .from("orders")
-      .select(ORDER_KOLOMMEN)
-      .eq("status", "advies_verzonden")
-      .gte("afgerond_op", van.toISOString())
-      .lte("afgerond_op", tot.toISOString())
-      .order("afgerond_op", { ascending: true })
-      .limit(200);
-    if (error) return { verstuurd, mislukt: [`Bestellingen ophalen mislukt: ${error.message}`] };
-    const lijst = (orders ?? []) as OrderRij[];
-    if (!lijst.length) return { verstuurd, mislukt };
+    // Bladeren tot er genoeg kandidaten zijn: anders blijft de ronde hangen op
+    // de oudste bestellingen die al een review hebben.
+    const kandidaten: OrderRij[] = [];
+    const gezienEmails = new Set<string>();
+    for (let pagina = 0; pagina < MAX_PAGINAS && kandidaten.length < PER_RONDE; pagina++) {
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select(ORDER_KOLOMMEN)
+        .eq("status", "advies_verzonden")
+        .gte("afgerond_op", van.toISOString())
+        .lte("afgerond_op", tot.toISOString())
+        .order("afgerond_op", { ascending: true })
+        .order("id", { ascending: true })
+        .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1);
+      if (error) return { verstuurd, mislukt: [`Bestellingen ophalen mislukt: ${error.message}`] };
+      const lijst = (orders ?? []) as OrderRij[];
+      if (!lijst.length) break;
 
-    const { data: bestaand, error: e2 } = await supabase
-      .from("beoordelingen")
-      .select("order_id")
-      .in(
-        "order_id",
-        lijst.map((o) => o.id),
-      );
-    if (e2) return { verstuurd, mislukt: [`Reviews ophalen mislukt: ${e2.message}`] };
-    // Ook klanten die eerder (bij een andere bestelling) al zijn uitgenodigd, overslaan.
-    const emails = [...new Set(lijst.map((o) => o.email.trim().toLowerCase()))];
-    const { data: perEmail } = await supabase.from("beoordelingen").select("email").in("email", emails);
-    const bekendeEmails = new Set((perEmail ?? []).map((r) => r.email as string));
+      const { data: bestaand, error: e2 } = await supabase
+        .from("beoordelingen")
+        .select("order_id")
+        .in(
+          "order_id",
+          lijst.map((o) => o.id),
+        );
+      if (e2) return { verstuurd, mislukt: [`Reviews ophalen mislukt: ${e2.message}`] };
+      // Ook klanten die eerder (bij een andere bestelling) al zijn uitgenodigd, overslaan.
+      const emails = [...new Set(lijst.map((o) => o.email.trim().toLowerCase()))];
+      const { data: perEmail, error: e3 } = await supabase.from("beoordelingen").select("email").in("email", emails);
+      if (e3) return { verstuurd, mislukt: [`Reviews ophalen mislukt: ${e3.message}`] };
+      const bekendeEmails = new Set((perEmail ?? []).map((r) => r.email as string));
 
-    const metReview = new Set((bestaand ?? []).map((r) => r.order_id as string));
-    const kandidaten = selecteerUitTeNodigen(lijst, metReview, nu, naDagen)
-      .filter((o) => !bekendeEmails.has(o.email.trim().toLowerCase()))
-      .slice(0, PER_RONDE) as OrderRij[];
+      const metReview = new Set((bestaand ?? []).map((r) => r.order_id as string));
+      for (const o of selecteerUitTeNodigen(lijst, metReview, nu, naDagen) as OrderRij[]) {
+        const email = o.email.trim().toLowerCase();
+        // Eén uitnodiging per klant per ronde, ook als die meerdere bestellingen heeft.
+        if (bekendeEmails.has(email) || gezienEmails.has(email)) continue;
+        gezienEmails.add(email);
+        if (kandidaten.length < PER_RONDE) kandidaten.push(o);
+      }
+      if (lijst.length < PAGINA) break;
+    }
+    if (!kandidaten.length) return { verstuurd, mislukt };
     const boek = await adresboek(
       supabase,
       kandidaten.map((o) => o.email),

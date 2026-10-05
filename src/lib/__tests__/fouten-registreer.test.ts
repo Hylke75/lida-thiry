@@ -10,7 +10,9 @@ const adminClient = vi.hoisted(() =>
 );
 const stuurBeheerMelding = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("@/lib/supabase/admin", () => ({ adminClient }));
+const magDoorOpSleutel = vi.hoisted(() => vi.fn<(...a: unknown[]) => Promise<boolean>>(async () => true));
 vi.mock("@/lib/beheermelding", () => ({ stuurBeheerMelding }));
+vi.mock("@/lib/rate-limit", () => ({ magDoorOpSleutel }));
 
 import { maakVingerafdruk, registreerFout } from "../fouten/registreer";
 
@@ -37,6 +39,8 @@ beforeEach(() => {
   rpc.mockReset();
   update.mockReset();
   stuurBeheerMelding.mockClear();
+  magDoorOpSleutel.mockReset();
+  magDoorOpSleutel.mockResolvedValue(true);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -84,6 +88,21 @@ describe("registreerFout", () => {
     await registreerFout({ bron: "melding", fout: "Factuur maken mislukt" });
     await registreerFout({ bron: "server", fout: "x", melden: false });
     expect(stuurBeheerMelding).not.toHaveBeenCalled();
+  });
+
+  it("mailt een nieuwe browserfout niet (openbaar endpoint), pas bij een drempel", async () => {
+    rpc.mockResolvedValue({ data: rij({ bron: "browser" }), error: null });
+    await registreerFout({ bron: "browser", fout: "x" });
+    expect(stuurBeheerMelding).not.toHaveBeenCalled();
+  });
+
+  it("houdt een globale daglimiet op foutmails aan (faalt dicht)", async () => {
+    rpc.mockResolvedValue({ data: rij(), error: null });
+    magDoorOpSleutel.mockResolvedValue(false);
+    await registreerFout({ bron: "server", fout: "x" });
+    expect(magDoorOpSleutel).toHaveBeenCalledWith("fouten-mail", 20, 86400, { bijFout: "weigeren" });
+    expect(stuurBeheerMelding).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("gooit nooit, ook niet als de database faalt", async () => {

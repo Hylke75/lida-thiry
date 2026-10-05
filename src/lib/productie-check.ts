@@ -72,6 +72,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       secties: perType.get(t.sleutel) ?? 0,
     })),
     ontbrekendeKoppelingen: ontbrekendeLetters(toewijzing),
+    toewijzing,
     omgeving: {
       GRATIS_TEST: process.env.GRATIS_TEST,
       RESEND_VAN: process.env.RESEND_VAN,
@@ -80,6 +81,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
       RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
       NIEUWSBRIEF_GEHEIM: process.env.NIEUWSBRIEF_GEHEIM,
+      LINK_GEHEIM: process.env.LINK_GEHEIM,
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
       VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
       VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,

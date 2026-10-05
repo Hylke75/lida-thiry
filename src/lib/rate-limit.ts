@@ -5,9 +5,16 @@ import { adminClient } from "@/lib/supabase/admin";
 /**
  * Rate limiting via Postgres (tabel rate_limits + functie rate_limit_hit), zodat
  * het over serverless-instanties heen werkt. Het IP-adres wordt alleen als
- * SHA-256-hash opgeslagen. Faalt OPEN: als de database-aanroep mislukt, wordt
- * het verzoek doorgelaten (liever een bestelling dan een kapotte site).
+ * SHA-256-hash opgeslagen. Faalt standaard OPEN: als de database-aanroep
+ * mislukt, wordt het verzoek doorgelaten (liever een bestelling dan een kapotte
+ * site). Met `{ bijFout: "weigeren" }` faalt hij dicht (voor mail-versturende
+ * endpoints, waar misbruik erger is dan een gemiste mail).
  */
+
+export interface RateLimitOpties {
+  /** Wat te doen als de controle zelf mislukt. Standaard "toestaan". */
+  bijFout?: "toestaan" | "weigeren";
+}
 
 export function clientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -27,15 +34,23 @@ export async function magDoor(
   naam: string,
   max: number,
   vensterSeconden: number,
+  opties: RateLimitOpties = {},
 ): Promise<boolean> {
-  return magDoorOpSleutel(`${naam}:${hashIp(clientIp(request))}`, max, vensterSeconden);
+  return magDoorOpSleutel(`${naam}:${hashIp(clientIp(request))}`, max, vensterSeconden, opties);
 }
 
 /**
  * Zoals magDoor, maar op een eigen sleutel (bijv. per e-mailadres). Hash
  * persoonsgegevens vooraf met hashIp. true = verzoek toegestaan.
  */
-export async function magDoorOpSleutel(sleutel: string, max: number, vensterSeconden: number): Promise<boolean> {
+export async function magDoorOpSleutel(
+  sleutel: string,
+  max: number,
+  vensterSeconden: number,
+  opties: RateLimitOpties = {},
+): Promise<boolean> {
+  const toestaan = opties.bijFout !== "weigeren";
+  const actie = toestaan ? "doorgelaten" : "geweigerd";
   try {
     const { data, error } = await adminClient().rpc("rate_limit_hit", {
       p_sleutel: sleutel,
@@ -43,13 +58,13 @@ export async function magDoorOpSleutel(sleutel: string, max: number, vensterSeco
       p_max: max,
     });
     if (error) {
-      console.error("Rate limit-controle mislukt (doorgelaten)", error.message);
-      return true;
+      console.error(`Rate limit-controle mislukt (${actie})`, error.message);
+      return toestaan;
     }
     return data !== false;
   } catch (e) {
-    console.error("Rate limit-controle mislukt (doorgelaten)", e);
-    return true;
+    console.error(`Rate limit-controle mislukt (${actie})`, e);
+    return toestaan;
   }
 }
 

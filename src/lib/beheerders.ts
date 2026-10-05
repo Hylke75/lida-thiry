@@ -19,21 +19,14 @@ export interface BeheerderRij {
 
 type RuweRij = { gebruiker_id: string; email: string | null; aangemaakt_op: string; rol?: unknown };
 
-/** De beheerdersrijen; zonder kolom 'rol' (oude database) is iedereen eigenaar. */
+/** De beheerdersrijen (met rol). Gooit bij een fout: nooit terugvallen op "eigenaar". */
 async function leesRijen(): Promise<RuweRij[]> {
-  const db = adminClient();
-  const metRol = await db.from("beheerders").select("gebruiker_id, email, aangemaakt_op, rol").order("aangemaakt_op");
-  if (!metRol.error) return (metRol.data ?? []) as RuweRij[];
-  const { data, error } = await db.from("beheerders").select("gebruiker_id, email, aangemaakt_op").order("aangemaakt_op");
+  const { data, error } = await adminClient()
+    .from("beheerders")
+    .select("gebruiker_id, email, aangemaakt_op, rol")
+    .order("aangemaakt_op");
   if (error) throw new Error(`beheerders lezen: ${error.message}`);
   return (data ?? []) as RuweRij[];
-}
-
-/** Rol van één beheerder (null als die geen beheerder is). */
-export async function rolVan(gebruikerId: string): Promise<Rol | null> {
-  const rijen = await leesRijen();
-  const rij = rijen.find((r) => r.gebruiker_id === gebruikerId);
-  return rij ? leesRol(rij.rol) : null;
 }
 
 /** Aantal beheerders en eigenaren. */

@@ -30,7 +30,7 @@ export function afgeleideMaten(maten: Maten): AfgeleideMaten {
 /** Regel 1 (zandloper) verschilt per variant; de overige regels zijn gelijk. */
 function isZandloper(a: AfgeleideMaten, variant: ZandloperVariant): boolean {
   const tailleVoorwaarde =
-    a.borstMinTaille >= G.drieEnTwintigCm || a.heupMinTaille >= G.vijftienCm;
+    a.borstMinTaille >= G.drieEnTwintigCm || a.heupMinTaille >= G.tienInch;
   if (variant === "excel") {
     return (
       a.heupMinBorst <= G.tweeEnHalveCm &&
@@ -60,7 +60,7 @@ export function bepaalFiguurtype(
 
   if (
     a.heupMinBorst >= G.negenCm &&
-    a.heupMinBorst < G.vijftienCm &&
+    a.heupMinBorst < G.tienInch &&
     a.heupMinTaille >= G.drieEnTwintigCm &&
     a.hogeHeupDoorTaille < G.hogeHeupTailleRatio
   ) {
@@ -69,7 +69,7 @@ export function bepaalFiguurtype(
 
   if (
     a.borstMinHeup > G.tweeEnHalveCm &&
-    a.borstMinHeup < G.vijftienCm &&
+    a.borstMinHeup < G.tienInch &&
     a.borstMinTaille >= G.drieEnTwintigCm
   ) {
     return "Bovenste zandloper";
@@ -95,7 +95,7 @@ export function bepaalFiguurtype(
     a.heupMinBorst < G.negenCm &&
     a.borstMinHeup < G.negenCm &&
     a.borstMinTaille < G.drieEnTwintigCm &&
-    a.heupMinTaille < G.vijftienCm
+    a.heupMinTaille < G.tienInch
   ) {
     return "Rechthoek";
   }

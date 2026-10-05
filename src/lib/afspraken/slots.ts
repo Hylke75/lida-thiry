@@ -14,7 +14,7 @@
 // - Blokkades (vrije dagen) mogen de afspraak zelf niet overlappen.
 // - Minimaal X uur vooraf, maximaal Y dagen vooruit (vanaf vandaag in Nederland).
 
-import { datumPlusDagen, naarAmsterdam, tijdNaarMinuten, vandaagAmsterdam, vanAmsterdam, weekdagVan } from "./tijd";
+import { datumPlusDagen, eindtijdNaarMinuten, naarAmsterdam, tijdNaarMinuten, vandaagAmsterdam, vanAmsterdam, weekdagVan } from "./tijd";
 
 export const RASTER_MINUTEN = 15;
 export const BETAALTERMIJN_MINUTEN = 30;
@@ -112,7 +112,7 @@ export function vensters(beschikbaarheid: readonly BeschikbaarheidBlok[], datum:
   for (const b of beschikbaarheid) {
     if (b.weekdag !== weekdag) continue;
     const van = tijdNaarMinuten(b.van);
-    const tot = tijdNaarMinuten(b.tot);
+    const tot = eindtijdNaarMinuten(b.tot);
     if (van === null || tot === null || tot <= van) continue;
     uit.push({ van: vanAmsterdam(datum, van).getTime(), tot: vanAmsterdam(datum, tot).getTime() });
   }

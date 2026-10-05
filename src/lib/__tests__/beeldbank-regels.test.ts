@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  snapVerhouding,
   minFormaat,
   STANDAARD_EISEN,
-  controleerAfmetingen,
   isTeKlein,
   naamSuggestie,
   slug,
@@ -32,18 +30,6 @@ describe("2:3-kader", () => {
   });
 });
 
-describe("verhouding", () => {
-  it("rondt af naar een gangbare verhouding", () => {
-    expect(snapVerhouding(300, 400)).toEqual([3, 4]);
-    expect(snapVerhouding(612, 600)).toEqual([1, 1]);
-    expect(snapVerhouding(1920, 1080)).toEqual([16, 9]);
-  });
-
-  it("valt terug op de eigen verhouding als niets in de buurt komt", () => {
-    expect(snapVerhouding(1150, 1000)).toEqual([7, 6]);
-  });
-});
-
 describe("minimaal formaat", () => {
   it("geeft de kortste zijde MIN_KORTE_ZIJDE", () => {
     expect(minFormaat(3, 4)).toEqual({ min_breedte: 600, min_hoogte: 800 });
@@ -61,27 +47,7 @@ describe("minimaal formaat", () => {
   });
 });
 
-describe("controleerAfmetingen", () => {
-  const eisen = { verhouding_b: 3, verhouding_h: 4, min_breedte: 600, min_hoogte: 800 };
-
-  it("keurt een goed beeld goed", () => {
-    expect(controleerAfmetingen(1200, 1600, eisen)).toEqual([]);
-    expect(controleerAfmetingen(1200, 1620, eisen)).toEqual([]); // binnen 3%
-  });
-
-  it("meldt een verkeerde verhouding", () => {
-    const f = controleerAfmetingen(1600, 1200, eisen);
-    expect(f).toHaveLength(1);
-    expect(f[0]).toContain("4:3 (liggend)");
-    expect(f[0]).toContain("3:4 (staand)");
-  });
-
-  it("meldt een te klein beeld", () => {
-    const f = controleerAfmetingen(300, 400, eisen);
-    expect(f).toHaveLength(1);
-    expect(f[0]).toContain("600 × 800");
-  });
-
+describe("isTeKlein", () => {
   it("herkent een te klein huidig beeld", () => {
     expect(isTeKlein({ breedte: 300, hoogte: 400, min_breedte: 600, min_hoogte: 800 })).toBe(true);
     expect(isTeKlein({ breedte: null, hoogte: null, min_breedte: 600, min_hoogte: 800 })).toBe(false);
