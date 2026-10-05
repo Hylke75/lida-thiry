@@ -30,8 +30,20 @@ $$;
 
 -- 2. Wachtrij claimen -------------------------------------------------------------------
 -- De oude versie had één parameter; de nieuwe heeft standaardwaarden, dus een aanroep
--- met alleen p_max blijft werken (dan zonder daglimiet in de database).
-drop function if exists public.nb_claim_verzendingen(integer);
+-- met alleen p_max blijft werken (dan zonder daglimiet in de database). De oude
+-- versie krijgt een andere naam (zonder rechten), zodat de aanroep niet dubbelzinnig is.
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname = 'nb_claim_verzendingen'
+       and pg_get_function_identity_arguments(p.oid) = 'p_max integer'
+  ) then
+    alter function public.nb_claim_verzendingen(integer) rename to nb_claim_verzendingen_oud;
+    revoke all on function public.nb_claim_verzendingen_oud(integer) from public, anon, authenticated, service_role;
+  end if;
+end;
+$$;
 
 create or replace function public.nb_claim_verzendingen(
   p_max integer,
