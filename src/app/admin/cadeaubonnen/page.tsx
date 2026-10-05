@@ -8,6 +8,7 @@ import { formatteerBedrag } from "@/lib/prijs";
 import { foutTekst } from "@/lib/beheermelding";
 import { CADEAUBON_KOLOMMEN, verstuurBon, type CadeaubonRij } from "@/lib/cadeaubon/verwerken";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
+import { BETAALDE_STATUSSEN } from "@/lib/order-status";
 import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 
@@ -99,7 +100,7 @@ export default async function CadeaubonnenPage({
         .from("orders")
         .select("id, kortingscode, klantnaam, status, aangemaakt_op")
         .in("kortingscode", codeTeksten)
-        .in("status", ["betaald", "test_afgerond", "handmatige_beoordeling", "advies_verzonden"])
+        .in("status", [...BETAALDE_STATUSSEN])
     : { data: [] };
   const gebruik = new Map<string, { id: string; klantnaam: string }[]>();
   for (const o of (gebruikData ?? []) as { id: string; kortingscode: string; klantnaam: string }[]) {

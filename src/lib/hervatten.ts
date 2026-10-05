@@ -4,7 +4,7 @@ import { controleerLink } from "./ondertekening";
 import { BETAALD_STATUSSEN, OPEN_STATUSSEN } from "./betaalherinnering-regels";
 import { HERVAT_DOEL } from "./betaalherinnering";
 import { UUID_PATROON } from "./nieuwsbrief/links";
-import { controleerKortingscode, type Kortingscode } from "./prijs";
+import { controleerKortingscode, zonderEigenClaim, type Kortingscode } from "./prijs";
 
 export interface HervatOrder {
   id: string;
@@ -14,6 +14,7 @@ export interface HervatOrder {
   bedrag_cent: number;
   valuta: string;
   kortingscode: string | null;
+  korting_geclaimd: boolean;
   mollie_payment_id: string | null;
   aangemaakt_op: string;
 }
@@ -42,7 +43,7 @@ export async function beoordeelHervatten(id: string, token: string): Promise<Her
   const supabase = adminClient();
   const { data: order, error } = await supabase
     .from("orders")
-    .select("id, klantnaam, email, status, bedrag_cent, valuta, kortingscode, mollie_payment_id, aangemaakt_op")
+    .select("id, klantnaam, email, status, bedrag_cent, valuta, kortingscode, korting_geclaimd, mollie_payment_id, aangemaakt_op")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -62,12 +63,15 @@ export async function beoordeelHervatten(id: string, token: string): Promise<Her
   if ((count ?? 0) > 0) return { soort: "betaald", orderId: order.id };
 
   if (order.kortingscode) {
-    const { data: code } = await supabase
+    const { data: code, error: e3 } = await supabase
       .from("kortingscodes")
       .select("code, soort, waarde, geldig_tot, max_gebruik, aantal_gebruikt, actief")
       .eq("code", order.kortingscode)
       .maybeSingle();
-    if (controleerKortingscode(code as Kortingscode | null)) return { soort: "ongeldig" };
+    if (e3) throw new Error(e3.message);
+    // Heeft deze bestelling de code zelf al geclaimd, dan telt die claim niet als 'gebruikt'.
+    const zonderClaim = code ? zonderEigenClaim(code as Kortingscode, Boolean(order.korting_geclaimd)) : null;
+    if (controleerKortingscode(zonderClaim)) return { soort: "ongeldig" };
   }
   return { soort: "open", order: order as HervatOrder };
 }

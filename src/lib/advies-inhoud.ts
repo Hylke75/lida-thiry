@@ -26,23 +26,28 @@ export interface AdviesInhoud {
   secties: InhoudSectie[];
 }
 
-/** Haalt een adviestype op met zijn secties en (geordende) beelden uit de beeldbank. */
+/**
+ * Haalt een adviestype op met zijn secties en (geordende) beelden uit de beeldbank.
+ * Null als het type niet bestaat; gooit bij een databasefout.
+ */
 export async function haalAdviesInhoud(sleutel: string): Promise<AdviesInhoud | null> {
   const supabase = adminClient();
-  const { data: type } = await supabase
+  const { data: type, error: typeFout } = await supabase
     .from("adviestypes")
     .select("sleutel, titel, categorie, letter")
     .eq("sleutel", sleutel)
     .maybeSingle();
+  if (typeFout) throw new Error(`Adviestype ${sleutel} lezen mislukt: ${typeFout.message}`);
   if (!type) return null;
 
-  const { data: secties } = await supabase
+  const { data: secties, error: sectieFout } = await supabase
     .from("adviessecties")
     .select(
       "id, volgorde, kop, tekst, sectie_beelden(volgorde, beelden(id, code, pad, thumb_pad, bijschrift, naam))",
     )
     .eq("type_sleutel", sleutel)
     .order("volgorde", { ascending: true });
+  if (sectieFout) throw new Error(`Adviessecties van ${sleutel} lezen mislukt: ${sectieFout.message}`);
 
   type Rij = {
     id: string;

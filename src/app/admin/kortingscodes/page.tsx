@@ -6,6 +6,7 @@ import { logActie } from "@/lib/beheer-log";
 import { heeftRecht } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
 import { adminClient } from "@/lib/supabase/admin";
+import { eindeVanDagNl } from "@/lib/cadeaubon/regels";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +34,8 @@ function terug(melding: string, soort: "ok" | "fout" = "ok"): never {
 function geldigTotIso(waarde: FormDataEntryValue | null): string | null {
   const tekst = String(waarde ?? "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tekst)) return null;
-  // 23:59:59 Nederlandse tijd; zomer-/wintertijd verschilt hooguit een uur.
-  return new Date(`${tekst}T23:59:59+01:00`).toISOString();
+  // 23:59:59 Nederlandse tijd, rekening houdend met zomer-/wintertijd.
+  return eindeVanDagNl(tekst);
 }
 
 async function maakCode(formData: FormData) {

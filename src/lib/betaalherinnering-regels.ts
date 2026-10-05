@@ -1,10 +1,12 @@
 // Pure regels voor de betaalherinnering: welke niet-afgeronde bestellingen krijgen
 // (eenmalig) een vriendelijke mail met een link om de betaling af te ronden?
 
-/** Statussen van een bestelling waarvan de betaling niet is afgerond. */
-export const OPEN_STATUSSEN = ["aangemaakt", "verlopen", "betaling_mislukt"] as const;
-/** Statussen die betekenen dat er betaald is. */
-export const BETAALD_STATUSSEN = ["betaald", "test_afgerond", "handmatige_beoordeling", "advies_verzonden"] as const;
+import { BETAALDE_STATUSSEN, OPEN_STATUSSEN } from "./order-status";
+
+/** Statussen van een bestelling waarvan de betaling niet is afgerond (zie order-status.ts). */
+export { OPEN_STATUSSEN };
+/** Statussen die betekenen dat er betaald is (zie order-status.ts). */
+export const BETAALD_STATUSSEN = BETAALDE_STATUSSEN;
 /** Ouder dan dit krijgt geen herinnering meer. */
 export const MAX_LEEFTIJD_DAGEN = 7;
 /** Zo lang blijft de link in de herinnering geldig. */

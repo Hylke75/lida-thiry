@@ -1,9 +1,11 @@
 // Wanneer mag een klant haar advies (nog) downloaden? Puur, zodat het los te testen is.
 
+import { ADVIES_STATUSSEN } from "./order-status";
+
 /** Zo lang na het afronden van de test blijft de PDF via de testlink beschikbaar. */
 export const PDF_BESCHIKBAAR_DAGEN = 365;
 
-const AFGEROND = ["test_afgerond", "advies_verzonden"];
+const AFGEROND: readonly string[] = ADVIES_STATUSSEN;
 
 export interface AdviesOrder {
   status: string;

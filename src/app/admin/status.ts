@@ -1,4 +1,6 @@
-// Gedeelde statusinformatie voor de beheerpagina's.
+// Gedeelde statusinformatie voor de beheerpagina's. De lijsten zelf staan in
+// src/lib/order-status.ts.
+import * as S from "@/lib/order-status";
 
 export const STATUS_LABEL: Record<string, string> = {
   aangemaakt: "Aangemaakt (nog niet betaald)",
@@ -13,18 +15,13 @@ export const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Statussen waarbij er betaald is. */
-export const BETAALDE_STATUSSEN = [
-  "betaald",
-  "test_afgerond",
-  "advies_verzonden",
-  "handmatige_beoordeling",
-];
+export const BETAALDE_STATUSSEN: string[] = [...S.BETAALDE_STATUSSEN];
 
 /** Statussen waarbij de test is ingevuld. */
-export const AFGERONDE_STATUSSEN = ["test_afgerond", "advies_verzonden", "handmatige_beoordeling"];
+export const AFGERONDE_STATUSSEN: string[] = [...S.AFGERONDE_STATUSSEN];
 
 /** Statussen die meetellen voor de omzet. */
-export const OMZET_STATUSSEN = ["betaald", "test_afgerond", "advies_verzonden"];
+export const OMZET_STATUSSEN: string[] = [...S.OMZET_STATUSSEN];
 
 export function statusLabel(status: string): string {
   return STATUS_LABEL[status] ?? status;

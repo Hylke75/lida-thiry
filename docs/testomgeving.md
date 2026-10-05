@@ -110,7 +110,7 @@ Preview uit en voeg een nieuwe waarde toe met alleen Preview.
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://<test-ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | publishable/anon key van het testproject |
 | `SUPABASE_SERVICE_ROLE_KEY` | service-role-sleutel van het testproject |
-| `GRATIS_TEST` | `1` (bestellen zonder betalen, nodig voor de e2e-test) |
+| `GRATIS_TEST` | `1` (bestellen zonder betalen, nodig voor de e2e-test; alleen precies `1` zet het aan) |
 | `MOLLIE_API_KEY` | een **test**sleutel (`test_…`), nooit `live_…` |
 | `RESEND_API_KEY` | leeg laten (mails mislukken dan en komen in de foutlog), of een Resend-sleutel met afzender `onboarding@resend.dev` (komt alleen aan bij het e-mailadres van het Resend-account) |
 | `RESEND_VAN` | leeg laten, of een adres van een apart testdomein |

@@ -24,7 +24,7 @@ interface Bevinding {
   ernst: string;
   bericht: string;
 }
-type Resultaat = { soort: "type"; sleutel: string; titel: string | null; letter: string };
+type Resultaat = { soort: "type"; sleutel: string; titel: string | null };
 
 interface Antwoorden {
   lengte: string;

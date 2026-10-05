@@ -5,7 +5,9 @@ import {
   datumInNederland,
   eindeVanDagNl,
   euroNaarCent,
+  maxBedragCent,
   plusDagen,
+  vasteBedragenOnder,
   valideerCadeaubon,
   verzendenIsAanDeBeurt,
 } from "../cadeaubon/regels";
@@ -27,7 +29,7 @@ describe("cadeaubon: bedrag", () => {
 
   it("accepteert de vaste bedragen en weigert andere waarden als keuze", () => {
     expect(bepaalBedrag("2000", "", 4900)).toEqual({ ok: true, waarde: 2000 });
-    expect(bepaalBedrag("5000", "", null)).toEqual({ ok: true, waarde: 5000 });
+    expect(bepaalBedrag("5000", "", 6000)).toEqual({ ok: true, waarde: 5000 });
     expect(bepaalBedrag("2500", "", 4900).ok).toBe(false);
     expect(bepaalBedrag("", "", 4900).ok).toBe(false);
   });
@@ -38,11 +40,25 @@ describe("cadeaubon: bedrag", () => {
   });
 
   it("controleert een eigen bedrag op minimum en maximum", () => {
-    expect(bepaalBedrag("anders", "5", null)).toEqual({ ok: true, waarde: 500 });
-    expect(bepaalBedrag("anders", "4,99", null)).toEqual({ ok: false, fout: "Een cadeaubon is minimaal € 5." });
-    expect(bepaalBedrag("anders", "500", null)).toEqual({ ok: true, waarde: 50000 });
-    expect(bepaalBedrag("anders", "500,01", null).ok).toBe(false);
-    expect(bepaalBedrag("anders", "veel", null).ok).toBe(false);
+    expect(bepaalBedrag("anders", "5", 4900)).toEqual({ ok: true, waarde: 500 });
+    expect(bepaalBedrag("anders", "4,99", 4900)).toEqual({ ok: false, fout: "Een cadeaubon is minimaal € 5." });
+    expect(bepaalBedrag("anders", "49", 4900)).toEqual({ ok: true, waarde: 4900 });
+    expect(bepaalBedrag("anders", "veel", 4900).ok).toBe(false);
+  });
+
+  it("is maximaal de prijs van de test", () => {
+    const r = bepaalBedrag("anders", "49,01", 4900);
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.fout).toMatch(/maximaal de prijs van de test \(€\s49,00\)/);
+    expect(bepaalBedrag("5000", "", 4900).ok).toBe(false);
+    expect(bepaalBedrag("anders", "600", 100_000).ok).toBe(false);
+    expect(maxBedragCent(4900)).toBe(4900);
+    expect(vasteBedragenOnder(4900)).toEqual([2000, 3500]);
+  });
+
+  it("weigert zonder bekende prijs", () => {
+    expect(bepaalBedrag("anders", "25", null).ok).toBe(false);
+    expect(bepaalBedrag("2000", "", null).ok).toBe(false);
   });
 });
 

@@ -4,6 +4,8 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_BETAALD, BESTELLEN_MISLUKT, BESTELLEN_VERWERKEN } from "@/lib/inhoud/groepen/bestellen";
 import { MIJN_ADVIES_PAGINA } from "@/lib/inhoud/groepen/mijn-advies";
+import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
+import { isBetaald, testlinkNogTonen } from "@/lib/order-status";
 import { AutoVernieuwen } from "./AutoVernieuwen";
 
 export const dynamic = "force-dynamic";
@@ -22,21 +24,23 @@ export default async function BedanktPage({
 
   let status: string | null = null;
   let token: string | null = null;
-  if (orderId) {
+  if (orderId && UUID_PATROON.test(orderId)) {
     try {
       const { data } = await adminClient()
         .from("orders")
-        .select("status, testtoken")
+        .select("status, testtoken, betaald_op")
         .eq("id", orderId)
-        .single();
+        .maybeSingle();
       status = data?.status ?? null;
-      token = data?.testtoken ?? null;
+      // De testlink alleen kort na betalen tonen: de bedankpagina-URL (met
+      // order-id) kan in de browsergeschiedenis blijven staan. Daarna staat hij in de mail.
+      token = testlinkNogTonen(data?.betaald_op ?? null) ? (data?.testtoken ?? null) : null;
     } catch {
       status = null;
     }
   }
 
-  const betaald = status === "betaald" || status === "test_afgerond" || status === "advies_verzonden";
+  const betaald = isBetaald(status);
   const mislukt = status === "betaling_mislukt" || status === "verlopen";
   const [tBetaald, tMislukt, tVerwerken, tMijnAdvies] = await Promise.all([
     leesSectie(BESTELLEN_BETAALD),
@@ -52,13 +56,17 @@ export default async function BedanktPage({
         <>
           <h1 className="text-2xl font-semibold tracking-tight">{tBetaald.titel}</h1>
           <p className="whitespace-pre-line text-foreground/70">{tBetaald.tekst}</p>
-          {token && (
+          {token ? (
             <Link
               href={`/test/${token}`}
               className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
             >
               {tBetaald.knop}
             </Link>
+          ) : (
+            <p className="text-sm text-foreground/70">
+              Je persoonlijke link naar de test staat in de bevestigingsmail. Kijk ook even in je spammap.
+            </p>
           )}
           {tMijnAdvies.verwijzing.trim() && (
             <Link href="/mijn-advies" className="mx-auto text-sm text-foreground/60 underline underline-offset-4 hover:text-accent">

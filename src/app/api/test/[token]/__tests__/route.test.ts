@@ -111,13 +111,33 @@ describe("POST /api/test/[token]", () => {
   it("verwerkt een geldige inzending tot een definitief type", async () => {
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68", letter: "8", pdfKlaar: true });
+    const json = await res.json();
+    expect(json).toMatchObject({ soort: "type", sleutel: "68", pdfKlaar: true });
+    expect(json).not.toHaveProperty("letter");
 
     const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
     expect(upsert?.args[0]).toMatchObject({ order_id: "order-1", letter: "8", borst: 92 });
     const update = db.calls.find((c) => c.table === "orders" && c.op === "update");
     expect(update?.args[0]).toMatchObject({ status: "test_afgerond", toegekend_type: "68" });
+    // Eerst de statusovergang, dan pas het resultaat opslaan.
+    expect(db.calls.indexOf(update!)).toBeLessThan(db.calls.indexOf(upsert!));
     expect(leverAdvies).toHaveBeenCalledWith("order-1");
+  });
+
+  it("weigert een schoudermaat buiten het bereik met 400", async () => {
+    const body = geldigeBody();
+    const res = await POST(verzoek({ ...body, maten: { ...body.maten, schouder: 400 } }), ctx);
+    expect(res.status).toBe(400);
+    expect(db.calls.some((c) => c.op === "update" || c.op === "upsert")).toBe(false);
+  });
+
+  it("zet de order terug op betaald als opslaan mislukt", async () => {
+    db.upsertError = { message: "db weg" };
+    const res = await POST(verzoek(geldigeBody()), ctx);
+    expect(res.status).toBe(500);
+    const updates = db.calls.filter((c) => c.table === "orders" && c.op === "update");
+    expect(updates[1]?.args[0]).toMatchObject({ status: "betaald", toegekend_type: null });
+    expect(leverAdvies).not.toHaveBeenCalled();
   });
 
   it("bewaart alleen pasvormantwoorden op bestaande vragen en opties", async () => {
@@ -165,7 +185,7 @@ describe("POST /api/test/[token]", () => {
     });
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6X", letter: "X" });
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6X" });
     expect(db.calls).toHaveLength(0);
     expect(leverAdvies).not.toHaveBeenCalled();
   });
@@ -187,6 +207,8 @@ describe("POST /api/test/[token]", () => {
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68" });
     expect(leverAdvies).not.toHaveBeenCalled();
+    // Het verliezende verzoek overschrijft het opgeslagen resultaat niet.
+    expect(db.calls.some((c) => c.op === "upsert")).toBe(false);
   });
 
   it("weigert een ongeldige token met 403", async () => {

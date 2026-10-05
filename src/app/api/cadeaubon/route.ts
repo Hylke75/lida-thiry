@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling, leesPrijsCent } from "@/lib/instellingen";
-import { mollie, centenNaarBedrag } from "@/lib/mollie";
+import { annuleerBetaling, startBetaling } from "@/lib/mollie";
 import { siteUrl } from "@/lib/site";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 import { valideerCadeaubon } from "@/lib/cadeaubon/regels";
@@ -58,22 +58,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ fout: "Bestelling aanmaken mislukt." }, { status: 500 });
   }
 
-  const basis = siteUrl();
-  const lokaal = basis.startsWith("http://localhost");
+  let betaalId: string | null = null;
   try {
-    const betaling = await mollie().payments.create({
-      amount: { currency: valuta, value: centenNaarBedrag(v.bedragCent) },
-      description: "Cadeaubon kledingadviestest – Lida Thiry",
-      redirectUrl: `${basis}/cadeaubon/bedankt?bon=${bon.id}`,
-      ...(lokaal ? {} : { webhookUrl: `${basis}/api/mollie/webhook` }),
+    const betaling = await startBetaling({
+      bedragCent: v.bedragCent,
+      valuta,
+      omschrijving: "Cadeaubon kledingadviestest – Lida Thiry",
+      redirectPad: `/cadeaubon/bedankt?bon=${bon.id}`,
       metadata: { cadeaubonId: bon.id },
     });
-    await supabase.from("cadeaubon_bestellingen").update({ mollie_payment_id: betaling.id }).eq("id", bon.id);
-    const checkoutUrl = betaling.getCheckoutUrl();
-    if (!checkoutUrl) return NextResponse.json({ fout: "Geen betaallink ontvangen." }, { status: 502 });
-    return NextResponse.json({ checkoutUrl });
+    betaalId = betaling.id;
+    const { error: idFout } = await supabase
+      .from("cadeaubon_bestellingen")
+      .update({ mollie_payment_id: betaling.id })
+      .eq("id", bon.id);
+    if (idFout) throw new Error(`Betaling koppelen mislukt: ${idFout.message}`);
+    if (!betaling.checkoutUrl) throw new Error("Geen betaallink ontvangen.");
+    return NextResponse.json({ checkoutUrl: betaling.checkoutUrl });
   } catch (e) {
-    await supabase.from("cadeaubon_bestellingen").update({ status: "mislukt" }).eq("id", bon.id);
+    if (betaalId) await annuleerBetaling(betaalId);
+    await supabase.from("cadeaubon_bestellingen").update({ status: "mislukt" }).eq("id", bon.id).eq("status", "aangemaakt");
     console.error("Cadeaubonbetaling starten mislukt", bon.id, e);
     return NextResponse.json({ fout: "Betaling starten mislukt. Probeer het opnieuw." }, { status: 502 });
   }

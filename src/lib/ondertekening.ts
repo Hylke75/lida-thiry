@@ -4,14 +4,24 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-function geheim(): string {
-  const g =
-    process.env.LINK_GEHEIM ||
-    process.env.NIEUWSBRIEF_GEHEIM ||
-    process.env.CRON_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
+/**
+ * Het geheim voor ondertekende links. In productie (VERCEL_ENV=production) is
+ * LINK_GEHEIM verplicht; lokaal en op previews valt het terug op andere geheimen.
+ */
+export function linkGeheim(env: Record<string, string | undefined> = process.env): string {
+  if (env.VERCEL_ENV === "production") {
+    if (!env.LINK_GEHEIM) {
+      throw new Error("LINK_GEHEIM ontbreekt: in productie is een eigen geheim voor ondertekende links verplicht.");
+    }
+    return env.LINK_GEHEIM;
+  }
+  const g = env.LINK_GEHEIM || env.NIEUWSBRIEF_GEHEIM || env.CRON_SECRET || env.SUPABASE_SERVICE_ROLE_KEY;
   if (!g) throw new Error("Geen geheim voor ondertekende links (zet LINK_GEHEIM).");
   return g;
+}
+
+function geheim(): string {
+  return linkGeheim();
 }
 
 function handtekening(doel: string, id: string, verlooptOp: number, sleutel: string): string {

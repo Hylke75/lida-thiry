@@ -15,6 +15,8 @@ import { leesSectieVers } from "@/lib/inhoud/lees";
 import { TEST_VRAGEN } from "@/lib/inhoud/groepen/test";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
+import { isOpen, OPEN_STATUSSEN } from "@/lib/order-status";
+import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,12 @@ const MELDINGEN: Record<string, { soort: "ok" | "fout"; tekst: string }> = {
   testlink_ok: { soort: "ok", tekst: "De testlink is opnieuw naar de klant gestuurd." },
   testlink_niet_betaald: { soort: "fout", tekst: "Deze bestelling is niet betaald; er is geen testlink verstuurd." },
   testlink_mislukt: { soort: "fout", tekst: "De testlink kon niet verstuurd worden. Probeer het later opnieuw." },
+  type_niet_betaald: { soort: "fout", tekst: "Deze bestelling is niet betaald; er is geen type toegekend." },
+  verwijderen_geweigerd: {
+    soort: "fout",
+    tekst: "Een betaalde bestelling of een bestelling met een factuurnummer kan niet worden verwijderd (de administratie moet bewaard blijven).",
+  },
+  verwijderen_mislukt: { soort: "fout", tekst: "Verwijderen mislukte. Probeer het later opnieuw." },
 };
 
 function terug(id: string, melding: string): never {
@@ -57,13 +65,16 @@ async function kenTypeToe(formData: FormData) {
   const { data: type } = await supabase.from("adviestypes").select("sleutel").eq("sleutel", sleutel).maybeSingle();
   if (!type) terug(id, "type_onbekend");
 
-  await supabase
+  const { data: bijgewerkt, error } = await supabase
     .from("orders")
     .update({ toegekend_type: sleutel, status: "test_afgerond", afgerond_op: new Date().toISOString() })
-    .eq("id", id);
-  let gelukt = true;
+    .eq("id", id)
+    .in("status", BETAALDE_STATUSSEN)
+    .select("id");
+  if (error || !bijgewerkt?.length) terug(id, "type_niet_betaald");
+  let gelukt = false;
   try {
-    await leverAdvies(id);
+    gelukt = await leverAdvies(id);
   } catch {
     gelukt = false;
   }
@@ -82,9 +93,9 @@ async function verstuurOpnieuw(formData: FormData) {
   "use server";
   const ik = await vereisBeheerder("bestellingen");
   const id = String(formData.get("id"));
-  let gelukt = true;
+  let gelukt = false;
   try {
-    await leverAdvies(id);
+    gelukt = await leverAdvies(id);
   } catch {
     gelukt = false;
   }
@@ -138,21 +149,34 @@ async function verwijderBestelling(formData: FormData) {
   const supabase = adminClient();
   const { data } = await supabase
     .from("orders")
-    .select("pdf_pad, klantnaam, email, status, bedrag_cent")
+    .select("pdf_pad, klantnaam, email, status, bedrag_cent, factuurnummer")
     .eq("id", id)
     .single();
-  if (data?.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
-  const { error } = await supabase.from("orders").delete().eq("id", id);
-  if (!error) {
-    await logActie({
-      actie: "order.verwijderen",
-      onderwerpSoort: "order",
-      onderwerpId: id,
-      omschrijving: `Bestelling verwijderd${data ? ` (${data.klantnaam ?? ""} <${data.email ?? ""}>, ${data.status})` : ""}`,
-      details: data ? { status: data.status, bedrag_cent: data.bedrag_cent } : null,
-      gebruiker: ik,
-    });
+  // Betaalde bestellingen en bestellingen met een factuur blijven bewaard.
+  if (!data || data.factuurnummer || !isOpen(data.status)) terug(id, "verwijderen_geweigerd");
+  // Een geclaimde kortingscode/cadeaubon eerst weer vrijgeven.
+  try {
+    await geefKortingsclaimVrij(id);
+  } catch {
+    terug(id, "verwijderen_mislukt");
   }
+  const { data: weg, error } = await supabase
+    .from("orders")
+    .delete()
+    .eq("id", id)
+    .is("factuurnummer", null)
+    .in("status", [...OPEN_STATUSSEN])
+    .select("id");
+  if (error || !weg?.length) terug(id, error ? "verwijderen_mislukt" : "verwijderen_geweigerd");
+  if (data.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
+  await logActie({
+    actie: "order.verwijderen",
+    onderwerpSoort: "order",
+    onderwerpId: id,
+    omschrijving: `Bestelling verwijderd (${data.klantnaam ?? ""} <${data.email ?? ""}>, ${data.status})`,
+    details: { status: data.status, bedrag_cent: data.bedrag_cent },
+    gebruiker: ik,
+  });
   revalidatePath("/admin/bestellingen");
   redirect("/admin/bestellingen");
 }
@@ -298,7 +322,7 @@ export default async function OrderDetail({
           </form>
         )}
 
-        {heeftRecht(ik.rol, "bestellingen_verwijderen") && (
+        {heeftRecht(ik.rol, "bestellingen_verwijderen") && isOpen(order.status) && !order.factuurnummer && (
           <form action={verwijderBestelling} className="border-t border-black/5 pt-4 dark:border-white/10">
             <input type="hidden" name="id" value={order.id} />
             <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">

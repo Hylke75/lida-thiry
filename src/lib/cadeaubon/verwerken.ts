@@ -25,13 +25,14 @@ export interface CadeaubonRij {
   mollie_payment_id: string | null;
   kortingscode_id: string | null;
   factuur_pad: string | null;
+  factuurnummer: string | null;
   betaald_op: string | null;
   verzonden_op: string | null;
   aangemaakt_op: string;
 }
 
 export const CADEAUBON_KOLOMMEN =
-  "id, koper_naam, koper_email, ontvanger_naam, ontvanger_email, boodschap, bezorging, verzend_op, bedrag_cent, valuta, status, mollie_payment_id, kortingscode_id, factuur_pad, betaald_op, verzonden_op, aangemaakt_op";
+  "id, koper_naam, koper_email, ontvanger_naam, ontvanger_email, boodschap, bezorging, verzend_op, bedrag_cent, valuta, status, mollie_payment_id, kortingscode_id, factuur_pad, factuurnummer, betaald_op, verzonden_op, aangemaakt_op";
 
 const FACTUUR_BUCKET = "facturen";
 
@@ -126,7 +127,7 @@ async function bonPdf(gegevens: BonGegevens): Promise<{ bestandsnaam: string; pd
 }
 
 /** Haalt een eerder gemaakte factuur op uit de bucket (voor opnieuw versturen). */
-async function bestaandeFactuur(pad: string | null): Promise<(Factuur & { factuurnummer: string }) | null> {
+async function bestaandeFactuur(pad: string | null): Promise<Factuur | null> {
   if (!pad) return null;
   try {
     const { data } = await adminClient().storage.from(FACTUUR_BUCKET).download(pad);
@@ -150,7 +151,10 @@ async function markeerVerzonden(id: string): Promise<void> {
  * Verwerkt de Mollie-status van een cadeaubonbetaling (vanuit de webhook).
  * Gooit bij databasefouten, zodat Mollie de webhook herhaalt.
  */
-export async function verwerkCadeaubonBetaling(bonId: string, betaling: { id: string; status: string }): Promise<void> {
+export async function verwerkCadeaubonBetaling(
+  bonId: string,
+  betaling: { id: string; status: string; terugbetaaldCent?: number },
+): Promise<void> {
   const supabase = adminClient();
   const bon = await leesBon(bonId);
   if (!bon) return;
@@ -165,6 +169,7 @@ export async function verwerkCadeaubonBetaling(bonId: string, betaling: { id: st
       .select("id");
     if (error) throw new Error(error.message);
     if (bijgewerkt && bijgewerkt.length > 0) await naCadeaubonBetaling(bonId);
+    if ((betaling.terugbetaaldCent ?? 0) > 0) await verwerkTerugbetaling(bonId, betaling.id, betaling.terugbetaaldCent!);
     return;
   }
 
@@ -177,6 +182,40 @@ export async function verwerkCadeaubonBetaling(bonId: string, betaling: { id: st
       .eq("mollie_payment_id", betaling.id);
     if (error) throw new Error(error.message);
   }
+}
+
+/**
+ * Terugbetaald of teruggeboekt (chargeback): de code van de bon uitschakelen en
+ * de beheerder (eenmalig per nieuw bedrag) inlichten. Gooit bij databasefouten.
+ */
+async function verwerkTerugbetaling(bonId: string, betaalId: string, terugCent: number): Promise<void> {
+  const supabase = adminClient();
+  const { data: gewijzigd, error } = await supabase
+    .from("cadeaubon_bestellingen")
+    .update({ terugbetaald_cent: terugCent })
+    .eq("id", bonId)
+    .lt("terugbetaald_cent", terugCent)
+    .select("kortingscode_id, koper_email, bedrag_cent");
+  if (error) throw new Error(`Terugbetaling vastleggen: ${error.message}`);
+  const rij = gewijzigd?.[0];
+  if (!rij) return;
+  let codeTekst = "Er was nog geen code aangemaakt.";
+  if (rij.kortingscode_id) {
+    const { data: code, error: e2 } = await supabase
+      .from("kortingscodes")
+      .update({ actief: false })
+      .eq("id", rij.kortingscode_id)
+      .select("code, aantal_gebruikt");
+    if (e2) throw new Error(`Code uitschakelen: ${e2.message}`);
+    const c = code?.[0];
+    codeTekst = c
+      ? `De code ${c.code} is uitgeschakeld${c.aantal_gebruikt > 0 ? " (let op: hij was al gebruikt)" : ""}.`
+      : "De gekoppelde code is niet gevonden.";
+  }
+  await stuurBeheerMelding(
+    "Cadeaubon terugbetaald of teruggeboekt",
+    `Cadeaubon ${bonId} (${rij.koper_email}): betaling ${betaalId} is voor ${(terugCent / 100).toFixed(2)} terugbetaald of teruggeboekt (chargeback). ${codeTekst}`,
+  );
 }
 
 /**
@@ -252,9 +291,23 @@ export async function verstuurBon(bonId: string, opts: { kopieNaarKoper?: boolea
   const gegevens = bonGegevens(bon, code);
   const pdf = await bonPdf(gegevens);
 
+  // Mislukte de factuur eerder, dan nu alsnog maken (zelfde nummer als dat er al was).
+  let factuur: Factuur | null = null;
+  if (!bon.factuur_pad) {
+    try {
+      factuur = await maakCadeaubonFactuur(bon.id);
+    } catch (e) {
+      console.error("Factuur cadeaubon (opnieuw) mislukt", bon.id, e);
+      await stuurBeheerMelding(
+        "Factuur cadeaubon maken mislukt",
+        `Cadeaubon ${bon.id} (${bon.koper_email}): de factuur kon (opnieuw) niet worden gemaakt.\n\n${foutTekst(e)}`,
+      );
+    }
+  }
+
   const naarKoper = opts.kopieNaarKoper || bon.bezorging === "koper" || !bon.ontvanger_email;
   if (naarKoper) {
-    const factuur = await bestaandeFactuur(bon.factuur_pad);
+    factuur = factuur ?? (await bestaandeFactuur(bon.factuur_pad));
     await stuurCadeaubonMail({ aan: "koper", email: bon.koper_email, bon: gegevens, bonPdf: pdf, factuur });
     if (bon.bezorging === "koper" || !bon.ontvanger_email) await markeerVerzonden(bon.id);
     return bon.koper_email;

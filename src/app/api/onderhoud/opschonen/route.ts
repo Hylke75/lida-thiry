@@ -10,6 +10,7 @@ import { verstuurGeplandeCadeaubonnen } from "@/lib/cadeaubon/verwerken";
 import { stuurAfspraakHerinneringen } from "@/lib/afspraken/data";
 import { registreerFout } from "@/lib/fouten/registreer";
 import { ruimLogboekOp } from "@/lib/beheer-log";
+import { herstelNaBetalingen } from "@/lib/bestelling-betaald";
 
 const HERINNERING_NA_DAGEN = 3;
 
@@ -17,9 +18,11 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 // Geplande opschoning (Vercel-cron): anonimiseert lichaamsmaten ouder dan de
-// bewaartermijn, levert adviezen opnieuw waarvan de PDF of mail eerder mislukte en
-// stuurt een herinnering als een betaalde test na enkele dagen nog niet is gedaan.
-// Blijven er problemen over, dan gaat er één samenvattende beheermelding uit.
+// bewaartermijn, rondt vastgelopen afhandelingen na betaling af, levert adviezen
+// opnieuw waarvan de PDF of mail eerder mislukte en stuurt een herinnering als een
+// betaalde test na enkele dagen nog niet is gedaan. Elke stap staat los: een fout
+// komt in de foutlog en houdt de rest niet tegen. Blijven er problemen over, dan
+// gaat er één samenvattende beheermelding uit.
 // Beveiligd met CRON_SECRET (Vercel stuurt Authorization: Bearer ...).
 export async function GET(request: Request) {
   const geheim = process.env.CRON_SECRET;
@@ -31,90 +34,150 @@ export async function GET(request: Request) {
     return NextResponse.json({ fout: "Niet geautoriseerd." }, { status: 401 });
   }
 
-  const dagen = Number((await leesInstelling("bewaartermijn_maten_dagen")) || "30");
   const supabase = adminClient();
-  const { data, error } = await supabase.rpc("anonimiseer_oude_maten", { dagen });
-  // Oude rate-limitvensters opruimen; een fout hier mag de rest niet tegenhouden.
-  await supabase.rpc("opschonen_rate_limits").then(
-    () => undefined,
-    () => undefined,
-  );
-  // Opgeloste fouten na 90 dagen uit de foutlog; ook dit mag de rest niet tegenhouden.
-  await supabase
-    .from("fouten_log")
-    .delete()
-    .eq("opgelost", true)
-    .lt("laatst_op", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
-    .then(
-      () => undefined,
-      () => undefined,
-    );
-  if (error) {
-    await registreerFout({
-      bron: "cron",
-      fout: `Anonimiseren oude maten mislukt: ${error.message}`,
-      pad: "/api/onderhoud/opschonen",
-    });
-    return NextResponse.json({ fout: error.message }, { status: 500 });
+  const PAD = "/api/onderhoud/opschonen";
+  const mislukteStappen: string[] = [];
+
+  /**
+   * Voert één stap geïsoleerd uit: een fout komt in de foutlog en de
+   * samenvatting, maar houdt de volgende stappen niet tegen.
+   */
+  async function stap<T>(naam: string, werk: () => Promise<T>, terugval: T): Promise<T> {
+    try {
+      return await werk();
+    } catch (e) {
+      console.error(`Nachtelijke stap '${naam}' mislukt`, e);
+      mislukteStappen.push(`${naam}: ${foutTekst(e)}`);
+      await registreerFout({ bron: "cron", fout: `${naam} mislukt: ${foutTekst(e)}`, pad: PAD });
+      return terugval;
+    }
   }
+
+  const dagen = await stap(
+    "Bewaartermijn lezen",
+    async () => Number((await leesInstelling("bewaartermijn_maten_dagen")) || "30"),
+    30,
+  );
+  const geanonimiseerd = await stap(
+    "Anonimiseren oude maten",
+    async () => {
+      const { data, error } = await supabase.rpc("anonimiseer_oude_maten", { dagen });
+      if (error) throw new Error(error.message);
+      return (data as number | null) ?? 0;
+    },
+    null as number | null,
+  );
+  // Oude rate-limitvensters opruimen.
+  await stap(
+    "Rate-limits opruimen",
+    async () => {
+      const { error } = await supabase.rpc("opschonen_rate_limits");
+      if (error) throw new Error(error.message);
+    },
+    undefined,
+  );
+  // Opgeloste fouten na 90 dagen uit de foutlog.
+  await stap(
+    "Foutlog opruimen",
+    async () => {
+      const { error } = await supabase
+        .from("fouten_log")
+        .delete()
+        .eq("opgelost", true)
+        .lt("laatst_op", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString());
+      if (error) throw new Error(error.message);
+    },
+    undefined,
+  );
+
+  // Betaalde orders waarvan de afhandeling na betaling (factuur, mail) vastliep.
+  const naBetaling = await stap("Afhandeling na betaling herstellen", () => herstelNaBetalingen(20), {
+    hersteld: 0,
+    mislukt: [] as string[],
+  });
 
   // Afgeronde tests zonder verzonden advies (ouder dan 10 minuten) opnieuw leveren.
-  const { data: open } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("status", "test_afgerond")
-    .lt("afgerond_op", new Date(Date.now() - 10 * 60 * 1000).toISOString());
-  let opnieuwGeleverd = 0;
-  const adviesProblemen: string[] = [];
-  for (const o of open ?? []) {
-    try {
-      if (await leverAdvies(o.id)) opnieuwGeleverd++;
-      else adviesProblemen.push(`${o.id}: advies (nog) niet te maken (ontbreekt het adviesdocument?)`);
-    } catch (e) {
-      console.error("Opnieuw leveren mislukt", o.id, e);
-      adviesProblemen.push(`${o.id}: ${foutTekst(e)}`);
-    }
-  }
+  const advies = await stap(
+    "Adviezen opnieuw leveren",
+    async () => {
+      const { data: open, error } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("status", "test_afgerond")
+        .lt("afgerond_op", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+      if (error) throw new Error(error.message);
+      let opnieuwGeleverd = 0;
+      const problemen: string[] = [];
+      for (const o of open ?? []) {
+        try {
+          if (await leverAdvies(o.id)) opnieuwGeleverd++;
+          else problemen.push(`${o.id}: advies (nog) niet te maken (ontbreekt het adviesdocument?)`);
+        } catch (e) {
+          console.error("Opnieuw leveren mislukt", o.id, e);
+          problemen.push(`${o.id}: ${foutTekst(e)}`);
+        }
+      }
+      return { opnieuwGeleverd, nogOpen: (open?.length ?? 0) - opnieuwGeleverd, problemen };
+    },
+    { opnieuwGeleverd: 0, nogOpen: 0, problemen: [] as string[] },
+  );
 
-  const herinnering = await stuurHerinneringen(supabase);
-  // Klanten een paar dagen na hun advies om een review vragen (gooit niet).
-  const reviews = await nodigUitVoorReviews(supabase);
-  // Eigen beheermeldingen bij fouten; gooien nooit.
-  const betaalherinneringen = await stuurBetaalherinneringen();
-  const cadeaubonnen = await verstuurGeplandeCadeaubonnen();
-  // Afspraken van morgen: herinnering aan de klant (gooit nooit).
-  const afspraakHerinnering = await stuurAfspraakHerinneringen();
+  const herinnering = await stap("Herinneringen", () => stuurHerinneringen(supabase), {
+    verstuurd: 0,
+    mislukt: [] as string[],
+  });
+  // Klanten een paar dagen na hun advies om een review vragen.
+  const reviews = await stap("Review-uitnodigingen", () => nodigUitVoorReviews(supabase), {
+    verstuurd: 0,
+    mislukt: [] as string[],
+  });
+  // Eigen beheermeldingen bij fouten.
+  const betaalherinneringen = await stap("Betaalherinneringen", () => stuurBetaalherinneringen(), null);
+  const cadeaubonnen = await stap("Geplande cadeaubonnen", () => verstuurGeplandeCadeaubonnen(), null);
+  // Afspraken van morgen: herinnering aan de klant.
+  const afspraakHerinnering = await stap("Afspraakherinneringen", () => stuurAfspraakHerinneringen(), {
+    verstuurd: 0,
+    mislukt: [] as string[],
+  });
   herinnering.mislukt.push(...afspraakHerinnering.mislukt);
-  // Logboek van beheeracties: regels ouder dan 2 jaar weg (gooit nooit).
-  const logboekOpgeruimd = await ruimLogboekOp();
+  // Logboek van beheeracties: regels ouder dan 2 jaar weg.
+  const logboekOpgeruimd = await stap("Logboek opruimen", () => ruimLogboekOp(), null);
 
-  const nogOpen = (open?.length ?? 0) - opnieuwGeleverd;
-  if (nogOpen > 0 || herinnering.mislukt.length > 0 || reviews.mislukt.length > 0) {
-    const delen: string[] = [];
-    if (nogOpen > 0) {
-      delen.push(
-        `${nogOpen} afgeronde test(s) zonder verzonden advies:\n${adviesProblemen.map((r) => `- ${r}`).join("\n")}`,
-      );
-    }
-    if (herinnering.mislukt.length > 0) {
-      delen.push(
-        `${herinnering.mislukt.length} herinneringsmail(s) mislukt:\n${herinnering.mislukt.map((r) => `- ${r}`).join("\n")}`,
-      );
-    }
-    if (reviews.mislukt.length > 0) {
-      delen.push(
-        `${reviews.mislukt.length} review-uitnodiging(en) mislukt:\n${reviews.mislukt.map((r) => `- ${r}`).join("\n")}`,
-      );
-    }
-    await stuurBeheerMelding("Nachtelijke controle: actie nodig", delen.join("\n\n"));
+  const delen: string[] = [];
+  if (mislukteStappen.length > 0) {
+    delen.push(`${mislukteStappen.length} stap(pen) mislukt:\n${mislukteStappen.map((r) => `- ${r}`).join("\n")}`);
   }
+  if (naBetaling.mislukt.length > 0) {
+    delen.push(
+      `${naBetaling.mislukt.length} betaalde bestelling(en) nog niet afgehandeld (factuur/bevestiging):\n${naBetaling.mislukt.map((r) => `- ${r}`).join("\n")}`,
+    );
+  }
+  if (advies.nogOpen > 0) {
+    delen.push(
+      `${advies.nogOpen} afgeronde test(s) zonder verzonden advies:\n${advies.problemen.map((r) => `- ${r}`).join("\n")}`,
+    );
+  }
+  if (herinnering.mislukt.length > 0) {
+    delen.push(
+      `${herinnering.mislukt.length} herinneringsmail(s) mislukt:\n${herinnering.mislukt.map((r) => `- ${r}`).join("\n")}`,
+    );
+  }
+  if (reviews.mislukt.length > 0) {
+    delen.push(
+      `${reviews.mislukt.length} review-uitnodiging(en) mislukt:\n${reviews.mislukt.map((r) => `- ${r}`).join("\n")}`,
+    );
+  }
+  if (delen.length > 0) await stuurBeheerMelding("Nachtelijke controle: actie nodig", delen.join("\n\n"));
 
   return NextResponse.json({
-    ok: true,
-    geanonimiseerd: data ?? 0,
+    ok: mislukteStappen.length === 0,
+    mislukte_stappen: mislukteStappen,
+    geanonimiseerd,
     bewaartermijn_dagen: dagen,
-    opnieuw_geleverd: opnieuwGeleverd,
-    nog_open: nogOpen,
+    nabetaling_hersteld: naBetaling.hersteld,
+    nabetaling_mislukt: naBetaling.mislukt.length,
+    opnieuw_geleverd: advies.opnieuwGeleverd,
+    nog_open: advies.nogOpen,
     herinneringen_verstuurd: herinnering.verstuurd,
     herinneringen_mislukt: herinnering.mislukt.length,
     reviews_uitgenodigd: reviews.verstuurd,

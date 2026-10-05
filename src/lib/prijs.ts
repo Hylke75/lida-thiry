@@ -83,3 +83,45 @@ export function cadeauboncode(bytes: Uint8Array): string {
   const tekens = Array.from(bytes.slice(0, 8), (b) => CODE_ALFABET[b % CODE_ALFABET.length]);
   return `CADEAU-${tekens.slice(0, 4).join("")}-${tekens.slice(4).join("")}`;
 }
+
+/** Mollie-bedrag ("24.95") naar centen; ontbrekend of ongeldig = 0. */
+export function bedragNaarCenten(bedrag: { value?: string } | null | undefined): number {
+  const n = Number(bedrag?.value ?? 0);
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+/** Totaal terugbetaald + teruggeboekt (chargeback) van een Mollie-betaling, in centen. */
+export function terugbetaaldCent(betaling: {
+  amountRefunded?: { value?: string } | null;
+  amountChargedBack?: { value?: string } | null;
+}): number {
+  return bedragNaarCenten(betaling.amountRefunded) + bedragNaarCenten(betaling.amountChargedBack);
+}
+
+/**
+ * De code zoals die er zonder de claim van deze bestelling zelf uitziet: een
+ * bestelling die de (eenmalige) code al heeft geclaimd, mag hem bij hervatten
+ * gewoon blijven gebruiken.
+ */
+export function zonderEigenClaim<T extends Pick<Kortingscode, "aantal_gebruikt">>(code: T, geclaimd: boolean): T {
+  return geclaimd ? { ...code, aantal_gebruikt: Math.max(code.aantal_gebruikt - 1, 0) } : code;
+}
+
+/** Maximale lengte per veld van de factuurgegevens. */
+export const FACTUURVELDEN = { adres: 200, postcode: 20, plaats: 100, land: 100 } as const;
+
+/**
+ * Houdt van de (door de klant ingestuurde) factuurgegevens alleen adres,
+ * postcode, plaats en land over, als getrimde tekst met een maximale lengte.
+ */
+export function schoonFactuurgegevens(invoer: unknown): Partial<Record<keyof typeof FACTUURVELDEN, string>> {
+  const bron = invoer && typeof invoer === "object" && !Array.isArray(invoer) ? (invoer as Record<string, unknown>) : {};
+  const uit: Partial<Record<keyof typeof FACTUURVELDEN, string>> = {};
+  for (const [veld, max] of Object.entries(FACTUURVELDEN) as [keyof typeof FACTUURVELDEN, number][]) {
+    const waarde = bron[veld];
+    if (typeof waarde !== "string") continue;
+    const tekst = waarde.trim().slice(0, max);
+    if (tekst) uit[veld] = tekst;
+  }
+  return uit;
+}

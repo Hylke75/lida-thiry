@@ -5,12 +5,13 @@ import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
 import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { gratisTestAan } from "@/lib/order-status";
 import { BestelFormulier } from "./BestelFormulier";
 
 // Statisch met ISR: teksten (tag "inhoud") en de prijs (tag "instellingen") komen
 // uit de datacache; opslaan in het beheer vernieuwt de pagina direct. Het bedrag
 // dat de klant betaalt, bepaalt /api/bestellen altijd vers uit de database.
-// GRATIS_TEST is een omgevingsvariabele en verandert alleen met een nieuwe deploy.
+// GRATIS_TEST (alleen aan met de waarde "1") is een omgevingsvariabele en verandert alleen met een nieuwe deploy.
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
@@ -36,7 +37,7 @@ export default async function BestellenPage() {
     leesSectie(BESTELLEN_FORMULIER),
     leesSectie(NIEUWSBRIEF_BESTELLING),
   ]);
-  const gratisTest = Boolean(process.env.GRATIS_TEST);
+  const gratisTest = gratisTestAan();
   let prijsLabel: string | null = null;
   let prijsBekend = false;
   try {

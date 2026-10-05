@@ -9,27 +9,42 @@ import { vormUitMaten } from "@/lib/lichaam-pad";
 
 const BUCKET = "adviezen-pdf";
 
-/** Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF). */
+/**
+ * Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF).
+ * Streng: gooit als het beeld niet te downloaden is; anders null.
+ */
 async function beeldDataUri(
   supabase: ReturnType<typeof adminClient>,
   pad: string,
+  streng: boolean,
 ): Promise<string | null> {
-  const { data } = await supabase.storage.from(BEELD_BUCKET).download(pad);
-  if (!data) return null;
+  const { data, error } = await supabase.storage.from(BEELD_BUCKET).download(pad);
+  if (!data) {
+    if (streng) throw new Error(`Adviesbeeld ${pad} downloaden mislukt: ${error?.message ?? "geen data"}`);
+    return null;
+  }
   const mime = pad.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
   const base64 = Buffer.from(await data.arrayBuffer()).toString("base64");
   return `data:${mime};base64,${base64}`;
 }
 
-/** Zet de secties van een adviestype om naar PDF-secties (beelden als data-URI). */
+/**
+ * Zet de secties van een adviestype om naar PDF-secties (beelden als data-URI).
+ * Streng (voor de klant-PDF): gooit als er geen secties zijn of een beeld
+ * ontbreekt, zodat er nooit een leeg of onvolledig advies wordt verstuurd.
+ */
 async function pdfSecties(
   supabase: ReturnType<typeof adminClient>,
   inhoud: NonNullable<Awaited<ReturnType<typeof haalAdviesInhoud>>>,
+  streng = false,
 ): Promise<PdfSectie[]> {
+  if (streng && inhoud.secties.length === 0) {
+    throw new Error(`Adviestype ${inhoud.sleutel} heeft geen secties (adviesdocument niet geïmporteerd?).`);
+  }
   // Alle beelden parallel downloaden; een beeld dat in meerdere secties staat maar één keer.
   const uris = new Map<string, Promise<string | null>>();
   for (const s of inhoud.secties)
-    for (const b of s.beelden) if (!uris.has(b.pad)) uris.set(b.pad, beeldDataUri(supabase, b.pad));
+    for (const b of s.beelden) if (!uris.has(b.pad)) uris.set(b.pad, beeldDataUri(supabase, b.pad, streng));
   return Promise.all(
     inhoud.secties.map(async (s) => ({
       kop: s.kop,
@@ -87,22 +102,24 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
 export async function genereerAdviesPdf(orderId: string): Promise<string | null> {
   const supabase = adminClient();
 
-  const { data: order } = await supabase
+  const { data: order, error: orderFout } = await supabase
     .from("orders")
     .select("id, klantnaam, toegekend_type, afgerond_op")
     .eq("id", orderId)
-    .single();
+    .maybeSingle();
+  if (orderFout) throw new Error(`Order lezen mislukt: ${orderFout.message}`);
   if (!order?.toegekend_type) return null;
 
   const inhoud = await haalAdviesInhoud(order.toegekend_type);
   if (!inhoud) return null; // Adviestype bestaat (nog) niet.
-  const secties = await pdfSecties(supabase, inhoud);
+  const secties = await pdfSecties(supabase, inhoud, true);
 
-  const { data: res } = await supabase
+  const { data: res, error: resFout } = await supabase
     .from("testresultaten")
     .select("lengte_cm, gewicht_kg, borst, taille, hoge_heup, heup, binnenbeen, schouder")
     .eq("order_id", orderId)
-    .single();
+    .maybeSingle();
+  if (resFout) throw new Error(`Testresultaat lezen mislukt: ${resFout.message}`);
 
   // Silhouet op de voorpagina: getekend naar de eigen maten als die er (nog)
   // zijn; na anonimisering valt het terug op het standaardsilhouet van de letter.
@@ -159,7 +176,8 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
     .upload(pad, buffer, { contentType: "application/pdf", upsert: true });
   if (error) throw new Error(`PDF uploaden: ${error.message}`);
 
-  await supabase.from("orders").update({ pdf_pad: pad }).eq("id", orderId);
+  const { error: padFout } = await supabase.from("orders").update({ pdf_pad: pad }).eq("id", orderId);
+  if (padFout) throw new Error(`PDF-pad opslaan mislukt: ${padFout.message}`);
   return pad;
 }
 

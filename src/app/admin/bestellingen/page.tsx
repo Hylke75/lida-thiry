@@ -9,6 +9,7 @@ import { leesInstelling } from "@/lib/instellingen";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { AdminNav } from "../AdminNav";
 import { STATUS_LABEL } from "../status";
+import { gratisTestAan } from "@/lib/order-status";
 import { ORDER_RIJ_KOLOMMEN, OrderRij, type OrderRijGegevens } from "./OrderRij";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ const MAX = 200;
 async function nieuweTest() {
   "use server";
   await vereisBeheerder("bestellingen");
-  if (!process.env.GRATIS_TEST) return;
+  if (!gratisTestAan()) return;
   const supabase = adminClient();
   const dagen = Number((await leesInstelling("token_geldigheid_dagen")) || "30");
   const token = maakTesttoken();
@@ -41,6 +42,7 @@ async function nieuweTest() {
     valuta: "EUR",
     status: "betaald",
     betaald_op: new Date().toISOString(),
+    nabetaling_klaar_op: new Date().toISOString(),
     testtoken: token,
     token_verloopt_op: tokenVerlooptOp(dagen),
   });
@@ -51,7 +53,7 @@ async function nieuweTest() {
 async function verwijderAlle() {
   "use server";
   const ik = await vereisBeheerder("bestellingen_verwijderen");
-  if (!process.env.GRATIS_TEST) return;
+  if (!gratisTestAan()) return;
   const supabase = adminClient();
   const { data } = await supabase.from("orders").select("pdf_pad");
   const paden = (data ?? []).map((o) => o.pdf_pad).filter(Boolean) as string[];
@@ -98,7 +100,7 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
   const { data: orders } = await query;
   const lijst = (orders ?? []) as OrderRijGegevens[];
 
-  const testmodus = Boolean(process.env.GRATIS_TEST);
+  const testmodus = gratisTestAan();
   const gefilterd = Boolean(veilig || status);
 
   return (

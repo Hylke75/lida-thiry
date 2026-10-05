@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { controleerLink, ondertekenLink } from "../ondertekening";
+import { controleerLink, linkGeheim, ondertekenLink } from "../ondertekening";
 
 const SLEUTEL = "test-geheim";
 const ID = "0b6f5c1e-2f4e-4c3e-9a51-1f6f8e2a7c10";
@@ -30,5 +30,18 @@ describe("ondertekende links", () => {
     expect(controleerLink("hervat", ID, `${sec}.${sig.slice(0, -1)}${sig.endsWith("A") ? "B" : "A"}`, nu, SLEUTEL)).toBe(false);
     expect(controleerLink("hervat", ID, "", nu, SLEUTEL)).toBe(false);
     expect(controleerLink("hervat", ID, "rommel", nu, SLEUTEL)).toBe(false);
+  });
+});
+
+describe("linkGeheim", () => {
+  it("vereist LINK_GEHEIM in productie", () => {
+    expect(() => linkGeheim({ VERCEL_ENV: "production", CRON_SECRET: "x" })).toThrow(/LINK_GEHEIM/);
+    expect(linkGeheim({ VERCEL_ENV: "production", LINK_GEHEIM: "g" })).toBe("g");
+  });
+
+  it("valt buiten productie terug op andere geheimen", () => {
+    expect(linkGeheim({ VERCEL_ENV: "preview", CRON_SECRET: "c" })).toBe("c");
+    expect(linkGeheim({ SUPABASE_SERVICE_ROLE_KEY: "s" })).toBe("s");
+    expect(() => linkGeheim({})).toThrow();
   });
 });

@@ -19,14 +19,17 @@ const invoerKlasse =
 export function CadeaubonFormulier({
   opties,
   standaard,
-  prijsCent,
+  maxCent,
+  maxLabel,
   minDatum,
   maxDatum,
   teksten,
 }: {
   opties: { waarde: string; label: string }[];
   standaard: string;
-  prijsCent: number | null;
+  /** Hoogste bedrag (de prijs van de test), in centen en leesbaar. */
+  maxCent: number;
+  maxLabel: string;
   minDatum: string;
   maxDatum: string;
   teksten: Teksten;
@@ -40,12 +43,16 @@ export function CadeaubonFormulier({
   const [fout, setFout] = useState<string | null>(null);
 
   const eigenCent = keuze === "anders" ? euroNaarCent(eigenBedrag) : null;
-  const meerDanPrijs = prijsCent !== null && eigenCent !== null && eigenCent > prijsCent;
+  const teHoog = eigenCent !== null && eigenCent > maxCent;
 
   async function verstuur(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = formRef.current;
     if (!form || !form.reportValidity()) return;
+    if (teHoog) {
+      setFout(`Een cadeaubon is maximaal de prijs van de test (${maxLabel}).`);
+      return;
+    }
     setFout(null);
     setBezig(true);
     const f = new FormData(form);
@@ -119,7 +126,8 @@ export function CadeaubonFormulier({
         {keuze === "anders" && (
           <label className="mt-1 flex flex-col gap-1 text-sm">
             <span className="text-foreground/70">
-              Bedrag in euro (minimaal 5)<span className="text-accent"> *</span>
+              Bedrag in euro (minimaal 5, maximaal de prijs van de test: {maxLabel})
+              <span className="text-accent"> *</span>
             </span>
             <input
               value={eigenBedrag}
@@ -128,13 +136,14 @@ export function CadeaubonFormulier({
               required
               pattern="\s*€?\s*\d{1,6}([.,]\d{1,2})?\s*"
               placeholder="25"
+              aria-invalid={teHoog || undefined}
               className={invoerKlasse}
             />
           </label>
         )}
-        {meerDanPrijs && (
+        {teHoog && (
           <p className="text-sm text-accent">
-            Let op: dit is meer dan de prijs van één test. De bon is één keer te gebruiken; het restbedrag vervalt.
+            Een cadeaubon is maximaal de prijs van de test ({maxLabel}).
           </p>
         )}
         <p className="text-xs whitespace-pre-line text-foreground/70">{teksten.bedragUitleg}</p>

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
-import { mollie, centenNaarBedrag } from "@/lib/mollie";
+import { annuleerBetaling, mollie, startBetaling } from "@/lib/mollie";
 import { siteUrl } from "@/lib/site";
 import { magDoor } from "@/lib/rate-limit";
 import { beoordeelHervatten } from "@/lib/hervatten";
+import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
+import { OPEN_STATUSSEN } from "@/lib/order-status";
 
 export const runtime = "nodejs";
 
@@ -30,38 +32,74 @@ export async function POST(request: Request) {
   if (oordeel.soort !== "open") return terug(pagina);
   const order = oordeel.order;
   const supabase = adminClient();
+  const bedankt = `/bestellen/bedankt?order=${order.id}`;
 
-  // Staat de vorige betaling nog open bij Mollie? Dan die gebruiken.
-  if (order.status === "aangemaakt" && order.mollie_payment_id) {
+  // Is er al een betaling? Staat die nog open, dan die gebruiken; is die nog in
+  // verwerking (pending/authorized) of al betaald, dan geen nieuwe maken.
+  if (order.mollie_payment_id) {
     try {
       const bestaand = await mollie().payments.get(order.mollie_payment_id);
-      const url = bestaand.status === "open" ? bestaand.getCheckoutUrl() : null;
-      if (url) return NextResponse.redirect(url, 303);
+      if (bestaand.status === "open") {
+        const url = bestaand.getCheckoutUrl();
+        if (url) return NextResponse.redirect(url, 303);
+      }
+      if (["pending", "authorized", "paid"].includes(bestaand.status)) return terug(bedankt);
     } catch {
       // Onbekend of niet bereikbaar: gewoon een nieuwe betaling maken.
     }
   }
 
-  const lokaal = basis.startsWith("http://localhost");
+  // Een kortingscode/cadeaubon die (nog) niet door deze bestelling is geclaimd
+  // (na een mislukte of verlopen betaling vrijgegeven), eerst opnieuw claimen.
+  let zelfGeclaimd = false;
+  if (order.kortingscode && !order.korting_geclaimd) {
+    const { data: vlag, error: vlagFout } = await supabase
+      .from("orders")
+      .update({ korting_geclaimd: true })
+      .eq("id", order.id)
+      .eq("korting_geclaimd", false)
+      .in("status", [...OPEN_STATUSSEN])
+      .select("id");
+    if (vlagFout || !vlag?.length) return terug(`${pagina}&fout=1`);
+    const { data: geclaimd, error: claimFout } = await supabase.rpc("gebruik_kortingscode", {
+      p_code: order.kortingscode,
+      p_afdwingen: true,
+    });
+    if (claimFout || !geclaimd) {
+      await supabase.from("orders").update({ korting_geclaimd: false }).eq("id", order.id);
+      return terug(pagina);
+    }
+    zelfGeclaimd = true;
+  }
+
   try {
-    const betaling = await mollie().payments.create({
-      amount: { currency: order.valuta || "EUR", value: centenNaarBedrag(order.bedrag_cent) },
-      description: "Kledingadviestest – Lida Thiry",
-      redirectUrl: `${basis}/bestellen/bedankt?order=${order.id}`,
-      ...(lokaal ? {} : { webhookUrl: `${basis}/api/mollie/webhook` }),
+    const betaling = await startBetaling({
+      bedragCent: order.bedrag_cent,
+      valuta: order.valuta,
+      omschrijving: "Kledingadviestest – Lida Thiry",
+      redirectPad: bedankt,
       metadata: { orderId: order.id },
     });
-    const { error } = await supabase
+    const { data: bijgewerkt, error } = await supabase
       .from("orders")
       .update({ mollie_payment_id: betaling.id, status: "aangemaakt" })
       .eq("id", order.id)
-      .in("status", ["aangemaakt", "verlopen", "betaling_mislukt"]);
-    if (error) throw new Error(error.message);
-    const url = betaling.getCheckoutUrl();
-    if (!url) return terug(pagina);
-    return NextResponse.redirect(url, 303);
+      .in("status", [...OPEN_STATUSSEN])
+      .select("id");
+    if (error) {
+      await annuleerBetaling(betaling.id);
+      throw new Error(error.message);
+    }
+    if (!bijgewerkt?.length) {
+      // Inmiddels al betaald (bijv. een eerdere betaling kwam alsnog binnen).
+      await annuleerBetaling(betaling.id);
+      return terug(bedankt);
+    }
+    if (!betaling.checkoutUrl) return terug(pagina);
+    return NextResponse.redirect(betaling.checkoutUrl, 303);
   } catch (e) {
     console.error("Betaling hervatten mislukt", order.id, e);
+    if (zelfGeclaimd) await geefKortingsclaimVrij(order.id).catch(() => undefined);
     return terug(`${pagina}&fout=1`);
   }
 }

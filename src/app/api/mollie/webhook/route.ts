@@ -3,7 +3,10 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { mollie } from "@/lib/mollie";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
-import { naBetaling } from "@/lib/bestelling-betaald";
+import { claimNaBetaling, geefKortingsclaimVrij, naBetaling } from "@/lib/bestelling-betaald";
+import { isBetaald, OPEN_STATUSSEN } from "@/lib/order-status";
+import { terugbetaaldCent } from "@/lib/prijs";
+import { stuurBeheerMelding } from "@/lib/beheermelding";
 import { verwerkCadeaubonBetaling } from "@/lib/cadeaubon/verwerken";
 import { verwerkAfspraakBetaling } from "@/lib/afspraken/data";
 
@@ -46,7 +49,11 @@ export async function POST(request: Request) {
   // Cadeaubon: eigen tabel en afhandeling (code, factuur, mail met de bon).
   if (metadata?.cadeaubonId) {
     try {
-      await verwerkCadeaubonBetaling(metadata.cadeaubonId, { id: betaling.id, status: betaling.status });
+      await verwerkCadeaubonBetaling(metadata.cadeaubonId, {
+        id: betaling.id,
+        status: betaling.status,
+        terugbetaaldCent: terugbetaaldCent(betaling),
+      });
       return NextResponse.json({ ok: true });
     } catch (e) {
       console.error("Cadeaubon-webhook mislukt", metadata.cadeaubonId, e);
@@ -59,7 +66,7 @@ export async function POST(request: Request) {
 
   const { data: order, error: leesFout } = await supabase
     .from("orders")
-    .select("id, status, klantnaam, email, mollie_payment_id")
+    .select("id, status, klantnaam, email, mollie_payment_id, nabetaling_klaar_op")
     .eq("id", orderId)
     .maybeSingle();
   if (leesFout) return NextResponse.json({ ok: false }, { status: 500 });
@@ -68,44 +75,94 @@ export async function POST(request: Request) {
   if (betaling.status === "paid") {
     const dagen = Number((await leesInstelling("token_geldigheid_dagen")) || "30");
     const token = maakTesttoken();
+    const nu = new Date().toISOString();
 
     // Idempotent: alleen de eerste overgang naar betaald slaagt en levert een
-    // rij op; herhaalde webhooks doen niets en mailen niet opnieuw. Ook een order
-    // die al als verlopen/mislukt stond (bijv. een betaling die via de
-    // betaalherinnering is hervat) wordt betaald als het geld binnen is.
+    // rij op. Ook een order die al als verlopen/mislukt stond (bijv. een betaling
+    // die via de betaalherinnering is hervat) wordt betaald als het geld binnen is.
+    // De betaling die de order betaalt, wordt de gekoppelde betaling.
     const { data: bijgewerkt, error: updateFout } = await supabase
       .from("orders")
       .update({
         status: "betaald",
-        betaald_op: new Date().toISOString(),
+        betaald_op: nu,
+        mollie_payment_id: betaling.id,
+        nabetaling_poging_op: nu,
         testtoken: token,
         token_verloopt_op: tokenVerlooptOp(dagen),
       })
       .eq("id", order.id)
-      .in("status", ["aangemaakt", "verlopen", "betaling_mislukt"])
+      .in("status", [...OPEN_STATUSSEN])
       .select("id");
     if (updateFout) return NextResponse.json({ ok: false }, { status: 500 });
 
     if (bijgewerkt && bijgewerkt.length > 0) {
-      // Kortingsgebruik tellen, factuur maken en bevestigingsmail met testlink
-      // sturen. Gooit nooit; bij fouten krijgt de beheerder een melding (de
-      // betaling blijft geldig en de bedankpagina toont de testlink ook).
-      await naBetaling({ orderId: order.id, token, geldigDagen: dagen });
+      // Kortingsgebruik tellen (oude orders), factuur maken en bevestigingsmail
+      // met testlink sturen. Gooit nooit; bij fouten krijgt de beheerder een
+      // melding en herhalen de webhook of de nachtelijke cron de afhandeling.
+      await naBetaling({ orderId: order.id, geldigDagen: dagen });
+    } else if (isBetaald(order.status)) {
+      if (order.mollie_payment_id && order.mollie_payment_id !== betaling.id) {
+        // Een tweede betaling voor een al betaalde order.
+        await stuurBeheerMelding(
+          "Dubbele betaling ontvangen",
+          `Order ${order.id} (${order.klantnaam}, ${order.email}) was al betaald met ${order.mollie_payment_id}, maar betaling ${betaling.id} (${betaling.amount.value} ${betaling.amount.currency}) is ook betaald. Controleer dit in Mollie en betaal zo nodig terug.`,
+        );
+      } else if (!order.nabetaling_klaar_op) {
+        // Eerdere afhandeling na betaling liep vast: opnieuw (als er geen recente
+        // poging loopt; anders later nog eens via Mollie of de nachtelijke cron).
+        let aanDeBeurt = false;
+        try {
+          aanDeBeurt = await claimNaBetaling(order.id);
+        } catch (e) {
+          console.error("Afhandeling claimen mislukt", order.id, e);
+          return NextResponse.json({ ok: false }, { status: 500 });
+        }
+        if (!aanDeBeurt) return NextResponse.json({ ok: false }, { status: 503 });
+        await naBetaling({ orderId: order.id, geldigDagen: dagen });
+      }
+    }
+
+    // Terugbetaald of teruggeboekt? Meld het (eenmalig per nieuw bedrag); de
+    // toegang tot de test blijft staan, dat beslist de beheerder.
+    const terug = terugbetaaldCent(betaling);
+    if (terug > 0) {
+      const { data: gewijzigd, error: terugFout } = await supabase
+        .from("orders")
+        .update({ terugbetaald_cent: terug })
+        .eq("id", order.id)
+        .lt("terugbetaald_cent", terug)
+        .select("id");
+      if (terugFout) return NextResponse.json({ ok: false }, { status: 500 });
+      if (gewijzigd && gewijzigd.length > 0) {
+        await stuurBeheerMelding(
+          "Bestelling terugbetaald of teruggeboekt",
+          `Order ${order.id} (${order.klantnaam}, ${order.email}): betaling ${betaling.id} is voor ${(terug / 100).toFixed(2)} ${betaling.amount.currency} terugbetaald of teruggeboekt (chargeback). De testlink en het advies blijven werken; trek de toegang zo nodig zelf in via het beheer.`,
+        );
+      }
     }
     return NextResponse.json({ ok: true });
   }
 
   // Niet betaald: markeer mislukt/verlopen als de order nog openstond, maar alleen
-  // voor de huidige betaling (na hervatten kan een oude betaling later verlopen).
+  // voor de huidige betaling (na hervatten kan een oude betaling later verlopen),
+  // en geef een geclaimde kortingscode/cadeaubon weer vrij.
   if (["failed", "expired", "canceled"].includes(betaling.status)) {
     if (order.mollie_payment_id && order.mollie_payment_id !== betaling.id) {
       return NextResponse.json({ ok: true });
     }
-    await supabase
+    const { error: statusFout } = await supabase
       .from("orders")
       .update({ status: betaling.status === "expired" ? "verlopen" : "betaling_mislukt" })
       .eq("id", order.id)
       .eq("status", "aangemaakt");
+    if (statusFout) return NextResponse.json({ ok: false }, { status: 500 });
+    try {
+      await geefKortingsclaimVrij(order.id);
+    } catch (e) {
+      console.error("Kortingsclaim vrijgeven mislukt", order.id, e);
+      return NextResponse.json({ ok: false }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true });

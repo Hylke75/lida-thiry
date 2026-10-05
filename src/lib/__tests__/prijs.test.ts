@@ -7,6 +7,9 @@ import {
   formatteerFactuurnummer,
   jaarInNederland,
   normaliseerCode,
+  schoonFactuurgegevens,
+  terugbetaaldCent,
+  zonderEigenClaim,
   type Kortingscode,
 } from "../prijs";
 
@@ -122,5 +125,50 @@ describe("codes", () => {
     const c = cadeauboncode(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]));
     expect(c).toBe("CADEAU-ABCD-EFGH");
     expect(cadeauboncode(new Uint8Array(8).fill(255))).toMatch(/^CADEAU-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+  });
+});
+
+describe("schoonFactuurgegevens", () => {
+  it("houdt alleen adres, postcode, plaats en land als getrimde tekst over", () => {
+    expect(
+      schoonFactuurgegevens({
+        adres: " Dorpsstraat 1 ",
+        postcode: "1234 AB",
+        plaats: "Utrecht",
+        land: "",
+        isAdmin: true,
+        extra: { diep: "x".repeat(10_000) },
+      }),
+    ).toEqual({ adres: "Dorpsstraat 1", postcode: "1234 AB", plaats: "Utrecht" });
+  });
+
+  it("begrenst de lengte en negeert andere typen", () => {
+    const uit = schoonFactuurgegevens({ adres: "a".repeat(500), postcode: 1234, plaats: ["x"] });
+    expect(uit).toEqual({ adres: "a".repeat(200) });
+  });
+
+  it("geeft een leeg object bij onzin", () => {
+    expect(schoonFactuurgegevens(null)).toEqual({});
+    expect(schoonFactuurgegevens("tekst")).toEqual({});
+    expect(schoonFactuurgegevens([1, 2])).toEqual({});
+  });
+});
+
+describe("terugbetaaldCent", () => {
+  it("telt terugbetaling en chargeback op", () => {
+    expect(terugbetaaldCent({})).toBe(0);
+    expect(terugbetaaldCent({ amountRefunded: { value: "0.00" } })).toBe(0);
+    expect(terugbetaaldCent({ amountRefunded: { value: "10.50" }, amountChargedBack: { value: "39.45" } })).toBe(4995);
+    expect(terugbetaaldCent({ amountRefunded: { value: "onzin" } })).toBe(0);
+  });
+});
+
+describe("zonderEigenClaim", () => {
+  it("telt de eigen claim van een bestelling niet als gebruik", () => {
+    const eenmalig = code({ max_gebruik: 1, aantal_gebruikt: 1 });
+    expect(controleerKortingscode(eenmalig)).toBeTruthy();
+    expect(controleerKortingscode(zonderEigenClaim(eenmalig, true))).toBeNull();
+    expect(controleerKortingscode(zonderEigenClaim(eenmalig, false))).toBeTruthy();
+    expect(zonderEigenClaim(code({ aantal_gebruikt: 0 }), true).aantal_gebruikt).toBe(0);
   });
 });

@@ -11,6 +11,7 @@ import {
 } from "@/rekenkern/config/ffit-regels";
 import { haalFfitToewijzing, haalSilhouetten } from "@/lib/lichaamstypes";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
+import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { TEST_VRAGEN, pasvormVragen, schoonPasvormAntwoorden } from "@/lib/inhoud/groepen/test";
@@ -26,12 +27,12 @@ function getal(v: unknown): number | undefined {
 }
 
 /**
- * Antwoord met het definitieve type: sleutel (bijv. "6A"), de titel uit
- * adviestypes (null als die ontbreekt) en de figuurletter.
+ * Antwoord met het definitieve type: sleutel (bijv. "6A") en de titel uit
+ * adviestypes (null als die ontbreekt).
  */
 async function typeAntwoord(sleutel: string, extra: { pdfKlaar?: boolean } = {}) {
   const titel = await haalTypeTitel(sleutel).catch(() => null);
-  return NextResponse.json({ soort: "type", sleutel, titel, letter: sleutel.slice(-1), ...extra });
+  return NextResponse.json({ soort: "type", sleutel, titel, ...extra });
 }
 
 export async function POST(
@@ -71,6 +72,16 @@ export async function POST(
       { status: 400 },
     );
   }
+  // Schouder is een omvang (optioneel): zelfde grenzen als de andere omtrekken.
+  const schouder = getal(m.schouder);
+  if (schouder !== undefined && (schouder < MAAT_GRENZEN.omtrekMin || schouder > MAAT_GRENZEN.omtrekMax)) {
+    return NextResponse.json(
+      {
+        fout: `De schouderomvang (${schouder} cm) valt buiten het bereik ${MAAT_GRENZEN.omtrekMin}–${MAAT_GRENZEN.omtrekMax} cm. Controleer de meting.`,
+      },
+      { status: 400 },
+    );
+  }
   const silhouetten = await haalSilhouetten();
   if (!silhouetten.some((s) => s.letter === body.gekozen_silhouet)) {
     return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
@@ -85,7 +96,7 @@ export async function POST(
       hogeHeup: hogeHeup!,
       heup: heup!,
       binnenbeen: getal(m.binnenbeen),
-      schouder: getal(m.schouder),
+      schouder,
     },
     controlemetingen: {
       borst: getal((body.controlemetingen as Record<string, unknown>)?.borst),
@@ -131,6 +142,27 @@ export async function POST(
   const supabase = adminClient();
   const categorie = uitkomst.categorie;
 
+  // Definitief type. Eerst de overgang betaald -> test_afgerond: alleen het
+  // verzoek dat die wint, slaat het resultaat op en levert het advies, zodat een
+  // dubbele verzending niets overschrijft en niet twee keer mailt.
+  const afgerondOp = new Date().toISOString();
+  const { data: bijgewerkt, error: orderFout } = await supabase
+    .from("orders")
+    .update({
+      status: "test_afgerond",
+      toegekend_type: uitkomst.sleutel,
+      afgerond_op: afgerondOp,
+    })
+    .eq("id", order.id)
+    .eq("status", "betaald")
+    .select("id");
+  if (orderFout) {
+    return NextResponse.json({ fout: "Afronden mislukte. Probeer het opnieuw." }, { status: 500 });
+  }
+  if (!bijgewerkt?.length) {
+    return typeAntwoord(uitkomst.sleutel);
+  }
+
   // Testresultaat opslaan (één per order dankzij de unieke order_id).
   const { error: opslagFout } = await supabase.from("testresultaten").upsert(
     {
@@ -153,29 +185,17 @@ export async function POST(
     { onConflict: "order_id" },
   );
   if (opslagFout) {
+    // Terug naar 'betaald', zodat de klant het opnieuw kan proberen.
+    await supabase
+      .from("orders")
+      .update({ status: "betaald", toegekend_type: null, afgerond_op: null })
+      .eq("id", order.id)
+      .eq("status", "test_afgerond")
+      .eq("afgerond_op", afgerondOp);
     return NextResponse.json(
       { fout: "Opslaan van je antwoorden mislukte. Probeer het opnieuw." },
       { status: 500 },
     );
-  }
-
-  // Definitief type. Alleen de eerste overgang betaald -> test_afgerond telt,
-  // zodat een dubbele verzending niet twee keer een advies mailt.
-  const { data: bijgewerkt, error: orderFout } = await supabase
-    .from("orders")
-    .update({
-      status: "test_afgerond",
-      toegekend_type: uitkomst.sleutel,
-      afgerond_op: new Date().toISOString(),
-    })
-    .eq("id", order.id)
-    .eq("status", "betaald")
-    .select("id");
-  if (orderFout) {
-    return NextResponse.json({ fout: "Afronden mislukte. Probeer het opnieuw." }, { status: 500 });
-  }
-  if (!bijgewerkt?.length) {
-    return typeAntwoord(uitkomst.sleutel);
   }
 
   // PDF genereren, mailen en op 'advies_verzonden' zetten. Mislukt dat, dan blijft

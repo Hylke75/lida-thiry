@@ -5,7 +5,7 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { CADEAUBON_PAGINA } from "@/lib/inhoud/groepen/cadeaubon";
 import { vulIn } from "@/lib/inhoud/schema";
 import { formatteerBedrag } from "@/lib/prijs";
-import { datumInNederland, plusDagen, MAX_VOORUIT_DAGEN, VASTE_BEDRAGEN } from "@/lib/cadeaubon/regels";
+import { datumInNederland, plusDagen, MAX_VOORUIT_DAGEN, maxBedragCent, vasteBedragenOnder } from "@/lib/cadeaubon/regels";
 import { Opmaak } from "@/components/Opmaak";
 import { CadeaubonFormulier } from "./CadeaubonFormulier";
 
@@ -31,7 +31,8 @@ export default async function CadeaubonPage() {
   }
   const vandaag = datumInNederland(new Date());
   const opties = [
-    ...VASTE_BEDRAGEN.map((c) => ({ waarde: String(c), label: formatteerBedrag(c, valuta) })),
+    // Een bon is hooguit de prijs van de test: alleen vaste bedragen daaronder.
+    ...(prijsCent ? vasteBedragenOnder(prijsCent) : []).map((c) => ({ waarde: String(c), label: formatteerBedrag(c, valuta) })),
     ...(prijsCent ? [{ waarde: "prijs", label: vulIn(t.prijsKeuze, { prijs: formatteerBedrag(prijsCent, valuta) }) }] : []),
     { waarde: "anders", label: "Ander bedrag" },
   ];
@@ -53,7 +54,8 @@ export default async function CadeaubonPage() {
           <CadeaubonFormulier
             opties={opties}
             standaard="prijs"
-            prijsCent={prijsCent}
+            maxCent={maxBedragCent(prijsCent)}
+            maxLabel={formatteerBedrag(maxBedragCent(prijsCent), valuta)}
             minDatum={plusDagen(vandaag, 1)}
             maxDatum={plusDagen(vandaag, MAX_VOORUIT_DAGEN)}
             teksten={{

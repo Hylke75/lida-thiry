@@ -1,9 +1,15 @@
 // Pure regels voor het kopen van een cadeaubon: bedrag, invoer en datums.
 // Geen server-only imports, zodat dit los te testen is.
 
+import { formatteerBedrag } from "../prijs";
+
 /** Vaste bedragen op het formulier (centen). */
 export const VASTE_BEDRAGEN = [2000, 3500, 5000] as const;
-/** Minimaal en maximaal bedrag van een cadeaubon (centen); de database staat 5–1000 euro toe. */
+/**
+ * Minimaal en (absoluut) maximaal bedrag van een cadeaubon (centen); de database
+ * staat 5–1000 euro toe. De bon is één keer te gebruiken en dekt hooguit de prijs
+ * van de test, dus het werkelijke maximum is de prijs van de test (maxBedragCent).
+ */
 export const MIN_BEDRAG_CENT = 500;
 export const MAX_BEDRAG_CENT = 50_000;
 /** Zo lang is een cadeaubon geldig na betaling (of na de geplande verzenddatum). */
@@ -39,18 +45,31 @@ export function euroNaarCent(invoer: string): number | null {
   return Math.round(Number(tekst) * 100);
 }
 
+/** Hoogste bedrag van een bon: de prijs van de test (en nooit boven MAX_BEDRAG_CENT). */
+export function maxBedragCent(prijsCent: number): number {
+  return Math.min(prijsCent, MAX_BEDRAG_CENT);
+}
+
+/** Vaste bedragen die onder de prijs van de test liggen (de prijs zelf is een eigen keuze). */
+export function vasteBedragenOnder(prijsCent: number): number[] {
+  return VASTE_BEDRAGEN.filter((c) => c < maxBedragCent(prijsCent));
+}
+
 /**
  * Bepaalt het bedrag van de bon uit de keuze op het formulier: een vast bedrag
  * (in centen), "prijs" (de prijs van één test) of "anders" met een eigen bedrag.
+ * Zonder bekende prijs is er geen bon te koop; meer dan de prijs kan niet.
  */
 export function bepaalBedrag(
   keuze: string,
   eigenBedrag: string,
   prijsCent: number | null,
 ): Uitkomst<number> {
+  if (!prijsCent || prijsCent <= 0) {
+    return { ok: false, fout: "Cadeaubonnen zijn op dit moment niet te koop. Probeer het later opnieuw." };
+  }
   let cent: number | null;
   if (keuze === "prijs") {
-    if (!prijsCent) return { ok: false, fout: "De prijs van de test is nog niet bekend. Kies een ander bedrag." };
     cent = prijsCent;
   } else if (keuze === "anders") {
     cent = euroNaarCent(eigenBedrag);
@@ -62,7 +81,12 @@ export function bepaalBedrag(
     }
   }
   if (cent < MIN_BEDRAG_CENT) return { ok: false, fout: "Een cadeaubon is minimaal € 5." };
-  if (cent > MAX_BEDRAG_CENT) return { ok: false, fout: "Een cadeaubon is maximaal € 500." };
+  if (cent > maxBedragCent(prijsCent)) {
+    return {
+      ok: false,
+      fout: `Een cadeaubon is maximaal de prijs van de test (${formatteerBedrag(maxBedragCent(prijsCent))}).`,
+    };
+  }
   return { ok: true, waarde: cent };
 }
 
