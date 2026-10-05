@@ -25,7 +25,7 @@ import {
   SLUG_BEZET,
   vernieuwBlog,
   vrijeSlug,
-} from "./_editor/server";
+} from "@/lib/blog/editor";
 import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 function leesId(formData: FormData): string {

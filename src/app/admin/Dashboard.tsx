@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { adminClient } from "@/lib/supabase/admin";
-import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN, OMZET_STATUSSEN } from "./status";
+import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN, OMZET_STATUSSEN } from "@/lib/admin/status";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
 import { formatteerBedrag } from "@/lib/prijs";

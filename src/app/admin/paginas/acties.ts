@@ -19,7 +19,7 @@ import { vindStartpagina } from "@/lib/paginas/sjablonen";
 import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { bewaarVersie } from "@/lib/versies/beheer";
 import { omschrijvingVoor, paginaSnapshot } from "@/lib/versies/regels";
-import { doorverwijzingenNaOpslaan, haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
+import { doorverwijzingenNaOpslaan, haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "@/lib/paginas/editor";
 import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 const fout = (...fouten: string[]): { ok: false; fouten: string[] } => ({ ok: false, fouten });

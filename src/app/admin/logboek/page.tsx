@@ -13,7 +13,7 @@ import {
 } from "@/lib/beheer-log-regels";
 import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
-import { formatteerMoment } from "../types/gedeeld";
+import { toonDatumTijd } from "@/lib/datum";
 import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ function Regel({ r }: { r: LogRij }) {
     <li className="flex flex-col gap-1 py-3 text-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="font-medium">{r.omschrijving || r.actie}</span>
-        <span className="text-xs text-black/50 dark:text-white/50">{formatteerMoment(r.op)}</span>
+        <span className="text-xs text-black/50 dark:text-white/50">{toonDatumTijd(r.op)}</span>
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-black/55 dark:text-white/55">
         <span>{r.email ?? "onbekend"}</span>

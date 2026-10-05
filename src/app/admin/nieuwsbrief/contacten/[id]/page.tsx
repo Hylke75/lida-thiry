@@ -8,7 +8,7 @@ import { haalFormulier } from "@/lib/nieuwsbrief/formulieren";
 import { BRON_LABEL } from "@/lib/nieuwsbrief/doelgroep";
 import { datumTijd, likeLetterlijk } from "@/lib/nieuwsbrief/contactregels";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
-import { statusLabel } from "../../../status";
+import { statusLabel } from "@/lib/admin/status";
 import { AdminNav, Melding } from "../../../AdminNav";
 import { bewaarContact, meldContactAf, meldContactOpnieuwAan, verwijderContact } from "../acties";
 import { BevestigKnop, TagInvoer } from "../Invoer";

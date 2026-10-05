@@ -14,7 +14,7 @@ import { tokenVerlooptOp } from "@/lib/tokens";
 import { leesSectieVers } from "@/lib/inhoud/lees";
 import { TEST_VRAGEN } from "@/lib/inhoud/groepen/test";
 import { AdminNav, Melding } from "../../AdminNav";
-import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
+import { BETAALDE_STATUSSEN, statusLabel } from "@/lib/admin/status";
 import { isOpen, OPEN_STATUSSEN } from "@/lib/order-status";
 import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
 import { ADVIEZEN_PDF } from "@/lib/opslag";

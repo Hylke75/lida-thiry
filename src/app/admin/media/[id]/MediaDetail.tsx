@@ -16,7 +16,7 @@ import {
 import { toonDatumTijd } from "@/lib/datum";
 import { Melding } from "../../Melding";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
-import { verwijderMediaBestand, werkMediaGegevensBij } from "../acties";
+import { verwijderMediaBestand, werkMediaGegevensBij } from "@/lib/media/acties";
 
 function KopieerKnop({ tekst, label }: { tekst: string; label: string }) {
   const [klaar, setKlaar] = useState(false);

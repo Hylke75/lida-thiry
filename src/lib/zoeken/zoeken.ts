@@ -1,7 +1,7 @@
 import "server-only";
 import { adminClient } from "@/lib/supabase/admin";
 import { formatteerBedrag } from "@/lib/prijs";
-import { STATUS_LABEL as ORDER_STATUS } from "@/app/admin/status";
+import { STATUS_LABEL as ORDER_STATUS } from "@/lib/admin/status";
 import { BERICHT_STATUS_LABEL, type BerichtStatus } from "@/lib/contact/regels";
 import { STATUS_LABEL as NB_STATUS, type ContactStatus } from "@/lib/nieuwsbrief/doelgroep";
 import { fragment, metZoekterm, orGroepen, zoekWoorden } from "./regels";

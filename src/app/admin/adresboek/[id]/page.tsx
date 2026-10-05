@@ -11,7 +11,7 @@ import { RELATIE_BRON_LABEL } from "@/lib/relaties/regels";
 import { alleRelatieTags, geschiedenis, relatieOpId } from "@/lib/relaties/beheer";
 import { bouwTijdlijn, type TijdlijnSoort } from "@/lib/relaties/tijdlijn";
 import { weergaveNaam } from "@/lib/relaties/zoeken";
-import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
+import { BETAALDE_STATUSSEN, statusLabel } from "@/lib/admin/status";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BevestigKnop } from "../../nieuwsbrief/contacten/Invoer";
 import { vergeetActie, voegNotitieToeActie } from "../acties";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Lichaam } from "@/app/test/[token]/Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 import { Opmaak } from "@/components/Opmaak";
 import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
 import { BlogKaart } from "@/components/blog/BlogKaart";

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { zoekInMedia } from "@/app/admin/media/acties";
+import { zoekInMedia } from "@/lib/media/acties";
 import { formatAfmetingen, MAP_SUGGESTIES, normaliseerMap, STANDAARD_MAP, type MediaItem, type MediaSoort } from "@/lib/media/regels";
 import { Afbeelding } from "@/components/Afbeelding";
 import { MediaUploader } from "./MediaUploader";

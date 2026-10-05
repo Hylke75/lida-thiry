@@ -8,7 +8,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { maakTesttoken, tokenVerlooptOp } from "@/lib/tokens";
 import { AdminNav } from "../AdminNav";
-import { STATUS_LABEL } from "../status";
+import { STATUS_LABEL } from "@/lib/admin/status";
 import { gratisTestAan } from "@/lib/order-status";
 import { ORDER_RIJ_KOLOMMEN, OrderRij, type OrderRijGegevens } from "./OrderRij";
 import { veiligeZoekterm } from "@/lib/zoeken/regels";

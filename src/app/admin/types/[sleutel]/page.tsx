@@ -10,7 +10,7 @@ import { AdminNav } from "../../AdminNav";
 import { ActieFormulier, GroeiendTekstvak } from "../ActieFormulier";
 import { BeeldKiezer } from "../BeeldKiezer";
 import { KopieerSectie, type TypeKeuze } from "../KopieerSectie";
-import { formatteerMoment } from "../gedeeld";
+import { toonDatumTijd } from "@/lib/datum";
 import {
   slaSectieOp,
   slaTypeOp,
@@ -245,7 +245,7 @@ export default async function TypeEditor({
           </h1>
           <p className="text-xs text-black/50 dark:text-white/50">
             {perVeld.size} van {velden.length} velden ingevuld · {aantalBeelden}{" "}
-            beelden · laatst bewerkt {formatteerMoment(type.bijgewerkt_op)}
+            beelden · laatst bewerkt {toonDatumTijd(type.bijgewerkt_op)}
           </p>
         </div>
         <a

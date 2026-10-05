@@ -4,7 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { lijstBeheerders } from "@/lib/beheerders";
 import { ROL_LABEL, ROL_UITLEG, ROLLEN } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
-import { formatteerMoment } from "../types/gedeeld";
+import { toonDatumTijd } from "@/lib/datum";
 import { RijActies, RolKeuze, ToevoegFormulier } from "./Formulieren";
 
 export const dynamic = "force-dynamic";
@@ -63,8 +63,8 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
                 </span>
                 <span className="text-xs text-black/50 dark:text-white/50">
                   {b.tweestap ? "Tweestapsverificatie aan" : "Geen tweestapsverificatie"} · Toegevoegd{" "}
-                  {formatteerMoment(b.aangemaakt_op)} ·{" "}
-                  {b.laatstIngelogd ? `laatst ingelogd ${formatteerMoment(b.laatstIngelogd)}` : "nog nooit ingelogd"}
+                  {toonDatumTijd(b.aangemaakt_op)} ·{" "}
+                  {b.laatstIngelogd ? `laatst ingelogd ${toonDatumTijd(b.laatstIngelogd)}` : "nog nooit ingelogd"}
                   {b.uitgenodigd && " (uitnodiging nog niet geaccepteerd)"}
                 </span>
               </div>

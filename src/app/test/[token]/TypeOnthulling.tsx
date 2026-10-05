@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
 import type { SectieWaarden } from "@/lib/inhoud/schema";
 import type { TEST_UITSLAG } from "@/lib/inhoud/groepen/test";
-import { Lichaam } from "./Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 
 export function TypeOnthulling({
   token,

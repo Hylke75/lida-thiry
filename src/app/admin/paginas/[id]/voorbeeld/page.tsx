@@ -4,7 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { vindPlaatshouders } from "@/lib/blog/beheer";
 import { onbekendeBlokken } from "@/lib/paginas/regels";
 import { StatusBadge } from "../../_editor/onderdelen";
-import { haalFormulieren, haalPaginaBeheer } from "../../_editor/server";
+import { haalFormulieren, haalPaginaBeheer } from "@/lib/paginas/editor";
 import { PaginaVoorbeeld } from "../../_editor/voorbeeld";
 
 export const dynamic = "force-dynamic";

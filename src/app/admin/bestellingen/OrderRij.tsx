@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { statusLabel } from "../status";
+import { statusLabel } from "@/lib/admin/status";
 
 export interface OrderRijGegevens {
   id: string;

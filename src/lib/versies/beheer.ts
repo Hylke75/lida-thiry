@@ -8,8 +8,8 @@ import { BERICHT_VELDEN, publicatieProblemen as berichtProblemen, valideerBerich
 import { vindSectie } from "@/lib/inhoud/register";
 import { isDubbel } from "@/lib/paginas/vrije-slug";
 import { combineer, valideer } from "@/lib/inhoud/schema";
-import { doorverwijzingenNaOpslaan as paginaDoorverwijzingen, haalPaginaBeheer, PAGINAS_PAD, vernieuwPaginas, vrijePaginaSlug } from "@/app/admin/paginas/_editor/server";
-import { BLOG_PAD, doorverwijzingenNaOpslaan as berichtDoorverwijzingen, haalBericht, vernieuwBlog, vrijeSlug } from "@/app/admin/blog/_editor/server";
+import { doorverwijzingenNaOpslaan as paginaDoorverwijzingen, haalPaginaBeheer, PAGINAS_PAD, vernieuwPaginas, vrijePaginaSlug } from "@/lib/paginas/editor";
+import { BLOG_PAD, doorverwijzingenNaOpslaan as berichtDoorverwijzingen, haalBericht, vernieuwBlog, vrijeSlug } from "@/lib/blog/editor";
 import {
   beslisVersie,
   blogSnapshot,

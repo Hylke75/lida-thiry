@@ -1,6 +1,6 @@
 // Uploaden naar de mediabibliotheek vanuit de browser (rechtstreeks naar de opslag).
 
-import { maakMediaUpload, registreerUpload } from "@/app/admin/media/acties";
+import { maakMediaUpload, registreerUpload } from "@/lib/media/acties";
 import { altUitNaam, controleerBestand, mimeVoorNaam, schoneBestandsnaam, type MediaItem, type MediaSoort } from "@/lib/media/regels";
 
 /** Leest de afmetingen van een afbeelding in de browser; null als dat niet lukt (bijv. sommige SVG/ICO). */

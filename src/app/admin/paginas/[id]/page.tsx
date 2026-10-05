@@ -4,7 +4,7 @@ import { siteUrl } from "@/lib/site";
 import { Melding } from "../../AdminNav";
 import { PaginaEditor } from "../_editor/PaginaEditor";
 import { PaginaKop } from "../_editor/PaginaKop";
-import { haalFormulieren, haalPaginaBeheer } from "../_editor/server";
+import { haalFormulieren, haalPaginaBeheer } from "@/lib/paginas/editor";
 
 export const dynamic = "force-dynamic";
 

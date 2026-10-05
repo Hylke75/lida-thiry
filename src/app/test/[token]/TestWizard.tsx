@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MAAT_GROEPEN, type MaatVeld } from "@/lib/test-config";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
-import { Lichaam } from "./Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 import { ontleedTypeSleutel, type Silhouet } from "@/lib/lichaamstype-regels";
 import { TypeOnthulling } from "./TypeOnthulling";
 import { Opmaak } from "@/components/Opmaak";

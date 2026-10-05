@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- tijdelijke (signed) URLs uit de beeldbank */
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import { Lichaam } from "@/app/test/[token]/Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 import { STANDAARD_VORM, VORM_GRENZEN, type Lichaamstype } from "@/lib/lichaamstype-regels";
 import type { Lichaamsvorm } from "@/lib/test-config";
 import { maakLichaamstype, slaLichaamstypeOp, zoekFotos, type FotoKeuze, type Status } from "./acties";

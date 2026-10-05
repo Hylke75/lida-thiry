@@ -4,7 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { haalFfitToewijzing, haalLichaamstypes, haalSilhouetten } from "@/lib/lichaamstypes";
 import { FFIT_TYPES, ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
-import { Lichaam } from "@/app/test/[token]/Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 import { AdminNav, Melding } from "../AdminNav";
 import { ToewijzingFormulier } from "./Formulieren";
 

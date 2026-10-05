@@ -5,7 +5,8 @@ import { sorteerSleutel } from "@/lib/beeldbank";
 import { letterNaam, telPerType } from "@/lib/adviestypes-beheer";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { AdminNav } from "../AdminNav";
-import { formatteerMoment, alleRijen } from "./gedeeld";
+import { toonDatumTijd } from "@/lib/datum";
+import { alles } from "@/lib/supabase/alles";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +22,11 @@ async function laad() {
   const supabase = adminClient();
   const [typesRes, secties, koppelingen] = await Promise.all([
     supabase.from("adviestypes").select("sleutel, letter, categorie, titel, bijgewerkt_op"),
-    alleRijen<{ id: string; type_sleutel: string; bijgewerkt_op: string | null }>((van, tot) =>
+    alles<{ id: string; type_sleutel: string; bijgewerkt_op: string | null }>((van, tot) =>
       supabase.from("adviessecties").select("id, type_sleutel, bijgewerkt_op").order("id").range(van, tot),
     ),
     // ~1800 rijen: PostgREST geeft er maximaal 1000 per keer, dus pagineren.
-    alleRijen<{ sectie_id: string }>((van, tot) =>
+    alles<{ sectie_id: string }>((van, tot) =>
       supabase.from("sectie_beelden").select("sectie_id").order("sectie_id").order("volgorde").range(van, tot),
     ),
   ]);
@@ -189,7 +190,7 @@ export default async function TypesPagina({
                     <td className="px-4 py-2.5 text-right tabular-nums">{tel.secties}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{tel.beelden}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-black/60 dark:text-white/60">
-                      {formatteerMoment(tel.laatstBewerkt)}
+                      {toonDatumTijd(tel.laatstBewerkt)}
                     </td>
                   </tr>
                 );

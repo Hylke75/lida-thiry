@@ -6,7 +6,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { aiBeschikbaar, schrijfConcept, type Concept } from "@/lib/blog/ai";
 import { normaliseerOpdracht, type SchrijfOpdracht } from "@/lib/blog/ai-prompt";
-import { aiFoutmelding, aiLimietFout, BLOG_PAD, isDubbel, vrijeSlug } from "../_editor/server";
+import { aiFoutmelding, aiLimietFout, BLOG_PAD, isDubbel, vrijeSlug } from "@/lib/blog/editor";
 
 export type SchrijfUitkomst = { ok: false; fout: string };
 

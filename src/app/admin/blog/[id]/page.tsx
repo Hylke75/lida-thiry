@@ -9,7 +9,7 @@ import { siteUrl } from "@/lib/site";
 import { Melding } from "../../AdminNav";
 import { BlogEditor } from "../_editor/BlogEditor";
 import { BlogKop } from "../_editor/onderdelen";
-import { haalBericht } from "../_editor/server";
+import { haalBericht } from "@/lib/blog/editor";
 
 export const dynamic = "force-dynamic";
 // De AI-knoppen in de editor (server actions) kunnen 30–90 seconden duren; die

@@ -3,7 +3,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { leesMeetBeeldRijen } from "@/lib/meetbeelden";
 import { leesSectieVers } from "@/lib/inhoud/lees";
 import { TEST_MATEN, maatVeldenMetTeksten } from "@/lib/inhoud/groepen/test";
-import { Lichaam } from "@/app/test/[token]/Lichaam";
+import { Lichaam } from "@/components/Lichaam";
 import { AdminNav, Melding } from "../AdminNav";
 import { FotoUpload } from "./FotoUpload";
 import { verwijderFoto } from "./acties";

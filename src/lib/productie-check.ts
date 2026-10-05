@@ -6,7 +6,7 @@ import { haalFfitToewijzing, haalLichaamstypes } from "./lichaamstypes";
 import { leesAlleInhoud } from "./inhoud/lees";
 import { GROEPEN } from "./inhoud/register";
 import { evalueerLivegang, livegangStatus, type LivegangItem } from "./livegang";
-import { alleRijen } from "@/app/admin/types/gedeeld";
+import { alles } from "@/lib/supabase/alles";
 import { huidigeDatabaseOmgeving } from "./omgeving";
 
 /**
@@ -23,7 +23,7 @@ export async function productieCheck(): Promise<{ items: LivegangItem[] } & Retu
     haalLichaamstypes(),
     haalFfitToewijzing(),
     supabase.from("adviestypes").select("sleutel"),
-    alleRijen<{ type_sleutel: string }>((van, tot) =>
+    alles<{ type_sleutel: string }>((van, tot) =>
       supabase.from("adviessecties").select("type_sleutel").order("id").range(van, tot),
     ),
     // Nieuwsbrief: een fout (bijv. tabel nog niet aanwezig) mag de lijst niet breken.

@@ -4,7 +4,7 @@ import { alles } from "../supabase/alles";
 import { likeLetterlijk } from "../nieuwsbrief/contactregels";
 import { normaliseerTag } from "../nieuwsbrief/doelgroep";
 import { verwijderContacten } from "../nieuwsbrief/beheer";
-import { BETAALDE_STATUSSEN } from "@/app/admin/status";
+import { BETAALDE_STATUSSEN } from "@/lib/admin/status";
 import { RELATIE_VELDEN, type Relatie } from "./regels";
 import { tagsInGebruik, type Koppelingen } from "./zoeken";
 import { planImport, type BestaandVoorImport, type ImportPlan, type RelatieImportRij } from "./csv";

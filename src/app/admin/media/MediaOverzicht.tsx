@@ -6,7 +6,7 @@ import { MediaUploader } from "@/components/admin/MediaUploader";
 import { MAP_SUGGESTIES, normaliseerMap, STANDAARD_MAP } from "@/lib/media/regels";
 import { Melding } from "../Melding";
 import { invoerKlasse, kaart, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
-import { importeerBestaandeMedia } from "./acties";
+import { importeerBestaandeMedia } from "@/lib/media/acties";
 
 /** Uploadvak met een map-veld; ververst daarna het overzicht. */
 export function UploadPaneel({ mappen }: { mappen: string[] }) {
