@@ -148,13 +148,14 @@ export async function vergeetActie(fd: FormData): Promise<void> {
   const extra = [
     uitkomst.nieuwsbrief ? "het nieuwsbriefcontact" : "",
     uitkomst.berichten ? `${uitkomst.berichten} contactbericht(en)` : "",
+    uitkomst.afspraken ? `de persoonsgegevens in ${uitkomst.afspraken} afspraak/afspraken` : "",
   ].filter(Boolean);
   await logActie({
     actie: "relatie.verwijderen",
     onderwerpSoort: "relatie",
     onderwerpId: id,
     omschrijving: `${weergaveNaam(r)} uit het adresboek verwijderd${extra.length ? ` (plus ${extra.join(" en ")})` : ""}`,
-    details: { nieuwsbrief: uitkomst.nieuwsbrief, berichten: uitkomst.berichten },
+    details: { nieuwsbrief: uitkomst.nieuwsbrief, berichten: uitkomst.berichten, afspraken: uitkomst.afspraken },
   });
   revalidatePath(PAD);
   terug(PAD, `${weergaveNaam(r)} is uit het adresboek verwijderd${extra.length ? `, net als ${extra.join(" en ")}` : ""}.`);

@@ -31,13 +31,15 @@ import {
 
 export type { BestelOverzicht } from "./email-html";
 
-function resend() {
+/** Resend-client (alleen server-side). Gedeeld door alle mails: bestellingen, nieuwsbrief en contact. */
+export function resend(): Resend {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY ontbreekt (server).");
   return new Resend(key);
 }
 
-function afzender(): string {
+/** Afzender van alle mails. */
+export function afzender(): string {
   // Geverifieerd afzenderadres (Resend-domein). OPEN tot het domein geverifieerd is.
   return process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>";
 }

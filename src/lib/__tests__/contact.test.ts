@@ -182,18 +182,25 @@ describe("contact: mails", () => {
     expect(m.tekst).not.toMatch(/\n\n\n/);
   });
 
-  it("ontvangstbevestiging aan de afzender, met citaat", () => {
-    const m = contactBevestigingMail(standaardWaarden(CONTACT_BEVESTIGMAIL), algemeen, {
-      naam: NAAM,
-      onderwerp: "",
-      bericht: BERICHT,
-    });
+  it("ontvangstbevestiging aan de afzender: algemeen, zonder iets van de bezoeker (geen spamrelay)", () => {
+    const m = contactBevestigingMail(standaardWaarden(CONTACT_BEVESTIGMAIL), algemeen);
     expect(m.onderwerp).toBe("Bedankt voor je bericht");
-    expect(m.html).toContain(`<p>Beste ${NAAM_HTML},</p>`);
-    expect(m.html).toContain("<blockquote");
-    expect(m.html).toContain("Regel &lt;twee&gt;");
+    expect(m.html).toContain("<p>Hallo,</p>");
+    expect(m.html).not.toContain("<blockquote");
     expect(m.html).not.toMatch(/\{[a-z_]+\}/);
-    expect(m.tekst).toContain("> Regel <twee>");
+    expect(m.tekst).not.toContain("> ");
+  });
+
+  it("ontvangstbevestiging: oude teksten met {naam} en {onderwerp} worden algemeen ingevuld", () => {
+    const t = combineer(CONTACT_BEVESTIGMAIL, {
+      onderwerp: "Over {onderwerp}",
+      tekst: "Beste {naam},\n\nBedankt voor {onderwerp}.",
+    });
+    const m = contactBevestigingMail(t, algemeen);
+    expect(m.onderwerp).toBe("Over je bericht");
+    expect(m.html).toContain("<p>Beste,</p>");
+    expect(m.tekst).toContain("Bedankt voor je bericht.");
+    expect(m.html).not.toContain(NAAM_HTML);
   });
 
   it("antwoordmail met aangepaste teksten", () => {

@@ -1,5 +1,5 @@
 import { after, NextResponse } from "next/server";
-import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
+import { hashIp, magDoor, magDoorOpSleutel, teVeelVerzoeken } from "@/lib/rate-limit";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
 import { foutTekst, stuurBeheerMelding } from "@/lib/beheermelding";
@@ -27,6 +27,16 @@ export async function POST(request: Request) {
 
   const v = valideerBoeking(body);
   if (!v.ok) return NextResponse.json({ fout: "Controleer de gemarkeerde velden.", velden: v.fouten }, { status: 400 });
+
+  // Hooguit twee boekingen per dag per e-mailadres: de bevestigingsmail bevat de
+  // ingevulde naam, dus anders is het formulier te misbruiken om mails met eigen
+  // tekst naar willekeurige adressen te sturen.
+  if (!(await magDoorOpSleutel(`afspraak-ontvanger:${hashIp(v.waarde.email.toLowerCase())}`, 2, 86_400))) {
+    return NextResponse.json(
+      { fout: "Met dit e-mailadres zijn vandaag al twee afspraken aangevraagd. Neem contact op als je nog een afspraak wilt maken." },
+      { status: 429 },
+    );
+  }
 
   const teksten = await leesSectie(AFSPRAKEN_BOEKEN);
   try {

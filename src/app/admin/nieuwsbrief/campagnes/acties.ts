@@ -112,7 +112,13 @@ export async function verwijderCampagne(formData: FormData) {
 export async function verzendNu(id: string): Promise<Uitkomst> {
   await vereisBeheerder("nieuwsbrief");
   if (!UUID_PATROON.test(id)) return { ok: false, fouten: ["Onbekende campagne."] };
-  const r = await startCampagne(id);
+  let r: Awaited<ReturnType<typeof startCampagne>>;
+  try {
+    r = await startCampagne(id);
+  } catch (e) {
+    // startCampagne heeft de campagne al teruggezet (weer concept of ingepland).
+    return { ok: false, fouten: [`Klaarzetten voor verzending mislukt: ${e instanceof Error ? e.message : String(e)}. Probeer het opnieuw.`] };
+  }
   if (!r.ok) return { ok: false, fouten: r.fouten };
   if (r.aantal > 0) verwerkStraks();
   await logActie({

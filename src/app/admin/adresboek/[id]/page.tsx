@@ -190,7 +190,7 @@ export default async function RelatiePagina({
         <h2 className="text-lg font-semibold">Privacy (AVG)</h2>
         <p className={`text-sm ${zacht}`}>
           Bij een inzageverzoek download je alles wat over deze persoon is opgeslagen: de gegevens in het adresboek,
-          bestellingen en testresultaten, de nieuwsbrief (met ontvangen mails) en contactberichten.
+          bestellingen en testresultaten, de nieuwsbrief (met ontvangen mails), contactberichten en afspraken.
         </p>
         <div>
           <a href={`${PAD}/${r.id}/gegevens`} className={kleineKnop}>
@@ -200,7 +200,8 @@ export default async function RelatiePagina({
         <form action={vergeetActie} className="flex flex-col gap-2 border-t border-black/10 pt-3 text-sm dark:border-white/15">
           <input type="hidden" name="id" value={r.id} />
           <p className={zacht}>
-            Bij een verzoek om vergeten te worden verwijder je de relatie uit het adresboek. Kies wat er nog meer weg moet.{" "}
+            Bij een verzoek om vergeten te worden verwijder je de relatie uit het adresboek. Kies wat er nog meer weg moet.
+            Bij afspraken worden naam, e-mailadres, telefoon en opmerkingen altijd gewist (datum en betaling blijven).{" "}
             <strong>Bestellingen en facturen blijven bewaard</strong>: daarvoor geldt een wettelijke bewaarplicht van
             zeven jaar (Belastingdienst).
           </p>

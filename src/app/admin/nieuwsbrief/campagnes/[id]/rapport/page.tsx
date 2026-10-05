@@ -96,8 +96,10 @@ export default async function RapportPagina({ params, searchParams }: { params: 
   if (q) query = query.ilike("email", `%${q}%`);
   const van = (pagina - 1) * PER_PAGINA;
   const ab = c.soort === "campagne" ? abUitCampagne(c) : null;
+  // De ontvangerslijst (e-mailadressen) alleen voor wie contacten mag zien.
+  const magOntvangers = heeftRecht(ik.rol, "nieuwsbrief_contacten");
   const [{ data: rijen, count }, stats, links, abCijfers] = await Promise.all([
-    query.order("email").range(van, van + PER_PAGINA - 1),
+    magOntvangers ? query.order("email").range(van, van + PER_PAGINA - 1) : Promise.resolve({ data: [], count: 0 }),
     statistiekPerCampagne([id]),
     kliksPerLink(id),
     ab && c.status !== "concept" && c.status !== "ingepland" ? variantCijfers(id) : Promise.resolve(null),
@@ -188,94 +190,94 @@ export default async function RapportPagina({ params, searchParams }: { params: 
         )}
       </section>
 
-      <section className={kaart}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Ontvangers</h2>
-          {heeftRecht(ik.rol, "nieuwsbrief_contacten") && (
+      {magOntvangers && (
+        <section className={kaart}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Ontvangers</h2>
             <a href={`${pad}/csv`} className={knopKlein} download>
               Exporteren (CSV)
             </a>
-          )}
-        </div>
-        <form action={pad} method="get" className="flex flex-col gap-2 sm:flex-row">
-          {filter !== "alle" && <input type="hidden" name="filter" value={filter} />}
-          <label htmlFor="q" className="sr-only">
-            Zoek op e-mailadres
-          </label>
-          <input id="q" name="q" defaultValue={q} placeholder="Zoek op e-mailadres" className={invoerKlasse} />
-          <button className={`${knopRand} shrink-0`}>Zoeken</button>
-        </form>
-        <nav aria-label="Filter" className="flex flex-wrap gap-1.5">
-          {(Object.keys(ONTVANGER_FILTERS) as OntvangerFilter[]).map((f) => (
-            <Link
-              key={f}
-              href={link({ filter: f === "alle" ? undefined : f, pagina: undefined })}
-              aria-current={f === filter ? "page" : undefined}
-              className={`rounded-full border px-3 py-1 text-sm ${
-                f === filter ? "border-accent bg-accent-zacht font-medium text-accent" : "border-black/15 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
-              }`}
-            >
-              {ONTVANGER_FILTERS[f]}
-            </Link>
-          ))}
-        </nav>
-        <p className={`text-xs ${zacht}`}>{(count ?? 0).toLocaleString("nl-NL")} gevonden</p>
-
-        {ontvangers.length > 0 && (
-          <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
-            {ontvangers.map((o) => (
-              <li key={o.id} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <div className="flex min-w-0 flex-col">
-                  <span className="break-all text-sm">{o.email}</span>
-                  {o.fout && <span className="break-words text-xs text-red-700 dark:text-red-300">{o.fout}</span>}
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-1.5 text-xs">
-                  <span className="rounded-full bg-black/5 px-2 py-0.5 dark:bg-white/10">
-                    {VERZEND_STATUS_LABEL[o.status] ?? o.status}
-                    {o.verzonden_op && ` · ${toonDatumTijd(o.verzonden_op)}`}
-                  </span>
-                  {o.geopend_op && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
-                      Geopend{o.aantal_geopend > 1 ? ` ${o.aantal_geopend}×` : ""}
-                    </span>
-                  )}
-                  {o.geklikt_op && (
-                    <span className="rounded-full bg-accent-zacht px-2 py-0.5 text-accent">
-                      Geklikt{o.aantal_kliks > 1 ? ` ${o.aantal_kliks}×` : ""}
-                    </span>
-                  )}
-                  {o.afgemeld_op && <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-900 dark:bg-red-950/50 dark:text-red-200">Afgemeld</span>}
-                  {o.gebounced_op && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-900 dark:bg-red-950/50 dark:text-red-200">Onbestelbaar</span>
-                  )}
-                </div>
-              </li>
+          </div>
+          <form action={pad} method="get" className="flex flex-col gap-2 sm:flex-row">
+            {filter !== "alle" && <input type="hidden" name="filter" value={filter} />}
+            <label htmlFor="q" className="sr-only">
+              Zoek op e-mailadres
+            </label>
+            <input id="q" name="q" defaultValue={q} placeholder="Zoek op e-mailadres" className={invoerKlasse} />
+            <button className={`${knopRand} shrink-0`}>Zoeken</button>
+          </form>
+          <nav aria-label="Filter" className="flex flex-wrap gap-1.5">
+            {(Object.keys(ONTVANGER_FILTERS) as OntvangerFilter[]).map((f) => (
+              <Link
+                key={f}
+                href={link({ filter: f === "alle" ? undefined : f, pagina: undefined })}
+                aria-current={f === filter ? "page" : undefined}
+                className={`rounded-full border px-3 py-1 text-sm ${
+                  f === filter ? "border-accent bg-accent-zacht font-medium text-accent" : "border-black/15 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
+                }`}
+              >
+                {ONTVANGER_FILTERS[f]}
+              </Link>
             ))}
-          </ul>
-        )}
-
-        {paginas > 1 && (
-          <nav aria-label="Pagina's" className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            {pagina > 1 ? (
-              <Link href={link({ pagina: String(pagina - 1) })} className={knopKlein}>
-                ← Vorige
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className={zacht}>
-              Pagina {pagina} van {paginas}
-            </span>
-            {pagina < paginas ? (
-              <Link href={link({ pagina: String(pagina + 1) })} className={knopKlein}>
-                Volgende →
-              </Link>
-            ) : (
-              <span />
-            )}
           </nav>
-        )}
-      </section>
+          <p className={`text-xs ${zacht}`}>{(count ?? 0).toLocaleString("nl-NL")} gevonden</p>
+
+          {ontvangers.length > 0 && (
+            <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
+              {ontvangers.map((o) => (
+                <li key={o.id} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="break-all text-sm">{o.email}</span>
+                    {o.fout && <span className="break-words text-xs text-red-700 dark:text-red-300">{o.fout}</span>}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-1.5 text-xs">
+                    <span className="rounded-full bg-black/5 px-2 py-0.5 dark:bg-white/10">
+                      {VERZEND_STATUS_LABEL[o.status] ?? o.status}
+                      {o.verzonden_op && ` · ${toonDatumTijd(o.verzonden_op)}`}
+                    </span>
+                    {o.geopend_op && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
+                        Geopend{o.aantal_geopend > 1 ? ` ${o.aantal_geopend}×` : ""}
+                      </span>
+                    )}
+                    {o.geklikt_op && (
+                      <span className="rounded-full bg-accent-zacht px-2 py-0.5 text-accent">
+                        Geklikt{o.aantal_kliks > 1 ? ` ${o.aantal_kliks}×` : ""}
+                      </span>
+                    )}
+                    {o.afgemeld_op && <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-900 dark:bg-red-950/50 dark:text-red-200">Afgemeld</span>}
+                    {o.gebounced_op && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-900 dark:bg-red-950/50 dark:text-red-200">Onbestelbaar</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {paginas > 1 && (
+            <nav aria-label="Pagina's" className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              {pagina > 1 ? (
+                <Link href={link({ pagina: String(pagina - 1) })} className={knopKlein}>
+                  ← Vorige
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className={zacht}>
+                Pagina {pagina} van {paginas}
+              </span>
+              {pagina < paginas ? (
+                <Link href={link({ pagina: String(pagina + 1) })} className={knopKlein}>
+                  Volgende →
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
+        </section>
+      )}
     </main>
   );
 }

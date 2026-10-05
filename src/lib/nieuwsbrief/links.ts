@@ -4,8 +4,20 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { siteUrl } from "../site";
 
+/** Productie: op Vercel de productieomgeving, elders een productiebuild (next start). */
+function isProductie(): boolean {
+  if (process.env.VERCEL_ENV) return process.env.VERCEL_ENV === "production";
+  return process.env.NODE_ENV === "production";
+}
+
 function geheim(): string {
-  const g = process.env.NIEUWSBRIEF_GEHEIM || process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const eigen = process.env.NIEUWSBRIEF_GEHEIM;
+  if (eigen) return eigen;
+  // In productie geen terugval op andere geheimen: wie CRON_SECRET of de
+  // service-role-sleutel roteert, zou anders alle verstuurde links breken, en die
+  // sleutels horen niet in een HMAC voor openbare links.
+  if (isProductie()) throw new Error("NIEUWSBRIEF_GEHEIM ontbreekt: verplicht in productie voor nieuwsbrieflinks.");
+  const g = process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!g) throw new Error("Geen geheim voor nieuwsbrieflinks (zet NIEUWSBRIEF_GEHEIM).");
   return g;
 }

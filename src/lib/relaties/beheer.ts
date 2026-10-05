@@ -1,5 +1,6 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
+import { alles } from "../supabase/alles";
 import { likeLetterlijk } from "../nieuwsbrief/contactregels";
 import { normaliseerTag } from "../nieuwsbrief/doelgroep";
 import { verwijderContacten } from "../nieuwsbrief/beheer";
@@ -12,19 +13,6 @@ import type { TijdlijnAntwoord, TijdlijnBericht, TijdlijnBestelling, TijdlijnNie
 
 // Beheer van het adresboek bovenop de kern (regels.ts, koppel.ts): lijsten,
 // koppelingen, bulkacties, import, samenvoegen en AVG.
-
-/** Haalt alle rijen op in pagina's van 1000 (Supabase geeft er standaard maximaal 1000). */
-async function alles<T>(
-  haal: (van: number, tot: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-): Promise<T[]> {
-  const uit: T[] = [];
-  for (let van = 0; ; van += 1000) {
-    const { data, error } = await haal(van, van + 999);
-    if (error) throw new Error(error.message);
-    uit.push(...(data ?? []));
-    if (!data || data.length < 1000) return uit;
-  }
-}
 
 /** Het hele adresboek. Klein genoeg om in het geheugen te filteren en te sorteren. */
 export async function alleRelaties(): Promise<Relatie[]> {
@@ -216,7 +204,7 @@ export async function importeerRelaties(rijen: Pick<RelatieImportRij, "gegevens"
 
 /**
  * Voert een samenvoegplan uit. Volgorde zo dat er bij een fout niets verloren
- * gaat: eerst berichten omzetten, dan (zo nodig) het e-mailadres van de
+ * gaat: eerst alles met een relatie-id (berichten, afspraken) omzetten, dan (zo nodig) het e-mailadres van de
  * verdwijnende relatie vrijmaken, dan de blijvende bijwerken en pas daarna de
  * andere verwijderen.
  */
@@ -229,6 +217,10 @@ export async function voerSamenvoegingUit(plan: SamenvoegPlan): Promise<void> {
   await stap(
     supabase.from("contact_berichten").update({ relatie_id: plan.blijftId }).eq("relatie_id", plan.wegId),
     "Berichten omzetten",
+  );
+  await stap(
+    supabase.from("afspraken").update({ relatie_id: plan.blijftId }).eq("relatie_id", plan.wegId),
+    "Afspraken omzetten",
   );
   if (plan.emailOvernemen) {
     await stap(supabase.from("relaties").update({ email: null }).eq("id", plan.wegId), "E-mailadres vrijmaken");
@@ -252,11 +244,25 @@ async function berichtIdsVan(r: Pick<Relatie, "id" | "email">): Promise<string[]
 }
 
 const GEHEIME_ORDERVELDEN = ["testtoken", "token_verloopt_op", "mollie_payment_id", "pdf_pad", "factuur_pad"];
+const GEHEIME_AFSPRAAKVELDEN = ["token", "mollie_payment_id"];
+
+/** Id's van alle afspraken van deze relatie: gekoppeld via de relatie-id of via het e-mailadres. */
+async function afspraakIdsVan(r: Pick<Relatie, "id" | "email">): Promise<string[]> {
+  const supabase = adminClient();
+  const [opId, opEmail] = await Promise.all([
+    supabase.from("afspraken").select("id").eq("relatie_id", r.id),
+    r.email ? supabase.from("afspraken").select("id").eq("email", r.email.toLowerCase()) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (opId.error) throw new Error(opId.error.message);
+  if (opEmail.error) throw new Error(opEmail.error.message);
+  return [...new Set([...(opId.data ?? []), ...(opEmail.data ?? [])].map((a) => String((a as { id: string }).id)))];
+}
 
 /**
  * Alles wat over deze relatie is opgeslagen (AVG-inzageverzoek): de relatie,
  * bestellingen (zonder interne sleutels en opslagpaden) met testresultaten, het
- * nieuwsbriefcontact met ontvangen mails, en contactberichten met antwoorden.
+ * nieuwsbriefcontact met ontvangen mails, contactberichten met antwoorden en
+ * afspraken (zonder interne sleutels).
  */
 export async function gegevensVanRelatie(id: string): Promise<Record<string, unknown> | null> {
   const supabase = adminClient();
@@ -296,9 +302,17 @@ export async function gegevensVanRelatie(id: string): Promise<Record<string, unk
     ? await supabase.from("contact_antwoorden").select("bericht_id, tekst, verzonden_op").in("bericht_id", berichtIds).order("verzonden_op")
     : { data: [] };
 
+  const afspraakIds = await afspraakIdsVan({ id, email });
+  const { data: afsprakenRuw } = afspraakIds.length
+    ? await supabase.from("afspraken").select("*, soort:afspraak_soorten(naam)").in("id", afspraakIds).order("start_op")
+    : { data: [] };
+  const afspraken = ((afsprakenRuw ?? []) as Record<string, unknown>[]).map((a) =>
+    Object.fromEntries(Object.entries(a).filter(([k]) => !GEHEIME_AFSPRAAKVELDEN.includes(k))),
+  );
+
   return {
     toelichting:
-      "Overzicht van alle gegevens die Lida Thiry Imago & Kledingadvies over deze persoon heeft opgeslagen (adresboek, bestellingen, nieuwsbrief en contactberichten).",
+      "Overzicht van alle gegevens die Lida Thiry Imago & Kledingadvies over deze persoon heeft opgeslagen (adresboek, bestellingen, nieuwsbrief, contactberichten en afspraken).",
     gemaakt_op: new Date().toISOString(),
     adresboek: relatie,
     bestellingen,
@@ -306,22 +320,43 @@ export async function gegevensVanRelatie(id: string): Promise<Record<string, unk
     nieuwsbrief,
     contactberichten: berichten ?? [],
     antwoorden_op_berichten: antwoorden ?? [],
+    afspraken,
   };
 }
 
 export interface VergeetResultaat {
   nieuwsbrief: number;
   berichten: number;
+  /** Afspraken waarvan naam, e-mail, telefoon en opmerkingen zijn gewist. */
+  afspraken: number;
 }
+
+/** Wat er van een afspraak overblijft na vergeten: tijden, status en betaalde bedragen blijven. */
+export const GEANONIMISEERDE_AFSPRAAK = {
+  relatie_id: null,
+  naam: "Verwijderd",
+  email: "verwijderd@verwijderd.invalid",
+  telefoon: null,
+  opmerking: null,
+  notitie: "",
+} as const;
 
 /**
  * Recht op vergetelheid: verwijdert de relatie en desgewenst het
- * nieuwsbriefcontact en de contactberichten. Bestellingen blijven bestaan
- * vanwege de wettelijke (fiscale) bewaarplicht.
+ * nieuwsbriefcontact en de contactberichten, en wist de persoonsgegevens in
+ * afspraken (naam, e-mail, telefoon, opmerkingen; datum, status en betaalde
+ * bedragen blijven voor de boekhouding). Bestellingen blijven bestaan vanwege de
+ * wettelijke (fiscale) bewaarplicht.
  */
 export async function vergeetRelatie(r: Pick<Relatie, "id" | "email">, opties: { nieuwsbrief: boolean; berichten: boolean }): Promise<VergeetResultaat> {
   const supabase = adminClient();
-  const uit: VergeetResultaat = { nieuwsbrief: 0, berichten: 0 };
+  const uit: VergeetResultaat = { nieuwsbrief: 0, berichten: 0, afspraken: 0 };
+  const afspraakIds = await afspraakIdsVan(r);
+  if (afspraakIds.length) {
+    const { data, error } = await supabase.from("afspraken").update(GEANONIMISEERDE_AFSPRAAK).in("id", afspraakIds).select("id");
+    if (error) throw new Error(`Afspraken anonimiseren: ${error.message}`);
+    uit.afspraken = data?.length ?? 0;
+  }
   if (opties.berichten) {
     const ids = await berichtIdsVan(r);
     if (ids.length) {

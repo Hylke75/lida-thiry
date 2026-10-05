@@ -75,18 +75,20 @@ export async function POST(request: Request) {
         .is("afgemeld_op", null);
       if (v.error) throw new Error(v.error.message);
       if (verzending.contact_id) {
-        const c = await supabase
+        // Eén update: status 'klacht' en (als die nog leeg was) de afmelddatum.
+        const { data: contact, error: leesFout } = await supabase
           .from("nb_contacten")
-          .update({ status: "klacht" })
+          .select("status, afgemeld_op")
           .eq("id", verzending.contact_id)
-          .neq("status", "klacht");
-        if (c.error) throw new Error(c.error.message);
-        const a = await supabase
-          .from("nb_contacten")
-          .update({ afgemeld_op: nu })
-          .eq("id", verzending.contact_id)
-          .is("afgemeld_op", null);
-        if (a.error) throw new Error(a.error.message);
+          .maybeSingle();
+        if (leesFout) throw new Error(leesFout.message);
+        if (contact && (contact.status !== "klacht" || !contact.afgemeld_op)) {
+          const c = await supabase
+            .from("nb_contacten")
+            .update({ status: "klacht", afgemeld_op: contact.afgemeld_op ?? nu })
+            .eq("id", verzending.contact_id);
+          if (c.error) throw new Error(c.error.message);
+        }
       }
     }
     return NextResponse.json({ ok: true, verwerkt: actie.soort });

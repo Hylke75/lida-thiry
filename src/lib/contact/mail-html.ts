@@ -115,22 +115,34 @@ export function contactMeldingMail(g: MeldingGegevens): ContactMail {
   return { onderwerp, html, tekst };
 }
 
-/** Ontvangstbevestiging aan de afzender, met het bericht als citaat. */
+/**
+ * Vult de variabelen van de ontvangstbevestiging in zonder iets van de bezoeker:
+ * {naam} wordt leeg ("Beste {naam}," → "Beste,") en {onderwerp} wordt "je bericht".
+ */
+function algemeenIngevuld(tekst: string): string {
+  return vulIn(tekst, { naam: "", onderwerp: "je bericht" }).replace(/[ \t]+([,.!?])/g, "$1");
+}
+
+/**
+ * Ontvangstbevestiging aan de afzender. Bevat bewust niets van wat de bezoeker
+ * invulde (geen naam, onderwerp of bericht): het formulier accepteert elk
+ * e-mailadres, en anders kan iemand via deze mail eigen tekst naar een ander
+ * laten sturen (spamrelay).
+ */
 export function contactBevestigingMail(
   t: SectieWaarden<typeof CONTACT_BEVESTIGMAIL>,
   algemeen: SectieWaarden<typeof EMAILS_ALGEMEEN>,
-  g: { naam: string; onderwerp: string; bericht: string },
 ): ContactMail {
-  const w = { naam: g.naam, onderwerp: g.onderwerp || "je bericht" };
+  const kop = algemeenIngevuld(t.kop);
+  const tekstIngevuld = algemeenIngevuld(t.tekst);
   const html = omhulsel(
     `
-      <h1 style="font-size:20px">${escapeHtml(vulIn(t.kop, w))}</h1>
-      ${opmaakNaarHtml(t.tekst, { variabelen: w, stijl: STIJL })}
-      ${citaatHtml(t.citaat_kop, g.bericht)}`,
+      <h1 style="font-size:20px">${escapeHtml(kop)}</h1>
+      ${opmaakNaarHtml(tekstIngevuld, { stijl: STIJL })}`,
     algemeen.voettekst,
   );
-  const tekst = `${vulIn(t.kop, w)}\n\n${zonderOpmaak(vulIn(t.tekst, w))}\n\n${citaatTekst(t.citaat_kop, g.bericht)}\n\n--\n${algemeen.voettekst}`;
-  return { onderwerp: vulIn(t.onderwerp, w), html, tekst };
+  const tekst = `${kop}\n\n${zonderOpmaak(tekstIngevuld)}\n\n--\n${algemeen.voettekst}`;
+  return { onderwerp: algemeenIngevuld(t.onderwerp), html, tekst };
 }
 
 /** Antwoord vanuit het beheer: het antwoord, het oorspronkelijke bericht als citaat en de voettekst. */

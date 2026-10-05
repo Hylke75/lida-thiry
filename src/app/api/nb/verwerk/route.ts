@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
+import { ruimOnbevestigdeOp } from "@/lib/nieuwsbrief/contacten";
 import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
+import { registreerFout } from "@/lib/fouten/registreer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +22,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ fout: "Niet geautoriseerd." }, { status: 401 });
   }
 
+  // Nooit bevestigde aanmeldingen ouder dan 30 dagen opruimen (AVG). Los van het
+  // verzenden: een fout hier mag de verzendronde niet tegenhouden.
+  let opgeruimd = 0;
+  try {
+    opgeruimd = await ruimOnbevestigdeOp();
+  } catch (e) {
+    console.error("Onbevestigde aanmeldingen opruimen mislukt", e);
+    await registreerFout({ bron: "cron", fout: e, pad: "/api/nb/verwerk", details: { onderdeel: "onbevestigde aanmeldingen opruimen" } });
+  }
+
   try {
     const uit = await verwerkWachtrij({ max: 1000 });
     if (uit.mislukt > 0) {
@@ -30,7 +42,7 @@ export async function GET(request: Request) {
           "daar kun je de mislukte mails opnieuw in de wachtrij zetten.",
       );
     }
-    return NextResponse.json({ ok: true, ...uit });
+    return NextResponse.json({ ok: true, ...uit, onbevestigdOpgeruimd: opgeruimd });
   } catch (e) {
     console.error("Nieuwsbrief-wachtrij verwerken mislukt", e);
     await stuurBeheerMelding("Nieuwsbrief: verzendronde mislukt", foutTekst(e));

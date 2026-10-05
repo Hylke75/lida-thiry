@@ -1,6 +1,7 @@
 import "server-only";
-import { Resend } from "resend";
 import { adminClient } from "../supabase/admin";
+import { afzender, resend } from "../resend";
+import { hashIp, magDoorOpSleutel } from "../rate-limit";
 import { leesInstellingen } from "../instellingen";
 import { leesSectie } from "../inhoud/lees";
 import { EMAILS_ALGEMEEN } from "../inhoud/groepen/emails";
@@ -90,17 +91,6 @@ export function berichtenQuery(f: BerichtFilter) {
 
 // Versturen ------------------------------------------------------------------------------
 
-function resend(): Resend {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY ontbreekt (server).");
-  return new Resend(key);
-}
-
-function afzender(): string {
-  // Zelfde afzender als de overige mails (zie resend.ts).
-  return process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>";
-}
-
 async function verstuur(opts: { aan: string; mail: ContactMail; replyTo?: string | null }): Promise<string | null> {
   const { data, error } = await resend().emails.send({
     from: afzender(),
@@ -118,8 +108,9 @@ const gevuld = (w: string | null | undefined) => (typeof w === "string" && w.tri
 
 /**
  * Na een nieuw bericht: (a) een melding aan de beheerder (adviseur_email, anders
- * contact_email) met reply-to de afzender, en (b) een ontvangstbevestiging aan de
- * afzender. Gooit nooit; mislukte mails worden gelogd en gemeld.
+ * contact_email) met reply-to de afzender, en (b) een algemene ontvangstbevestiging
+ * aan de afzender (zonder de ingevulde naam of tekst, hooguit 2 per dag per adres).
+ * Gooit nooit; mislukte mails worden gelogd en gemeld.
  */
 export async function stuurContactMails(b: ContactBericht): Promise<void> {
   let instellingen: Record<string, string | null> = {};
@@ -149,8 +140,11 @@ export async function stuurContactMails(b: ContactBericht): Promise<void> {
   };
 
   const bevestiging = async () => {
+    // Hooguit twee ontvangstbevestigingen per dag naar hetzelfde adres: het
+    // formulier accepteert elk adres, dus anders is het een mailkanon.
+    if (!(await magDoorOpSleutel(`contact-bevestiging:${hashIp(b.email.toLowerCase())}`, 2, 86_400))) return;
     const [t, algemeen] = await Promise.all([leesSectie(CONTACT_BEVESTIGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
-    const mail = contactBevestigingMail(t, algemeen, { naam: b.naam, onderwerp: b.onderwerp, bericht: b.bericht });
+    const mail = contactBevestigingMail(t, algemeen);
     await verstuur({ aan: b.email, mail, replyTo: gevuld(instellingen.contact_email) ?? beheerder });
   };
 
