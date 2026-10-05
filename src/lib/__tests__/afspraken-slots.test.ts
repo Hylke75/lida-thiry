@@ -175,6 +175,16 @@ describe("afspraken/slots: zomer- en wintertijd", () => {
     expect(tijdenOpDag(i, "2026-03-30")[0].start).toBe("2026-03-30T07:00:00.000Z");
   });
 
+  it("beschikbaar tot middernacht (24:00 of oude 23:59): het laatste slot telt mee", () => {
+    for (const tot of ["24:00:00", "23:59:00"]) {
+      const i = invoer({ nu: new Date("2026-10-01T00:00:00Z"), beschikbaarheid: [{ weekdag: 1, van: "22:00", tot }] });
+      // 5 oktober 2026 is een maandag; 24:00 CEST = 22:00Z.
+      expect(vensters(i.beschikbaarheid, "2026-10-05")).toEqual([
+        { van: Date.parse("2026-10-05T20:00:00Z"), tot: Date.parse("2026-10-05T22:00:00Z") },
+      ]);
+    }
+  });
+
   it("nacht van de overgang naar zomertijd: het uur 02:00–03:00 bestaat niet", () => {
     const i = invoer({ nu: new Date("2026-03-20T00:00:00Z"), beschikbaarheid: [{ weekdag: 7, van: "01:00", tot: "05:00" }] });
     // 01:00 CET (00:00Z) tot 05:00 CEST (03:00Z) = 3 echte uren.

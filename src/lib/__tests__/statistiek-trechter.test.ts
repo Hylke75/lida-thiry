@@ -6,13 +6,13 @@ import {
   bestellingenPerDag,
   binnen,
   dagenVan,
-  isTestbestelling,
   MAX_DAGEN,
   queryGrenzen,
   telPerDag,
   topFiguurtypes,
   type TrechterOrder,
 } from "../statistiek/trechter";
+import { isTestbestelling } from "../reviews/regels";
 
 const NU = new Date("2026-10-04T10:00:00Z");
 
@@ -26,7 +26,6 @@ function order(o: Partial<TrechterOrder> & { afgerond_op?: string | null } = {})
     kortingscode: null,
     mollie_payment_id: "tr_1",
     toegekend_type: null,
-    heeftMeting: false,
     ...o,
   };
 }
@@ -68,6 +67,10 @@ describe("statistiek: testbestellingen", () => {
     expect(isTestbestelling({ bedrag_cent: 0, kortingscode: null, mollie_payment_id: null })).toBe(true);
     expect(isTestbestelling({ bedrag_cent: 0, kortingscode: "CADEAU", mollie_payment_id: null })).toBe(false);
     expect(isTestbestelling({ bedrag_cent: 4900, kortingscode: null, mollie_payment_id: "tr_1" })).toBe(false);
+    // Gratis, maar wel via Mollie: geen test.
+    expect(isTestbestelling({ bedrag_cent: 0, kortingscode: null, mollie_payment_id: "tr_2" })).toBe(false);
+    // Voorbeeldadres: altijd test (dezelfde definitie als bij reviews).
+    expect(isTestbestelling({ bedrag_cent: 4900, kortingscode: null, mollie_payment_id: "tr_1", email: "a@voorbeeld.nl" })).toBe(true);
   });
 });
 
@@ -77,9 +80,9 @@ describe("statistiek: trechter", () => {
     order(),
     order({ status: "verlopen" }),
     order({ status: "betaald", betaald_op: "2026-10-01T11:00:00Z" }),
-    order({ status: "betaald", betaald_op: "2026-10-01T11:00:00Z", heeftMeting: true }),
-    order({ status: "test_afgerond", betaald_op: "2026-10-01T11:00:00Z", heeftMeting: true }),
-    order({ status: "advies_verzonden", betaald_op: "2026-10-01T11:00:00Z", heeftMeting: false }),
+    order({ status: "betaald", betaald_op: "2026-10-01T11:00:00Z" }),
+    order({ status: "test_afgerond", betaald_op: "2026-10-01T11:00:00Z" }),
+    order({ status: "advies_verzonden", betaald_op: "2026-10-01T11:00:00Z" }),
     // Testbestelling en een bestelling van buiten de periode tellen niet mee.
     order({ status: "advies_verzonden", bedrag_cent: 0, mollie_payment_id: null }),
     order({ status: "advies_verzonden", aangemaakt_op: "2026-01-01T10:00:00Z" }),
@@ -90,14 +93,13 @@ describe("statistiek: trechter", () => {
     expect(t.map((s) => [s.sleutel, s.aantal])).toEqual([
       ["aangemaakt", 6],
       ["betaald", 4],
-      ["gestart", 3],
       ["afgerond", 2],
       ["advies", 1],
     ]);
     expect(t[0].vanVorige).toBeNull();
     expect(t[1].vanVorige).toBe(66.7);
-    expect(t[2].vanVorige).toBe(75);
-    expect(t[4].vanStart).toBe(16.7);
+    expect(t[2].vanVorige).toBe(50);
+    expect(t[3].vanStart).toBe(16.7);
   });
 
   it("geeft null-percentages zonder bestellingen", () => {
@@ -129,6 +131,12 @@ describe("statistiek: verkoop", () => {
       kortingPct: 66.7,
       kortingCent: 5900,
     });
+  });
+
+  it("handmatige_beoordeling telt als betaald, ook voor de omzet (zelfde lijst als de trechter)", () => {
+    const o = order({ status: "handmatige_beoordeling", betaald_op: "2026-10-01T11:00:00Z", bedrag_cent: 4900 });
+    expect(berekenVerkoop([o], p)).toMatchObject({ betaald: 1, omzetCent: 4900 });
+    expect(berekenTrechter([o], p).find((s) => s.sleutel === "betaald")?.aantal).toBe(1);
   });
 
   it("zonder verkopen", () => {

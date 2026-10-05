@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
 import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
+import { isGeldigeCron } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   if (!geheim) {
     return NextResponse.json({ fout: "CRON_SECRET niet ingesteld." }, { status: 503 });
   }
-  if (request.headers.get("authorization") !== `Bearer ${geheim}`) {
+  if (!isGeldigeCron(request, geheim)) {
     return NextResponse.json({ fout: "Niet geautoriseerd." }, { status: 401 });
   }
 

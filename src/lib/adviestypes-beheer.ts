@@ -24,29 +24,6 @@ export function letterNaam(letter: string, lijst: LetterKeuze[] = LETTERS): stri
   return lijst.find((l) => l.letter === letter)?.naam ?? letter;
 }
 
-/** Gangbare sectiekoppen (keuzelijst in de editor; vrije tekst mag ook). */
-export const STANDAARD_KOPPEN = [
-  "Je hebt",
-  "Je kledingplan",
-  "Je schouders",
-  "Je bovenlichaam",
-  "Je taille en middenrif",
-  "Je onderlichaam",
-  "Je kleuren en dessins",
-  "Je sieraden",
-  "Je sjaals",
-  "Je riemen en ceintuurs",
-  "Je schoenen",
-  "Je tassen",
-  "Je broeken",
-  "Je rokken",
-  "Je tops",
-  "Je jasjes en mantels",
-  "Je jurken",
-  "Tips",
-  "Voorbeeldoutfits",
-] as const;
-
 /** Verschuift het element op `index` één plek omhoog (-1) of omlaag (+1). */
 export function verplaats<T>(lijst: readonly T[], index: number, richting: -1 | 1): T[] {
   const doel = index + richting;

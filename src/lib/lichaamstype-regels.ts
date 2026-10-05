@@ -37,7 +37,8 @@ export const FFIT_TYPES: Exclude<FfitType, "Geen type">[] = [
   "Rechthoek",
 ];
 
-export const STANDAARD_VORM: Lichaamsvorm = { schouder: 36, borst: 34, taille: 27, hogeHeup: 32, heup: 37 };
+/** De standaardvorm van de tekening: één definitie, in lichaam-pad.ts. */
+export { STANDAARD_VORM } from "./lichaam-pad";
 
 /** Grenzen voor de tekening (halve breedtes in de illustratie). */
 export const VORM_GRENZEN = { min: 12, max: 52 } as const;

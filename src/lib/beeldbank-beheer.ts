@@ -6,7 +6,6 @@ import {
   ADVIEZEN,
   NAAM_PATROON,
   isTeKlein,
-  minFormaat,
 } from "./beeldbank-regels";
 import { CODE_PATROON } from "./lichaamstype-regels";
 
@@ -159,16 +158,6 @@ export function gebruikZin(aantalSecties: number, aantalTypes: number): string {
   return `in ${s} van ${t}`;
 }
 
-/** Leest een verhouding als "3:4", "3 x 4" of "3/4". */
-export function leesVerhouding(tekst: string): [number, number] | null {
-  const m = tekst.trim().match(/^(\d{1,3})\s*[:x×/]\s*(\d{1,3})$/i);
-  if (!m) return null;
-  const b = Number(m[1]);
-  const h = Number(m[2]);
-  if (b < 1 || h < 1) return null;
-  return [b, h];
-}
-
 export interface Metadata {
   naam: string | null;
   onderdeel: string | null;
@@ -216,37 +205,4 @@ export function controleerMetadata(fd: FormData): { waarden: Metadata; fouten: s
     },
     fouten,
   };
-}
-
-export interface EisenInvoer {
-  verhouding_b: number;
-  verhouding_h: number;
-  min_breedte: number;
-  min_hoogte: number;
-}
-
-/** Controleert de aangepaste eisen (verhouding + minimaal formaat). */
-export function controleerEisen(fd: FormData): { eisen: EisenInvoer | null; fouten: string[] } {
-  const keuze = String(fd.get("verhouding") ?? "");
-  const tekst = keuze === "eigen" ? String(fd.get("eigen_verhouding") ?? "") : keuze;
-  const v = leesVerhouding(tekst);
-  if (!v) return { eisen: null, fouten: ["Vul een geldige verhouding in, bijvoorbeeld 3:4."] };
-  const standaard = minFormaat(v[0], v[1]);
-  const getal = (naam: string, terugval: number) => {
-    const s = String(fd.get(naam) ?? "").trim();
-    return s === "" ? terugval : Number(s);
-  };
-  const min_breedte = getal("min_breedte", standaard.min_breedte);
-  const min_hoogte = getal("min_hoogte", standaard.min_hoogte);
-  const fouten: string[] = [];
-  for (const [label, w] of [
-    ["breedte", min_breedte],
-    ["hoogte", min_hoogte],
-  ] as const) {
-    if (!Number.isInteger(w) || w < 50 || w > 10000) {
-      fouten.push(`De minimale ${label} moet een heel getal tussen 50 en 10000 px zijn.`);
-    }
-  }
-  if (fouten.length) return { eisen: null, fouten };
-  return { eisen: { verhouding_b: v[0], verhouding_h: v[1], min_breedte, min_hoogte }, fouten };
 }

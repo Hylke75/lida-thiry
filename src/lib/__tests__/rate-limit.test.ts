@@ -4,7 +4,7 @@ const rpc = vi.hoisted(() => vi.fn());
 const adminClient = vi.hoisted(() => vi.fn(() => ({ rpc })));
 vi.mock("@/lib/supabase/admin", () => ({ adminClient }));
 
-import { clientIp, hashIp, magDoor } from "../rate-limit";
+import { clientIp, hashIp, magDoor, magDoorOpSleutel } from "../rate-limit";
 
 function req(headers: Record<string, string>) {
   return new Request("http://localhost/x", { headers });
@@ -45,5 +45,17 @@ describe("rate-limit", () => {
       throw new Error("geen env");
     });
     expect(await magDoor(req({}), "x", 1, 60)).toBe(true);
+  });
+
+  it("faalt dicht met bijFout: 'weigeren'", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "kapot" } });
+    expect(await magDoor(req({}), "x", 1, 60, { bijFout: "weigeren" })).toBe(false);
+    expect(await magDoorOpSleutel("y", 1, 60, { bijFout: "weigeren" })).toBe(false);
+    adminClient.mockImplementationOnce(() => {
+      throw new Error("geen env");
+    });
+    expect(await magDoorOpSleutel("y", 1, 60, { bijFout: "weigeren" })).toBe(false);
+    rpc.mockResolvedValue({ data: true, error: null });
+    expect(await magDoorOpSleutel("y", 1, 60, { bijFout: "weigeren" })).toBe(true);
   });
 });

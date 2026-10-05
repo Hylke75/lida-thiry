@@ -159,14 +159,24 @@ export interface KandidaatOrder {
   kortingscode: string | null;
 }
 
+/** De velden waaraan een testbestelling te herkennen is. */
+export interface TestbestellingVelden {
+  bedrag_cent: number | null;
+  kortingscode: string | null;
+  email?: string | null;
+  mollie_payment_id?: string | null;
+}
+
 /**
- * Of een bestelling een testbestelling is: gratis zonder kortingscode (de
- * testknop in het beheer en GRATIS_TEST maken bestellingen van € 0) of een
- * voorbeeldadres zoals test+…@voorbeeld.nl.
+ * Of een bestelling een testbestelling is (één definitie voor reviews én
+ * statistieken): gratis, zonder kortingscode en zonder Mollie-betaling (de
+ * testknop in het beheer en GRATIS_TEST maken bestellingen van € 0), of een
+ * voorbeeldadres zoals test+…@voorbeeld.nl. Een bestelling die met een
+ * cadeaubon/kortingscode op € 0 uitkomt, telt wél mee (die heeft een kortingscode).
  */
-export function isTestbestelling(o: Pick<KandidaatOrder, "email" | "bedrag_cent" | "kortingscode">): boolean {
-  if (!o.bedrag_cent && !o.kortingscode) return true;
-  const domein = (o.email.split("@")[1] ?? "").trim().toLowerCase();
+export function isTestbestelling(o: TestbestellingVelden): boolean {
+  if (!o.bedrag_cent && !o.kortingscode && !o.mollie_payment_id) return true;
+  const domein = ((o.email ?? "").split("@")[1] ?? "").trim().toLowerCase();
   return domein === "voorbeeld.nl" || /^example\.(com|org|net)$/.test(domein);
 }
 

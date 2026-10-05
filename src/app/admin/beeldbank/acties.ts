@@ -78,9 +78,9 @@ export async function verwerkBeeld(
 /** Bepaalt de afmetingen van (een deel van) de beelden waarvan ze nog ontbreken. */
 export async function bepaalAfmetingen() {
   await vereisBeheerder("advies");
-  const { verwerkt, open } = await bepaalOntbrekendeAfmetingen(150);
+  const { verwerkt, onleesbaar, open } = await bepaalOntbrekendeAfmetingen(150);
   revalidatePath("/admin/beeldbank");
-  redirect(`/admin/beeldbank?bepaald=${verwerkt}&open=${open}`);
+  redirect(`/admin/beeldbank?bepaald=${verwerkt}&open=${open}${onleesbaar ? `&onleesbaar=${onleesbaar}` : ""}`);
 }
 
 /** Slaat naam, onderdeel, omschrijving, figuur, advies, bijschrift en status op. */

@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 type Supabase = ReturnType<typeof adminClient>;
 type Zoek = { periode?: string; van?: string; tot?: string };
-type OrderRij = Omit<TrechterOrder, "heeftMeting"> & { id: string; afgerond_op: string | null };
+type OrderRij = TrechterOrder & { id: string; afgerond_op: string | null };
 
 const BLOK = 1000;
 const DAG_MS = 86_400_000;
@@ -36,7 +36,7 @@ async function leesOrders(supabase: Supabase, p: Periode): Promise<OrderRij[]> {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, status, aangemaakt_op, betaald_op, afgerond_op, bedrag_cent, korting_cent, kortingscode, mollie_payment_id, toegekend_type",
+        "id, email, status, aangemaakt_op, betaald_op, afgerond_op, bedrag_cent, korting_cent, kortingscode, mollie_payment_id, toegekend_type",
       )
       .or(`aangemaakt_op.gte."${vanaf}",betaald_op.gte."${vanaf}",afgerond_op.gte."${vanaf}"`)
       .lt("aangemaakt_op", totEnMet)
@@ -46,17 +46,6 @@ async function leesOrders(supabase: Supabase, p: Periode): Promise<OrderRij[]> {
     uit.push(...((data ?? []) as OrderRij[]));
     if (!data || data.length < BLOK) return uit;
   }
-}
-
-/** Welke van deze bestellingen een testresultaat (maten) hebben. */
-async function metMeting(supabase: Supabase, ids: string[]): Promise<Set<string>> {
-  const uit = new Set<string>();
-  for (let i = 0; i < ids.length; i += 200) {
-    const { data, error } = await supabase.from("testresultaten").select("order_id").in("order_id", ids.slice(i, i + 200));
-    if (error) throw new Error(`testresultaten lezen: ${error.message}`);
-    for (const r of data ?? []) uit.add(r.order_id as string);
-  }
-  return uit;
 }
 
 /** Tijdstempels uit een tabel binnen de (ruime) periode, voor tellen per dag. */
@@ -115,11 +104,7 @@ async function laad(p: Periode) {
   ]);
   if (aangemeld.error) throw new Error(`contacten tellen: ${aangemeld.error.message}`);
 
-  const meting = await metMeting(
-    supabase,
-    orders.filter((o) => o.status !== "aangemaakt").map((o) => o.id),
-  );
-  const rijen = orders.map((o) => ({ ...o, heeftMeting: meting.has(o.id) }));
+  const rijen = orders;
   const namen = new Map(lichaamstypes.map((l) => [l.code, l.naam]));
   const groei = groeiReeks(aangemeld.count ?? 0, nbMomenten, dagenTotVandaag, nu).filter(
     (d) => d.datum >= p.van && d.datum <= p.tot,
@@ -208,9 +193,9 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
           Conversietrechter
         </h2>
         <p className="text-xs text-black/55 dark:text-white/55">
-          Bestellingen die in deze periode zijn aangemaakt, en hoe ver ze (tot nu toe) zijn gekomen. De maten worden pas bij
-          het afronden opgeslagen, dus &lsquo;test gestart&rsquo; is hier bijna gelijk aan &lsquo;afgerond&rsquo;; hoeveel
-          mensen de test openen en beginnen, zie je in Vercel Web Analytics (gebeurtenis &lsquo;test gestart&rsquo;).
+          Bestellingen die in deze periode zijn aangemaakt, en hoe ver ze (tot nu toe) zijn gekomen. Of iemand de test al
+          is begonnen, weten we pas bij het afronden; hoeveel mensen de test openen en beginnen, zie je in Vercel Web
+          Analytics (gebeurtenis &lsquo;test gestart&rsquo;).
         </p>
         <Trechter stappen={d.trechter} />
       </section>

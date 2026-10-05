@@ -147,9 +147,11 @@ describe("afspraken/regels: beschikbaarheid en blokkades", () => {
     expect(valideerBeschikbaarheid([])).toEqual({ ok: true, waarde: [] });
   });
 
-  it("24:00 als eindtijd wordt 23:59", () => {
-    const v = valideerBeschikbaarheid([{ weekdag: 6, van: "20:00", tot: "24:00" }]);
-    expect(v.ok && v.waarde[0].tot).toBe("23:59");
+  it("einde van de dag (24:00, 00:00 of 23:59) wordt 24:00, zodat het laatste slot blijft", () => {
+    for (const tot of ["24:00", "00:00", "23:59"]) {
+      const v = valideerBeschikbaarheid([{ weekdag: 6, van: "20:00", tot }]);
+      expect(v.ok && v.waarde[0].tot).toBe("24:00");
+    }
   });
 
   it("blokkade van hele dagen (Nederlandse tijd)", () => {

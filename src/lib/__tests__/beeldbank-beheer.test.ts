@@ -1,13 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
-  controleerEisen,
   controleerMetadata,
   filterBeelden,
   filterHref,
   gebruikZin,
   groepeerGebruik,
   leesFilters,
-  leesVerhouding,
   pagineer,
   tellers,
   vergelijkCode,
@@ -123,14 +121,6 @@ describe("gebruik", () => {
 });
 
 describe("invoer controleren", () => {
-  it("leest verhoudingen", () => {
-    expect(leesVerhouding("3:4")).toEqual([3, 4]);
-    expect(leesVerhouding(" 16 x 9 ")).toEqual([16, 9]);
-    expect(leesVerhouding("2/3")).toEqual([2, 3]);
-    expect(leesVerhouding("0:4")).toBeNull();
-    expect(leesVerhouding("drie")).toBeNull();
-  });
-
   it("controleert de metadata", () => {
     const goed = controleerMetadata(
       formulier({ naam: "Tops-V-hals-goed", figuur: "V", advies: "goed", status: "goedgekeurd", omschrijving: " " }),
@@ -140,20 +130,5 @@ describe("invoer controleren", () => {
 
     const fout = controleerMetadata(formulier({ naam: "tops v hals", figuur: "q?", status: "x" }));
     expect(fout.fouten).toHaveLength(3);
-  });
-
-  it("controleert de eisen en vult het minimum aan", () => {
-    expect(controleerEisen(formulier({ verhouding: "3:4" })).eisen).toEqual({
-      verhouding_b: 3,
-      verhouding_h: 4,
-      min_breedte: 600,
-      min_hoogte: 800,
-    });
-    expect(
-      controleerEisen(formulier({ verhouding: "eigen", eigen_verhouding: "7:5", min_breedte: "1000", min_hoogte: "700" }))
-        .eisen,
-    ).toEqual({ verhouding_b: 7, verhouding_h: 5, min_breedte: 1000, min_hoogte: 700 });
-    expect(controleerEisen(formulier({ verhouding: "eigen", eigen_verhouding: "" })).fouten).toHaveLength(1);
-    expect(controleerEisen(formulier({ verhouding: "1:1", min_breedte: "12.5" })).fouten).toHaveLength(1);
   });
 });

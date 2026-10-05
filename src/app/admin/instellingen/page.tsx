@@ -5,6 +5,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import {
+  AFSPRAAK_INSTELLINGEN,
   INSTELLING_VELDEN,
   VEROUDERDE_INSTELLINGEN,
   WEBSITE_INSTELLINGEN,
@@ -29,7 +30,10 @@ async function leesRijen(): Promise<Rij[]> {
   const bekend = Object.keys(INSTELLING_VELDEN);
   const positie = (s: string) => (bekend.includes(s) ? bekend.indexOf(s) : bekend.length);
   return ((data ?? []) as Rij[])
-    .filter((r) => !VEROUDERDE_INSTELLINGEN.has(r.sleutel) && !WEBSITE_INSTELLINGEN.has(r.sleutel))
+    .filter(
+      (r) =>
+        !VEROUDERDE_INSTELLINGEN.has(r.sleutel) && !WEBSITE_INSTELLINGEN.has(r.sleutel) && !AFSPRAAK_INSTELLINGEN.has(r.sleutel),
+    )
     .sort((a, b) => positie(a.sleutel) - positie(b.sleutel) || a.sleutel.localeCompare(b.sleutel));
 }
 

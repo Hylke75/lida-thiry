@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { evalueerLivegang, isEigenDomein, livegangStatus, opsomming, sectieAnker, type LivegangGegevens } from "../livegang";
+import {
+  evalueerLivegang,
+  isEigenDomein,
+  koppelingsDoelFouten,
+  livegangStatus,
+  opsomming,
+  sectieAnker,
+  type LivegangGegevens,
+} from "../livegang";
 import { sectie, type Groep } from "../inhoud/schema";
 
 const HERO = sectie({
@@ -36,6 +44,7 @@ function compleet(): LivegangGegevens {
       adviseur_email: "lida@voorbeeld.nl",
       logo_url: "https://cdn.voorbeeld.nl/logo.png",
       deel_afbeelding_url: "https://cdn.voorbeeld.nl/delen.jpg",
+      mfa_verplicht: "ja",
     },
     tekstgroepen: [WEBSITE],
     opgeslagenTeksten: new Map([["website.over.mij", { tekst: "Ik ben Lida.", vragen: [] }]]),
@@ -45,6 +54,7 @@ function compleet(): LivegangGegevens {
     ],
     adviestypes: ALLE_CATEGORIEEN.map((c) => ({ sleutel: `${c}X`, secties: 3 })),
     ontbrekendeKoppelingen: [],
+    toewijzing: { Zandloper: "X", Lepel: null },
     omgeving: {
       RESEND_VAN: "Lida <info@lidathiry.nl>",
       RESEND_API_KEY: "re_123",
@@ -52,6 +62,7 @@ function compleet(): LivegangGegevens {
       NEXT_PUBLIC_SITE_URL: "https://lidathiry.nl",
       RESEND_WEBHOOK_SECRET: "whsec_abc",
       NIEUWSBRIEF_GEHEIM: "geheim",
+      LINK_GEHEIM: "linkgeheim",
       ANTHROPIC_API_KEY: "sk-ant-123",
       VAPID_PUBLIC_KEY: "BPubliek",
       VAPID_PRIVATE_KEY: "privaat",
@@ -186,12 +197,13 @@ describe("evalueerLivegang", () => {
       "nieuwsbrief-afzender",
       "nieuwsbrief-webhook",
       "nieuwsbrief-geheim",
+      "link-geheim",
       "ai-schrijfhulp",
       "pushmeldingen",
     ]);
     expect(items.find((i) => i.id === "mollie")?.detail).toContain("testsleutel");
     expect(items.find((i) => i.id === "resend-van")?.detail).toContain("resend.dev");
-    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 6 });
+    expect(livegangStatus(items)).toMatchObject({ klaar: false, openVerplicht: 6, openAanbevolen: 7 });
 
     expect(vind({ ...compleet(), omgeving: { ...compleet().omgeving, MOLLIE_API_KEY: "" } }, "mollie").detail).toContain(
       "ontbreekt",
@@ -359,5 +371,45 @@ describe("aparte testdatabase in de controlelijst", () => {
     const item = omgeving({ VERCEL_ENV: "preview", PRODUCTIE_SUPABASE_REF: undefined, NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" });
     expect(item).toMatchObject({ ok: false, niveau: "aanbevolen" });
     expect(item.detail).toContain("PRODUCTIE_SUPABASE_REF");
+  });
+});
+
+describe("livegang: koppeling, tweestap en geheimen", () => {
+  const types = [
+    { code: "X", naam: "Zandloper", actief: true },
+    { code: "Q", naam: "Oud type", actief: false },
+    { code: "A", naam: "Peer", actief: true },
+  ];
+  const advies = [
+    ...ALLE_CATEGORIEEN.map((c) => ({ sleutel: `${c}X`, secties: 3 })),
+    ...ALLE_CATEGORIEEN.map((c) => ({ sleutel: `${c}A`, secties: c === 4 ? 0 : 2 })),
+  ];
+
+  it("elke uitkomst wijst naar een actief type met inhoud in alle adviestypes", () => {
+    expect(koppelingsDoelFouten({ Zandloper: "X", Lepel: null }, types, advies)).toEqual([]);
+    const f = koppelingsDoelFouten({ Zandloper: "Q", Lepel: "Z", Driehoek: "A" }, types, advies);
+    expect(f).toHaveLength(3);
+    expect(f[0]).toContain("gearchiveerd");
+    expect(f[1]).toContain("bestaat niet");
+    expect(f[2]).toContain("4A");
+    expect(f[2]).not.toContain("5A");
+
+    const g = compleet();
+    g.toewijzing = { Zandloper: "Q" };
+    const item = vind(g, "koppeling-doel");
+    expect(item).toMatchObject({ ok: false, niveau: "verplicht" });
+  });
+
+  it("waarschuwt als tweestapsverificatie niet verplicht is", () => {
+    const g = compleet();
+    g.instellingen = { ...g.instellingen, mfa_verplicht: "nee" };
+    expect(vind(g, "mfa-verplicht")).toMatchObject({ ok: false, niveau: "aanbevolen" });
+    expect(vind(compleet(), "mfa-verplicht").ok).toBe(true);
+  });
+
+  it("waarschuwt zonder eigen LINK_GEHEIM", () => {
+    const g = compleet();
+    g.omgeving = { ...g.omgeving, LINK_GEHEIM: "" };
+    expect(vind(g, "link-geheim")).toMatchObject({ ok: false, niveau: "aanbevolen" });
   });
 });

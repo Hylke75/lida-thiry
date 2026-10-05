@@ -202,6 +202,8 @@ export function drempelVan(aantal: number): number {
 }
 
 export interface FoutRijStaat {
+  /** Bron van de fout; browserfouten mailen pas bij een drempel (zie meldReden). */
+  bron?: string;
   aantal: number;
   gemeld_op: string | null;
   details?: unknown;
@@ -222,14 +224,15 @@ export type MeldReden = "nieuw" | "terug" | "drempel";
 
 /**
  * Moet er een mail uit over deze fout (na registratie)?
- * - "nieuw": eerste keer gezien;
+ * - "nieuw": eerste keer gezien (niet voor bron "browser": dat endpoint is
+ *   openbaar, dus daar alleen mailen bij een drempel);
  * - "terug": er is eerder over gemaild, daarna is de fout als opgelost gemarkeerd
  *   (dat wist gemeld_op) en nu is hij terug;
  * - "drempel": het aantal is over 10/100/1000 gegaan sinds de vorige mail, en die
  *   vorige mail is minstens 24 uur geleden.
  */
 export function meldReden(rij: FoutRijStaat, nu: Date = new Date()): MeldReden | null {
-  if (rij.aantal <= 1) return "nieuw";
+  if (rij.aantal <= 1) return rij.bron === "browser" ? null : "nieuw";
   const vorige = gemeldBijAantal(rij.details);
   if (!rij.gemeld_op) {
     // Eerder gemaild en daarna als opgelost gemarkeerd (dat wist gemeld_op).

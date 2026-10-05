@@ -5,6 +5,7 @@
 import { bevatPlaceholder, combineer, type Groep } from "./inhoud/schema";
 import { CATEGORIEEN, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
 import { vapidCompleet } from "./push/regels";
+import { mfaVerplicht } from "./mfa-regels";
 import { databaseStatus, HANDLEIDING_TESTOMGEVING, type DatabaseOmgeving } from "./omgeving";
 
 export interface LivegangLink {
@@ -36,6 +37,7 @@ export interface LivegangOmgeving extends DatabaseOmgeving {
   NEXT_PUBLIC_SITE_URL?: string;
   RESEND_WEBHOOK_SECRET?: string;
   NIEUWSBRIEF_GEHEIM?: string;
+  LINK_GEHEIM?: string;
   ANTHROPIC_API_KEY?: string;
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
@@ -53,6 +55,8 @@ export interface LivegangGegevens {
   adviestypes: readonly { sleutel: string; secties: number }[];
   /** Uitkomsten van de berekening zonder lichaamstype (leeg = compleet). */
   ontbrekendeKoppelingen: readonly string[];
+  /** De koppeling uitkomst → lichaamstypecode (ffit_toewijzing); ontbreekt = niet controleren. */
+  toewijzing?: Readonly<Record<string, string | null>>;
   omgeving: LivegangOmgeving;
   /** Aantal aangemelde nieuwsbriefcontacten (ontbreekt = 0). */
   aangemeldeContacten?: number;
@@ -128,6 +132,36 @@ export function tekstenMetPlaceholder(
   return uit;
 }
 
+/**
+ * Controleert de doelen van de koppeling uitkomst → lichaamstype: elk doel moet
+ * een bestaand, actief lichaamstype zijn met alle 12 adviestypes, elk met inhoud.
+ * Geeft per probleem een leesbare zin terug (leeg = in orde).
+ */
+export function koppelingsDoelFouten(
+  toewijzing: Readonly<Record<string, string | null>>,
+  lichaamstypes: readonly { code: string; naam: string; actief: boolean }[],
+  adviestypes: readonly { sleutel: string; secties: number }[],
+): string[] {
+  const types = new Map(lichaamstypes.map((t) => [t.code, t]));
+  const secties = new Map(adviestypes.map((t) => [t.sleutel, t.secties]));
+  const fouten: string[] = [];
+  for (const [uitkomst, code] of Object.entries(toewijzing)) {
+    if (!code) continue; // ontbrekende koppelingen staan in een eigen punt
+    const t = types.get(code);
+    if (!t) {
+      fouten.push(`${uitkomst} → ${code}: dat lichaamstype bestaat niet`);
+      continue;
+    }
+    if (!t.actief) {
+      fouten.push(`${uitkomst} → ${t.naam}: dat lichaamstype is gearchiveerd`);
+      continue;
+    }
+    const leeg = CATEGORIEEN.map((c) => typeSleutel(c, code)).filter((s) => !secties.get(s));
+    if (leeg.length) fouten.push(`${uitkomst} → ${t.naam}: zonder (inhoud in) ${leeg.join(", ")}`);
+  }
+  return fouten;
+}
+
 function beperk(links: LivegangLink[], meer: LivegangLink): LivegangLink[] {
   return links.length > MAX_LINKS ? [...links.slice(0, MAX_LINKS - 1), meer] : links;
 }
@@ -196,6 +230,18 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
 
   const actief = g.lichaamstypes.filter((t) => t.actief);
   const bestaand = new Set(g.adviestypes.map((t) => t.sleutel));
+
+  if (g.toewijzing) {
+    const fouten = koppelingsDoelFouten(g.toewijzing, g.lichaamstypes, g.adviestypes);
+    items.push({
+      id: "koppeling-doel",
+      label: "Elke uitkomst wijst naar een actief lichaamstype met advies",
+      ok: fouten.length === 0,
+      niveau: "verplicht",
+      detail: fouten.length ? `${fouten.join("; ")}. Wie zo'n uitkomst krijgt, ontvangt geen (volledig) advies.` : undefined,
+      links: [{ href: "/admin/lichaamstypes#koppeling", label: "Naar de koppeling" }],
+    });
+  }
   const missendPerType = actief
     .map((t) => ({ t, missend: CATEGORIEEN.map((c) => typeSleutel(c, t.code)).filter((s) => !bestaand.has(s)) }))
     .filter((m) => m.missend.length > 0);
@@ -380,6 +426,31 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
       : "Kliklinks in nieuwsbrieven worden nu ondertekend met een ander geheim (CRON_SECRET of de Supabase-sleutel). Werkt, maar wisselt dat geheim ooit, dan werken oude kliklinks niet meer. Zet een eigen lange willekeurige waarde. " +
         VERCEL_UITLEG,
     links: [],
+  });
+
+  items.push({
+    id: "link-geheim",
+    label: "Eigen geheim voor ondertekende links (LINK_GEHEIM)",
+    ok: gevuld(env.LINK_GEHEIM),
+    niveau: "aanbevolen",
+    detail: gevuld(env.LINK_GEHEIM)
+      ? undefined
+      : "Links in bijv. betaalherinneringen worden nu ondertekend met een ander geheim (NIEUWSBRIEF_GEHEIM, CRON_SECRET of de Supabase-sleutel). Werkt, maar wisselt dat geheim ooit, dan werken oude links niet meer. Zet een eigen lange willekeurige waarde. " +
+        VERCEL_UITLEG,
+    links: [],
+  });
+
+  // Beveiliging ------------------------------------------------------------------
+  const mfa = mfaVerplicht(g.instellingen.mfa_verplicht);
+  items.push({
+    id: "mfa-verplicht",
+    label: "Tweestapsverificatie verplicht voor alle beheerders",
+    ok: mfa,
+    niveau: "aanbevolen",
+    detail: mfa
+      ? undefined
+      : "Beheerders kunnen nu met alleen een wachtwoord inloggen. Zet ‘Tweestapsverificatie verplicht’ op ja, zodat een uitgelekt wachtwoord niet genoeg is om in het beheer te komen.",
+    links: [INSTELLINGEN, { href: "/admin/beveiliging", label: "Naar de beveiliging" }],
   });
 
   // Contact ----------------------------------------------------------------------

@@ -71,6 +71,14 @@ export async function voegBeheerderToe(_v: BeheerUitkomst | null, fd: FormData):
   if (bestaand) {
     const { data: al } = await db.from("beheerders").select("gebruiker_id").eq("gebruiker_id", bestaand.id).maybeSingle();
     if (al) return uit(false, `${email} is al beheerder.`);
+    // Een nooit bevestigd account kan door iedereen met dit adres zijn aangemaakt
+    // (met een eigen wachtwoord): dat maken we niet zomaar beheerder.
+    if (!bestaand.email_confirmed_at) {
+      return uit(
+        false,
+        `${email} heeft wel een account, maar het e-mailadres is nooit bevestigd. Verwijder dat account in Supabase (Authentication → Users) en nodig ${email} daarna hier opnieuw uit; de uitnodiging bevestigt het adres.`,
+      );
+    }
     const fout = await voegRijToe(bestaand.id, email, rol);
     if (fout) return uit(false, `Toevoegen mislukt: ${fout}`);
     await log(false, bestaand.id);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { veiligVervolg } from "@/lib/beheerder-regels";
 
 export const runtime = "nodejs";
 
@@ -7,7 +8,8 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/admin";
+  // Alleen een eigen pad (geen //andere-site.nl of volledige url): geen open redirect.
+  const next = veiligVervolg(url.searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

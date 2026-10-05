@@ -1,7 +1,7 @@
 // Pure regels voor afspraken: statussen, invoercontrole (boeken, soorten,
 // beschikbaarheid, blokkades), annuleren en instellingen. Zonder database.
 
-import { leesDatum, minutenNaarTijd, tijdNaarMinuten, vanAmsterdam } from "./tijd";
+import { eindtijdNaarMinuten, leesDatum, minutenNaarTijd, tijdNaarMinuten, vanAmsterdam } from "./tijd";
 
 export const AFSPRAAK_STATUSSEN = [
   "wacht_op_betaling",
@@ -260,7 +260,7 @@ export function valideerBeschikbaarheid(blokken: readonly { weekdag: unknown; va
   for (const b of blokken) {
     const weekdag = Number(b.weekdag);
     const van = tijdNaarMinuten(tekst(b.van));
-    const tot = tijdNaarMinuten(tekst(b.tot));
+    const tot = eindtijdNaarMinuten(tekst(b.tot));
     const dag = WEEKDAGEN[weekdag - 1];
     if (!Number.isInteger(weekdag) || !dag) {
       fouten.push("Onbekende weekdag.");
@@ -289,8 +289,8 @@ export function valideerBeschikbaarheid(blokken: readonly { weekdag: unknown; va
   if (fouten.length) return { ok: false, fouten };
   return {
     ok: true,
-    // "24:00" kan niet als time-waarde zonder gedoe; 23:59 is in de praktijk hetzelfde.
-    waarde: uit.map((b) => ({ weekdag: b.weekdag, van: minutenNaarTijd(b.van), tot: minutenNaarTijd(Math.min(b.tot, 1439)) })),
+    // Einde van de dag wordt "24:00" (Postgres' time accepteert 24:00:00).
+    waarde: uit.map((b) => ({ weekdag: b.weekdag, van: minutenNaarTijd(b.van), tot: minutenNaarTijd(b.tot) })),
   };
 }
 

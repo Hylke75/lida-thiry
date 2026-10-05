@@ -24,6 +24,12 @@ export interface BeheerStatus {
 
 type Uitkomst = BeheerStatus | "geen_sessie" | "geen_beheerder";
 
+/**
+ * Of tweestapsverificatie verplicht is. Faalt DICHT: is de instelling niet te
+ * lezen, dan geldt hij als verplicht (een beheerder zonder factor wordt dan
+ * naar de beveiligingspagina gestuurd om er een in te stellen; wie al een
+ * factor heeft, merkt er niets van).
+ */
 async function leesMfaVerplicht(): Promise<boolean> {
   try {
     const { data, error } = await adminClient()
@@ -31,21 +37,25 @@ async function leesMfaVerplicht(): Promise<boolean> {
       .select("waarde")
       .eq("sleutel", "mfa_verplicht")
       .maybeSingle();
-    if (error) return false;
+    if (error) {
+      console.error("Instelling mfa_verplicht niet te lezen; tweestapsverificatie geldt als verplicht.", error.message);
+      return true;
+    }
     return mfaVerplicht((data as { waarde: string | null } | null)?.waarde);
-  } catch {
-    // Instelling niet te lezen: niet iedereen buitensluiten. Wie al een factor
-    // heeft, moet die hoe dan ook gebruiken.
-    return false;
+  } catch (e) {
+    console.error("Instelling mfa_verplicht niet te lezen; tweestapsverificatie geldt als verplicht.", e);
+    return true;
   }
 }
 
+/** De rol van deze gebruiker; null (geen toegang) als hij geen beheerder is of de rol niet te lezen is. */
 async function leesRolVan(supabase: Awaited<ReturnType<typeof createClient>>, id: string): Promise<Rol | null> {
   const { data, error } = await supabase.from("beheerders").select("gebruiker_id, rol").eq("gebruiker_id", id).maybeSingle();
-  if (!error) return data ? leesRol((data as { rol?: unknown }).rol) : null;
-  // Kolom 'rol' (nog) niet aanwezig: gedraag je zoals vóór de rollen.
-  const oud = await supabase.from("beheerders").select("gebruiker_id").eq("gebruiker_id", id).maybeSingle();
-  return oud.data ? "eigenaar" : null;
+  if (error) {
+    console.error("Beheerdersrol lezen mislukt; geen toegang.", error.message);
+    return null;
+  }
+  return data ? leesRol((data as { rol?: unknown }).rol) : null;
 }
 
 /** Eén keer per verzoek: wie is ingelogd, met welke rol en hoe staat het met de tweestapsverificatie. */
