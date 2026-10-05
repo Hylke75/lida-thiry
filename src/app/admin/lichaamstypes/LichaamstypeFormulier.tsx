@@ -262,9 +262,9 @@ function FotoKiezer({ gekozen, kies }: { gekozen: FotoKeuze | null; kies: (f: Fo
             </button>
           </div>
           {bezig ? (
-            <p className="text-sm text-black/55">Zoeken…</p>
+            <p className="text-sm text-black/55 dark:text-white/55">Zoeken…</p>
           ) : resultaten.length === 0 ? (
-            <p className="text-sm text-black/55">Niets gevonden.</p>
+            <p className="text-sm text-black/55 dark:text-white/55">Niets gevonden.</p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {resultaten.map((r) => (

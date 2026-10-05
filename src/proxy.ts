@@ -1,5 +1,5 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession } from "@/lib/supabase/sessie";
 import { haalIndex, telGebruik } from "@/lib/doorverwijzingen/cache";
 import { doelAdres, isGereserveerd, statusCode, zoek } from "@/lib/doorverwijzingen/regels";
 
