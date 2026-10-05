@@ -1,13 +1,13 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
 import { publiekClient, publiekGecached } from "../cache/publiek";
-import { leesInstellingen } from "../instellingen";
-import { centenNaarBedrag, mollie } from "../mollie";
+import { leesInstelling, leesInstellingen } from "../instellingen";
+import { mollie, startBetaling } from "../mollie";
 import { koppelRelatie } from "../relaties/koppel";
 import { foutTekst, stuurBeheerMelding } from "../beheermelding";
 import { siteUrl } from "../site";
 import { BETAALTERMIJN_MINUTEN, beschikbareDagen, conflicten, isVrij, laatsteDatum, type BezetteAfspraak, type Dag, type SlotInvoer } from "./slots";
-import { datumPlusDagen, datumLabel, herinneringVenster, tijdLabel, vandaagAmsterdam, vanAmsterdam } from "./tijd";
+import { datumPlusDagen, datumLabel, herinneringVenster, tijdLabel, vandaagAmsterdam, vanAmsterdam } from "../datum";
 import {
   leesAfspraakInstellingen,
   magAnnuleren,
@@ -300,19 +300,16 @@ export async function boekAfspraak(invoer: BoekInvoer): Promise<BoekResultaat> {
   }
   if (!aanbetaling) return { ok: true, afspraak, checkoutUrl: null };
 
-  const basis = siteUrl();
-  const lokaal = basis.startsWith("http://localhost");
   try {
-    const betaling = await mollie().payments.create({
-      amount: { currency: "EUR", value: centenNaarBedrag(aanbetaling) },
-      description: `Aanbetaling ${soort.naam} ${datumLabel(start)} ${tijdLabel(start)}`.slice(0, 255),
-      redirectUrl: `${basis}/afspraak/${afspraak.token}?betaling=1`,
-      // Mollie weigert een niet-bereikbare (localhost) webhook: lokaal weglaten.
-      ...(lokaal ? {} : { webhookUrl: `${basis}/api/mollie/webhook` }),
+    const betaling = await startBetaling({
+      bedragCent: aanbetaling,
+      valuta: await leesInstelling("valuta"),
+      omschrijving: `Aanbetaling ${soort.naam} ${datumLabel(start)} ${tijdLabel(start)}`.slice(0, 255),
+      redirectPad: `/afspraak/${afspraak.token}?betaling=1`,
       metadata: { soort: "afspraak", afspraakId: afspraak.id },
     });
     await adminClient().from("afspraken").update({ mollie_payment_id: betaling.id }).eq("id", afspraak.id);
-    const checkoutUrl = betaling.getCheckoutUrl();
+    const checkoutUrl = betaling.checkoutUrl;
     if (!checkoutUrl) throw new Error("Geen betaallink ontvangen.");
     return { ok: true, afspraak: { ...afspraak, mollie_payment_id: betaling.id }, checkoutUrl };
   } catch (e) {

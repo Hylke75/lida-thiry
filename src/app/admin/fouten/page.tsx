@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
-import { BRON_LABEL, BRONNEN, isBron, zoekTerm, type FoutBron } from "@/lib/fouten/regels";
+import { BRON_LABEL, BRONNEN, isBron, type FoutBron } from "@/lib/fouten/regels";
 import { AdminNav, Melding } from "../AdminNav";
 import { datumTijd, hoofdknop, invoer, kleineKnop } from "../berichten/stijl";
 import { heropen, markeerOpgelost } from "./acties";
 import { BRON_KLEUR } from "./stijl";
 import { TestfoutKnop } from "./TestfoutKnop";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Fouten · Beheer" };
@@ -27,7 +29,7 @@ function leesFilter(zoek: Record<string, string | string[] | undefined>): Filter
   return {
     opgelost: zoek.tab === "opgelost",
     bron: isBron(zoek.bron) ? zoek.bron : null,
-    q: zoekTerm(zoek.q),
+    q: veiligeZoekterm(zoek.q),
     pagina: Number.isInteger(pagina) && pagina > 1 ? pagina : 1,
   };
 }
@@ -208,27 +210,13 @@ export default async function FoutenPagina({
         </ul>
       )}
 
-      {paginas > 1 && (
-        <nav aria-label="Pagina's" className="flex items-center justify-between text-sm">
-          {filter.pagina > 1 ? (
-            <Link href={filterUrl({ ...filter, pagina: filter.pagina - 1 })} className="underline underline-offset-4">
-              ← Vorige
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-black/50 dark:text-white/50">
-            Pagina {filter.pagina} van {paginas}
-          </span>
-          {filter.pagina < paginas ? (
-            <Link href={filterUrl({ ...filter, pagina: filter.pagina + 1 })} className="underline underline-offset-4">
-              Volgende →
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <Paginering
+        pagina={filter.pagina}
+        paginas={paginas}
+        href={(p) => filterUrl({ ...filter, pagina: p })}
+        linkKlasse="underline underline-offset-4"
+        tekstKlasse="text-black/50 dark:text-white/50"
+      />
     </main>
   );
 }

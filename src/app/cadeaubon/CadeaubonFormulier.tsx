@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { VinkjeTekst } from "../bestellen/BestelFormulier";
-import { euroNaarCent, MAX_BOODSCHAP } from "@/lib/cadeaubon/regels";
+import { MAX_BOODSCHAP } from "@/lib/cadeaubon/regels";
+import { euroNaarCent } from "@/lib/prijs";
 
 interface Teksten {
   bedragUitleg: string;

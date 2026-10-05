@@ -11,6 +11,8 @@ import { AdminNav } from "../AdminNav";
 import { STATUS_LABEL } from "../status";
 import { gratisTestAan } from "@/lib/order-status";
 import { ORDER_RIJ_KOLOMMEN, OrderRij, type OrderRijGegevens } from "./OrderRij";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
+import { ADVIEZEN_PDF } from "@/lib/opslag";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +59,7 @@ async function verwijderAlle() {
   const supabase = adminClient();
   const { data } = await supabase.from("orders").select("pdf_pad");
   const paden = (data ?? []).map((o) => o.pdf_pad).filter(Boolean) as string[];
-  if (paden.length) await supabase.storage.from("adviezen-pdf").remove(paden);
+  if (paden.length) await supabase.storage.from(ADVIEZEN_PDF).remove(paden);
   await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await logActie({
     actie: "order.alle_verwijderen",
@@ -92,7 +94,7 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
     .order("aangemaakt_op", { ascending: false })
     .limit(MAX);
   // Tekens die de filtersyntax van Supabase verstoren weghalen.
-  const veilig = q.replace(/[,()*%\\"']/g, " ").trim();
+  const veilig = veiligeZoekterm(q);
   if (veilig) {
     query = query.or(`klantnaam.ilike.*${veilig}*,email.ilike.*${veilig}*,toegekend_type.ilike.*${veilig}*`);
   }

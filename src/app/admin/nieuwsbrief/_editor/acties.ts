@@ -12,8 +12,7 @@ import { normaliseerVertraging, TRIGGERS, type Trigger } from "@/lib/nieuwsbrief
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { doelgroepMetWachttijd, normaliseerAb } from "@/lib/nieuwsbrief/ab-test";
 import { AFBEELDING_MAX_BYTES, AFBEELDING_TYPES, BUCKET, LIMIETEN, type MailInhoud } from "./regels";
-
-type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
+import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 const tekst = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 
@@ -40,7 +39,7 @@ function leesInhoud(ruw: unknown): { inhoud: MailInhoud; fouten: string[] } {
   };
 }
 
-export type OpslaanResultaat = Uitkomst<{ bericht: string; inhoud: MailInhoud; problemen: string[]; actief: boolean }>;
+export type OpslaanResultaat = FormulierUitkomst<{ bericht: string; inhoud: MailInhoud; problemen: string[]; actief: boolean }>;
 
 /** Slaat naam, onderwerp, inhoud en doelgroep (of het moment, bij een automatische mail) op. */
 export async function slaMailOp(id: string, ruw: unknown): Promise<OpslaanResultaat> {
@@ -107,7 +106,7 @@ export async function slaMailOp(id: string, ruw: unknown): Promise<OpslaanResult
 }
 
 /** Hoeveel aangemelde contacten er in een doelgroep vallen. */
-export async function telOntvangers(doelgroep: Doelgroep): Promise<Uitkomst<{ aantal: number }>> {
+export async function telOntvangers(doelgroep: Doelgroep): Promise<FormulierUitkomst<{ aantal: number }>> {
   await vereisBeheerder("nieuwsbrief");
   try {
     const ontvangers = await zoekOntvangers(normaliseerDoelgroep(doelgroep));
@@ -121,7 +120,7 @@ export async function telOntvangers(doelgroep: Doelgroep): Promise<Uitkomst<{ aa
 export async function stuurTest(
   ruw: { onderwerp: string; preheader: string; blokken: Blok[] },
   naar: string,
-): Promise<Uitkomst<{ bericht: string }>> {
+): Promise<FormulierUitkomst<{ bericht: string }>> {
   const gebruiker = await vereisBeheerder("nieuwsbrief");
   const adres = normaliseerEmail(String(naar ?? ""));
   if (!adres) return { ok: false, fouten: ["Vul een geldig e-mailadres in."] };
@@ -148,7 +147,7 @@ export async function stuurTest(
 export async function maakAfbeeldingUpload(
   type: string,
   grootte: number,
-): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
+): Promise<FormulierUitkomst<{ pad: string; token: string; url: string }>> {
   await vereisBeheerder("nieuwsbrief");
   const ext = AFBEELDING_TYPES[type];
   if (!ext) return { ok: false, fouten: ["Kies een afbeelding van het type JPG, PNG, GIF of WebP."] };

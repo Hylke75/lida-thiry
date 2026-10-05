@@ -14,6 +14,7 @@ import {
   typeSleutel,
   type Lichaamstype,
 } from "@/lib/lichaamstype-regels";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
 
 export interface Status {
   ok: boolean;
@@ -257,7 +258,7 @@ export async function zoekFotos(zoek: string): Promise<FotoKeuze[]> {
     .select("id, code, naam, omschrijving, pad, thumb_pad")
     .order("code")
     .limit(24);
-  const term = zoek.replace(/[%,()]/g, " ").trim();
+  const term = veiligeZoekterm(zoek);
   if (term) q = q.or(`code.ilike.%${term}%,naam.ilike.%${term}%,omschrijving.ilike.%${term}%,onderdeel.ilike.%${term}%`);
   else q = q.eq("onderdeel", "silhouetten");
   const { data } = await q;

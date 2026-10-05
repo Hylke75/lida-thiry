@@ -3,13 +3,12 @@
 // handmatig toevoegen. Te gebruiken in de browser en op de server.
 
 import { BRONNEN, STATUSSEN, normaliseerTag, type Bron, type ContactStatus } from "./doelgroep";
+import { normaliseerEmail } from "@/lib/email";
+import { TIJDZONE } from "../datum";
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Hetzelfde als normaliseerEmail in contacten.ts, maar zonder serverafhankelijkheden. */
+/** Genormaliseerd e-mailadres of null (zelfde regels als normaliseerEmail in @/lib/email). */
 export function geldigEmail(email: string): string | null {
-  const e = email.trim().toLowerCase();
-  return e.length <= 254 && EMAIL.test(e) ? e : null;
+  return normaliseerEmail(email);
 }
 
 /** Tags uit vrije invoer, gescheiden door komma, puntkomma of |. Uniek, maximaal 20. */
@@ -62,11 +61,6 @@ export function filterQuery(f: ContactFilter & { pagina?: number }): string {
   return p.toString();
 }
 
-/** Zoektekst die veilig in een PostgREST-filter (or/ilike) past. */
-export function veiligeZoekterm(q: string): string {
-  return q.replace(/[,()*%\\"':]/g, " ").replace(/\s+/g, " ").trim();
-}
-
 /** Tekst letterlijk in een (i)like-patroon: % en _ zijn anders jokertekens (_ komt vaak voor in e-mailadressen). */
 export function likeLetterlijk(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -79,7 +73,7 @@ export function datumTijd(iso: string | Date): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Europe/Amsterdam",
+    timeZone: TIJDZONE,
   });
 }
 

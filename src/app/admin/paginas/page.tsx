@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { menuLabel, sorteerPaginas, type Pagina } from "@/lib/paginas/beheer";
 import { STARTPAGINAS } from "@/lib/paginas/sjablonen";
 import { Melding } from "../AdminNav";

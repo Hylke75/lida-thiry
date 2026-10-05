@@ -108,18 +108,6 @@ export function telPerType(
   return uit;
 }
 
-/**
- * Maakt een zoekterm veilig voor een PostgREST `or(...ilike...)`-filter:
- * haalt tekens weg die de filtersyntaxis of het patroon zouden breken.
- */
-export function veiligeZoekterm(tekst: string): string {
-  return tekst
-    .replace(/[,()*%_\\:"']/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80);
-}
-
 /** Splitst een sleutel als "12A" in categorie en letter; null als ongeldig. */
 export function ontleedSleutel(sleutel: string): { categorie: number; letter: Letter } | null {
   const o = ontleedTypeSleutel(sleutel);

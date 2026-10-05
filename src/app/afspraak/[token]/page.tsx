@@ -7,7 +7,7 @@ import { AFSPRAKEN_PAGINA } from "@/lib/inhoud/groepen/afspraken";
 import { vulIn } from "@/lib/inhoud/schema";
 import { afspraakInstellingen, annuleerDoorKlant, controleerBetaling, haalAfspraakOpToken, haalSoort } from "@/lib/afspraken/data";
 import { bedragLabel, duurLabel, magAnnuleren, STATUS_LABEL } from "@/lib/afspraken/regels";
-import { datumLabel, tijdLabel } from "@/lib/afspraken/tijd";
+import { datumLabel, tijdLabel } from "@/lib/datum";
 
 export const dynamic = "force-dynamic";
 

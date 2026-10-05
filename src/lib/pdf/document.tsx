@@ -13,6 +13,7 @@ import {
 } from "@react-pdf/renderer";
 import type { Lichaamsvorm } from "@/lib/test-config";
 import { CX, HOOFD, VIEWBOX, Y, lichaamsPad } from "@/lib/lichaam-pad";
+import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 
 export interface PdfMaten {
   lengte_cm: number | null;
@@ -212,7 +213,7 @@ function MatenRij({ label, waarde }: { label: string; waarde: string }) {
 function Voettekst({ sleutel }: { sleutel: string }) {
   return (
     <View style={styles.voettekst} fixed>
-      <Text>© Lida Thiry Imago &amp; Kledingadvies · Type {sleutel}</Text>
+      <Text>© {BEDRIJFSNAAM_STANDAARD} · Type {sleutel}</Text>
       <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
@@ -234,7 +235,7 @@ export function AdviesPdf({ klantnaam, datum, sleutel, titel, maten, secties, si
   const toonMaten = matenRijen.some((r) => r.waarde !== "–");
 
   return (
-    <Document title={`Kledingadvies ${sleutel}`} author="Lida Thiry Imago & Kledingadvies">
+    <Document title={`Kledingadvies ${sleutel}`} author={BEDRIJFSNAAM_STANDAARD}>
       {/* Voorpagina */}
       <Page size="A4" style={[styles.page, styles.cover]}>
         <Voettekst sleutel={sleutel} />

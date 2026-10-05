@@ -9,6 +9,7 @@ import { AdminNav, Melding } from "../../AdminNav";
 import { bulkActie, voegContactToe } from "./acties";
 import { BevestigKnop, SelecteerAlles, TagInvoer } from "./Invoer";
 import { StatusLabel, datum, invoer, hoofdknop, kleineKnop } from "./stijl";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 
@@ -216,27 +217,13 @@ export default async function ContactenPagina({
         )}
       </form>
 
-      {paginas > 1 && (
-        <nav aria-label="Pagina's" className="flex items-center justify-between text-sm">
-          {filter.pagina > 1 ? (
-            <Link href={link({ pagina: filter.pagina - 1 })} className={kleineKnop}>
-              ← Vorige
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-black/60 dark:text-white/60">
-            Pagina {filter.pagina} van {paginas}
-          </span>
-          {filter.pagina < paginas ? (
-            <Link href={link({ pagina: filter.pagina + 1 })} className={kleineKnop}>
-              Volgende →
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <Paginering
+        pagina={filter.pagina}
+        paginas={paginas}
+        href={(p) => link({ pagina: p })}
+        linkKlasse={kleineKnop}
+        tekstKlasse="text-black/60 dark:text-white/60"
+      />
 
       <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
         <h2 className="text-lg font-semibold">Contact toevoegen</h2>

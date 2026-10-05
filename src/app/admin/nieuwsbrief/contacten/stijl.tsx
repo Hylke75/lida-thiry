@@ -19,11 +19,4 @@ export function StatusLabel({ status }: { status: ContactStatus }) {
   return <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${KLEUR[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function datum(iso: string): string {
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
-}
+export { datum } from "@/lib/datum";

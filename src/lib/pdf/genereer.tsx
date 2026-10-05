@@ -6,8 +6,9 @@ import { haalAdviesInhoud } from "@/lib/advies-inhoud";
 import { BEELD_BUCKET } from "@/lib/beeldbank-regels";
 import { silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { vormUitMaten } from "@/lib/lichaam-pad";
+import { ADVIEZEN_PDF } from "@/lib/opslag";
 
-const BUCKET = "adviezen-pdf";
+const BUCKET = ADVIEZEN_PDF;
 
 /**
  * Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF).

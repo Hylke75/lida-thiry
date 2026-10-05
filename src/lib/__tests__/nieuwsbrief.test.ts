@@ -100,6 +100,10 @@ describe("nieuwsbrief: doelgroep", () => {
 
 describe("nieuwsbrief: links", () => {
   it("ondertekent kliklinks en weigert vervalste", () => {
+    // Vaste uitkomst: verstuurde nieuwsbrieven bevatten deze handtekeningen al.
+    expect(handtekening("3f2b8c1e-1234-4abc-9def-0123456789ab", "https://example.nl/a?b=1", "test-geheim")).toBe(
+      "adU-LF6v2G9F5jaC9Y_fuPlp",
+    );
     const sig = handtekening("v1", "https://x.nl", "geheim");
     expect(klopt("v1", "https://x.nl", sig, "geheim")).toBe(true);
     expect(klopt("v1", "https://evil.nl", sig, "geheim")).toBe(false);

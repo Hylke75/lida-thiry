@@ -5,6 +5,7 @@ import { STATUS_LABEL as ORDER_STATUS } from "@/app/admin/status";
 import { BERICHT_STATUS_LABEL, type BerichtStatus } from "@/lib/contact/regels";
 import { STATUS_LABEL as NB_STATUS, type ContactStatus } from "@/lib/nieuwsbrief/doelgroep";
 import { fragment, metZoekterm, orGroepen, zoekWoorden } from "./regels";
+import { datumTijd } from "@/lib/datum";
 
 /** Hoeveel treffers per soort we tonen; de rest via "meer". */
 const PER_GROEP = 8;
@@ -54,16 +55,7 @@ const samen = (...delen: unknown[]): string => delen.map(s).filter(Boolean).join
 
 function datum(v: unknown): string {
   const d = new Date(s(v));
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleString("nl-NL", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Europe/Amsterdam",
-      });
+  return Number.isNaN(d.getTime()) ? "" : datumTijd(d);
 }
 
 const DEFINITIES: readonly Definitie[] = [

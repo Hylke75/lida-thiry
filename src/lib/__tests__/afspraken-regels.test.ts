@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   centNaarEuroInvoer,
   duurLabel,
-  euroNaarCent,
   leesAfspraakInstellingen,
   magAnnuleren,
   toegestaneOvergangen,
@@ -67,13 +66,6 @@ describe("afspraken/regels: soorten", () => {
   const basis = { naam: "Kleuradvies", omschrijving: "", duur_minuten: "90", buffer_minuten: "15", prijs: "125,00", aanbetaling: "25", locatie: "Thuis", volgorde: "1", actief: "on" };
 
   it("euro's ↔ centen", () => {
-    expect(euroNaarCent("125,50")).toBe(12550);
-    expect(euroNaarCent("1.250,00")).toBe(125000);
-    expect(euroNaarCent("€ 25")).toBe(2500);
-    expect(euroNaarCent("12.5")).toBe(1250);
-    expect(euroNaarCent("")).toBe(0);
-    expect(euroNaarCent("tien")).toBeNull();
-    expect(euroNaarCent("1,234")).toBeNull();
     expect(centNaarEuroInvoer(2500)).toBe("25,00");
     expect(centNaarEuroInvoer(0)).toBe("");
   });

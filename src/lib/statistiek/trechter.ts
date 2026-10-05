@@ -4,6 +4,7 @@
 
 import { nlDag } from "../nieuwsbrief/statistiek";
 import { isTestbestelling } from "../reviews/regels";
+import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN } from "../order-status";
 
 const DAG_MS = 86_400_000;
 /** Langste eigen periode die we tonen. */
@@ -99,11 +100,11 @@ export interface TrechterOrder {
  * Statussen waarbij er betaald is. Ook "handmatige_beoordeling" (oud) is betaald,
  * dus telt die overal hier mee: in de trechter, de omzet en de betalingen per dag.
  */
-export const BETAALD = ["betaald", "test_afgerond", "advies_verzonden", "handmatige_beoordeling"];
+const BETAALD: readonly string[] = BETAALDE_STATUSSEN;
 /** Statussen waarbij de test is ingevuld. */
-export const AFGEROND = ["test_afgerond", "advies_verzonden", "handmatige_beoordeling"];
-/** Statussen die meetellen voor de omzet: dezelfde als BETAALD. */
-export const OMZET = BETAALD;
+const AFGEROND: readonly string[] = AFGERONDE_STATUSSEN;
+/** Statussen die hier meetellen voor de omzet: dezelfde als BETAALD (dus ruimer dan OMZET_STATUSSEN). */
+const OMZET = BETAALD;
 
 type StapSleutel = "aangemaakt" | "betaald" | "afgerond" | "advies";
 

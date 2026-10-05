@@ -3,7 +3,7 @@
 // browser, op de server en in tests.
 
 import { opmaakNaarTekst } from "../inhoud/opmaak";
-import { maakSlug } from "../blog/regels";
+import { slugify } from "../slug";
 import { blokkenInTekst, formulierSlugUitBlok, GERESERVEERDE_SLUGS, geldigePaginaSlug, PAGINA_BLOK_LABELS } from "./regels";
 
 export interface Pagina {
@@ -37,7 +37,7 @@ export const MENU_LABEL_MAX = 40;
 
 /** Een slug uit een titel, nooit gereserveerd ("Blog" → "blog-pagina"). */
 export function slugSuggestie(titel: string): string {
-  const s = maakSlug(titel).slice(0, SLUG_MAX - 7).replace(/-+$/, "") || "pagina";
+  const s = slugify(titel).slice(0, SLUG_MAX - 7).replace(/-+$/, "") || "pagina";
   return GERESERVEERDE_SLUGS.has(s) ? `${s}-pagina` : s;
 }
 

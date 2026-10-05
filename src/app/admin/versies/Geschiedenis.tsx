@@ -5,6 +5,7 @@ import { compacteer, telVerschil, type DiffRegel } from "@/lib/versies/diff";
 import type { VersieMeta, VersieSoort } from "@/lib/versies/regels";
 import { Melding } from "../Melding";
 import { haalVersies, vergelijkVersie } from "./acties";
+import { TIJDZONE } from "@/lib/datum";
 
 const knop =
   "rounded-full border border-black/15 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-40 dark:border-white/20 dark:hover:bg-white/5";
@@ -13,7 +14,7 @@ const zacht = "text-black/55 dark:text-white/55";
 const datumTijd = new Intl.DateTimeFormat("nl-NL", {
   dateStyle: "medium",
   timeStyle: "short",
-  timeZone: "Europe/Amsterdam",
+  timeZone: TIJDZONE,
 });
 
 function Regel({ r }: { r: DiffRegel }) {

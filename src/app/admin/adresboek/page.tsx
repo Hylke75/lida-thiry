@@ -23,6 +23,7 @@ import { BevestigKnop, SelecteerAlles } from "../nieuwsbrief/contacten/Invoer";
 import { bulkActie } from "./acties";
 import { ExporteerSelectie } from "./Knoppen";
 import { Badges, gevaarKnop, heelZacht, hoofdknop, invoer, kleineKnop, PAD, zacht } from "./ui";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 
@@ -260,27 +261,13 @@ export default async function AdresboekPagina({
         )}
       </form>
 
-      {paginas > 1 && (
-        <nav aria-label="Pagina's" className="flex items-center justify-between text-sm">
-          {pagina > 1 ? (
-            <Link href={link({ pagina: pagina - 1 })} className={kleineKnop}>
-              ← Vorige
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className={zacht}>
-            Pagina {pagina} van {paginas}
-          </span>
-          {pagina < paginas ? (
-            <Link href={link({ pagina: pagina + 1 })} className={kleineKnop}>
-              Volgende →
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <Paginering
+        pagina={pagina}
+        paginas={paginas}
+        href={(p) => link({ pagina: p })}
+        linkKlasse={kleineKnop}
+        tekstKlasse={zacht}
+      />
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { haalReviewSamenvatting } from "@/lib/reviews/publiek";
+import { haalGoedgekeurdeReviews, haalReviewSamenvatting } from "@/lib/reviews/publiek";
 import { Fragment } from "react";
 import { leesPubliekeInstellingen, leesPubliekePrijs } from "@/lib/instellingen";
 import { haalSilhouettenPubliek } from "@/lib/lichaamstypes";
@@ -17,12 +17,12 @@ import {
 } from "@/lib/inhoud/groepen/website";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { haalLaatste } from "@/lib/blog/publiek";
-import { haalGoedgekeurdeReviews } from "@/lib/reviews/publiek";
 import { leesWebsite } from "@/lib/website/lees";
 import { normaliseerIndeling } from "@/lib/website/homepage";
 import { siteUrl } from "@/lib/site";
 import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type ReviewSamenvatting } from "@/lib/seo/structuur";
 import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/Blokken";
+import { formatteerBedrag } from "@/lib/prijs";
 
 // Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
 // bezoeker gelijk: teksten, instellingen, silhouetten, reviews en de nieuwste
@@ -33,12 +33,6 @@ import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/
 // ingeplande berichten op tijd verschijnen. Geen cookies of zoekparameters
 // nodig, dus geen force-dynamic meer.
 export const revalidate = 3600;
-
-function formatteerPrijs(cent: number, valuta: string): string {
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(
-    cent / 100,
-  );
-}
 
 const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen", "tien"];
 // Zonder figuurtypes (bijv. database onbereikbaar) liever "De verschillende figuurtypes" dan "De nul".
@@ -78,7 +72,7 @@ export default async function Home() {
     const prijs = await leesPubliekePrijs();
     valuta = prijs.valuta;
     prijsCent = prijs.prijsCent;
-    if (prijsCent) prijsLabel = formatteerPrijs(prijsCent, valuta);
+    if (prijsCent) prijsLabel = formatteerBedrag(prijsCent, valuta);
   } catch {
     prijsLabel = null;
   }

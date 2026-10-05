@@ -14,6 +14,7 @@ import {
 } from "@/lib/prijs";
 import { geefKortingsclaimVrij, naBetaling, nieuwsbriefNaBetaling } from "@/lib/bestelling-betaald";
 import { gratisTestAan } from "@/lib/order-status";
+import { geldigEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -27,10 +28,6 @@ interface BestelInvoer {
   website?: string;
   kortingscode?: string;
   nieuwsbrief?: boolean;
-}
-
-function geldigEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export async function POST(request: Request) {

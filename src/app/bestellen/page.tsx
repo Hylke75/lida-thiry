@@ -7,6 +7,7 @@ import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/best
 import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { gratisTestAan } from "@/lib/order-status";
 import { BestelFormulier } from "./BestelFormulier";
+import { formatteerBedrag } from "@/lib/prijs";
 
 // Statisch met ISR: teksten (tag "inhoud") en de prijs (tag "instellingen") komen
 // uit de datacache; opslaan in het beheer vernieuwt de pagina direct. Het bedrag
@@ -44,10 +45,7 @@ export default async function BestellenPage() {
     const { prijsCent: cent, valuta } = await leesPubliekePrijs();
     if (cent) {
       prijsBekend = true;
-      prijsLabel = new Intl.NumberFormat("nl-NL", {
-        style: "currency",
-        currency: valuta,
-      }).format(cent / 100);
+      prijsLabel = formatteerBedrag(cent, valuta);
     }
   } catch {
     prijsBekend = false;

@@ -1,6 +1,6 @@
 import { beslismoment, bepaalWinnaar, type AbInstelling, type Variant, type VariantCijfers } from "@/lib/nieuwsbrief/ab-test";
 import { toonPercentage } from "@/lib/nieuwsbrief/rapport";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { kaart, knopHoofd, zacht } from "../../../_editor/stijl";
 import { kiesWinnaarNuFormulier } from "../../acties";
 

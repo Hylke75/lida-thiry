@@ -4,11 +4,13 @@
 // zo uitziet als vóór deze instellingen bestonden.
 
 /** Standaardwaarden (gelijk aan wat de site al gebruikte). */
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
+
 export const STANDAARD_SITE = {
   /** Korte naam: kop bovenaan en achter paginatitels ("Blog · Lida Thiry"). */
   korteNaam: "Lida Thiry",
   /** Volledige naam: bij delen (og:site_name), footer en applicatienaam. */
-  volledigeNaam: "Lida Thiry Imago & Kledingadvies",
+  volledigeNaam: BEDRIJFSNAAM_STANDAARD,
   omschrijving:
     "Ontdek je figuurtype met de online kledingadviestest van Lida Thiry, imago- en kledingadviseur. Meet jezelf op, beantwoord een paar vragen en ontvang direct je persoonlijke advies als PDF.",
   /** Titel van de homepage (zonder eigen sitenaam). */

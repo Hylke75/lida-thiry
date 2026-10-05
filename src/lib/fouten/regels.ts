@@ -245,16 +245,6 @@ export function meldReden(rij: FoutRijStaat, nu: Date = new Date()): MeldReden |
   return drempelVan(rij.aantal) > drempelVan(vorige) ? "drempel" : null;
 }
 
-/** Tekst voor PostgREST-filters: haalt tekens weg die de filtersyntaxis breken. */
-export function zoekTerm(q: unknown): string {
-  if (typeof q !== "string") return "";
-  return q
-    .replace(/[%*,()\\"']/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 100);
-}
-
 // Browsermeldingen ------------------------------------------------------------------
 
 export const MAX_BROWSER_BYTES = 16 * 1024;

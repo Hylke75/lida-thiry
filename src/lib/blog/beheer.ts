@@ -3,9 +3,11 @@
 // Geen database of netwerk: bruikbaar in de browser, op de server en in tests.
 
 import type { Blok as MailBlok } from "../nieuwsbrief/blokken";
-import { maakSlug, zichtbaarheid, type BlogBericht, type Zichtbaarheid } from "./regels";
+import { zichtbaarheid, type BlogBericht, type Zichtbaarheid } from "./regels";
+import { slugify } from "../slug";
+import { BLOG } from "../opslag";
 
-export const BLOG_BUCKET = "blog";
+export const BLOG_BUCKET = BLOG;
 export const BLOG_AFBEELDING_MAX_BYTES = 5 * 1024 * 1024;
 export const BLOG_AFBEELDING_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -173,7 +175,7 @@ export function fotoplekBijCursor(tekst: string, start: number, eind: number): s
 /** Een slug die nog niet bestaat: basis, basis-2, basis-3, … (max. 100 tekens). */
 export function uniekeSlug(basis: string, bestaand: Iterable<string>): string {
   const bezet = new Set(bestaand);
-  const schoon = maakSlug(basis) || "bericht";
+  const schoon = slugify(basis) || "bericht";
   if (!bezet.has(schoon)) return schoon;
   for (let n = 2; n < 10_000; n++) {
     const achter = `-${n}`;

@@ -6,9 +6,8 @@ import {
   percentage,
   toonPercentage,
   totalenUitRij,
-  veiligeZoekterm,
 } from "../nieuwsbrief/rapport";
-import { amsterdamNaarUtc, controleerInplanmoment, standaardInplanmoment, utcNaarAmsterdamInvoer } from "../nieuwsbrief/tijd";
+import { amsterdamNaarUtc, controleerInplanmoment, standaardInplanmoment, utcNaarAmsterdamInvoer } from "../datum";
 import { SJABLONEN, beschrijfMoment, normaliseerVertraging, vindSjabloon } from "../nieuwsbrief/sjablonen";
 import { controleerVoorVerzenden, valideerBlokken } from "../nieuwsbrief/blokken";
 
@@ -36,7 +35,6 @@ describe("nieuwsbrief: statistiek", () => {
     expect(leesFilter("geopend")).toBe("geopend");
     expect(leesFilter("onzin")).toBe("alle");
     expect(leesFilter(undefined)).toBe("alle");
-    expect(veiligeZoekterm("anna%,(x)*")).toBe("anna   x");
   });
 
   it("maakt CSV voor Excel zonder formule-injectie", () => {

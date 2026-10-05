@@ -1,8 +1,10 @@
-// Rekenen met Nederlandse tijd (Europe/Amsterdam) zonder externe bibliotheek.
-// Beschikbaarheid staat in de database als wandkloktijd ("09:00" op maandag);
-// afspraken en blokkades als UTC-tijdstip. Deze helpers vertalen tussen beide,
-// inclusief de overgang naar zomer- en wintertijd. Puur en te testen.
+// Datums en tijden in Nederlandse tijd (Europe/Amsterdam) zonder externe bibliotheek.
+// De database bewaart UTC; beschikbaarheid voor afspraken staat er als wandkloktijd
+// ("09:00" op maandag). Deze helpers vertalen tussen beide, inclusief de overgang
+// naar zomer- en wintertijd, en maken datums leesbaar. Puur: bruikbaar in de
+// browser, op de server en in tests.
 
+/** De tijdzone van de site: alle datums en tijden zijn Nederlandse tijd. */
 export const TIJDZONE = "Europe/Amsterdam";
 const MINUUT = 60_000;
 const DAG = 24 * 60 * MINUUT;
@@ -44,9 +46,14 @@ function lokaleDelen(t: Date): Delen {
 
 /** Verschil tussen Nederlandse tijd en UTC op dit tijdstip, in minuten (+60 of +120). */
 export function afwijkingMinuten(t: Date): number {
-  const d = lokaleDelen(t);
+  return Math.round(afwijkingMs(t.getTime()) / MINUUT);
+}
+
+/** Verschil (in ms) tussen Nederlandse kloktijd en UTC op een bepaald moment. */
+function afwijkingMs(utcMs: number): number {
+  const d = lokaleDelen(new Date(utcMs));
   const alsUtc = Date.UTC(d.jaar, d.maand - 1, d.dag, d.uur, d.minuut, d.seconde);
-  return Math.round((alsUtc - Math.floor(t.getTime() / 1000) * 1000) / MINUUT);
+  return alsUtc - Math.floor(utcMs / 1000) * 1000;
 }
 
 const tweeCijfers = (n: number) => String(n).padStart(2, "0");
@@ -188,4 +195,108 @@ export function tijdLabel(t: Date | string): string {
 /** Een kalenderdatum ("2026-10-05") als "maandag 5 oktober 2026" (zonder tijdzonegedoe). */
 export function kalenderdatumLabel(datum: string): string {
   return datumLabel(vanAmsterdam(datum, 12 * 60));
+}
+
+// Leesbare datums (Nederlandse tijd) -------------------------------------------------
+
+/** Een kalenderdatum ("2026-10-12") geldt als die dag om 12:00 UTC; anders gewoon het tijdstip. */
+function alsMoment(waarde: string | Date): Date {
+  return typeof waarde === "string" && DATUM_PATROON.test(waarde) ? new Date(`${waarde}T12:00:00Z`) : new Date(waarde);
+}
+
+/** "12 oktober 2026". Accepteert yyyy-mm-dd, een ISO-tijdstip of een Date. */
+export function datumLang(waarde: string | Date): string {
+  return alsMoment(waarde).toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: TIJDZONE,
+  });
+}
+
+/** "12 okt 2026". Accepteert yyyy-mm-dd, een ISO-tijdstip of een Date. */
+export function datum(waarde: string | Date): string {
+  return alsMoment(waarde).toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: TIJDZONE,
+  });
+}
+
+/** "4 okt 2026, 14:03". */
+export function datumTijd(waarde: string | Date): string {
+  return new Date(waarde).toLocaleString("nl-NL", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: TIJDZONE,
+  });
+}
+
+/** Als datumTijd, maar "—" bij geen of een ongeldig tijdstip. */
+export function toonDatumTijd(moment: string | Date | null | undefined): string {
+  if (!moment) return "—";
+  const d = new Date(moment);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return datumTijd(d);
+}
+
+// Inplannen (datetime-local-velden) ----------------------------------------------------
+
+const INVOER = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+/**
+ * Zet de waarde van een `<input type="datetime-local">` (Nederlandse tijd, bijv.
+ * "2026-10-25T09:30") om naar een Date (UTC). Geeft null bij ongeldige invoer.
+ * Een tijd die door de overgang naar zomertijd niet bestaat (02:30 in maart)
+ * schuift een uur op.
+ */
+export function amsterdamNaarUtc(invoer: string): Date | null {
+  const m = INVOER.exec(invoer.trim());
+  if (!m) return null;
+  const [j, mnd, d, u, min] = m.slice(1).map(Number);
+  if (mnd < 1 || mnd > 12 || d < 1 || d > 31 || u > 23 || min > 59) return null;
+  const naief = Date.UTC(j, mnd - 1, d, u, min);
+  // Controleer dat de datum echt bestaat (geen 31 februari).
+  const check = new Date(naief);
+  if (check.getUTCMonth() !== mnd - 1 || check.getUTCDate() !== d) return null;
+  let utc = naief - afwijkingMs(naief);
+  const tweede = afwijkingMs(utc);
+  if (naief - tweede !== utc) utc = naief - tweede;
+  return new Date(utc);
+}
+
+/** Zet een UTC-tijdstip om naar de waarde voor een datetime-local-veld (Nederlandse tijd). */
+export function utcNaarAmsterdamInvoer(moment: string | Date): string {
+  const ms = new Date(moment).getTime();
+  if (!Number.isFinite(ms)) return "";
+  const klok = new Date(ms + afwijkingMs(ms));
+  const p = tweeCijfers;
+  return `${klok.getUTCFullYear()}-${p(klok.getUTCMonth() + 1)}-${p(klok.getUTCDate())}T${p(klok.getUTCHours())}:${p(klok.getUTCMinutes())}`;
+}
+
+/** Grenzen voor het inplannen: minstens 5 minuten vooruit en hooguit een jaar. */
+export function controleerInplanmoment(moment: Date | null, nu = new Date()): string | null {
+  if (!moment) return "Kies een geldige datum en tijd.";
+  if (moment.getTime() < nu.getTime() + 5 * 60_000) return "Kies een moment dat minstens 5 minuten in de toekomst ligt.";
+  if (moment.getTime() > nu.getTime() + 365 * 86_400_000) return "Je kunt hooguit een jaar vooruit inplannen.";
+  return null;
+}
+
+/** Voorstel voor het inplannen: morgen om 9:00 Nederlandse tijd (datetime-local-waarde). */
+export function standaardInplanmoment(nu: Date = new Date()): string {
+  return `${utcNaarAmsterdamInvoer(new Date(nu.getTime() + 86_400_000)).slice(0, 10)}T09:00`;
+}
+
+/**
+ * Begin (00:00 Nederlandse tijd) van de kalenderdag waarin `nu` valt, als UTC.
+ * Voor de daglimiet: die telt per Nederlandse kalenderdag, zodat een dagelijkse
+ * ronde die een paar minuten verschuift niet om de dag wordt overgeslagen.
+ */
+export function beginVanDag(nu: Date = new Date()): Date {
+  const dag = utcNaarAmsterdamInvoer(nu).slice(0, 10);
+  return amsterdamNaarUtc(`${dag}T00:00`) ?? new Date(nu.getTime() - (nu.getTime() % 86_400_000));
 }

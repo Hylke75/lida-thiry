@@ -3,6 +3,7 @@
 // gewoon tekstveld met de omschrijving uit de database als uitleg.
 
 import { INSTELLING_SLEUTELS as AFSPRAAK_SLEUTELS } from "./afspraken/regels";
+import { geldigEmail } from "@/lib/email";
 
 type VeldSoort = "euro" | "geheel_getal" | "email" | "tekst" | "tekstvak" | "keuze";
 
@@ -181,8 +182,6 @@ export function naarInvoer(veld: InstellingVeld, waarde: string | null): string 
   return waarde;
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** Invoer -> op te slaan waarde, of een foutmelding in gewone taal. */
 export function vanInvoer(
   veld: InstellingVeld,
@@ -213,7 +212,7 @@ export function vanInvoer(
       return { ok: true, waarde: String(n) };
     }
     case "email":
-      if (!EMAIL.test(v)) return { ok: false, fout: `${veld.label}: dit is geen geldig e-mailadres.` };
+      if (!geldigEmail(v)) return { ok: false, fout: `${veld.label}: dit is geen geldig e-mailadres.` };
       return { ok: true, waarde: v };
     case "keuze":
       if (!veld.opties?.some((o) => o.waarde === v)) {

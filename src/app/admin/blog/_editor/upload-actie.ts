@@ -4,17 +4,16 @@ import { randomUUID } from "node:crypto";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
+import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 /** Voor welke editor: blog (map omslag/ of afbeeldingen/) of pagina's (onder paginas/). */
 export type EditorUploadSoort = "blog" | "paginas";
-
-type Uitkomst = { ok: true; pad: string; token: string; url: string } | { ok: false; fouten: string[] };
 
 /**
  * Stap 1 van een foto uploaden in de blog- of pagina-editor: een eenmalige
  * upload-URL in de openbare bucket "blog". De browser uploadt daarna zelf.
  */
-export async function maakEditorUpload(soort: EditorUploadSoort, type: string, grootte: number, map: UploadMap): Promise<Uitkomst> {
+export async function maakEditorUpload(soort: EditorUploadSoort, type: string, grootte: number, map: UploadMap): Promise<FormulierUitkomst<{ pad: string; token: string; url: string }>> {
   const paginas = soort === "paginas";
   await vereisBeheerder(paginas ? "paginas" : "blog");
   const ext = BLOG_AFBEELDING_TYPES[type];

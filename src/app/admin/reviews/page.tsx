@@ -18,6 +18,7 @@ import { AdminNav, Melding } from "../AdminNav";
 import { BevestigKnop, VerzendKnop } from "../berichten/Knoppen";
 import { datumTijd, gevaarKnop, hoofdknop, invoer, kleineKnop } from "../berichten/stijl";
 import { beoordeel, bewerk, nodigUit, stuurOpnieuw, verwijder } from "./acties";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +121,7 @@ export default async function ReviewsPagina({
       .eq("status", "advies_verzonden")
       .order("afgerond_op", { ascending: false, nullsFirst: false })
       .limit(100);
-    const veilig = q.replace(/[,()*%\\"']/g, " ").trim();
+    const veilig = veiligeZoekterm(q);
     if (veilig) query = query.or(`klantnaam.ilike.*${veilig}*,email.ilike.*${veilig}*`);
     const { data: orders } = await query;
     const metReview = new Set(alle.map((r) => r.order_id).filter(Boolean));

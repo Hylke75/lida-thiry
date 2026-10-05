@@ -7,7 +7,6 @@ import {
   geldigeFormulierSlug,
   kopieSlug,
   leesFormulierSlug,
-  maakSlug,
   naamLabel,
   telAanmeldingen,
   valideerFormulier,
@@ -20,13 +19,6 @@ const ID = "3f2b8c1e-1234-4abc-9def-0123456789ab";
 const ID2 = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 
 describe("slugs en blokcode", () => {
-  it("maakt een slug van een naam", () => {
-    expect(maakSlug("Zomeractie 2026!")).toBe("zomeractie-2026");
-    expect(maakSlug("  Café & Crème  ")).toBe("cafe-en-creme");
-    expect(maakSlug("---")).toBe("");
-    expect(maakSlug("a".repeat(80)).length).toBe(60);
-  });
-
   it("keurt slugs goed of af", () => {
     expect(geldigeFormulierSlug("zomer-actie")).toBe(true);
     expect(geldigeFormulierSlug("Zomer")).toBe(false);

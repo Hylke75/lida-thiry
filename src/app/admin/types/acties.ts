@@ -9,10 +9,10 @@ import {
   hernummerPlan,
   ontleedSleutel,
   verplaats,
-  veiligeZoekterm,
   verwijderOp,
 } from "@/lib/adviestypes-beheer";
 import type { GevondenBeeld, Uitkomst } from "./uitkomst";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
 
 type Supabase = ReturnType<typeof adminClient>;
 
@@ -360,7 +360,7 @@ export async function zoekBeelden(zoek: string, onderdeel: string): Promise<Gevo
     .limit(24);
   if ((ONDERDELEN as readonly string[]).includes(onderdeel)) query = query.eq("onderdeel", onderdeel);
   // Elk woord moet ergens voorkomen.
-  for (const woord of veiligeZoekterm(zoek).split(" ").filter(Boolean)) {
+  for (const woord of veiligeZoekterm(zoek, { max: 80, underscoreWeg: true }).split(" ").filter(Boolean)) {
     query = query.or(
       ["code", "naam", "omschrijving", "onderdeel", "bijschrift"].map((k) => `${k}.ilike.%${woord}%`).join(","),
     );

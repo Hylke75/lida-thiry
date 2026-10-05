@@ -20,8 +20,7 @@ import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { bewaarVersie } from "@/lib/versies/beheer";
 import { omschrijvingVoor, paginaSnapshot } from "@/lib/versies/regels";
 import { doorverwijzingenNaOpslaan, haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
-
-type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
+import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 const fout = (...fouten: string[]): { ok: false; fouten: string[] } => ({ ok: false, fouten });
 
@@ -141,7 +140,7 @@ function bewaarHuidig(huidig: Pagina, door: string | undefined) {
   return bewaarVersie({ soort: "pagina", ref: huidig.id, inhoud, omschrijving: omschrijvingVoor(inhoud), door });
 }
 
-export type PaginaUitkomst = Uitkomst<{ pagina: Pagina; melding: string }>;
+export type PaginaUitkomst = FormulierUitkomst<{ pagina: Pagina; melding: string }>;
 
 /** Slaat de velden op; een gepubliceerde pagina moet daarbij publiceerbaar blijven. */
 export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitkomst> {

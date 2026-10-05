@@ -3,7 +3,8 @@ import { adminClient } from "../supabase/admin";
 import { alles } from "../supabase/alles";
 import { CONTACT_VELDEN, meldAan, type Contact } from "./contacten";
 import { STATUSSEN, normaliseerTag, type ContactStatus } from "./doelgroep";
-import { likeLetterlijk, veiligeZoekterm, type ContactFilter } from "./contactregels";
+import { likeLetterlijk, type ContactFilter } from "./contactregels";
+import { veiligeZoekterm } from "../zoeken/regels";
 import type { ImportRij } from "./csv";
 
 // Contactbeheer bovenop de kern (contacten.ts): opzoeken via de persoonlijke link,

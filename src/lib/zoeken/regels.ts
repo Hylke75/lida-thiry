@@ -42,6 +42,24 @@ export function zoekWoorden(q: string): string[] {
   return uit;
 }
 
+/**
+ * Zoekterm die veilig in een PostgREST or()-filter met ilike past (`kolom.ilike.*term*`):
+ * `, ( ) * \ " ' % :` worden spaties, witruimte wordt samengevoegd en de term wordt
+ * ingekort tot `max` tekens. Met `underscoreWeg` verdwijnt ook `_` (in ilike een
+ * jokerteken voor één teken); standaard blijft die staan, omdat e-mailadressen er vaak
+ * een hebben. Geen tekst: "".
+ */
+export function veiligeZoekterm(q: unknown, opties: { max?: number; underscoreWeg?: boolean } = {}): string {
+  if (typeof q !== "string") return "";
+  const { max = MAX_ZOEKTERM, underscoreWeg = false } = opties;
+  return q
+    .replace(underscoreWeg ? /[,()*%_\\"':]/g : /[,()*%\\"':]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max)
+    .trim();
+}
+
 /** Tekst letterlijk in een (i)like-patroon: `%`, `_` en `\` krijgen een backslash. */
 export function likeLetterlijk(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);

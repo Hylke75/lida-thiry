@@ -7,6 +7,7 @@ import { normaliseerDoelgroep } from "@/lib/nieuwsbrief/doelgroep";
 import { abUitCampagne } from "@/lib/nieuwsbrief/ab-test";
 import type { Campagne } from "@/lib/nieuwsbrief/verzenden";
 import type { MailInhoud, TypeKeuze } from "./regels";
+import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 
 export interface EditorContext {
   afzender: { naam: string; adres: string | null };
@@ -44,7 +45,7 @@ export async function laadEditorContext(metDoelgroep: boolean): Promise<EditorCo
   return {
     // Gelijk aan de afzender die verzenden.ts in de echte mail zet.
     afzender: {
-      naam: inst.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+      naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
       adres: inst.bedrijf_adres?.trim() || null,
     },
     maxPerDag: Number.isFinite(max) && max > 0 ? Math.floor(max) : 100,

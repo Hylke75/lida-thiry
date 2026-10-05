@@ -1,6 +1,6 @@
 // Regels voor het logboek van beheeracties. Puur (testbaar).
 
-import { vanAmsterdam } from "./afspraken/tijd";
+import { vanAmsterdam } from "./datum";
 
 export const BEWAAR_JAREN = 2;
 export const PER_PAGINA = 50;

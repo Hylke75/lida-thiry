@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { lijstPrullenbak, type PrullenbakItem } from "@/lib/versies/beheer";
 import { AdminNav, Melding } from "../../AdminNav";
 import { PrullenbakKnoppen } from "./Knoppen";

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   leestijdMinuten,
-  maakSlug,
   metaOmschrijving,
   publicatieProblemen,
   valideerBericht,
@@ -11,12 +10,6 @@ import {
 import { kostenDollarcent, normaliseerOpdracht, schrijfVraag, systeemPrompt, SCHRIJF_SCHEMA } from "../blog/ai-prompt";
 
 describe("blog: regels", () => {
-  it("maakt nette slugs", () => {
-    expect(maakSlug("Jurken voor de Peer & Zandloper!")).toBe("jurken-voor-de-peer-en-zandloper");
-    expect(maakSlug("Café-stijl: één look")).toBe("cafe-stijl-een-look");
-    expect(maakSlug("   ")).toBe("");
-  });
-
   it("berekent leestijd en zichtbaarheid", () => {
     expect(leestijdMinuten("woord ".repeat(660))).toBe(3);
     expect(leestijdMinuten("")).toBe(1);

@@ -17,7 +17,6 @@ import {
 } from "@/lib/blog/beheer";
 import {
   leestijdMinuten,
-  maakSlug,
   metaOmschrijving,
   normaliseerTags,
   publicatieProblemen,
@@ -26,7 +25,7 @@ import {
   type BlogBericht,
   type Zichtbaarheid,
 } from "@/lib/blog/regels";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { aiBewerk, aiVoorstel, alsNieuwsbrief, naarConcept, publiceer, slaBerichtOp, type BerichtUitkomst } from "../acties";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
 import { Geschiedenis } from "../../versies/Geschiedenis";
@@ -35,6 +34,7 @@ import { ArtikelTekst } from "./Artikel";
 import { FotoUpload } from "./FotoUpload";
 import { AiBadge, ZichtbaarheidBadge } from "./badges";
 import { TagInvoer } from "./TagInvoer";
+import { slugify } from "@/lib/slug";
 
 interface Velden {
   titel: string;
@@ -175,7 +175,7 @@ export function BlogEditor({
   const [v, setV] = useState<Velden>(() => alsVelden(bericht));
   const [gewijzigd, setGewijzigd] = useState(false);
   const [slugAuto, setSlugAuto] = useState(
-    beginZichtbaar === "concept" && (bericht.slug === maakSlug(bericht.titel) || /^nieuw-bericht(-\d+)?$/.test(bericht.slug)),
+    beginZichtbaar === "concept" && (bericht.slug === slugify(bericht.titel) || /^nieuw-bericht(-\d+)?$/.test(bericht.slug)),
   );
   const [bezig, setBezig] = useState<string | null>(null);
   const [melding, setMelding] = useState<{ soort: "ok" | "fout"; tekst: string[] } | null>(null);
@@ -191,7 +191,7 @@ export function BlogEditor({
   const aiPaneel = useRef<HTMLDivElement>(null);
 
   const id = opgeslagen.id;
-  const url = `${site}/blog/${v.slug || maakSlug(v.titel)}`;
+  const url = `${site}/blog/${v.slug || slugify(v.titel)}`;
   const aantalWoorden = woorden(v.inhoud);
   const plekken = useMemo(() => vindPlaatshouders(v.inhoud), [v.inhoud]);
   const validatie = useMemo(() => valideerBericht(alsInvoer(v)), [v]);
@@ -215,7 +215,7 @@ export function BlogEditor({
     setGewijzigd(true);
     setMelding(null);
   };
-  const zetTitel = (titel: string) => zet(slugAuto ? { titel, slug: maakSlug(titel) } : { titel });
+  const zetTitel = (titel: string) => zet(slugAuto ? { titel, slug: slugify(titel) } : { titel });
 
   /** Verwerkt het antwoord van de server; met `alleenStatus` blijft niet-opgeslagen tekst in de editor staan. */
   function verwerk(r: BerichtUitkomst, alleenStatus = false) {
@@ -620,13 +620,13 @@ export function BlogEditor({
                     zet({ slug: e.target.value.toLowerCase().replace(/\s+/g, "-") });
                   }}
                   onBlur={() => {
-                    const schoon = maakSlug(v.slug);
+                    const schoon = slugify(v.slug);
                     if (schoon && schoon !== v.slug) zet({ slug: schoon });
                   }}
                   className={invoerKlasse}
                 />
-                {!slugAuto && maakSlug(v.titel) && maakSlug(v.titel) !== v.slug && (
-                  <button type="button" onClick={() => zet({ slug: maakSlug(v.titel) })} className={`${knopRand} shrink-0`} title="Webadres opnieuw maken uit de titel">
+                {!slugAuto && slugify(v.titel) && slugify(v.titel) !== v.slug && (
+                  <button type="button" onClick={() => zet({ slug: slugify(v.titel) })} className={`${knopRand} shrink-0`} title="Webadres opnieuw maken uit de titel">
                     Uit titel
                   </button>
                 )}

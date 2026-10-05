@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { daglimietBereikt, isTijdelijkeLimiet, koppelBatchUitkomst, statusNaAanmelding } from "../nieuwsbrief/verzendregels";
-import { beginVanDag } from "../nieuwsbrief/tijd";
+import { beginVanDag } from "../datum";
 import { magPushOntvangen, RECHT_PER_SOORT, PUSH_SOORTEN } from "../push/regels";
 
 describe("nieuwsbrief: status bij opnieuw aanmelden", () => {

@@ -4,6 +4,7 @@ import type { Blok } from "@/lib/nieuwsbrief/blokken";
 import type { Doelgroep } from "@/lib/nieuwsbrief/doelgroep";
 import type { Trigger } from "@/lib/nieuwsbrief/sjablonen";
 import type { AbInstelling } from "@/lib/nieuwsbrief/ab-test";
+import { NIEUWSBRIEF } from "@/lib/opslag";
 
 export interface MailInhoud {
   naam: string;
@@ -19,7 +20,7 @@ export interface MailInhoud {
 
 export const LIMIETEN = { naam: 120, onderwerp: 150, preheader: 200 } as const;
 
-export const BUCKET = "nieuwsbrief";
+export const BUCKET = NIEUWSBRIEF;
 export const AFBEELDING_MAX_BYTES = 5 * 1024 * 1024;
 export const AFBEELDING_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",

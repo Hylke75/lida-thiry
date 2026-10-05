@@ -73,19 +73,6 @@ export function geldigeFormulierSlug(slug: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length <= MAX.slug && !GERESERVEERDE_FORMULIER_SLUGS.has(slug);
 }
 
-/** Maakt een slug van een naam: "Zomeractie 2026!" → "zomeractie-2026". */
-export function maakSlug(tekst: string): string {
-  return tekst
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " en ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, MAX.slug)
-    .replace(/-+$/g, "");
-}
-
 /** Een vrije slug voor een kopie: "zomer-kopie", anders "zomer-kopie-2", enz. */
 export function kopieSlug(slug: string, bestaand: readonly string[]): string {
   const basis = `${slug.slice(0, MAX.slug - 9).replace(/-+$/g, "")}-kopie`;

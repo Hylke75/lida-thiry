@@ -7,8 +7,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { MAAT_VELDEN } from "@/lib/test-config";
 import { MEET_BUCKET, MEET_MAX_BYTES, MEET_TYPES } from "@/lib/meetbeelden-regels";
-
-type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fout: string };
+import type { Uitkomst } from "@/lib/uitkomst";
 
 function geldigeMaat(sleutel: string): boolean {
   return MAAT_VELDEN.some((v) => v.sleutel === sleutel);

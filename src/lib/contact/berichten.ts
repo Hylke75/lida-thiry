@@ -11,10 +11,10 @@ import { foutTekst, stuurBeheerMelding } from "../beheermelding";
 import { contactAntwoordMail, contactBevestigingMail, contactMeldingMail, type ContactMail } from "./mail-html";
 import {
   BERICHT_STATUSSEN,
-  veiligeZoekterm,
   type BerichtFilter,
   type BerichtStatus,
 } from "./regels";
+import { veiligeZoekterm } from "../zoeken/regels";
 
 export interface ContactBericht {
   id: string;
@@ -80,7 +80,7 @@ export function berichtenQuery(f: BerichtFilter) {
     .order("id");
   if (f.weergave === "inbox") q = q.in("status", ["nieuw", "gelezen", "beantwoord"]);
   else q = q.eq("status", f.weergave);
-  const zoek = f.q ? veiligeZoekterm(f.q) : "";
+  const zoek = f.q ? veiligeZoekterm(f.q, { underscoreWeg: true }) : "";
   if (zoek) {
     q = q.or(
       ["naam", "email", "onderwerp", "bericht"].map((k) => `${k}.ilike.*${zoek}*`).join(","),

@@ -1,7 +1,9 @@
 // Pure regels voor het kopen van een cadeaubon: bedrag, invoer en datums.
 // Geen server-only imports, zodat dit los te testen is.
 
-import { formatteerBedrag } from "../prijs";
+import { euroNaarCent, formatteerBedrag } from "../prijs";
+import { EMAIL_PATROON, MAX_EMAIL_LENGTE } from "@/lib/email";
+import { datumLang, TIJDZONE } from "../datum";
 
 /** Vaste bedragen op het formulier (centen). */
 const VASTE_BEDRAGEN = [2000, 3500, 5000] as const;
@@ -35,14 +37,7 @@ export interface CadeaubonInvoer {
 export type Uitkomst<T> = { ok: true; waarde: T } | { ok: false; fout: string };
 
 export function geldigEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
-}
-
-/** "12,50", "12.50", "€ 12" → centen; null bij ongeldige invoer. */
-export function euroNaarCent(invoer: string): number | null {
-  const tekst = invoer.replace(/€|\s/g, "").replace(",", ".");
-  if (!/^\d{1,6}(\.\d{1,2})?$/.test(tekst)) return null;
-  return Math.round(Number(tekst) * 100);
+  return EMAIL_PATROON.test(email) && email.length <= MAX_EMAIL_LENGTE;
 }
 
 /** Hoogste bedrag van een bon: de prijs van de test (en nooit boven MAX_BEDRAG_CENT). */
@@ -72,7 +67,7 @@ export function bepaalBedrag(
   if (keuze === "prijs") {
     cent = prijsCent;
   } else if (keuze === "anders") {
-    cent = euroNaarCent(eigenBedrag);
+    cent = eigenBedrag.trim() ? euroNaarCent(eigenBedrag) : null;
     if (cent === null) return { ok: false, fout: "Vul een geldig bedrag in, bijvoorbeeld 25 of 27,50." };
   } else {
     cent = Number(keuze);
@@ -96,7 +91,7 @@ export function datumInNederland(moment: Date): string {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    timeZone: "Europe/Amsterdam",
+    timeZone: TIJDZONE,
   }).format(moment);
 }
 
@@ -199,11 +194,5 @@ export function verzendenIsAanDeBeurt(verzendOp: string | null, nu: Date = new D
 
 /** Leesbare datum, bijv. "12 oktober 2026". Accepteert yyyy-mm-dd of ISO. */
 export function leesbareDatum(waarde: string): string {
-  const iso = /^\d{4}-\d{2}-\d{2}$/.test(waarde) ? `${waarde}T12:00:00Z` : waarde;
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
+  return datumLang(waarde);
 }

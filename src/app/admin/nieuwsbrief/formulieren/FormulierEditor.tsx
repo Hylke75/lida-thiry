@@ -9,13 +9,13 @@ import {
   NAAM_VELD_MODI,
   blokCode,
   geldigeFormulierSlug,
-  maakSlug,
   type FormulierInvoer,
   type StandaardAanmeldTeksten,
 } from "@/lib/nieuwsbrief/formulierregels";
 import { TagInvoer } from "../contacten/Invoer";
 import { invoerKlasse, kaart, knopHoofd, zacht } from "../_editor/stijl";
 import { bewaarFormulier, type BewaarStaat } from "./acties";
+import { slugify } from "@/lib/slug";
 
 const OPMAAK_UITLEG = "Lege regel = nieuwe alinea. Gebruik **vet** of [linktekst](https://…) voor opmaak.";
 
@@ -123,7 +123,7 @@ export function FormulierEditor({
               value={w.naam}
               onChange={(e) => {
                 const naam = e.target.value;
-                setW((oud) => ({ ...oud, naam, ...(slugAangepast ? {} : { slug: maakSlug(naam) }) }));
+                setW((oud) => ({ ...oud, naam, ...(slugAangepast ? {} : { slug: slugify(naam, MAX.slug) }) }));
               }}
               placeholder="Bijv. Zomeractie 2026"
               className={invoerKlasse}

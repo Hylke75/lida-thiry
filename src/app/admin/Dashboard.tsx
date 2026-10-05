@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN, OMZET_STATUSSEN } from "./status";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
+import { formatteerBedrag } from "@/lib/prijs";
 
 interface DashOrder {
   status: string;
@@ -31,10 +32,6 @@ async function leesOrders(dagen: number | null): Promise<DashOrder[]> {
     if (!data || data.length < blok) break;
   }
   return uit;
-}
-
-function euro(cent: number): string {
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(cent / 100);
 }
 
 function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: string }) {
@@ -110,7 +107,7 @@ export async function Dashboard({ periode, linkVoor }: { periode: string | undef
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Kaart titel="Bestellingen" waarde={String(orders.length)} sub={`waarvan ${betaald.length} betaald`} />
-        <Kaart titel="Omzet" waarde={euro(omzet)} sub="van betaalde bestellingen" />
+        <Kaart titel="Omzet" waarde={formatteerBedrag(omzet)} sub="van betaalde bestellingen" />
         <Kaart
           titel="Test ingevuld"
           waarde={`${pct}%`}

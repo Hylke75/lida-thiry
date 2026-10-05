@@ -14,6 +14,7 @@ import {
 import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 import { formatteerMoment } from "../types/gedeeld";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 
@@ -177,22 +178,16 @@ export default async function LogboekPagina({
               <Regel key={r.id} r={r} />
             ))}
           </ul>
-          {paginas > 1 && (
-            <nav aria-label="Pagina's" className="flex items-center justify-between gap-2 text-sm">
-              {filter.pagina > 1 ? (
-                <Link href={link({ pagina: filter.pagina - 1 })} className={knopKlein}>
-                  ← Nieuwer
-                </Link>
-              ) : (
-                <span />
-              )}
-              {filter.pagina < paginas && (
-                <Link href={link({ pagina: filter.pagina + 1 })} className={knopKlein}>
-                  Ouder →
-                </Link>
-              )}
-            </nav>
-          )}
+          <Paginering
+            pagina={filter.pagina}
+            paginas={paginas}
+            href={(p) => link({ pagina: p })}
+            linkKlasse={knopKlein}
+            navKlasse="flex items-center justify-between gap-2 text-sm"
+            tekst={null}
+            vorige="← Nieuwer"
+            volgende="Ouder →"
+          />
         </section>
       )}
       <p className="text-xs text-black/50 dark:text-white/50">

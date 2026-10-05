@@ -6,7 +6,7 @@ import { beschrijfDoelgroep, normaliseerDoelgroep } from "@/lib/nieuwsbrief/doel
 import { formulierNamen } from "@/lib/nieuwsbrief/formulieren";
 import { toonPercentage } from "@/lib/nieuwsbrief/rapport";
 import { statistiekPerCampagne } from "@/lib/nieuwsbrief/campagne-statistiek";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { Melding } from "../../AdminNav";
 import { NieuwsbriefKop, StatusBadge } from "../_editor/onderdelen";
 import { knopHoofd, knopKlein, zacht } from "../_editor/stijl";

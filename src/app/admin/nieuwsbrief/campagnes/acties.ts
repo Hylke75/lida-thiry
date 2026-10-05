@@ -15,11 +15,12 @@ import {
   verwerkWachtrij,
   verzendProblemen,
 } from "@/lib/nieuwsbrief/verzenden";
-import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { amsterdamNaarUtc, controleerInplanmoment, datumLang, toonDatumTijd } from "@/lib/datum";
+import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 const PAD = "/admin/nieuwsbrief/campagnes";
 
-type Uitkomst = { ok: true; bericht: string } | { ok: false; fouten: string[] };
+type Uitkomst = FormulierUitkomst<{ bericht: string }>;
 
 /** Eerste ronde verzenden ná het antwoord, zodat de knop direct reageert. */
 const EERSTE_RONDE = 100;
@@ -49,7 +50,7 @@ function leesId(formData: FormData): string {
 
 export async function nieuweCampagne() {
   await vereisBeheerder("nieuwsbrief");
-  const datum = new Date().toLocaleDateString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric" });
+  const datum = datumLang(new Date());
   const { data, error } = await adminClient()
     .from("nb_campagnes")
     .insert({

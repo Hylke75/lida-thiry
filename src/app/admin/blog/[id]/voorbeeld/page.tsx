@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { vindPlaatshouders } from "@/lib/blog/beheer";
 import { zichtbaarheid } from "@/lib/blog/regels";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { haalBericht } from "../../_editor/server";
 import { Artikel } from "../../_editor/Artikel";
 import { ZichtbaarheidBadge } from "../../_editor/onderdelen";

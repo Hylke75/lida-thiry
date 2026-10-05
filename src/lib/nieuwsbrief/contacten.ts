@@ -1,6 +1,7 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
 import { alles } from "../supabase/alles";
+import { normaliseerEmail } from "../email";
 import { ontleedSleutel } from "../adviestypes-beheer";
 import { koppelRelatie } from "../relaties/koppel";
 import {
@@ -12,6 +13,7 @@ import {
   type Klantinfo,
 } from "./doelgroep";
 import { statusNaAanmelding } from "./verzendregels";
+import { BETAALDE_STATUSSEN } from "../order-status";
 
 export interface Contact {
   id: string;
@@ -33,12 +35,7 @@ export interface Contact {
 export const CONTACT_VELDEN =
   "id, email, naam, status, bron, tags, token, toestemming_op, toestemming_tekst, bevestigd_op, afgemeld_op, aangemaakt_op, formulier_id";
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function normaliseerEmail(email: string): string | null {
-  const e = email.trim().toLowerCase();
-  return e.length <= 254 && EMAIL.test(e) ? e : null;
-}
+export { normaliseerEmail };
 
 /** Per e-mailadres: heeft betaald besteld en welke figuurtypes (letters) eruit kwamen. */
 async function klantinfoPerEmail(): Promise<Map<string, Klantinfo>> {
@@ -47,7 +44,7 @@ async function klantinfoPerEmail(): Promise<Map<string, Klantinfo>> {
     supabase
       .from("orders")
       .select("email, status, toegekend_type")
-      .in("status", ["betaald", "test_afgerond", "handmatige_beoordeling", "advies_verzonden"])
+      .in("status", [...BETAALDE_STATUSSEN])
       .range(van, tot),
   );
   const info = new Map<string, Klantinfo>();

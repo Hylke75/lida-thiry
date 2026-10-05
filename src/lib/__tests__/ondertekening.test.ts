@@ -9,6 +9,12 @@ const later = new Date("2026-10-11T10:00:00Z");
 describe("ondertekende links", () => {
   const token = ondertekenLink("hervat", ID, later, SLEUTEL);
 
+  it("geeft een vaste handtekening (verstuurde links blijven geldig)", () => {
+    expect(ondertekenLink("hervat", "order-1", new Date(1_800_000_000_000), "link-geheim")).toBe(
+      "1800000000.ZLtJU6U5RinyOzCSQdqlKgEquDwrkItU",
+    );
+  });
+
   it("heeft de vorm <seconden>.<handtekening>", () => {
     expect(token).toMatch(/^\d+\.[A-Za-z0-9_-]{32}$/);
   });

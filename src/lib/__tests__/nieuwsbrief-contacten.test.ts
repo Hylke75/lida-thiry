@@ -7,7 +7,6 @@ import {
   leesFilter,
   likeLetterlijk,
   ontleedTags,
-  veiligeZoekterm,
 } from "../nieuwsbrief/contactregels";
 import { nieuwsbriefBevestigingMail } from "../email-html";
 import { combineer, standaardWaarden } from "../inhoud/schema";
@@ -148,7 +147,6 @@ describe("contactregels", () => {
   });
 
   it("maakt zoektermen veilig voor PostgREST-filters", () => {
-    expect(veiligeZoekterm("a,b(c)*d%e\"f'g:h")).toBe("a b c d e f g h");
     expect(likeLetterlijk("an_de%vries\\x")).toBe("an\\_de\\%vries\\\\x");
   });
 

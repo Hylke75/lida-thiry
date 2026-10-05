@@ -11,7 +11,7 @@ import {
   AFSPRAKEN_HERINNERINGMAIL,
 } from "../inhoud/groepen/afspraken";
 import { stuurAfspraakMail } from "../resend";
-import { siteUrl } from "../site";
+import { BEDRIJFSNAAM_STANDAARD, siteUrl } from "../site";
 import { foutTekst, stuurBeheerMelding } from "../beheermelding";
 import { maakIcs } from "./ics";
 import {
@@ -24,6 +24,7 @@ import {
   type MailAfspraak,
 } from "./mail-html";
 import type { AfspraakStatus } from "./regels";
+import { TIJDZONE } from "../datum";
 
 /** De velden van een afspraak die de mails nodig hebben. */
 export interface MailbareAfspraak {
@@ -95,7 +96,7 @@ function icsVoor(a: MailbareAfspraak, m: MailAfspraak, instellingen: Record<stri
     host = new URL(siteUrl()).host || host;
   } catch {}
   const organisatorMail = antwoordAdres(instellingen);
-  const bedrijf = gevuld(instellingen.bedrijfsnaam) ?? "Lida Thiry Imago & Kledingadvies";
+  const bedrijf = gevuld(instellingen.bedrijfsnaam) ?? BEDRIJFSNAAM_STANDAARD;
   return maakIcs({
     uid: `afspraak-${a.id}@${host}`,
     start: new Date(a.start_op),
@@ -206,7 +207,7 @@ export async function naNieuweAfspraak(a: MailbareAfspraak): Promise<void> {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Europe/Amsterdam",
+    timeZone: TIJDZONE,
   });
   const [k, b] = await Promise.allSettled([
     klant,

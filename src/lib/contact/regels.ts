@@ -2,6 +2,8 @@
 // controleren, spam herkennen, filters voor de lijst. Zonder database of
 // Resend, zodat alles te testen is.
 
+import { geldigEmail } from "@/lib/email";
+
 export const BERICHT_STATUSSEN = ["nieuw", "gelezen", "beantwoord", "gearchiveerd", "spam"] as const;
 export type BerichtStatus = (typeof BERICHT_STATUSSEN)[number];
 
@@ -20,7 +22,6 @@ function isBerichtStatus(s: unknown): s is BerichtStatus {
 export const MAX = { naam: 120, email: 254, telefoon: 30, onderwerp: 120, bericht: 5_000, antwoord: 20_000 } as const;
 const MIN_BERICHT = 10;
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TELEFOON = /^[0-9+()\-.\s/]{6,30}$/;
 
 export type ContactVeld = "naam" | "email" | "telefoon" | "onderwerp" | "bericht";
@@ -55,7 +56,7 @@ export function valideerContact(ruw: Readonly<Record<string, unknown>>, onderwer
 
   const email = eenRegel(tekst(ruw.email)).toLowerCase();
   if (!email) fouten.email = "Vul je e-mailadres in.";
-  else if (email.length > MAX.email || !EMAIL.test(email)) fouten.email = "Dit lijkt geen geldig e-mailadres.";
+  else if (email.length > MAX.email || !geldigEmail(email)) fouten.email = "Dit lijkt geen geldig e-mailadres.";
 
   const telefoonRuw = eenRegel(tekst(ruw.telefoon));
   if (telefoonRuw && !TELEFOON.test(telefoonRuw)) fouten.telefoon = "Dit lijkt geen geldig telefoonnummer.";
@@ -176,15 +177,6 @@ export function berichtFilterQuery(f: Partial<BerichtFilter>): string {
   if (f.q) p.set("q", f.q);
   if (f.pagina && f.pagina > 1) p.set("pagina", String(f.pagina));
   return p.toString();
-}
-
-/** Zoekterm die veilig in een PostgREST or()-filter met ilike past. */
-export function veiligeZoekterm(q: string): string {
-  return q
-    .replace(/[,()*%_\\"':]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 100);
 }
 
 /** Korte voorvertoning van een bericht voor de lijst. */

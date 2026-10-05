@@ -10,7 +10,7 @@ export function mollie() {
 }
 
 /** Formatteert centen naar het Mollie-bedragformaat (bijv. "24.95"). */
-export function centenNaarBedrag(cent: number): string {
+function centenNaarBedrag(cent: number): string {
   return (cent / 100).toFixed(2);
 }
 

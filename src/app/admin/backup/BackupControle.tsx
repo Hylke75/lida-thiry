@@ -4,6 +4,7 @@ import { useState } from "react";
 import { controleerBackup, isGzip, leesbareGrootte, type BackupControle as Controle } from "@/lib/backup/formaat";
 import { Melding } from "../Melding";
 import { huidigeTellingen } from "./acties";
+import { TIJDZONE } from "@/lib/datum";
 
 /** Leest het bestand (gzip of gewone JSON) in de browser; er wordt niets geüpload. */
 async function leesBestand(bestand: File): Promise<unknown> {
@@ -79,7 +80,7 @@ export function BackupControle() {
         <>
           <Melding soort="ok">
             De back-up is in orde: gemaakt op{" "}
-            {new Date(c.gemaakt_op).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
+            {new Date(c.gemaakt_op).toLocaleString("nl-NL", { timeZone: TIJDZONE })}
             {c.project ? ` (project ${c.project})` : ""}, {c.tabellen.length} tabellen,{" "}
             {c.tabellen.reduce((n, t) => n + t.inBestand, 0).toLocaleString("nl-NL")} rijen.
           </Melding>

@@ -4,7 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
-import { beginVanDag } from "@/lib/nieuwsbrief/tijd";
+import { beginVanDag, TIJDZONE } from "@/lib/datum";
 import {
   gemiddeldePercentages,
   groeiReeks,
@@ -60,7 +60,7 @@ const datumTijd = new Intl.DateTimeFormat("nl-NL", {
   month: "short",
   hour: "2-digit",
   minute: "2-digit",
-  timeZone: "Europe/Amsterdam",
+  timeZone: TIJDZONE,
 });
 
 async function telAantal(q: PromiseLike<{ count: number | null; error: { message: string } | null }>): Promise<number> {

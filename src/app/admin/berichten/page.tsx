@@ -13,6 +13,7 @@ import {
 } from "@/lib/contact/regels";
 import { AdminNav, Melding } from "../AdminNav";
 import { BerichtStatusLabel, datumTijd, hoofdknop, invoer, kleineKnop } from "./stijl";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 
@@ -167,27 +168,13 @@ export default async function BerichtenPagina({
         </ul>
       )}
 
-      {paginas > 1 && (
-        <nav aria-label="Pagina's" className="flex items-center justify-between text-sm">
-          {filter.pagina > 1 ? (
-            <Link href={link({ q: filter.q, pagina: filter.pagina - 1 })} className={kleineKnop}>
-              ← Vorige
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-black/60 dark:text-white/60">
-            Pagina {filter.pagina} van {paginas}
-          </span>
-          {filter.pagina < paginas ? (
-            <Link href={link({ q: filter.q, pagina: filter.pagina + 1 })} className={kleineKnop}>
-              Volgende →
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <Paginering
+        pagina={filter.pagina}
+        paginas={paginas}
+        href={(p) => link({ q: filter.q, pagina: p })}
+        linkKlasse={kleineKnop}
+        tekstKlasse="text-black/60 dark:text-white/60"
+      />
     </main>
   );
 }

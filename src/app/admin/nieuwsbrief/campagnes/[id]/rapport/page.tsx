@@ -12,15 +12,16 @@ import {
   VERZEND_STATUS_LABEL,
   leesFilter,
   toonPercentage,
-  veiligeZoekterm,
   type OntvangerFilter,
 } from "@/lib/nieuwsbrief/rapport";
 import { kliksPerLink, statistiekPerCampagne } from "@/lib/nieuwsbrief/campagne-statistiek";
-import { toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd } from "@/lib/datum";
 import { Melding } from "../../../../AdminNav";
 import { NieuwsbriefKop, StatusBadge } from "../../../_editor/onderdelen";
 import { invoerKlasse, kaart, knopKlein, knopRand, zacht } from "../../../_editor/stijl";
 import { probeerOpnieuw } from "../../acties";
+import { veiligeZoekterm } from "@/lib/zoeken/regels";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -65,7 +66,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
   if (!c) notFound();
 
   const filter = leesFilter(zoek.filter);
-  const q = veiligeZoekterm(zoek.q);
+  const q = veiligeZoekterm(zoek.q, { underscoreWeg: true });
   const pagina = Math.max(1, Math.floor(Number(zoek.pagina)) || 1);
   const basis = c.soort === "automatisch" ? `/admin/nieuwsbrief/automatisch/${id}` : `/admin/nieuwsbrief/campagnes/${id}`;
   const pad = `/admin/nieuwsbrief/campagnes/${id}/rapport`;
@@ -255,27 +256,14 @@ export default async function RapportPagina({ params, searchParams }: { params: 
             </ul>
           )}
 
-          {paginas > 1 && (
-            <nav aria-label="Pagina's" className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              {pagina > 1 ? (
-                <Link href={link({ pagina: String(pagina - 1) })} className={knopKlein}>
-                  ← Vorige
-                </Link>
-              ) : (
-                <span />
-              )}
-              <span className={zacht}>
-                Pagina {pagina} van {paginas}
-              </span>
-              {pagina < paginas ? (
-                <Link href={link({ pagina: String(pagina + 1) })} className={knopKlein}>
-                  Volgende →
-                </Link>
-              ) : (
-                <span />
-              )}
-            </nav>
-          )}
+          <Paginering
+              pagina={pagina}
+              paginas={paginas}
+              href={(p) => link({ pagina: String(p) })}
+              linkKlasse={knopKlein}
+              navKlasse="flex flex-wrap items-center justify-between gap-2 text-sm"
+              tekstKlasse={zacht}
+            />
         </section>
       )}
     </main>

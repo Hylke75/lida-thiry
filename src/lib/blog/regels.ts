@@ -1,6 +1,7 @@
 // Pure regels voor de blog: slugs, leestijd, zichtbaarheid en validatie.
 
 import { opmaakNaarTekst, parseerOpmaak } from "../inhoud/opmaak";
+import { slugify } from "../slug";
 
 export interface BlogBericht {
   id: string;
@@ -26,19 +27,6 @@ export interface BlogBericht {
 
 export const BERICHT_VELDEN =
   "id, slug, titel, samenvatting, inhoud, omslag_url, omslag_alt, categorie, tags, status, gepubliceerd_op, seo_titel, seo_omschrijving, auteur, uitgelicht, ai_gegenereerd, ai_opdracht, aangemaakt_op, bijgewerkt_op";
-
-/** Zet een titel om in een nette URL-slug ("Jurken voor de Peer!" → "jurken-voor-de-peer"). */
-export function maakSlug(tekst: string): string {
-  return tekst
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " en ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80)
-    .replace(/-+$/g, "");
-}
 
 export function geldigeSlug(slug: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length <= 100;
@@ -109,7 +97,7 @@ export function valideerBericht(ruw: unknown): { ok: true; waarde: BerichtInvoer
   const fouten: string[] = [];
   const titel = tekst(o.titel, 200);
   if (!titel) fouten.push("Geef het bericht een titel.");
-  const slug = tekst(o.slug, 100) || maakSlug(titel);
+  const slug = tekst(o.slug, 100) || slugify(titel);
   if (!geldigeSlug(slug)) fouten.push("Het webadres mag alleen kleine letters, cijfers en streepjes bevatten.");
   const omslag = tekst(o.omslag_url, 2000) || null;
   if (omslag && !/^https:\/\//.test(omslag)) fouten.push("De omslagfoto moet een https-adres hebben.");

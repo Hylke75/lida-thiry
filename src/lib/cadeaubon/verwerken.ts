@@ -9,6 +9,7 @@ import { stuurBeheerMelding, foutTekst } from "../beheermelding";
 import { siteUrl } from "../site";
 import type { BonGegevens } from "../email-html";
 import { cadeaubonGeldigTot, verzendenIsAanDeBeurt, type Bezorging } from "./regels";
+import { FACTUREN } from "../opslag";
 
 export interface CadeaubonRij {
   id: string;
@@ -33,8 +34,6 @@ export interface CadeaubonRij {
 
 export const CADEAUBON_KOLOMMEN =
   "id, koper_naam, koper_email, ontvanger_naam, ontvanger_email, boodschap, bezorging, verzend_op, bedrag_cent, valuta, status, mollie_payment_id, kortingscode_id, factuur_pad, factuurnummer, betaald_op, verzonden_op, aangemaakt_op";
-
-const FACTUUR_BUCKET = "facturen";
 
 async function leesBon(id: string): Promise<CadeaubonRij | null> {
   const { data, error } = await adminClient()
@@ -130,7 +129,7 @@ async function bonPdf(gegevens: BonGegevens): Promise<{ bestandsnaam: string; pd
 async function bestaandeFactuur(pad: string | null): Promise<Factuur | null> {
   if (!pad) return null;
   try {
-    const { data } = await adminClient().storage.from(FACTUUR_BUCKET).download(pad);
+    const { data } = await adminClient().storage.from(FACTUREN).download(pad);
     if (!data) return null;
     const factuurnummer = pad.replace(/\.pdf$/, "");
     return { factuurnummer, bestandsnaam: `factuur-${factuurnummer}.pdf`, pdf: Buffer.from(await data.arrayBuffer()) };

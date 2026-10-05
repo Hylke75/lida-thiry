@@ -4,7 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { haalCampagne } from "@/lib/nieuwsbrief/verzenden";
 import { abUitCampagne } from "@/lib/nieuwsbrief/ab-test";
-import { standaardInplanmoment } from "@/lib/nieuwsbrief/tijd";
+import { standaardInplanmoment } from "@/lib/datum";
 import { Melding } from "../../../AdminNav";
 import { alsInhoud, laadEditorContext } from "../../_editor/laden";
 import { NieuwsbriefKop, StatusBadge } from "../../_editor/onderdelen";

@@ -11,7 +11,7 @@ import { koppelRelatie } from "@/lib/relaties/koppel";
 import { AFSPRAAK_VELDEN, haalBezetting, haalBlokkades, haalSoort, type AfspraakRij } from "@/lib/afspraken/data";
 import { stuurAnnulering, stuurBevestiging } from "@/lib/afspraken/mails";
 import { conflicten } from "@/lib/afspraken/slots";
-import { leesDatum, tijdNaarMinuten, vanAmsterdam } from "@/lib/afspraken/tijd";
+import { leesDatum, tijdNaarMinuten, vanAmsterdam } from "@/lib/datum";
 import {
   geldigeUuid,
   INSTELLING_SLEUTELS,

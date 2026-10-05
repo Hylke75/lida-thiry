@@ -14,7 +14,7 @@
 // - Blokkades (vrije dagen) mogen de afspraak zelf niet overlappen.
 // - Minimaal X uur vooraf, maximaal Y dagen vooruit (vanaf vandaag in Nederland).
 
-import { datumPlusDagen, eindtijdNaarMinuten, naarAmsterdam, tijdNaarMinuten, vandaagAmsterdam, vanAmsterdam, weekdagVan } from "./tijd";
+import { datumPlusDagen, eindtijdNaarMinuten, naarAmsterdam, tijdNaarMinuten, vandaagAmsterdam, vanAmsterdam, weekdagVan } from "../datum";
 
 const RASTER_MINUTEN = 15;
 export const BETAALTERMIJN_MINUTEN = 30;

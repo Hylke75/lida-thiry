@@ -1,16 +1,10 @@
 import "server-only";
+import { datumTijd } from "@/lib/datum";
 
 /** Datum + tijd in Nederlandse notatie, bijv. "2 okt 2026, 15:20". */
 export function formatteerMoment(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("nl-NL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Amsterdam",
-  });
+  return datumTijd(iso);
 }
 
 type Pagina<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;

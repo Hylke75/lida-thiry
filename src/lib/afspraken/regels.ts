@@ -1,7 +1,9 @@
 // Pure regels voor afspraken: statussen, invoercontrole (boeken, soorten,
 // beschikbaarheid, blokkades), annuleren en instellingen. Zonder database.
 
-import { eindtijdNaarMinuten, leesDatum, minutenNaarTijd, tijdNaarMinuten, vanAmsterdam } from "./tijd";
+import { eindtijdNaarMinuten, leesDatum, minutenNaarTijd, tijdNaarMinuten, vanAmsterdam } from "../datum";
+import { geldigEmail } from "@/lib/email";
+import { euroNaarCent, formatteerBedrag } from "../prijs";
 
 export const AFSPRAAK_STATUSSEN = [
   "wacht_op_betaling",
@@ -83,7 +85,6 @@ export function leesAfspraakInstellingen(map: Readonly<Record<string, string | n
 // Boeken ---------------------------------------------------------------------------
 
 export const MAX = { naam: 120, email: 254, telefoon: 30, opmerking: 2_000, notitie: 5_000, reden: 1_000 } as const;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TELEFOON = /^[0-9+()\-.\s/]{6,30}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -125,7 +126,7 @@ export function valideerBoeking(ruw: Readonly<Record<string, unknown>>): Validat
 
   const email = eenRegel(tekst(ruw.email)).toLowerCase();
   if (!email) fouten.email = "Vul je e-mailadres in.";
-  else if (email.length > MAX.email || !EMAIL.test(email)) fouten.email = "Dit lijkt geen geldig e-mailadres.";
+  else if (email.length > MAX.email || !geldigEmail(email)) fouten.email = "Dit lijkt geen geldig e-mailadres.";
 
   const telefoonRuw = eenRegel(tekst(ruw.telefoon));
   if (telefoonRuw && !TELEFOON.test(telefoonRuw)) fouten.telefoon = "Dit lijkt geen geldig telefoonnummer.";
@@ -169,21 +170,13 @@ export interface AfspraakSoort {
 
 export type SoortInvoer = Omit<AfspraakSoort, "id">;
 
-/** "29,95" of "29.95" → 2995; leeg → 0; ongeldig → null. */
-export function euroNaarCent(w: string): number | null {
-  const s = w.trim().replace(/\s|€/g, "");
-  if (!s) return 0;
-  const norm = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
-  if (!/^\d+(\.\d{1,2})?$/.test(norm)) return null;
-  return Math.round(Number(norm) * 100);
-}
-
 export function centNaarEuroInvoer(cent: number): string {
   return cent ? (cent / 100).toFixed(2).replace(".", ",") : "";
 }
 
+/** Bedrag in euro's, bijv. "€ 75,00". */
 export function bedragLabel(cent: number): string {
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(cent / 100);
+  return formatteerBedrag(cent);
 }
 
 export function duurLabel(minuten: number): string {

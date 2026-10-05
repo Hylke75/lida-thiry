@@ -14,7 +14,8 @@ import {
   type Bewerking,
   type SchrijfOpdracht,
 } from "./ai-prompt";
-import { maakSlug, normaliseerTags } from "./regels";
+import { normaliseerTags } from "./regels";
+import { slugify } from "../slug";
 
 const AI_MODEL = "claude-opus-5-5";
 
@@ -160,7 +161,7 @@ export async function schrijfConcept(
     gebruikId,
     concept: {
       titel,
-      slug: maakSlug(str(o.slug) || titel),
+      slug: slugify(str(o.slug) || titel),
       samenvatting: str(o.samenvatting).slice(0, 500),
       inhoud,
       tags: normaliseerTags(o.tags),

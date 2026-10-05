@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MailEditor, type EditorStaat } from "../../_editor/MailEditor";
 import type { MailInhoud, TypeKeuze } from "../../_editor/regels";
 import { invoerKlasse, kaart, knopHoofd, knopRand, zacht } from "../../_editor/stijl";
-import { toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/nieuwsbrief/tijd";
+import { toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/datum";
 import { annuleerPlanning, hervat, kiesWinnaarNu, pauzeer, planIn, verzendNu } from "../acties";
 
 /** A/B-test van de opgeslagen campagne. */

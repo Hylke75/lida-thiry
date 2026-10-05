@@ -21,13 +21,4 @@ export function BerichtStatusLabel({ status }: { status: BerichtStatus }) {
 }
 
 /** "4 okt 2026, 14:03" (Nederlandse tijd). */
-export function datumTijd(iso: string): string {
-  return new Date(iso).toLocaleString("nl-NL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Amsterdam",
-  });
-}
+export { datumTijd } from "@/lib/datum";

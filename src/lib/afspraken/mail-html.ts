@@ -13,8 +13,9 @@ import type {
   AFSPRAKEN_BEVESTIGMAIL,
   AFSPRAKEN_HERINNERINGMAIL,
 } from "../inhoud/groepen/afspraken";
-import { datumLabel, tijdLabel } from "./tijd";
+import { datumLabel, tijdLabel } from "../datum";
 import { bedragLabel, duurLabel, STATUS_LABEL, type AfspraakStatus } from "./regels";
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
 
 export interface AfspraakMail {
   onderwerp: string;
@@ -217,7 +218,7 @@ export function afspraakMeldingMail(opts: {
       ${detailsHtml(a)}
       ${a.opmerking ? `<p style="${KLEIN};margin:0 0 6px">Opmerking van de klant:</p><div style="background:#f6f4f1;border-radius:8px;padding:12px 16px">${platteTekstHtml(a.opmerking, "margin:0 0 10px")}</div>` : ""}
       <p style="margin:24px 0"><a href="${escapeHtml(opts.link)}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-weight:600">Bekijk in het beheer</a></p>`,
-    opts.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+    opts.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
   );
   const tekst = [
     kop,

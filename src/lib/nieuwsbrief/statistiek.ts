@@ -1,5 +1,7 @@
 // Cijfers voor het nieuwsbriefoverzicht in het beheer. Puur, zodat het te testen is.
 
+import { TIJDZONE } from "../datum";
+
 export interface ContactMoment {
   status: string;
   bevestigd_op: string | null;
@@ -20,7 +22,7 @@ export interface GroeiDag {
 
 const DAG_MS = 86_400_000;
 const NL = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Europe/Amsterdam",
+  timeZone: TIJDZONE,
   year: "numeric",
   month: "2-digit",
   day: "2-digit",

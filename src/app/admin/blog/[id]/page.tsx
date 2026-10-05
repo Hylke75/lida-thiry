@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { aiBeschikbaar } from "@/lib/blog/ai";
 import { uniekGesorteerd } from "@/lib/blog/beheer";
 import { zichtbaarheid } from "@/lib/blog/regels";
-import { standaardInplanmoment } from "@/lib/nieuwsbrief/tijd";
+import { standaardInplanmoment } from "@/lib/datum";
 import { siteUrl } from "@/lib/site";
 import { Melding } from "../../AdminNav";
 import { BlogEditor } from "../_editor/BlogEditor";

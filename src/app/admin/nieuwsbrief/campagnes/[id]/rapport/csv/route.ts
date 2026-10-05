@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { VERZEND_STATUS_LABEL, naarCsv } from "@/lib/nieuwsbrief/rapport";
 import { haalCampagne } from "@/lib/nieuwsbrief/verzenden";
+import { TIJDZONE } from "@/lib/datum";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ interface Rij {
 }
 
 const tijd = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", dateStyle: "short", timeStyle: "short" }) : "";
+  iso ? new Date(iso).toLocaleString("nl-NL", { timeZone: TIJDZONE, dateStyle: "short", timeStyle: "short" }) : "";
 
 // Ontvangers van een campagne als CSV (puntkomma's, voor Excel), alleen voor beheerders.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {

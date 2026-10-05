@@ -13,12 +13,12 @@ import {
   zoekMedia,
   type MediaItem,
   type Registratie,
-  type Uitkomst,
   type UploadPlek,
   type VerwijderUitkomst,
   type ZoekResultaat,
 } from "@/lib/media/beheer";
 import { leesTypeFilter, SOORT_MIMES, type MediaSoort } from "@/lib/media/regels";
+import type { Uitkomst } from "@/lib/uitkomst";
 
 const MEDIA_PAD = "/admin/media";
 

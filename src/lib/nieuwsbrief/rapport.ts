@@ -87,11 +87,6 @@ export function leesFilter(v: unknown): OntvangerFilter {
   return typeof v === "string" && v in ONTVANGER_FILTERS ? (v as OntvangerFilter) : "alle";
 }
 
-/** Maakt zoektekst veilig voor een ilike-filter (geen jokertekens of filtersyntax). */
-export function veiligeZoekterm(q: unknown): string {
-  return typeof q === "string" ? q.replace(/[,()*%_\\"']/g, " ").trim().slice(0, 100) : "";
-}
-
 export const VERZEND_STATUS_LABEL: Record<string, string> = {
   wachtrij: "In de wachtrij",
   verwerken: "Wordt verstuurd",

@@ -1,5 +1,7 @@
 // Gestructureerde gegevens (schema.org JSON-LD) voor blogberichten.
 
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
+
 export interface BlogPostingInvoer {
   titel: string;
   omschrijving: string;
@@ -16,8 +18,6 @@ export interface BlogPostingInvoer {
   siteUrl: string;
 }
 
-export const UITGEVER_NAAM = "Lida Thiry Imago & Kledingadvies";
-
 export function blogPostingJsonLd(b: BlogPostingInvoer): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -30,7 +30,7 @@ export function blogPostingJsonLd(b: BlogPostingInvoer): Record<string, unknown>
     author: { "@type": "Person", name: b.auteur || "Lida Thiry", url: b.siteUrl },
     publisher: {
       "@type": "Organization",
-      name: UITGEVER_NAAM,
+      name: BEDRIJFSNAAM_STANDAARD,
       url: b.siteUrl,
       logo: { "@type": "ImageObject", url: `${b.siteUrl}/icon.svg` },
     },

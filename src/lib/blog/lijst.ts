@@ -2,6 +2,7 @@
 // "Lees ook". Geen database of Next.js hier, zodat alles los te testen is.
 
 import type { BlogBericht } from "./regels";
+import { datumLang } from "../datum";
 
 /** Aantal berichten per pagina in het overzicht. */
 export const PER_PAGINA = 9;
@@ -80,7 +81,7 @@ export function formatteerDatum(iso: string | null | undefined): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" }).format(d);
+  return datumLang(d);
 }
 
 type Vergelijkbaar = Pick<BlogBericht, "id" | "tags" | "categorie" | "gepubliceerd_op">;

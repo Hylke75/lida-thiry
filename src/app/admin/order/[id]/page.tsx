@@ -17,6 +17,7 @@ import { AdminNav, Melding } from "../../AdminNav";
 import { BETAALDE_STATUSSEN, statusLabel } from "../../status";
 import { isOpen, OPEN_STATUSSEN } from "@/lib/order-status";
 import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
+import { ADVIEZEN_PDF } from "@/lib/opslag";
 
 export const dynamic = "force-dynamic";
 
@@ -168,7 +169,7 @@ async function verwijderBestelling(formData: FormData) {
     .in("status", [...OPEN_STATUSSEN])
     .select("id");
   if (error || !weg?.length) terug(id, error ? "verwijderen_mislukt" : "verwijderen_geweigerd");
-  if (data.pdf_pad) await supabase.storage.from("adviezen-pdf").remove([data.pdf_pad]);
+  if (data.pdf_pad) await supabase.storage.from(ADVIEZEN_PDF).remove([data.pdf_pad]);
   await logActie({
     actie: "order.verwijderen",
     onderwerpSoort: "order",

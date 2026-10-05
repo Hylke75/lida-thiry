@@ -1,6 +1,7 @@
 import { Opmaak } from "@/components/Opmaak";
 import { splitsVoorVoorbeeld } from "@/lib/blog/beheer";
 import { leestijdMinuten } from "@/lib/blog/regels";
+import { datumLang } from "@/lib/datum";
 
 /** Opmaak van de artikeltekst, zoals op de openbare blogpagina. */
 const ARTIKEL_TEKST =
@@ -27,10 +28,7 @@ export function ArtikelTekst({ inhoud }: { inhoud: string }) {
   );
 }
 
-const datum = (iso: string | null) =>
-  iso
-    ? new Date(iso).toLocaleDateString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric" })
-    : null;
+const datum = (iso: string | null) => (iso ? datumLang(iso) : null);
 
 /** Het hele artikel zoals bezoekers het straks zien (voor het voorbeeld in het beheer). */
 export function Artikel({

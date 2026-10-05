@@ -5,7 +5,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AdminNav } from "../../AdminNav";
 import { AFSPRAAK_VELDEN, afspraakInstellingen, haalSoort, type AfspraakRij } from "@/lib/afspraken/data";
 import { bedragLabel, duurLabel, geldigeUuid, MAX, STATUS_LABEL, toegestaneOvergangen, type AfspraakStatus } from "@/lib/afspraken/regels";
-import { datumLabel, tijdLabel } from "@/lib/afspraken/tijd";
+import { datumLabel, tijdLabel } from "@/lib/datum";
 import { bewaarNotitie, koppelAanAdresboek, stuurBevestigingOpnieuw, verwijderAfspraak, wijzigStatus } from "../acties";
 import { invoer, kaart, knop, knopLicht, Meldingen, NAV_AFSPRAKEN, StatusLabel, zacht } from "../stijl";
 

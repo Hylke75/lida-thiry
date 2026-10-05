@@ -2,6 +2,8 @@
 // UTC (…Z), zodat elke agenda ze in de eigen tijdzone goed toont. Regels worden
 // gevouwen op 75 octets en teksten ge-escaped.
 
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
+
 export interface IcsAfspraak {
   /** Uniek en stabiel per afspraak, bijv. "<id>@lidathiry.nl". */
   uid: string;
@@ -64,7 +66,7 @@ export function maakIcs(a: IcsAfspraak): string {
   const regels = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Lida Thiry Imago & Kledingadvies//Afspraken//NL",
+    `PRODID:-//${BEDRIJFSNAAM_STANDAARD}//Afspraken//NL`,
     "CALSCALE:GREGORIAN",
     `METHOD:${a.geannuleerd ? "CANCEL" : "PUBLISH"}`,
     "BEGIN:VEVENT",

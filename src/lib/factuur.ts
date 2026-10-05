@@ -3,23 +3,17 @@ import { adminClient } from "./supabase/admin";
 import { leesInstellingen } from "./instellingen";
 import { maakFactuurPdf } from "./pdf/factuur";
 import { jaarInNederland } from "./prijs";
+import { datumLang } from "./datum";
+import { FACTUREN } from "./opslag";
+import { BEDRIJFSNAAM_STANDAARD } from "./site";
 
-const BUCKET = "facturen";
+const BUCKET = FACTUREN;
 const BTW_PROCENT = 21;
 
 export interface Factuur {
   factuurnummer: string;
   bestandsnaam: string;
   pdf: Buffer;
-}
-
-function datumNl(iso: string | Date): string {
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
 }
 
 function adresregels(g: unknown): string[] {
@@ -76,10 +70,10 @@ export async function maakFactuur(orderId: string): Promise<Factuur | null> {
   const korting = order.korting_cent ?? 0;
   const pdf = await maakFactuurPdf({
     factuurnummer,
-    factuurdatum: datumNl(betaaldOp),
-    betaaldOp: datumNl(betaaldOp),
+    factuurdatum: datumLang(betaaldOp),
+    betaaldOp: datumLang(betaaldOp),
     verkoper: {
-      naam: inst.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+      naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
       adres: inst.bedrijf_adres?.trim() || null,
       kvk: inst.kvk_nummer?.trim() || null,
       btw: inst.btw_nummer?.trim() || null,
@@ -131,10 +125,10 @@ export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
   const inst = await leesInstellingen();
   const pdf = await maakFactuurPdf({
     factuurnummer,
-    factuurdatum: datumNl(betaaldOp),
-    betaaldOp: datumNl(betaaldOp),
+    factuurdatum: datumLang(betaaldOp),
+    betaaldOp: datumLang(betaaldOp),
     verkoper: {
-      naam: inst.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+      naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
       adres: inst.bedrijf_adres?.trim() || null,
       kvk: inst.kvk_nummer?.trim() || null,
       btw: inst.btw_nummer?.trim() || null,

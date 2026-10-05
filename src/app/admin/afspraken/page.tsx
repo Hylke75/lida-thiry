@@ -15,7 +15,7 @@ import {
   tijdLabel,
   vandaagAmsterdam,
   vanAmsterdam,
-} from "@/lib/afspraken/tijd";
+} from "@/lib/datum";
 import { kaart, knop, knopLicht, Meldingen, NAV_AFSPRAKEN, StatusLabel, zacht } from "./stijl";
 
 export const dynamic = "force-dynamic";

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useMemo, useState, type FormEvent, type 
 import type { SectieWaarden } from "@/lib/inhoud/schema";
 import type { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
 import { bedragLabel, duurLabel, MAX, valideerBoeking, type BoekVeld } from "@/lib/afspraken/regels";
-import { datumPlusDagen, kalenderdatumLabel, weekdagVan } from "@/lib/afspraken/tijd";
+import { datumPlusDagen, kalenderdatumLabel, weekdagVan } from "@/lib/datum";
 import type { Dag, Tijdslot } from "@/lib/afspraken/slots";
 
 export type AfspraakBoekenTeksten = SectieWaarden<typeof AFSPRAKEN_BOEKEN>;

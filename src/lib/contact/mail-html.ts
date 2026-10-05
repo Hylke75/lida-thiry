@@ -7,6 +7,8 @@ import { vulIn, type SectieWaarden } from "../inhoud/schema";
 import { omhulsel } from "../email-html";
 import type { EMAILS_ALGEMEEN } from "../inhoud/groepen/emails";
 import type { CONTACT_ANTWOORDMAIL, CONTACT_BEVESTIGMAIL } from "../inhoud/groepen/contact";
+import { datumLang } from "../datum";
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
 
 export interface ContactMail {
   onderwerp: string;
@@ -53,15 +55,6 @@ export function zonderOpmaak(tekst: string): string {
   return tekst.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, "$1 ($2)");
 }
 
-export function datumLang(iso: string): string {
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
-}
-
 export interface MeldingGegevens {
   naam: string;
   email: string;
@@ -95,7 +88,7 @@ export function contactMeldingMail(g: MeldingGegevens): ContactMail {
         <a href="${escapeHtml(g.link)}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-weight:600">Bekijk en beantwoord</a>
       </p>
       <p style="${KLEIN}">Je kunt ook direct op deze mail antwoorden; je antwoord gaat dan naar ${escapeHtml(g.email)}. Antwoord je via het beheer, dan wordt het daar bij het bericht bewaard.</p>`,
-    g.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+    g.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
   );
   const tekst = [
     "Nieuw bericht via het contactformulier",

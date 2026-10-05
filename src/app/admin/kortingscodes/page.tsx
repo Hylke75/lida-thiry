@@ -8,6 +8,7 @@ import { AdminNav } from "../AdminNav";
 import { adminClient } from "@/lib/supabase/admin";
 import { eindeVanDagNl } from "@/lib/cadeaubon/regels";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
+import { datum } from "@/lib/datum";
 
 export const dynamic = "force-dynamic";
 
@@ -144,15 +145,6 @@ async function zetActief(formData: FormData) {
 
 function waardeLabel(c: CodeRij): string {
   return c.soort === "percentage" ? `${c.waarde}%` : formatteerBedrag(c.waarde);
-}
-
-function datum(iso: string): string {
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
 }
 
 function status(c: CodeRij): { label: string; bruikbaar: boolean } {

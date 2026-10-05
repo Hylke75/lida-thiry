@@ -24,8 +24,20 @@ function geheim(): string {
   return linkGeheim();
 }
 
+/** HMAC-SHA256 van `bericht` met `sleutel`, als base64url ingekort tot `lengte` tekens. */
+export function hmacHandtekening(bericht: string, sleutel: string, lengte: number): string {
+  return createHmac("sha256", sleutel).update(bericht).digest("base64url").slice(0, lengte);
+}
+
+/** Vergelijkt een verwachte en een gekregen handtekening in constante tijd. */
+export function zelfdeHandtekening(verwacht: string, gekregen: string): boolean {
+  const a = Buffer.from(verwacht);
+  const b = Buffer.from(gekregen);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 function handtekening(doel: string, id: string, verlooptOp: number, sleutel: string): string {
-  return createHmac("sha256", sleutel).update(`${doel}\n${id}\n${verlooptOp}`).digest("base64url").slice(0, 32);
+  return hmacHandtekening(`${doel}\n${id}\n${verlooptOp}`, sleutel, 32);
 }
 
 /** Token "<verloopt-op in seconden>.<handtekening>" voor `doel` en `id`. */
@@ -46,7 +58,5 @@ export function controleerLink(
   if (!m) return false;
   const sec = Number(m[1]);
   if (sec * 1000 < nu.getTime()) return false;
-  const verwacht = Buffer.from(handtekening(doel, id, sec, sleutel));
-  const gekregen = Buffer.from(m[2]);
-  return verwacht.length === gekregen.length && timingSafeEqual(verwacht, gekregen);
+  return zelfdeHandtekening(handtekening(doel, id, sec, sleutel), m[2]);
 }

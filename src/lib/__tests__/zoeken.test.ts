@@ -10,8 +10,27 @@ import {
   orGroep,
   orGroepen,
   uuidBereik,
+  veiligeZoekterm,
   zoekWoorden,
 } from "../zoeken/regels";
+
+describe("veiligeZoekterm", () => {
+  it("haalt tekens weg die een PostgREST-filter breken en voegt witruimte samen", () => {
+    expect(veiligeZoekterm(" a,b(c)*d%e\"f'g:h\\i ")).toBe("a b c d e f g h i");
+    expect(veiligeZoekterm("anna%,(x)*")).toBe("anna x");
+    expect(veiligeZoekterm("  v-hals, (goed)%  ")).toBe("v-hals goed");
+  });
+  it("laat _ standaard staan (e-mailadressen), of haalt die weg op verzoek", () => {
+    expect(veiligeZoekterm("an_de@x.nl")).toBe("an_de@x.nl");
+    expect(veiligeZoekterm("a_b*c", { underscoreWeg: true })).toBe("a b c");
+  });
+  it("kort in en geeft lege tekst bij iets anders dan tekst", () => {
+    expect(veiligeZoekterm("x".repeat(200))).toHaveLength(100);
+    expect(veiligeZoekterm("x".repeat(200), { max: 80 })).toHaveLength(80);
+    expect(veiligeZoekterm(["x"])).toBe("");
+    expect(veiligeZoekterm(undefined)).toBe("");
+  });
+});
 
 describe("normaliseerZoekterm", () => {
   it("knipt, voegt witruimte samen en haalt stuurtekens weg", () => {

@@ -7,7 +7,7 @@ import { renderNieuwsbrief, valideerBlokken, controleerVoorVerzenden, type Blok 
 import { normaliseerDoelgroep } from "./doelgroep";
 import { zoekOntvangers, CONTACT_VELDEN, type Contact } from "./contacten";
 import { afmeldEndpoint, afmeldPagina, klikUrl, pixelUrl } from "./links";
-import { beginVanDag } from "./tijd";
+import { beginVanDag } from "../datum";
 import { daglimietBereikt, isTijdelijkeLimiet, koppelBatchUitkomst } from "./verzendregels";
 import { registreerFout } from "../fouten/registreer";
 import {
@@ -21,6 +21,7 @@ import {
   type Variant,
   type VariantCijfers,
 } from "./ab-test";
+import { BEDRIJFSNAAM_STANDAARD } from "../site";
 
 /** Resend accepteert maximaal 100 mails per batch-aanroep. */
 const BATCH = 100;
@@ -67,7 +68,7 @@ async function huisstijl(): Promise<Huisstijl> {
   const max = Number(i.nb_max_per_dag);
   return {
     afzender: {
-      naam: i.bedrijfsnaam?.trim() || "Lida Thiry Imago & Kledingadvies",
+      naam: i.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
       adres: i.bedrijf_adres?.trim() || null,
     },
     replyTo: i.contact_email?.trim() || undefined,

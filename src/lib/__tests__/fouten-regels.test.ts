@@ -13,7 +13,6 @@ import {
   schoonPad,
   schoonTekst,
   vingerafdrukInvoer,
-  zoekTerm,
 } from "../fouten/regels";
 
 describe("schoonTekst", () => {
@@ -184,10 +183,3 @@ describe("meldReden", () => {
   });
 });
 
-describe("zoekTerm", () => {
-  it("haalt tekens weg die een PostgREST-filter breken", () => {
-    expect(zoekTerm("a,b(c)%*")).toBe("a b c");
-    expect(zoekTerm(["x"])).toBe("");
-    expect(zoekTerm("x".repeat(200))).toHaveLength(100);
-  });
-});

@@ -18,6 +18,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AdminNav } from "../AdminNav";
 import { Groeigrafiek } from "../nieuwsbrief/Groeigrafiek";
 import { Balken, DagStaven, kortDatum, Trechter } from "./Grafieken";
+import { formatteerBedrag } from "@/lib/prijs";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,7 @@ async function laad(p: Periode) {
 
 function euro(cent: number | null): string {
   if (cent == null) return "–";
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(cent / 100);
+  return formatteerBedrag(cent);
 }
 
 function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: string }) {

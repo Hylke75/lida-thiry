@@ -4,7 +4,6 @@ import {
   cadeaubonGeldigTot,
   datumInNederland,
   eindeVanDagNl,
-  euroNaarCent,
   maxBedragCent,
   plusDagen,
   vasteBedragenOnder,
@@ -13,18 +12,8 @@ import {
 } from "../cadeaubon/regels";
 
 describe("cadeaubon: bedrag", () => {
-  it.each([
-    ["25", 2500],
-    ["27,50", 2750],
-    ["27.5", 2750],
-    ["€ 12", 1200],
-    [" 5 ", 500],
-  ])("euroNaarCent(%s) = %i", (invoer, cent) => {
-    expect(euroNaarCent(invoer)).toBe(cent);
-  });
-
-  it.each(["", "abc", "-5", "12,345", "1e3", "12,", "1.000,00"])("euroNaarCent(%j) is ongeldig", (invoer) => {
-    expect(euroNaarCent(invoer)).toBeNull();
+  it("weigert een leeg eigen bedrag", () => {
+    expect(bepaalBedrag("anders", "  ", 4900)).toEqual({ ok: false, fout: "Vul een geldig bedrag in, bijvoorbeeld 25 of 27,50." });
   });
 
   it("accepteert de vaste bedragen en weigert andere waarden als keuze", () => {

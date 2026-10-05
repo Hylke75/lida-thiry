@@ -1,7 +1,7 @@
 // Links in nieuwsbrieven: afmelden, bevestigen, klik- en openmeting. Kliklinks zijn
 // ondertekend (HMAC), zodat de doorstuurroute niet als open redirect te misbruiken is.
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { hmacHandtekening, zelfdeHandtekening } from "../ondertekening";
 import { siteUrl } from "../site";
 
 /** Productie: op Vercel de productieomgeving, elders een productiebuild (next start). */
@@ -10,6 +10,8 @@ function isProductie(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+// Eigen geheim (NIEUWSBRIEF_GEHEIM), los van LINK_GEHEIM: verstuurde mails blijven
+// zo werken als een van beide wordt vervangen.
 function geheim(): string {
   const eigen = process.env.NIEUWSBRIEF_GEHEIM;
   if (eigen) return eigen;
@@ -23,13 +25,11 @@ function geheim(): string {
 }
 
 export function handtekening(verzendingId: string, url: string, sleutel = geheim()): string {
-  return createHmac("sha256", sleutel).update(`${verzendingId}\n${url}`).digest("base64url").slice(0, 24);
+  return hmacHandtekening(`${verzendingId}\n${url}`, sleutel, 24);
 }
 
 export function klopt(verzendingId: string, url: string, sig: string, sleutel = geheim()): boolean {
-  const verwacht = Buffer.from(handtekening(verzendingId, url, sleutel));
-  const gekregen = Buffer.from(sig);
-  return verwacht.length === gekregen.length && timingSafeEqual(verwacht, gekregen);
+  return zelfdeHandtekening(handtekening(verzendingId, url, sleutel), sig);
 }
 
 export function klikUrl(verzendingId: string, url: string): string {

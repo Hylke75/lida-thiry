@@ -3,6 +3,8 @@ import {
   berekenKorting,
   btwSplitsing,
   cadeauboncode,
+  euroNaarCent,
+  formatteerBedrag,
   controleerKortingscode,
   formatteerFactuurnummer,
   jaarInNederland,
@@ -12,6 +14,32 @@ import {
   zonderEigenClaim,
   type Kortingscode,
 } from "../prijs";
+
+describe("euroNaarCent", () => {
+  it.each([
+    ["25", 2500],
+    ["27,50", 2750],
+    ["27.5", 2750],
+    ["€ 12", 1200],
+    [" 5 ", 500],
+    ["125,50", 12550],
+    ["1.250,00", 125000],
+    ["12.5", 1250],
+    ["", 0],
+  ])("euroNaarCent(%j) = %i", (invoer, cent) => {
+    expect(euroNaarCent(invoer)).toBe(cent);
+  });
+
+  it.each(["abc", "tien", "-5", "12,345", "1,234", "1e3", "12,"])("euroNaarCent(%j) is ongeldig", (invoer) => {
+    expect(euroNaarCent(invoer)).toBeNull();
+  });
+});
+
+describe("formatteerBedrag", () => {
+  it("toont euro's in Nederlandse notatie", () => {
+    expect(formatteerBedrag(2495).replace(/\s/g, " ")).toBe("€ 24,95");
+  });
+});
 
 function code(overrides: Partial<Kortingscode> = {}): Kortingscode {
   return {

@@ -15,6 +15,8 @@ import type {
 import type { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
 import type { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
 import type { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
+import { formatteerBedrag } from "./prijs";
+import { datumLang } from "./datum";
 
 export interface Mail {
   onderwerp: string;
@@ -39,19 +41,15 @@ export interface BestelOverzicht {
 const KLEIN = "font-size:13px;color:#555";
 const STIJL: HtmlOpties["stijl"] = { a: "color:#a4634d", ul: "padding-left:20px" };
 
-function bedrag(cent: number, valuta: string): string {
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(cent / 100);
-}
-
 function overzichtHtml(o: BestelOverzicht): string {
   const rij = (label: string, waarde: string, vet = false) =>
     `<tr><td style="padding:4px 0;${vet ? "font-weight:600" : "color:#555"}">${label}</td><td style="padding:4px 0;text-align:right;${vet ? "font-weight:600" : ""}">${waarde}</td></tr>`;
-  const regels = [rij("Persoonlijke kledingadviestest", bedrag(o.prijsCent, o.valuta))];
+  const regels = [rij("Persoonlijke kledingadviestest", formatteerBedrag(o.prijsCent, o.valuta))];
   if (o.kortingCent > 0) {
     const label = o.kortingscode ? `Korting (${escapeHtml(o.kortingscode)})` : "Korting";
-    regels.push(rij(label, `− ${bedrag(o.kortingCent, o.valuta)}`));
+    regels.push(rij(label, `− ${formatteerBedrag(o.kortingCent, o.valuta)}`));
   }
-  regels.push(rij("Totaal (incl. btw)", bedrag(o.totaalCent, o.valuta), true));
+  regels.push(rij("Totaal (incl. btw)", formatteerBedrag(o.totaalCent, o.valuta), true));
   const factuur = o.factuurnummer
     ? `<p style="${KLEIN}">Factuurnummer ${escapeHtml(o.factuurnummer)} — de factuur vind je als bijlage bij deze mail.</p>`
     : "";
@@ -110,14 +108,7 @@ export function herinneringMail(
   algemeen: Algemeen,
   opts: { naam: string; link: string; verlooptOp: string | null },
 ): Mail {
-  const verloopdatum = opts.verlooptOp
-    ? new Date(opts.verlooptOp).toLocaleDateString("nl-NL", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "Europe/Amsterdam",
-      })
-    : "";
+  const verloopdatum = opts.verlooptOp ? datumLang(opts.verlooptOp) : "";
   const verloopzin = verloopdatum && t.verloopzin ? ` ${vulIn(t.verloopzin, { verloopdatum })}` : "";
   const w = { naam: opts.naam, verloopdatum, verloopzin };
   const html = omhulsel(
@@ -203,16 +194,6 @@ export interface BonGegevens {
   boodschap: string | null;
 }
 
-export function datumLang(waarde: string): string {
-  const iso = /^\d{4}-\d{2}-\d{2}$/.test(waarde) ? `${waarde}T12:00:00Z` : waarde;
-  return new Date(iso).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Amsterdam",
-  });
-}
-
 /** De bon als kader in de mail: bedrag, code, geldigheid en de boodschap. */
 export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
   const voorVan = [
@@ -232,7 +213,7 @@ export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
         <tr><td style="padding:28px 28px 20px;text-align:center">
           <p style="margin:0;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:#a4634d">Cadeaubon</p>
           <p style="margin:6px 0 0;font-size:13px;color:#555">Persoonlijk kledingadvies · Lida Thiry</p>
-          <p style="margin:18px 0 0;font-size:36px;font-weight:700;color:#1a1a1a">${bedrag(b.bedragCent, b.valuta)}</p>
+          <p style="margin:18px 0 0;font-size:36px;font-weight:700;color:#1a1a1a">${formatteerBedrag(b.bedragCent, b.valuta)}</p>
           ${voorVan ? `<p style="margin:6px 0 0;font-size:14px;color:#555">${voorVan}</p>` : ""}
           <p style="margin:20px 0 4px;font-size:12px;color:#555">Code</p>
           <p style="margin:0;font-family:Menlo,Consolas,monospace;font-size:22px;letter-spacing:2px;font-weight:700;color:#1a1a1a">${escapeHtml(b.code)}</p>
@@ -245,7 +226,7 @@ function bonWaarden(b: BonGegevens) {
   return {
     koper: b.koperNaam,
     ontvanger: b.ontvangerNaam?.trim() || "daar",
-    bedrag: bedrag(b.bedragCent, b.valuta),
+    bedrag: formatteerBedrag(b.bedragCent, b.valuta),
     code: b.code,
     geldig_tot: datumLang(b.geldigTot),
   };
@@ -318,7 +299,7 @@ export function betaalherinneringMail(
   algemeen: Algemeen,
   opts: { naam: string; bedragCent: number; valuta: string; link: string; basisUrl: string },
 ): Mail {
-  const w = { naam: opts.naam, bedrag: bedrag(opts.bedragCent, opts.valuta) };
+  const w = { naam: opts.naam, bedrag: formatteerBedrag(opts.bedragCent, opts.valuta) };
   const html = omhulsel(
     `
       ${kop(t.kop, w)}

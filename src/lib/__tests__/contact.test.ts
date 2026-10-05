@@ -9,7 +9,6 @@ import {
   spamRedenen,
   valideerAntwoord,
   valideerContact,
-  veiligeZoekterm,
   voorproef,
   voornaamVan,
 } from "../contact/regels";
@@ -137,10 +136,6 @@ describe("contact: herkomst en filters", () => {
     expect(leesBerichtFilter({ status: "onzin", pagina: "-1" })).toEqual({ weergave: "inbox", pagina: 1 });
     expect(berichtFilterQuery({ weergave: "inbox", pagina: 1 })).toBe("");
     expect(berichtFilterQuery({ weergave: "nieuw", q: "a b", pagina: 2 })).toBe("status=nieuw&q=a+b&pagina=2");
-  });
-
-  it("maakt zoektermen veilig voor PostgREST", () => {
-    expect(veiligeZoekterm(" a,b(c)*d%e_f:g ")).toBe("a b c d e f g");
   });
 
   it("voorproef en voornaam", () => {

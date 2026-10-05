@@ -1,6 +1,8 @@
 // Pure prijslogica: kortingen, btw-splitsing, factuurnummers en cadeauboncodes.
 // Geen server-only imports, zodat dit los te testen is.
 
+import { TIJDZONE } from "./datum";
+
 export type KortingSoort = "percentage" | "bedrag";
 
 export interface Kortingscode {
@@ -65,13 +67,25 @@ export function formatteerFactuurnummer(jaar: number, volgnummer: number): strin
 /** Kalenderjaar van een moment in Nederlandse tijd. */
 export function jaarInNederland(moment: Date): number {
   return Number(
-    new Intl.DateTimeFormat("nl-NL", { year: "numeric", timeZone: "Europe/Amsterdam" }).format(moment),
+    new Intl.DateTimeFormat("nl-NL", { year: "numeric", timeZone: TIJDZONE }).format(moment),
   );
 }
 
 /** Formatteert centen als bedrag, bijv. "€ 24,95". */
 export function formatteerBedrag(cent: number, valuta = "EUR"): string {
   return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(cent / 100);
+}
+
+/**
+ * Ingevoerd bedrag in euro's naar centen: "29,95", "29.95", "€ 25" en "1.250,00"
+ * (punt als duizendtalscheiding bij een komma) worden herkend. Leeg → 0; ongeldig → null.
+ */
+export function euroNaarCent(w: string): number | null {
+  const s = w.trim().replace(/\s|€/g, "");
+  if (!s) return 0;
+  const norm = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  if (!/^\d+(\.\d{1,2})?$/.test(norm)) return null;
+  return Math.round(Number(norm) * 100);
 }
 
 // Zonder verwarrende tekens (0/O, 1/I/L).

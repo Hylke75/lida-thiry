@@ -8,6 +8,7 @@
 // }
 
 import { BACKUP_FORMAAT, BACKUP_TABELLEN, BACKUP_VERSIE, type BackupTabel } from "./tabellen";
+import { TIJDZONE } from "../datum";
 
 export interface ManifestTabel {
   naam: string;
@@ -61,7 +62,7 @@ export function manifestTabel(t: BackupTabel, aantal: number, fout?: string): Ma
 /** Bestandsnaam: lida-thiry-backup-2026-10-04-1503.json.gz (Nederlandse tijd). */
 export function backupBestandsnaam(nu: Date): string {
   const d = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Amsterdam",
+    timeZone: TIJDZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

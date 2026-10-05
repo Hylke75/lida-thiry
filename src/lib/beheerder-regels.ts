@@ -3,14 +3,8 @@
 export const MIN_WACHTWOORD = 10;
 const MAX_WACHTWOORD = 72; // bcrypt (Supabase) gebruikt niet meer dan 72 bytes.
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** Genormaliseerd e-mailadres (kleine letters, zonder spaties), of null als het ongeldig is. */
-export function normaliseerEmail(invoer: unknown): string | null {
-  if (typeof invoer !== "string") return null;
-  const v = invoer.trim().toLowerCase();
-  return v.length <= 254 && EMAIL.test(v) ? v : null;
-}
+export { normaliseerEmail } from "@/lib/email";
 
 /** Waarom een beheerder niet verwijderd mag worden, of null als het mag. */
 export function verwijderBezwaar(opts: {

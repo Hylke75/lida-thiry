@@ -3,7 +3,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { AdminNav } from "../../AdminNav";
 import { haalSoorten } from "@/lib/afspraken/data";
 import { duurLabel, MAX } from "@/lib/afspraken/regels";
-import { vandaagAmsterdam } from "@/lib/afspraken/tijd";
+import { vandaagAmsterdam } from "@/lib/datum";
 import { maakAfspraak } from "../acties";
 import { invoer, kaart, knop, Meldingen, NAV_AFSPRAKEN, zacht } from "../stijl";
 

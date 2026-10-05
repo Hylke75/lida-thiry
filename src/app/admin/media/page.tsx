@@ -7,6 +7,7 @@ import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 import { invoerKlasse, knopKlein, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
 import { ImporteerKnop, UploadPaneel } from "./MediaOverzicht";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 
@@ -131,27 +132,16 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
             </ul>
           )}
 
-          {resultaat.paginas > 1 && (
-            <nav aria-label="Pagina's" className="flex items-center justify-center gap-2">
-              {resultaat.pagina > 1 ? (
-                <Link href={paginaLink(filters, resultaat.pagina - 1)} className={knopKlein}>
-                  ← Vorige
-                </Link>
-              ) : (
-                <span className={`${knopKlein} opacity-30`}>← Vorige</span>
-              )}
-              <span className={`text-xs ${zacht}`}>
-                {resultaat.pagina} / {resultaat.paginas}
-              </span>
-              {resultaat.pagina < resultaat.paginas ? (
-                <Link href={paginaLink(filters, resultaat.pagina + 1)} className={knopKlein}>
-                  Volgende →
-                </Link>
-              ) : (
-                <span className={`${knopKlein} opacity-30`}>Volgende →</span>
-              )}
-            </nav>
-          )}
+          <Paginering
+              pagina={resultaat.pagina}
+              paginas={resultaat.paginas}
+              href={(p) => paginaLink(filters, p)}
+              linkKlasse={knopKlein}
+              uitKlasse={`${knopKlein} opacity-30`}
+              navKlasse="flex items-center justify-center gap-2"
+              tekst="kort"
+              tekstKlasse={`text-xs ${zacht}`}
+            />
         </>
       )}
     </main>

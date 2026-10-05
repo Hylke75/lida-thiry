@@ -2,7 +2,9 @@
 // Puur (geen server- of browserafhankelijkheden), dus bruikbaar bij de upload in
 // de browser én bij de controle op de server.
 
-export const BEELD_BUCKET = "advies-beelden";
+import { ADVIES_BEELDEN } from "./opslag";
+
+export const BEELD_BUCKET = ADVIES_BEELDEN;
 
 /** Kortste zijde die een (nieuw) beeld minimaal moet hebben, in pixels. */
 const MIN_KORTE_ZIJDE = 600;

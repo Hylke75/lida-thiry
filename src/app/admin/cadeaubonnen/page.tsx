@@ -11,6 +11,8 @@ import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { BETAALDE_STATUSSEN } from "@/lib/order-status";
 import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
+import { datum } from "@/lib/datum";
+import { FACTUREN } from "@/lib/opslag";
 
 export const dynamic = "force-dynamic";
 
@@ -49,12 +51,6 @@ async function verstuurOpnieuw(formData: FormData) {
   });
   revalidatePath(PAD);
   terug(`Cadeaubon verstuurd naar ${aan}.`);
-}
-
-function datum(iso: string | null): string {
-  if (!iso) return "–";
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00Z`) : new Date(iso);
-  return d.toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Amsterdam" });
 }
 
 interface CodeInfo {
@@ -111,7 +107,7 @@ export default async function CadeaubonnenPage({
   const paden = bonnen.map((b) => b.factuur_pad).filter((p): p is string => Boolean(p));
   const factuurUrls = new Map<string, string>();
   if (paden.length) {
-    const { data: urls } = await supabase.storage.from("facturen").createSignedUrls(paden, 3600);
+    const { data: urls } = await supabase.storage.from(FACTUREN).createSignedUrls(paden, 3600);
     for (const u of urls ?? []) if (u.path && u.signedUrl) factuurUrls.set(u.path, u.signedUrl);
   }
 

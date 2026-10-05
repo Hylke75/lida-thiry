@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { leesPubliekeInstellingen } from "@/lib/instellingen";
+import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 
 /** Gemeenschappelijke opmaak voor de voorwaarden en de privacyverklaring. */
 export function JuridischePagina({
@@ -56,7 +57,7 @@ export async function Identiteit() {
   return (
     <div className="rounded-xl bg-kaart p-5 text-sm ring-1 ring-foreground/10">
       <p className="font-semibold text-foreground">
-        {waarde("bedrijfsnaam", "Lida Thiry Imago & Kledingadvies")}
+        {waarde("bedrijfsnaam", BEDRIJFSNAAM_STANDAARD)}
       </p>
       <p>Eigenaar: Lida Thiry</p>
       <p className="whitespace-pre-line">Adres: {waarde("bedrijf_adres", "[adres], [postcode] [plaats]")}</p>

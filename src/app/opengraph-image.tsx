@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
+import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 
-export const alt = "Lida Thiry Imago & Kledingadvies — ontdek je figuurtype";
+export const alt = `${BEDRIJFSNAAM_STANDAARD} — ontdek je figuurtype`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

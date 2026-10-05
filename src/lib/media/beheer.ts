@@ -31,6 +31,8 @@ import {
   type MediaBucket,
   type TypeFilter,
 } from "./regels";
+import { BLOG, NIEUWSBRIEF } from "../opslag";
+import type { Uitkomst } from "../uitkomst";
 
 export type { MediaItem };
 
@@ -94,8 +96,6 @@ function openbareUrl(bucket: string, pad: string): string {
 }
 
 // Uploaden ----------------------------------------------------------------------------
-
-export type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fout: string };
 
 export interface UploadPlek {
   bucket: MediaBucket;
@@ -325,7 +325,7 @@ export async function importeerBestaande(): Promise<{ nieuw: number; bekeken: nu
   const supabase = adminClient();
   let nieuw = 0;
   let bekeken = 0;
-  for (const bucket of ["blog", "nieuwsbrief"] as const) {
+  for (const bucket of [BLOG, NIEUWSBRIEF] as const) {
     // Gemaakte versies (opt/…) horen bij hun origineel en komen niet apart in de bibliotheek.
     const bestanden = (await lijstBucket(bucket)).filter((x) => isImporteerbaar(x.b.name) && isVeiligPad(x.pad) && !isOptPad(x.pad));
     bekeken += bestanden.length;

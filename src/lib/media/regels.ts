@@ -1,6 +1,8 @@
 // Pure regels voor de mediabibliotheek (veilig in de browser én op de server).
 
 /** Eén rij uit de tabel media. */
+import { BLOG, MEDIA, NIEUWSBRIEF } from "../opslag";
+
 export interface MediaItem {
   id: string;
   bucket: string;
@@ -16,9 +18,9 @@ export interface MediaItem {
   aangemaakt_op: string;
 }
 
-export const MEDIA_BUCKET = "media";
+export const MEDIA_BUCKET = MEDIA;
 /** Buckets waarvan bestanden in de bibliotheek mogen staan (oudere uploads: blog, nieuwsbrief). */
-const MEDIA_BUCKETS = ["media", "blog", "nieuwsbrief"] as const;
+const MEDIA_BUCKETS = [MEDIA, BLOG, NIEUWSBRIEF] as const;
 export type MediaBucket = (typeof MEDIA_BUCKETS)[number];
 
 /** Gelijk aan de limiet van de bucket "media". */

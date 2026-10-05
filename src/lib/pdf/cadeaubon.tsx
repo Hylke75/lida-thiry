@@ -1,7 +1,9 @@
 import "server-only";
 import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { formatteerBedrag } from "@/lib/prijs";
-import { datumLang, type BonGegevens } from "@/lib/email-html";
+import type { BonGegevens } from "@/lib/email-html";
+import { datumLang } from "@/lib/datum";
+import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 
 const kleur = { tekst: "#2b2a28", grijs: "#6b6b6b", accent: "#a4634d", zacht: "#f6efe9" };
 
@@ -47,10 +49,10 @@ function CadeaubonPdf({ b, bestelUrl }: { b: BonGegevens; bestelUrl: string }) {
     .filter(Boolean)
     .join(" · ");
   return (
-    <Document title={`Cadeaubon ${b.code}`} author="Lida Thiry Imago & Kledingadvies">
+    <Document title={`Cadeaubon ${b.code}`} author={BEDRIJFSNAAM_STANDAARD}>
       <Page size="A4" orientation="landscape" style={s.page}>
         <View style={s.kader} wrap={false}>
-          <Text style={s.merk}>Lida Thiry Imago &amp; Kledingadvies</Text>
+          <Text style={s.merk}>{BEDRIJFSNAAM_STANDAARD}</Text>
           <Text style={s.titel}>Cadeaubon</Text>
           <Text style={s.sub}>voor de online persoonlijke kledingadviestest</Text>
           <Text style={s.bedrag}>{formatteerBedrag(b.bedragCent, b.valuta)}</Text>

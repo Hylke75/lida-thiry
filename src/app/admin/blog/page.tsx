@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { aiBeschikbaar } from "@/lib/blog/ai";
 import { AI_LIMIET_PER_UUR, filterBerichten, toonDollar, uniekGesorteerd } from "@/lib/blog/beheer";
 import { leestijdMinuten, zichtbaarheid, type BlogBericht } from "@/lib/blog/regels";
-import { amsterdamNaarUtc, toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/nieuwsbrief/tijd";
+import { amsterdamNaarUtc, toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/datum";
 import { Melding } from "../AdminNav";
 import { VerwijderKnop } from "../nieuwsbrief/_editor/VerwijderKnop";
 import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";

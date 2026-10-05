@@ -5,7 +5,6 @@ import {
   letterNaam,
   ontleedSleutel,
   telPerType,
-  veiligeZoekterm,
   verplaats,
   verwijderOp,
   voegIn,
@@ -119,10 +118,6 @@ describe("telPerType", () => {
 });
 
 describe("overig", () => {
-  it("maakt zoektermen veilig", () => {
-    expect(veiligeZoekterm("  v-hals, (goed)%  ")).toBe("v-hals goed");
-    expect(veiligeZoekterm("a_b*c")).toBe("a b c");
-  });
   it("ontleedt sleutels", () => {
     expect(ontleedSleutel("12A")).toEqual({ categorie: 12, letter: "A" });
     expect(ontleedSleutel("6-8")).toBeNull();

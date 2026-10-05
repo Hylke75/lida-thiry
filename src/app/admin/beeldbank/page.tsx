@@ -18,6 +18,7 @@ import { AdminNav, Melding } from "../AdminNav";
 import { BeeldUpload } from "./BeeldUpload";
 import { bepaalAfmetingen } from "./acties";
 import { StatusBadge, TeKleinBadge } from "./badges";
+import { Paginering } from "@/components/admin/Paginering";
 
 export const dynamic = "force-dynamic";
 // Afmetingen bepalen en uploads verwerken (sharp) kan even duren.
@@ -333,27 +334,16 @@ export default async function BeeldbankPagina({
         </ul>
       )}
 
-      {aantalPaginas > 1 && (
-        <nav aria-label="Pagina's" className="flex items-center justify-center gap-3 text-sm">
-          {pagina > 1 ? (
-            <Link href={filterHref(filters, { pagina: pagina - 1 })} className="rounded-full border border-black/15 px-4 py-1.5 hover:border-accent dark:border-white/20">
-              ← Vorige
-            </Link>
-          ) : (
-            <span className="rounded-full border border-black/5 px-4 py-1.5 text-black/30 dark:border-white/10 dark:text-white/30">← Vorige</span>
-          )}
-          <span className="tabular-nums">
-            {pagina} / {aantalPaginas}
-          </span>
-          {pagina < aantalPaginas ? (
-            <Link href={filterHref(filters, { pagina: pagina + 1 })} className="rounded-full border border-black/15 px-4 py-1.5 hover:border-accent dark:border-white/20">
-              Volgende →
-            </Link>
-          ) : (
-            <span className="rounded-full border border-black/5 px-4 py-1.5 text-black/30 dark:border-white/10 dark:text-white/30">Volgende →</span>
-          )}
-        </nav>
-      )}
+      <Paginering
+        pagina={pagina}
+        paginas={aantalPaginas}
+        href={(p) => filterHref(filters, { pagina: p })}
+        linkKlasse="rounded-full border border-black/15 px-4 py-1.5 hover:border-accent dark:border-white/20"
+        uitKlasse="rounded-full border border-black/5 px-4 py-1.5 text-black/30 dark:border-white/10 dark:text-white/30"
+        navKlasse="flex items-center justify-center gap-3 text-sm"
+        tekst="kort"
+        tekstKlasse="tabular-nums"
+      />
     </main>
   );
 }

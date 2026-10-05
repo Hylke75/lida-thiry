@@ -12,7 +12,7 @@ import {
   vandaagAmsterdam,
   vanAmsterdam,
   weekdagVan,
-} from "../afspraken/tijd";
+} from "../datum";
 
 const iso = (d: Date) => d.toISOString();
 

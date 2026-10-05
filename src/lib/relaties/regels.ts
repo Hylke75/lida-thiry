@@ -1,5 +1,7 @@
 // Pure regels voor het adresboek: namen splitsen, invoer opschonen, aanvullen.
 
+import { geldigEmail } from "@/lib/email";
+
 export const RELATIE_BRONNEN = ["handmatig", "bestelling", "nieuwsbrief", "contactformulier", "import"] as const;
 export type RelatieBron = (typeof RELATIE_BRONNEN)[number];
 
@@ -64,7 +66,7 @@ const leeg = (v: unknown, max = 200): string | null => {
 export function schoonGegevens(ruw: Partial<Record<keyof RelatieGegevens, unknown>>): Partial<RelatieGegevens> {
   const uit: Partial<RelatieGegevens> = {};
   const email = leeg(ruw.email, 254)?.toLowerCase() ?? null;
-  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) uit.email = email;
+  if (email && geldigEmail(email)) uit.email = email;
   for (const k of ["voornaam", "achternaam", "telefoon", "bedrijf", "straat", "plaats"] as const) {
     const w = leeg(ruw[k], k === "straat" ? 200 : 100);
     if (w) uit[k] = w;

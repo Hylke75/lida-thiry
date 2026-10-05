@@ -10,7 +10,7 @@ import { BEWERKINGEN, type Bewerking } from "@/lib/blog/ai-prompt";
 import { campagneBlokkenUitBericht } from "@/lib/blog/beheer";
 import { BERICHT_VELDEN, publicatieProblemen, valideerBericht, zichtbaarheid, type BlogBericht, type Zichtbaarheid } from "@/lib/blog/regels";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
-import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
+import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/datum";
 import { siteUrl } from "@/lib/site";
 import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { bewaarVersie } from "@/lib/versies/beheer";
@@ -26,8 +26,7 @@ import {
   vernieuwBlog,
   vrijeSlug,
 } from "./_editor/server";
-
-type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
+import type { FormulierUitkomst } from "@/lib/uitkomst";
 
 function leesId(formData: FormData): string {
   const id = String(formData.get("id") ?? "");
@@ -102,7 +101,7 @@ export async function verwijderBericht(formData: FormData) {
 
 // Editor ------------------------------------------------------------------------------
 
-export type BerichtUitkomst = Uitkomst<{ bericht: BlogBericht; zichtbaar: Zichtbaarheid; melding: string }>;
+export type BerichtUitkomst = FormulierUitkomst<{ bericht: BlogBericht; zichtbaar: Zichtbaarheid; melding: string }>;
 
 const fout = (...fouten: string[]): { ok: false; fouten: string[] } => ({ ok: false, fouten });
 
@@ -272,7 +271,7 @@ export async function alsNieuwsbrief(formData: FormData) {
 // AI ----------------------------------------------------------------------------------
 
 /** Herschrijft een stuk tekst met de AI. Het resultaat wordt alleen getoond, niet opgeslagen. */
-export async function aiBewerk(id: string, bewerking: string, tekst: string): Promise<Uitkomst<{ tekst: string }>> {
+export async function aiBewerk(id: string, bewerking: string, tekst: string): Promise<FormulierUitkomst<{ tekst: string }>> {
   await vereisBeheerder("blog");
   if (!aiBeschikbaar()) return fout("De AI-schrijfhulp is nog niet ingesteld.");
   if (!(bewerking in BEWERKINGEN)) return fout("Onbekende bewerking.");
@@ -287,7 +286,7 @@ export async function aiBewerk(id: string, bewerking: string, tekst: string): Pr
 }
 
 /** Voorstellen voor titels, samenvatting, SEO-teksten en tags. */
-export async function aiVoorstel(id: string, titel: string, inhoud: string): Promise<Uitkomst<{ suggesties: Suggesties }>> {
+export async function aiVoorstel(id: string, titel: string, inhoud: string): Promise<FormulierUitkomst<{ suggesties: Suggesties }>> {
   await vereisBeheerder("blog");
   if (!aiBeschikbaar()) return fout("De AI-schrijfhulp is nog niet ingesteld.");
   const limiet = await aiLimietFout();
