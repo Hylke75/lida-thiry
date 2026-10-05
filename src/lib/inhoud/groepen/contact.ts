@@ -70,8 +70,8 @@ export const CONTACT_FORMULIER = sectie({
 export const CONTACT_BEVESTIGMAIL = sectie({
   sleutel: "contact.bevestigmail",
   titel: "Ontvangstbevestiging aan de afzender",
-  uitleg: "Wordt direct na het versturen van het contactformulier gestuurd. Onder de tekst staat het bericht zelf.",
-  variabelen: { naam: "de naam die is ingevuld", onderwerp: "het gekozen onderwerp (of ‘je bericht’)" },
+  uitleg:
+    "Wordt direct na het versturen van het contactformulier gestuurd (hooguit twee keer per dag per adres). Bewust zonder de ingevulde naam en het bericht: zo kan niemand via het formulier eigen tekst naar een ander laten sturen.",
   velden: {
     onderwerp: { soort: "tekst", label: "Onderwerp van de mail", standaard: "Bedankt voor je bericht" },
     kop: { soort: "tekst", label: "Kop", standaard: "Bedankt voor je bericht!" },
@@ -81,9 +81,8 @@ export const CONTACT_BEVESTIGMAIL = sectie({
       uitleg: OPMAAK_UITLEG,
       regels: 6,
       standaard:
-        "Beste {naam},\n\nBedankt voor je bericht. Ik heb het goed ontvangen en reageer zo snel mogelijk, meestal binnen twee werkdagen.\n\nHartelijke groet,\nLida Thiry",
+        "Hallo,\n\nBedankt voor je bericht via de website. Ik heb het goed ontvangen en reageer zo snel mogelijk, meestal binnen twee werkdagen.\n\nHeb je dit bericht niet zelf gestuurd? Dan kun je deze mail negeren.\n\nHartelijke groet,\nLida Thiry",
     },
-    citaat_kop: { soort: "tekst", label: "Regel boven het geciteerde bericht", standaard: "Je bericht:" },
   },
 });
 

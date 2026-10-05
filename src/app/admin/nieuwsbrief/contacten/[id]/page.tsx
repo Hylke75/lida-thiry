@@ -165,15 +165,15 @@ export default async function ContactPagina({
             </BevestigKnop>
           </form>
         ) : null}
-        {c.status !== "aangemeld" && (
+        {c.status === "klacht" && (
+          <p className="border-t border-black/10 pt-3 text-sm text-red-700 dark:border-white/15 dark:text-red-300">
+            Deze persoon heeft de nieuwsbrief als spam gemeld. Opnieuw aanmelden kan daarom niet; vraagt die er zelf
+            om, dan kan dat alleen na verwijderen via een nieuwe aanmelding met bevestiging.
+          </p>
+        )}
+        {c.status !== "aangemeld" && c.status !== "klacht" && (
           <form action={meldContactOpnieuwAan} className="flex flex-col gap-2 border-t border-black/10 pt-3 text-sm dark:border-white/15">
             <input type="hidden" name="id" value={c.id} />
-            {c.status === "klacht" && (
-              <p className="text-red-700 dark:text-red-300">
-                Let op: deze persoon heeft de nieuwsbrief als spam gemeld. Meld alleen opnieuw aan als die daar zelf
-                uitdrukkelijk om heeft gevraagd.
-              </p>
-            )}
             {c.status === "gebounced" && (
               <p className="text-black/60 dark:text-white/60">
                 Mails naar dit adres kwamen niet aan. Controleer eerst of het adres klopt.

@@ -1,12 +1,15 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { Resend } from "resend";
 import { adminClient } from "../supabase/admin";
+import { afzender, resend } from "../resend";
 import { leesInstellingen } from "../instellingen";
 import { renderNieuwsbrief, valideerBlokken, controleerVoorVerzenden, type Blok } from "./blokken";
 import { normaliseerDoelgroep } from "./doelgroep";
 import { zoekOntvangers, CONTACT_VELDEN, type Contact } from "./contacten";
 import { afmeldEndpoint, afmeldPagina, klikUrl, pixelUrl } from "./links";
+import { beginVanDag } from "./tijd";
+import { daglimietBereikt, isTijdelijkeLimiet, koppelBatchUitkomst } from "./verzendregels";
+import { registreerFout } from "../fouten/registreer";
 import {
   abActief,
   abWachtUren,
@@ -51,16 +54,6 @@ export interface Campagne {
 
 export const CAMPAGNE_VELDEN =
   "id, soort, naam, onderwerp, preheader, blokken, doelgroep, status, ingepland_op, gestart_op, verzonden_op, trigger, vertraging_dagen, actief, actief_sinds, aangemaakt_op, bijgewerkt_op, onderwerp_b, ab_percentage, ab_winnaar";
-
-function resend(): Resend {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY ontbreekt.");
-  return new Resend(key);
-}
-
-function afzender(): string {
-  return process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>";
-}
 
 interface Huisstijl {
   afzender: { naam: string; adres: string | null };
@@ -111,33 +104,58 @@ export async function startCampagne(
 
   const supabase = adminClient();
   // Eerst claimen (alleen als nog niet gestart), zodat dubbel klikken niets dubbel doet.
+  // wachtrij_gevuld_op blijft leeg tot de hele doelgroep in de wachtrij staat: zolang
+  // rondt rondCampagnesAf() de campagne niet af, ook al is de wachtrij even leeg.
   const { data: geclaimd } = await supabase
     .from("nb_campagnes")
-    .update({ status: "bezig", gestart_op: new Date().toISOString() })
+    .update({ status: "bezig", gestart_op: new Date().toISOString(), wachtrij_gevuld_op: null })
     .eq("id", id)
     .in("status", ["concept", "ingepland"])
     .select("id")
     .maybeSingle();
   if (!geclaimd) return { ok: false, fouten: ["Deze campagne wordt al verzonden."] };
 
-  const ontvangers = await zoekOntvangers(normaliseerDoelgroep(c.doelgroep));
-  // A/B-test: eerst alleen de testgroep (A en B); de rest volgt na de keuze van de winnaar.
-  const test = abActief(c) && !c.ab_winnaar ? splitsTestgroep(ontvangers, c.ab_percentage!) : null;
-  if (abActief(c) && !c.ab_winnaar && !test && ontvangers.length) {
-    // Te weinig ontvangers voor een test: iedereen krijgt onderwerp A.
-    await supabase.from("nb_campagnes").update({ ab_winnaar: "a" }).eq("id", id);
+  let winnaarGezet = false;
+  try {
+    const ontvangers = await zoekOntvangers(normaliseerDoelgroep(c.doelgroep));
+    // A/B-test: eerst alleen de testgroep (A en B); de rest volgt na de keuze van de winnaar.
+    const test = abActief(c) && !c.ab_winnaar ? splitsTestgroep(ontvangers, c.ab_percentage!) : null;
+    if (abActief(c) && !c.ab_winnaar && !test && ontvangers.length) {
+      // Te weinig ontvangers voor een test: iedereen krijgt onderwerp A.
+      const { error } = await supabase.from("nb_campagnes").update({ ab_winnaar: "a" }).eq("id", id);
+      if (error) throw new Error(`A/B-test: ${error.message}`);
+      winnaarGezet = true;
+    }
+    const wachtrij: { o: (typeof ontvangers)[number]; variant: Variant | null }[] = test
+      ? [...test.a.map((o) => ({ o, variant: "a" as const })), ...test.b.map((o) => ({ o, variant: "b" as const }))]
+      : ontvangers.map((o) => ({ o, variant: null }));
+    await vulWachtrij(
+      id,
+      wachtrij.map(({ o, variant }) => ({ contact_id: o.id, email: o.email, ...(variant ? { variant } : {}) })),
+    );
+    const nu = new Date().toISOString();
+    const { error } = await supabase
+      .from("nb_campagnes")
+      .update(ontvangers.length === 0 ? { status: "verzonden", verzonden_op: nu, wachtrij_gevuld_op: nu } : { wachtrij_gevuld_op: nu })
+      .eq("id", id);
+    if (error) throw new Error(`campagne bijwerken: ${error.message}`);
+    return { ok: true, aantal: ontvangers.length, ...(test ? { testgroep: test.a.length + test.b.length } : {}) };
+  } catch (e) {
+    // Terugdraaien: weer concept/ingepland, zonder half gevulde wachtrij. Wat al
+    // verstuurd is, blijft staan (een nieuwe start slaat die ontvangers over).
+    await supabase.from("nb_verzendingen").delete().eq("campagne_id", id).eq("status", "wachtrij");
+    await supabase
+      .from("nb_campagnes")
+      .update({
+        status: c.status,
+        gestart_op: c.gestart_op,
+        wachtrij_gevuld_op: null,
+        ...(winnaarGezet ? { ab_winnaar: null } : {}),
+      })
+      .eq("id", id)
+      .eq("status", "bezig");
+    throw e;
   }
-  const wachtrij: { o: (typeof ontvangers)[number]; variant: Variant | null }[] = test
-    ? [...test.a.map((o) => ({ o, variant: "a" as const })), ...test.b.map((o) => ({ o, variant: "b" as const }))]
-    : ontvangers.map((o) => ({ o, variant: null }));
-  await vulWachtrij(
-    id,
-    wachtrij.map(({ o, variant }) => ({ contact_id: o.id, email: o.email, ...(variant ? { variant } : {}) })),
-  );
-  if (ontvangers.length === 0) {
-    await supabase.from("nb_campagnes").update({ status: "verzonden", verzonden_op: new Date().toISOString() }).eq("id", id);
-  }
-  return { ok: true, aantal: ontvangers.length, ...(test ? { testgroep: test.a.length + test.b.length } : {}) };
 }
 
 /** Zet verzendingen in de wachtrij (in blokken; bestaande ontvangers worden overgeslagen). */
@@ -213,7 +231,7 @@ export async function kiesAbWinnaar(id: string, opties: { direct?: boolean } = {
   const supabase = adminClient();
   const { data: gezet } = await supabase
     .from("nb_campagnes")
-    .update({ ab_winnaar: winnaar })
+    .update({ ab_winnaar: winnaar, wachtrij_gevuld_op: null })
     .eq("id", id)
     .is("ab_winnaar", null)
     .select("id")
@@ -225,6 +243,8 @@ export async function kiesAbWinnaar(id: string, opties: { direct?: boolean } = {
       id,
       ontvangers.map((o) => ({ contact_id: o.id, email: o.email })),
     );
+    const { error } = await supabase.from("nb_campagnes").update({ wachtrij_gevuld_op: new Date().toISOString() }).eq("id", id);
+    if (error) throw new Error(`campagne bijwerken: ${error.message}`);
     // Wie al in de testgroep zat, staat er al in; het aantal nieuwe telt de rest.
     const { count } = await supabase
       .from("nb_verzendingen")
@@ -234,7 +254,8 @@ export async function kiesAbWinnaar(id: string, opties: { direct?: boolean } = {
     return { ok: true, winnaar, reden, aantal: count ?? 0 };
   } catch (e) {
     // Terugdraaien, zodat de volgende ronde het opnieuw probeert.
-    await supabase.from("nb_campagnes").update({ ab_winnaar: null }).eq("id", id);
+    // De testgroep stond al volledig in de wachtrij.
+    await supabase.from("nb_campagnes").update({ ab_winnaar: null, wachtrij_gevuld_op: new Date().toISOString() }).eq("id", id);
     throw e;
   }
 }
@@ -270,8 +291,14 @@ export async function startIngeplande(): Promise<number> {
     .lte("ingepland_op", new Date().toISOString());
   let n = 0;
   for (const r of data ?? []) {
-    const u = await startCampagne(r.id);
-    if (u.ok) n++;
+    // Eén mislukte campagne mag de rest van de ronde niet tegenhouden.
+    try {
+      const u = await startCampagne(r.id);
+      if (u.ok) n++;
+    } catch (e) {
+      console.error("Ingeplande campagne starten mislukt", r.id, e);
+      await registreerFout({ bron: "cron", fout: e, pad: "/api/nb/verwerk", details: { onderdeel: "campagne starten", campagne: r.id } });
+    }
   }
   return n;
 }
@@ -291,60 +318,68 @@ export async function planAutomatiseringen(): Promise<number> {
     .eq("actief", true);
   let gepland = 0;
   for (const a of (autos ?? []) as Campagne[]) {
-    if (verzendProblemen(a).length) continue;
-    const grens = new Date(Date.now() - a.vertraging_dagen * 86_400_000);
-    if (!a.actief_sinds) continue;
-    const vanaf = new Date(a.actief_sinds);
-    if (vanaf > grens) continue;
-    let kandidaten: { id: string; email: string }[] = [];
-
-    if (a.trigger === "aanmelding") {
-      const { data } = await supabase
-        .from("nb_contacten")
-        .select("id, email")
-        .eq("status", "aangemeld")
-        .lte("bevestigd_op", grens.toISOString())
-        .gte("bevestigd_op", vanaf.toISOString())
-        .limit(1000);
-      kandidaten = data ?? [];
-    } else if (a.trigger === "advies") {
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("email")
-        .eq("status", "advies_verzonden")
-        .lte("afgerond_op", grens.toISOString())
-        .gte("afgerond_op", vanaf.toISOString())
-        .limit(1000);
-      const emails = [...new Set((orders ?? []).map((o) => o.email.trim().toLowerCase()))];
-      for (let i = 0; i < emails.length; i += 200) {
-        const { data } = await supabase
-          .from("nb_contacten")
-          .select("id, email")
-          .eq("status", "aangemeld")
-          .in("email", emails.slice(i, i + 200));
-        kandidaten.push(...(data ?? []));
-      }
+    // Eén mislukte automatisering mag de rest (en het verzenden) niet tegenhouden.
+    try {
+      if (verzendProblemen(a).length) continue;
+      const grens = new Date(Date.now() - a.vertraging_dagen * 86_400_000);
+      if (!a.actief_sinds) continue;
+      const vanaf = new Date(a.actief_sinds);
+      if (vanaf > grens) continue;
+      // De database kiest wie de mail nog niet kreeg (anti-join op nb_verzendingen),
+      // zodat dit niet vastloopt zodra er meer dan 1000 kandidaten zijn geweest.
+      const { data: kandidaten, error: fout } = await supabase.rpc("nb_automatisering_kandidaten", {
+        p_campagne: a.id,
+        p_vanaf: vanaf.toISOString(),
+        p_grens: grens.toISOString(),
+        p_max: 1000,
+      });
+      if (fout) throw new Error(`kandidaten zoeken: ${fout.message}`);
+      const lijst = (kandidaten ?? []) as { id: string; email: string }[];
+      if (!lijst.length) continue;
+      const { data: ingevoegd, error } = await supabase
+        .from("nb_verzendingen")
+        .upsert(
+          lijst.map((k) => ({ campagne_id: a.id, contact_id: k.id, email: k.email })),
+          { onConflict: "campagne_id,contact_id", ignoreDuplicates: true },
+        )
+        .select("id");
+      if (error) throw new Error(error.message);
+      gepland += ingevoegd?.length ?? 0;
+    } catch (e) {
+      console.error("Automatische mail inplannen mislukt", a.id, e);
+      await registreerFout({
+        bron: "cron",
+        fout: e instanceof Error ? new Error(`automatisering ${a.naam}: ${e.message}`) : e,
+        pad: "/api/nb/verwerk",
+        details: { onderdeel: "automatisering inplannen", campagne: a.id },
+      });
     }
-    if (!kandidaten.length) continue;
-    const { data: ingevoegd, error } = await supabase
-      .from("nb_verzendingen")
-      .upsert(
-        kandidaten.map((k) => ({ campagne_id: a.id, contact_id: k.id, email: k.email })),
-        { onConflict: "campagne_id,contact_id", ignoreDuplicates: true },
-      )
-      .select("id");
-    if (error) throw new Error(`automatisering ${a.naam}: ${error.message}`);
-    gepland += ingevoegd?.length ?? 0;
   }
   return gepland;
 }
 
-async function verzondenAfgelopenEtmaal(): Promise<number> {
-  const { count } = await adminClient()
-    .from("nb_verzendingen")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "verzonden")
-    .gte("verzonden_op", new Date(Date.now() - 86_400_000).toISOString());
+/**
+ * Hoeveel van de daglimiet vandaag (Nederlandse kalenderdag) al op is: verzonden
+ * mails plus mails die nu verstuurd worden (status 'verwerken'), zodat
+ * overlappende rondes samen niet over de limiet gaan.
+ */
+async function verbruiktVandaag(): Promise<number> {
+  const supabase = adminClient();
+  const [verzonden, bezig] = await Promise.all([
+    supabase
+      .from("nb_verzendingen")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "verzonden")
+      .gte("verzonden_op", beginVanDag().toISOString()),
+    supabase.from("nb_verzendingen").select("id", { count: "exact", head: true }).eq("status", "verwerken"),
+  ]);
+  if (verzonden.error) throw new Error(`daglimiet tellen: ${verzonden.error.message}`);
+  if (bezig.error) throw new Error(`daglimiet tellen: ${bezig.error.message}`);
+  return (verzonden.count ?? 0) + (bezig.count ?? 0);
+}
+
+async function nogInWachtrij(): Promise<number> {
+  const { count } = await adminClient().from("nb_verzendingen").select("id", { count: "exact", head: true }).eq("status", "wachtrij");
   return count ?? 0;
 }
 
@@ -352,32 +387,48 @@ export interface WachtrijResultaat {
   verzonden: number;
   mislukt: number;
   overgeslagen: number;
-  /** De daglimiet is bereikt; de rest gaat bij een volgende ronde. */
+  /** De daglimiet (of de limiet van Resend) is bereikt; de rest gaat bij een volgende ronde. */
   limietBereikt: boolean;
 }
 
 /**
  * Verstuurt mails uit de wachtrij, in batches van 100 via Resend, binnen de
- * daglimiet (instelling nb_max_per_dag). Veilig om vaak en gelijktijdig aan te
- * roepen: verzendingen worden atomair geclaimd.
+ * daglimiet (instelling nb_max_per_dag, per Nederlandse kalenderdag). Veilig om
+ * vaak en gelijktijdig aan te roepen: de database claimt verzendingen atomair en
+ * bewaakt daarbij zelf de daglimiet (nb_claim_verzendingen met advisory lock).
  */
 export async function verwerkWachtrij(opties: { max?: number } = {}): Promise<WachtrijResultaat> {
   const supabase = adminClient();
   const uit: WachtrijResultaat = { verzonden: 0, mislukt: 0, overgeslagen: 0, limietBereikt: false };
-  await startIngeplande();
-  await beslisAbTesten();
-  await planAutomatiseringen();
+  // Elk onderdeel apart: een fout in het ene mag het verzenden niet tegenhouden.
+  for (const [onderdeel, stap] of [
+    ["ingeplande campagnes starten", startIngeplande],
+    ["A/B-testen beslissen", beslisAbTesten],
+    ["automatische mails inplannen", planAutomatiseringen],
+  ] as const) {
+    try {
+      await stap();
+    } catch (e) {
+      console.error(`Nieuwsbrief: ${onderdeel} mislukt`, e);
+      await registreerFout({ bron: "cron", fout: e, pad: "/api/nb/verwerk", details: { onderdeel } });
+    }
+  }
 
   const stijl = await huisstijl();
-  const ruimte = stijl.maxPerDag - (await verzondenAfgelopenEtmaal());
+  const ruimte = stijl.maxPerDag - (await verbruiktVandaag());
   const max = Math.min(opties.max ?? 500, ruimte);
   if (max <= 0) {
-    const { count } = await supabase.from("nb_verzendingen").select("id", { count: "exact", head: true }).eq("status", "wachtrij");
-    uit.limietBereikt = (count ?? 0) > 0;
+    uit.limietBereikt = (await nogInWachtrij()) > 0;
     return uit;
   }
 
-  const { data: geclaimd, error } = await supabase.rpc("nb_claim_verzendingen", { p_max: max });
+  // De database telt de daglimiet opnieuw (onder een lock), zodat gelijktijdige
+  // rondes samen nooit meer dan de limiet claimen.
+  const { data: geclaimd, error } = await supabase.rpc("nb_claim_verzendingen", {
+    p_max: max,
+    p_dag_limiet: stijl.maxPerDag,
+    p_dag_start: beginVanDag().toISOString(),
+  });
   if (error) throw new Error(`wachtrij claimen: ${error.message}`);
   const rijen = (geclaimd ?? []) as {
     id: string;
@@ -388,6 +439,7 @@ export async function verwerkWachtrij(opties: { max?: number } = {}): Promise<Wa
   }[];
   if (!rijen.length) {
     await rondCampagnesAf();
+    uit.limietBereikt = await limietTegenhoudt(stijl.maxPerDag);
     return uit;
   }
 
@@ -417,8 +469,15 @@ export async function verwerkWachtrij(opties: { max?: number } = {}): Promise<Wa
     uit.overgeslagen = overslaan.length;
   }
 
+  let gestopt: string | null = null;
   for (let i = 0; i < teVersturen.length; i += BATCH) {
     const deel = teVersturen.slice(i, i + BATCH);
+    const ids = deel.map((d) => d.rij.id);
+    if (gestopt) {
+      // Resend gaf eerder in deze ronde een limiet: niet verder proberen.
+      await zetTerugInWachtrij(ids, gestopt);
+      continue;
+    }
     const mails = deel.map(({ rij, contact, campagne }) => {
       const { blokken } = valideerBlokken(campagne.blokken);
       const r = renderNieuwsbrief({
@@ -447,45 +506,94 @@ export async function verwerkWachtrij(opties: { max?: number } = {}): Promise<Wa
       };
     });
     const sleutel = createHash("sha256").update(deel.map((d) => d.rij.id).sort().join(",")).digest("hex");
+    let antwoord;
     try {
-      const { data, error: fout } = await resend().batch.send(mails, { idempotencyKey: `nb-${sleutel}` });
-      if (fout) throw new Error(fout.message);
-      const ids = data?.data ?? [];
-      const nu = new Date().toISOString();
-      await Promise.all(
-        deel.map(({ rij }, j) =>
-          supabase
-            .from("nb_verzendingen")
-            .update({ status: "verzonden", verzonden_op: nu, resend_id: ids[j]?.id ?? null, fout: null })
-            .eq("id", rij.id),
-        ),
-      );
-      uit.verzonden += deel.length;
+      // 'permissive': één ongeldig adres laat niet de hele batch mislukken.
+      antwoord = await resend().batch.send(mails, { idempotencyKey: `nb-${sleutel}`, batchValidation: "permissive" });
     } catch (e) {
-      const melding = e instanceof Error ? e.message : String(e);
-      await supabase
-        .from("nb_verzendingen")
-        .update({ status: "mislukt", fout: melding.slice(0, 500) })
-        .in(
-          "id",
-          deel.map((d) => d.rij.id),
-        );
-      uit.mislukt += deel.length;
+      antwoord = { data: null, error: { message: e instanceof Error ? e.message : String(e), statusCode: null, name: "application_error" as const } };
     }
+    if (antwoord.error) {
+      const melding = antwoord.error.message;
+      if (isTijdelijkeLimiet(antwoord.error)) {
+        // Limiet of quotum van Resend: laten staan voor een volgende ronde.
+        gestopt = `Uitgesteld (limiet van Resend): ${melding}`.slice(0, 500);
+        await zetTerugInWachtrij(ids, gestopt);
+        uit.limietBereikt = true;
+        continue;
+      }
+      const { error: fout } = await supabase.from("nb_verzendingen").update({ status: "mislukt", fout: melding.slice(0, 500) }).in("id", ids);
+      if (fout) console.error("Nieuwsbrief: status 'mislukt' opslaan mislukt", fout.message);
+      uit.mislukt += deel.length;
+      continue;
+    }
+
+    const uitkomsten = koppelBatchUitkomst(deel.length, antwoord.data?.data, antwoord.data?.errors);
+    const verzonden: { id: string; resendId: string | null }[] = [];
+    const geweigerd: { id: string; fout: string }[] = [];
+    uitkomsten.forEach((u, j) => {
+      if ("fout" in u) geweigerd.push({ id: ids[j], fout: u.fout });
+      else verzonden.push({ id: ids[j], resendId: u.id });
+    });
+    if (verzonden.length) {
+      // Eén statement voor de hele batch, en de fout controleren: anders blijven
+      // verzonden mails op 'verwerken' staan.
+      const { error: fout } = await supabase.rpc("nb_markeer_verzonden", {
+        p_ids: verzonden.map((v) => v.id),
+        p_resend_ids: verzonden.map((v) => v.resendId),
+      });
+      if (fout) {
+        // De mails zijn wel verstuurd. Niet opnieuw claimen: na 30 minuten worden ze
+        // 'mislukt' met de notitie "mogelijk verzonden" (zie nb_claim_verzendingen).
+        console.error("Nieuwsbrief: verzonden mails registreren mislukt", fout.message);
+        await registreerFout({ bron: "cron", fout: new Error(`verzonden registreren: ${fout.message}`), pad: "/api/nb/verwerk" });
+      }
+      uit.verzonden += verzonden.length;
+    }
+    for (const g of geweigerd) {
+      await supabase.from("nb_verzendingen").update({ status: "mislukt", fout: g.fout.slice(0, 500) }).eq("id", g.id);
+    }
+    uit.mislukt += geweigerd.length;
   }
 
   await rondCampagnesAf();
+  if (!uit.limietBereikt) uit.limietBereikt = await limietTegenhoudt(stijl.maxPerDag);
   return uit;
 }
 
-/** Zet campagnes zonder openstaande verzendingen op 'verzonden'. */
+/** Zet geclaimde verzendingen terug in de wachtrij (bijv. na een limiet van Resend). */
+async function zetTerugInWachtrij(ids: string[], notitie: string): Promise<void> {
+  const { error } = await adminClient()
+    .from("nb_verzendingen")
+    .update({ status: "wachtrij", geclaimd_op: null, fout: notitie })
+    .in("id", ids)
+    .eq("status", "verwerken");
+  if (error) console.error("Nieuwsbrief: terugzetten in de wachtrij mislukt", error.message);
+}
+
+/** Staat er nog iets in de wachtrij dat door de daglimiet moet wachten? */
+async function limietTegenhoudt(maxPerDag: number): Promise<boolean> {
+  try {
+    const [verbruikt, wachtend] = await Promise.all([verbruiktVandaag(), nogInWachtrij()]);
+    return daglimietBereikt({ maxPerDag, verbruiktVandaag: verbruikt, nogInWachtrij: wachtend });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Zet campagnes zonder openstaande verzendingen op 'verzonden'. Alleen als de
+ * wachtrij volledig gevuld is (wachtrij_gevuld_op): een campagne die nog wordt
+ * klaargezet, heeft even een lege wachtrij maar is niet klaar.
+ */
 async function rondCampagnesAf(): Promise<void> {
   const supabase = adminClient();
   const { data: bezig } = await supabase
     .from("nb_campagnes")
     .select("id, onderwerp_b, ab_percentage, ab_winnaar")
     .eq("soort", "campagne")
-    .eq("status", "bezig");
+    .eq("status", "bezig")
+    .not("wachtrij_gevuld_op", "is", null);
   for (const c of bezig ?? []) {
     // Een A/B-test zonder winnaar is niet klaar: de rest van de doelgroep moet nog.
     if (abActief(c) && !c.ab_winnaar) continue;
@@ -547,18 +655,4 @@ export async function stuurTestmail(
     ...(stijl.replyTo ? { replyTo: stijl.replyTo } : {}),
   });
   if (error) throw new Error(error.message);
-}
-
-/** HTML voor de voorbeeldweergave in het beheer (zonder meting). */
-export async function voorbeeldHtml(c: Pick<Campagne, "onderwerp" | "preheader" | "blokken">): Promise<string> {
-  const stijl = await huisstijl();
-  const { blokken } = valideerBlokken(c.blokken);
-  return renderNieuwsbrief({
-    onderwerp: c.onderwerp,
-    preheader: c.preheader,
-    blokken,
-    ontvanger: { naam: "Anna de Vries", email: "anna@voorbeeld.nl" },
-    afmeldUrl: "#",
-    afzender: stijl.afzender,
-  }).html;
 }

@@ -1,7 +1,9 @@
 // Pushmeldingen voor beheerders: pure regels (soorten, abonnement controleren,
 // inhoud van een melding opbouwen). Geen database of web-push hier; zie versturen.ts.
 
-export const PUSH_SOORTEN = ["bestelling", "bericht", "afspraak", "review"] as const;
+import { heeftRecht, type Recht, type Rol } from "../rollen";
+
+export const PUSH_SOORTEN =["bestelling", "bericht", "afspraak", "review"] as const;
 export type PushSoort = (typeof PUSH_SOORTEN)[number];
 
 export const PUSH_SOORT_LABEL: Record<PushSoort, string> = {
@@ -188,4 +190,22 @@ export function vapidCompleet(env: { VAPID_PUBLIC_KEY?: string; VAPID_PRIVATE_KE
   const priv = (env.VAPID_PRIVATE_KEY ?? "").trim();
   const sub = (env.VAPID_SUBJECT ?? "").trim();
   return Boolean(pub && priv && /^(mailto:\S+@\S+|https:\/\/\S+)$/.test(sub));
+}
+
+// Rechten -------------------------------------------------------------------
+
+/** Welk recht (zie rollen.ts) nodig is om een melding van deze soort te krijgen. */
+export const RECHT_PER_SOORT: Record<PushSoort, Recht> = {
+  bestelling: "bestellingen",
+  bericht: "berichten",
+  afspraak: "afspraken",
+  review: "reviews",
+};
+
+/**
+ * Of een beheerder met deze rol een pushmelding van deze soort mag krijgen: hij
+ * moet pushmeldingen mogen gebruiken én het onderwerp van de melding mogen zien.
+ */
+export function magPushOntvangen(rol: Rol | null | undefined, soort: PushSoort): boolean {
+  return heeftRecht(rol, "meldingen") && heeftRecht(rol, RECHT_PER_SOORT[soort]);
 }

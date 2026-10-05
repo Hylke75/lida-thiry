@@ -4,6 +4,7 @@ import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
 import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
+import { beginVanDag } from "@/lib/nieuwsbrief/tijd";
 import {
   gemiddeldePercentages,
   groeiReeks,
@@ -24,6 +25,8 @@ export const maxDuration = 300;
 
 const DAG_MS = 86_400_000;
 const GRAFIEK_DAGEN = 90;
+/** Gratis Resend: 100 mails per dag in totaal; houd ~30% vrij voor bestel- en afspraakmails. */
+const VEILIGE_LIMIET_GRATIS = 70;
 
 type Supabase = ReturnType<typeof adminClient>;
 
@@ -122,7 +125,8 @@ async function laadOverzicht() {
   const supabase = adminClient();
   const nu = Date.now();
   const grafiekVanaf = new Date(nu - GRAFIEK_DAGEN * DAG_MS).toISOString();
-  const etmaal = new Date(nu - DAG_MS).toISOString();
+  // De daglimiet telt per Nederlandse kalenderdag (zie verzenden.ts).
+  const vandaagVanaf = beginVanDag(new Date(nu)).toISOString();
 
   const [aangemeld, momenten, recent, verzondenCampagnes, autos, wachtrij, verzonden24u, mislukt, maxPerDagTekst] =
     await Promise.all([
@@ -158,7 +162,7 @@ async function laadOverzicht() {
           .from("nb_verzendingen")
           .select("id", { count: "exact", head: true })
           .eq("status", "verzonden")
-          .gte("verzonden_op", etmaal),
+          .gte("verzonden_op", vandaagVanaf),
       ),
       telAantal(supabase.from("nb_verzendingen").select("id", { count: "exact", head: true }).eq("status", "mislukt")),
       leesInstelling("nb_max_per_dag"),
@@ -413,7 +417,7 @@ export default async function NieuwsbriefOverzicht() {
             <dd className="font-serif text-2xl tabular-nums">{wachtrij.toLocaleString("nl-NL")}</dd>
           </div>
           <div className="flex flex-col">
-            <dt className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">Laatste 24 uur</dt>
+            <dt className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">Vandaag verzonden</dt>
             <dd className="font-serif text-2xl tabular-nums">
               {verzonden24u.toLocaleString("nl-NL")}
               <span className="font-sans text-sm text-black/50 dark:text-white/50"> / {maxPerDag} per dag</span>
@@ -428,8 +432,16 @@ export default async function NieuwsbriefOverzicht() {
         </dl>
         {verzonden24u >= maxPerDag && wachtrij > 0 && (
           <p className="text-sm text-amber-700 dark:text-amber-300">
-            De daglimiet van {maxPerDag} mails is bereikt. De wachtrij gaat verder zodra er weer ruimte is (de limiet
-            telt over de afgelopen 24 uur).
+            De daglimiet van {maxPerDag} mails is bereikt. De wachtrij gaat morgen verder (de limiet telt per
+            kalenderdag, Nederlandse tijd).
+          </p>
+        )}
+        {maxPerDag > VEILIGE_LIMIET_GRATIS && (
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Let op: Resend telt álle mails mee, ook bevestigingen van bestellingen, afspraken en contactberichten. Op het
+            gratis Resend-abonnement (100 mails per dag in totaal) laat een daglimiet van {maxPerDag} te weinig ruimte
+            over voor die mails. Houd ongeveer 30% van je Resend-limiet vrij (bij het gratis abonnement: hooguit{" "}
+            {VEILIGE_LIMIET_GRATIS}); dit stel je in bij Instellingen.
           </p>
         )}
         {mislukt > 0 && (
@@ -456,8 +468,9 @@ export default async function NieuwsbriefOverzicht() {
             </p>
             <ul className="list-disc pl-5">
               <li>
-                <strong>Elke ochtend rond 9:00</strong> (8:00 in de winter) verwerkt een vaste ronde de hele wachtrij:
-                ingeplande campagnes worden gestart en automatische mails ingepland en verstuurd.
+                <strong>Elke ochtend rond 9:00</strong> (8:00 in de winter) start een vaste ronde ingeplande campagnes,
+                plant automatische mails in en verstuurt uit de wachtrij wat binnen de daglimiet past (hooguit 1000
+                mails per ronde). De rest volgt bij een volgende ronde.
               </li>
               <li>
                 <strong>Als je dit overzicht opent</strong>, wordt de wachtrij op de achtergrond bijgewerkt. Zolang jij
@@ -470,7 +483,7 @@ export default async function NieuwsbriefOverzicht() {
             <p>
               Een campagne die je inplant voor 14:00 gaat dus uiterlijk de volgende ochtend weg, of eerder als je
               tussendoor het beheer opent. Een welkomstmail na aanmelding komt op dezelfde manier binnen een dag aan. Er
-              gaan nooit meer dan {maxPerDag} mails per 24 uur uit (instelling &ldquo;maximaal aantal mails per
+              gaan nooit meer dan {maxPerDag} nieuwsbriefmails per dag uit (instelling &ldquo;maximaal aantal mails per
               dag&rdquo;); de rest volgt bij een volgende ronde.
             </p>
           </div>

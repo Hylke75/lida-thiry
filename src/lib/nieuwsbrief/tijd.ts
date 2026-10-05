@@ -80,3 +80,13 @@ export function controleerInplanmoment(moment: Date | null, nu = new Date()): st
 export function standaardInplanmoment(nu: Date = new Date()): string {
   return `${utcNaarAmsterdamInvoer(new Date(nu.getTime() + 86_400_000)).slice(0, 10)}T09:00`;
 }
+
+/**
+ * Begin (00:00 Nederlandse tijd) van de kalenderdag waarin `nu` valt, als UTC.
+ * Voor de daglimiet: die telt per Nederlandse kalenderdag, zodat een dagelijkse
+ * ronde die een paar minuten verschuift niet om de dag wordt overgeslagen.
+ */
+export function beginVanDag(nu: Date = new Date()): Date {
+  const dag = utcNaarAmsterdamInvoer(nu).slice(0, 10);
+  return amsterdamNaarUtc(`${dag}T00:00`) ?? new Date(nu.getTime() - (nu.getTime() % 86_400_000));
+}

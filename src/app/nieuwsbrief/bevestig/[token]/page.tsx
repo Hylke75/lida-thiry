@@ -4,7 +4,7 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { NIEUWSBRIEF_BEVESTIGD } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { bevestig } from "@/lib/nieuwsbrief/contacten";
 import { TOKEN_PATROON } from "@/lib/nieuwsbrief/links";
-import { planAutomatiseringen, verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
+import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
 import { Kader } from "../../Kader";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +33,10 @@ export default async function BevestigPagina({ params }: { params: Promise<{ tok
   }
 
   if (isVers(contact.bevestigd_op)) {
-    // Na het versturen van de pagina: een eventuele welkomstmail meteen inplannen en versturen.
+    // Na het versturen van de pagina: een eventuele welkomstmail meteen inplannen en
+    // versturen (verwerkWachtrij plant de automatische mails zelf in).
     after(async () => {
       try {
-        await planAutomatiseringen();
         await verwerkWachtrij({ max: 20 });
       } catch (e) {
         console.error("Wachtrij na bevestiging mislukt", e);

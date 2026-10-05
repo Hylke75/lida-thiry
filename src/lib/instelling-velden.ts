@@ -93,7 +93,8 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
   },
   nb_max_per_dag: {
     label: "Nieuwsbrief: maximaal aantal mails per dag",
-    uitleg: "De limiet van je Resend-abonnement (gratis: 100 per dag). Wat erboven komt, gaat de volgende dag automatisch verder.",
+    uitleg:
+      "Telt per kalenderdag. Resend telt álle mails mee, ook die bij bestellingen, afspraken en contact: houd ongeveer 30% van je Resend-limiet vrij (gratis abonnement: 100 per dag, dus hier hooguit 70). Wat erboven komt, gaat de volgende dag automatisch verder.",
     soort: "geheel_getal",
     min: 1,
     max: 100000,

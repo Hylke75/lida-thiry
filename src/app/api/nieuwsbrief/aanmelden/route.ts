@@ -7,7 +7,7 @@ import { meldAan, normaliseerEmail } from "@/lib/nieuwsbrief/contacten";
 import { bevestigPagina } from "@/lib/nieuwsbrief/links";
 import { haalActiefFormulier } from "@/lib/nieuwsbrief/formulieren";
 import { aanmeldOpties, leesFormulierSlug } from "@/lib/nieuwsbrief/formulierregels";
-import { planAutomatiseringen, verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
+import { verwerkWachtrij } from "@/lib/nieuwsbrief/verzenden";
 import { stuurNieuwsbriefBevestiging } from "@/lib/resend";
 
 export const runtime = "nodejs";
@@ -50,11 +50,12 @@ export async function POST(request: Request) {
     // Niet steeds opnieuw mailen naar iemand die net een bevestigingsmail kreeg.
     const { data: bestaand } = await adminClient()
       .from("nb_contacten")
-      .select("status, toestemming_op")
+      .select("status, toestemming_op, bevestigd_op")
       .eq("email", email)
       .maybeSingle();
+    // (Ook zonder dubbele opt-in: een eerder afgemeld adres moet altijd opnieuw bevestigen.)
     if (
-      opties.dubbeleOptIn &&
+      (opties.dubbeleOptIn || bestaand?.bevestigd_op) &&
       bestaand?.status === "onbevestigd" &&
       bestaand.toestemming_op &&
       Date.now() - new Date(bestaand.toestemming_op).getTime() < OPNIEUW_MAILEN_NA_MS
@@ -79,10 +80,9 @@ export async function POST(request: Request) {
       });
     } else if (uitkomst.soort === "aangemeld") {
       // Formulier zonder dubbele opt-in: meteen aangemeld, dus een eventuele
-      // welkomstmail nu inplannen (net als na het bevestigen).
+      // welkomstmail nu inplannen en versturen (verwerkWachtrij plant ook in).
       after(async () => {
         try {
-          await planAutomatiseringen();
           await verwerkWachtrij({ max: 20 });
         } catch (e) {
           console.error("Wachtrij na aanmelding mislukt", e);

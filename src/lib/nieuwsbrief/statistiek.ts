@@ -33,8 +33,7 @@ export function nlDag(moment: Date | string): string {
 
 /** Wanneer een contact van de lijst verdween (null = staat er nog op). */
 export function vertrokkenOp(c: ContactMoment): string | null {
-  if (c.status === "afgemeld" || c.status === "klacht") return c.afgemeld_op ?? c.bijgewerkt_op;
-  if (c.status === "gebounced") return c.afgemeld_op ?? c.bijgewerkt_op;
+  if (c.status === "afgemeld" || c.status === "klacht" || c.status === "gebounced") return c.afgemeld_op ?? c.bijgewerkt_op;
   return null;
 }
 

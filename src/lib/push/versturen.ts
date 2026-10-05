@@ -1,9 +1,11 @@
 import "server-only";
 import webpush from "web-push";
 import { adminClient } from "@/lib/supabase/admin";
+import { leesRol } from "@/lib/rollen";
 import {
   bouwPayload,
   isVerlopen,
+  magPushOntvangen,
   vapidCompleet,
   type PushAbonnement,
   type PushBericht,
@@ -103,12 +105,16 @@ export async function stuurPushMelding(soort: PushSoort, bericht: PushBericht): 
     const supabase = adminClient();
     const [abonnementen, beheerders] = await Promise.all([
       supabase.from("push_abonnementen").select("id, gebruiker_id, endpoint, p256dh, auth").contains("meldingen", [soort]),
-      supabase.from("beheerders").select("gebruiker_id"),
+      supabase.from("beheerders").select("gebruiker_id, rol"),
     ]);
     if (abonnementen.error) throw new Error(abonnementen.error.message);
     if (beheerders.error) throw new Error(beheerders.error.message);
-    // Alleen wie (nog) beheerder is.
-    const toegestaan = new Set((beheerders.data ?? []).map((b) => b.gebruiker_id as string));
+    // Alleen wie (nog) beheerder is én met zijn rol deze melding mag zien.
+    const toegestaan = new Set(
+      (beheerders.data ?? [])
+        .filter((b) => magPushOntvangen(leesRol(b.rol), soort))
+        .map((b) => b.gebruiker_id as string),
+    );
     const rijen = ((abonnementen.data ?? []) as (AbonnementRij & { gebruiker_id: string })[]).filter((r) =>
       toegestaan.has(r.gebruiker_id),
     );

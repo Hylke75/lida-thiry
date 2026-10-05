@@ -1,5 +1,6 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
+import { alles } from "../supabase/alles";
 import { CONTACT_VELDEN, meldAan, type Contact } from "./contacten";
 import { STATUSSEN, normaliseerTag, type ContactStatus } from "./doelgroep";
 import { likeLetterlijk, veiligeZoekterm, type ContactFilter } from "./contactregels";
@@ -46,19 +47,6 @@ export async function meldAanNaBestelling(opts: { email: string; naam: string | 
     });
   } catch (e) {
     console.error("Nieuwsbriefaanmelding na bestelling mislukt", e);
-  }
-}
-
-/** Haalt alle rijen op in pagina's van 1000. */
-async function alles<T>(
-  haal: (van: number, tot: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-): Promise<T[]> {
-  const uit: T[] = [];
-  for (let van = 0; ; van += 1000) {
-    const { data, error } = await haal(van, van + 999);
-    if (error) throw new Error(error.message);
-    uit.push(...(data ?? []));
-    if (!data || data.length < 1000) return uit;
   }
 }
 

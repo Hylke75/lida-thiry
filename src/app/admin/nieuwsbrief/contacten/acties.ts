@@ -148,6 +148,11 @@ export async function meldContactOpnieuwAan(fd: FormData): Promise<void> {
   if (fd.get("toestemming") !== "on") {
     terug(`${PAD}/${id}`, "Vink aan dat deze persoon opnieuw toestemming heeft gegeven.", "fout");
   }
+  const { data: huidig } = await adminClient().from("nb_contacten").select("status").eq("id", id).maybeSingle();
+  // Een spammelding (klacht) is een harde afmelding: die heft de beheerder niet op.
+  if (huidig?.status === "klacht") {
+    terug(`${PAD}/${id}`, "Dit contact heeft de nieuwsbrief als spam gemeld en kan niet opnieuw worden aangemeld.", "fout");
+  }
   const nu = new Date();
   const { data, error } = await adminClient()
     .from("nb_contacten")
@@ -159,7 +164,7 @@ export async function meldContactOpnieuwAan(fd: FormData): Promise<void> {
       afgemeld_op: null,
     })
     .eq("id", id)
-    .neq("status", "aangemeld")
+    .in("status", ["onbevestigd", "afgemeld", "gebounced"])
     .select("id");
   if (error) terug(`${PAD}/${id}`, `Aanmelden mislukt: ${error.message}`, "fout");
   revalidatePath(`${PAD}/${id}`);
