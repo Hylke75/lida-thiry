@@ -2,6 +2,9 @@
   "name": "lida-thiry",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,7 +14,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:lokaal": "node scripts/e2e-lokaal.mjs",
-    "snelheid": "node scripts/meet-snelheid.mjs"
+    "snelheid": "node scripts/meet-snelheid.mjs",
+    "migraties:bundelen": "node scripts/migraties-bundelen.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
@@ -33,7 +37,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",

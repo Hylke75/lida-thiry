@@ -139,7 +139,8 @@ npm run e2e:lokaal -- e2e/toegankelijkheid.spec.ts
 
 `.github/workflows/ci.yml` heeft twee jobs:
 
-- **check**: `npm run lint`, `npx vitest run` en `npm run build`.
+- **check**: `npm run lint`, de typecontrole (`npx next typegen` en daarna
+  `npx tsc --noEmit`), `npx vitest run` en `npm run build`.
 - **e2e**: installeert Chromium (`npx playwright install --with-deps chromium`) en
   draait `npm run e2e:lokaal`. Er zijn geen secrets nodig. Bij een fout staan de
   traces als artefact `playwright-resultaten` bij de run.

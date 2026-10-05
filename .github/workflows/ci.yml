@@ -26,6 +26,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # `next typegen` maakt de routetypes (o.a. LayoutProps) die tsc nodig heeft;
+      # anders ontstaan die pas tijdens `next build`.
+      - name: Typecontrole (tsc)
+        run: |
+          npx next typegen
+          npx tsc --noEmit
+
       - name: Unit tests (vitest)
         run: npx vitest run
 
