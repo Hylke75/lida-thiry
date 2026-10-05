@@ -4,14 +4,12 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import {
-  haalMedia,
   importeerBestaande,
   maakUpload,
   mediaMappen,
   registreerMedia,
   verwijderMedia,
   werkMediaBij,
-  zoekGebruik,
   zoekMedia,
   type MediaItem,
   type Registratie,
@@ -20,7 +18,7 @@ import {
   type VerwijderUitkomst,
   type ZoekResultaat,
 } from "@/lib/media/beheer";
-import { leesTypeFilter, SOORT_MIMES, type Gebruik, type MediaSoort } from "@/lib/media/regels";
+import { leesTypeFilter, SOORT_MIMES, type MediaSoort } from "@/lib/media/regels";
 
 const MEDIA_PAD = "/admin/media";
 
@@ -59,16 +57,16 @@ export async function zoekInMedia(v: ZoekVraag): Promise<Uitkomst<{ resultaat: Z
 
 /** Stap 1 van uploaden: een eenmalige upload-URL in de bucket "media". */
 export async function maakMediaUpload(mime: string, grootte: number, map: string): Promise<Uitkomst<UploadPlek>> {
-  await vereisBeheerder("media");
-  return maakUpload(String(mime ?? ""), Number(grootte), String(map ?? ""));
+  const ik = await vereisBeheerder("media");
+  return maakUpload(String(mime ?? ""), Number(grootte), String(map ?? ""), { magSvg: ik.rol === "eigenaar" });
 }
 
 /** Stap 2: het geüploade bestand in de bibliotheek zetten (ook voor uploads uit de editors). */
 export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
-  await vereisBeheerder("media");
+  const ik = await vereisBeheerder("media");
   if (!r || typeof r !== "object") return { ok: false, fout: "Onbekend bestand." };
   try {
-    const u = await registreerMedia(r);
+    const u = await registreerMedia(r, { magSvg: ik.rol === "eigenaar" });
     if (u.ok) revalidatePath(MEDIA_PAD);
     return u;
   } catch (e) {
@@ -85,18 +83,6 @@ export async function werkMediaGegevensBij(id: string, w: { naam?: string; alt?:
   });
   if (u.ok) revalidatePath(MEDIA_PAD, "layout");
   return u;
-}
-
-/** Waar de afbeelding gebruikt wordt. */
-export async function gebruikVanMedia(id: string): Promise<Uitkomst<{ gebruik: Gebruik[] }>> {
-  await vereisBeheerder("media");
-  try {
-    const m = await haalMedia(String(id ?? ""));
-    if (!m) return { ok: false, fout: "Deze afbeelding bestaat niet meer." };
-    return { ok: true, gebruik: await zoekGebruik(m) };
-  } catch (e) {
-    return { ok: false, fout: `Zoeken naar gebruik is niet gelukt (${foutTekst(e)}).` };
-  }
 }
 
 /** Verwijderen; geblokkeerd zolang de afbeelding nog gebruikt wordt, tenzij `forceer`. */

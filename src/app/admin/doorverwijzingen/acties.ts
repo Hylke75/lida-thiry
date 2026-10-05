@@ -7,7 +7,7 @@ import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { parseerCsvRijen } from "@/lib/nieuwsbrief/csv";
-import { alleDoorverwijzingen } from "@/lib/doorverwijzingen/beheer";
+import { alleDoorverwijzingen, onlineOpPad } from "@/lib/doorverwijzingen/beheer";
 import { legeDoorverwijzingCache } from "@/lib/doorverwijzingen/cache";
 import {
   analyseerImport,
@@ -56,6 +56,12 @@ export async function bewaarDoorverwijzing(_vorige: BewaarStaat, fd: FormData): 
   }
   const { fouten, waarschuwingen } = controleerTegenBestaande(v.waarde, bestaande, huidig?.van);
   if (fouten.length) return { fouten };
+  const online = await onlineOpPad(v.waarde.van);
+  if (online) {
+    waarschuwingen.push(
+      `op ${v.waarde.van} staat ${online} online. De doorverwijzing gaat voor, dus die is nu niet meer te zien. Opslaan of publiceren van ${online} haalt deze doorverwijzing weer weg.`,
+    );
+  }
 
   const rij = { ...v.waarde, automatisch: false };
   const { error } = id

@@ -247,3 +247,42 @@ describe("doorverwijzingen: nieuw webadres", () => {
     expect(slugWijziging("/admin", "/x")).toBeNull();
   });
 });
+
+describe("doorverwijzingen: hoofdletters, afbeeldingen en backslashes", () => {
+  it("een regel /Over → /over stuurt /over niet naar zichzelf", () => {
+    const index = bouwIndex([r("/Over", "/over")]);
+    expect(zoek(index, "/Over")?.naar).toBe("/over");
+    expect(zoek(index, "/over")).toBeNull();
+    // Een andere schrijfwijze gaat wel naar /over, en daar stopt het.
+    expect(zoek(index, "/OVER")?.naar).toBe("/over");
+    expect(vanInLus([r("/Over", "/over")]).size).toBe(0);
+  });
+
+  it("vindt lussen die via kleine letters lopen", () => {
+    const regels = [r("/A", "/b"), r("/B", "/a")];
+    expect(vanInLus(regels)).toEqual(new Set(["/A", "/B"]));
+    expect(volgKeten(regels, "/A").lus).toBe(true);
+    const index = bouwIndex(regels);
+    expect(zoek(index, "/A")).toBeNull();
+    expect(zoek(index, "/b")).toBeNull();
+    expect(controleerTegenBestaande(r("/B", "/a"), [r("/A", "/b")]).fouten).toHaveLength(1);
+  });
+
+  it("weigert afbeeldingspaden (die ziet de proxy niet), ook bij importeren", () => {
+    for (const van of ["/oud/logo.svg", "/foto.png", "/a.jpg", "/a.jpeg", "/a.gif", "/a.webp", "/favicon.ico"]) {
+      expect(valideerDoorverwijzing({ van, naar: "/nieuw" }).ok, van).toBe(false);
+    }
+    expect(valideerDoorverwijzing({ van: "/brochure.pdf", naar: "/nieuw" }).ok).toBe(true);
+    const a = analyseerImport(parseerCsvRijen("/logo.png,/nieuw\n/oud,/nieuw"));
+    expect(a.rijen.map((x) => x.van)).toEqual(["/oud"]);
+    expect(a.ongeldig[0].reden).toMatch(/afbeeldingen/);
+  });
+
+  it("behandelt /\\ niet als intern adres", () => {
+    expect(valideerDoorverwijzing({ van: "/oud", naar: "/\\evil.com" }).ok).toBe(false);
+    expect(valideerDoorverwijzing({ van: "/oud", naar: "/%5Cevil.com" }).ok).toBe(false);
+    expect(valideerDoorverwijzing({ van: "/oud", naar: "//evil.com" }).ok).toBe(false);
+    expect(valideerDoorverwijzing({ van: "/o\\ud", naar: "/nieuw" }).ok).toBe(false);
+    expect(zoek(bouwIndex([r("/oud", "/\\evil.com")]), "/oud")).toBeNull();
+  });
+});

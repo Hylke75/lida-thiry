@@ -1,12 +1,10 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
-import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import {
   PAGINA_VELDEN,
@@ -18,10 +16,10 @@ import {
   type Pagina,
 } from "@/lib/paginas/beheer";
 import { vindStartpagina } from "@/lib/paginas/sjablonen";
-import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
+import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { bewaarVersie } from "@/lib/versies/beheer";
 import { omschrijvingVoor, paginaSnapshot } from "@/lib/versies/regels";
-import { haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
+import { doorverwijzingenNaOpslaan, haalPaginaBeheer, isDubbel, PAGINAS_PAD, SLUG_BEZET, vernieuwPaginas, vrijePaginaSlug } from "./_editor/server";
 
 type Uitkomst<T = object> = ({ ok: true } & T) | { ok: false; fouten: string[] };
 
@@ -162,12 +160,10 @@ export async function slaPaginaOp(id: string, ruw: unknown): Promise<PaginaUitko
   const { data, error } = await adminClient().from("paginas").update(v.waarde).eq("id", id).select(PAGINA_VELDEN).single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Opslaan is niet gelukt (${error?.message ?? "onbekend"}).`);
-  if (huidig.status === "gepubliceerd" && huidig.slug !== v.waarde.slug) {
-    await registreerSlugWijziging(`/${huidig.slug}`, `/${v.waarde.slug}`);
-  }
+  const waarschuwing = await doorverwijzingenNaOpslaan(huidig, data as Pagina);
   vernieuwPaginas(huidig.slug, v.waarde.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
-  return { ok: true, pagina: data as Pagina, melding: "Opgeslagen." };
+  return { ok: true, pagina: data as Pagina, melding: metWaarschuwing("Opgeslagen.", waarschuwing) };
 }
 
 /** Slaat op en zet de pagina online. */
@@ -188,9 +184,7 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Publiceren is niet gelukt (${error?.message ?? "onbekend"}).`);
-  if (huidig.status === "gepubliceerd" && huidig.slug !== v.waarde.slug) {
-    await registreerSlugWijziging(`/${huidig.slug}`, `/${v.waarde.slug}`);
-  }
+  const waarschuwing = await doorverwijzingenNaOpslaan(huidig, data as Pagina);
   await logActie({
     actie: "pagina.publiceren",
     onderwerpSoort: "pagina",
@@ -201,7 +195,7 @@ export async function publiceerPagina(id: string, ruw: unknown): Promise<PaginaU
   });
   vernieuwPaginas(huidig.slug, v.waarde.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
-  return { ok: true, pagina: data as Pagina, melding: "Gepubliceerd! De pagina staat nu online." };
+  return { ok: true, pagina: data as Pagina, melding: metWaarschuwing("Gepubliceerd! De pagina staat nu online.", waarschuwing) };
 }
 
 /** Haalt een pagina offline; de tekst blijft bewaard. */
@@ -222,25 +216,4 @@ export async function paginaNaarConcept(id: string): Promise<PaginaUitkomst> {
   vernieuwPaginas(huidig.slug);
   revalidatePath(`${PAGINAS_PAD}/${id}`);
   return { ok: true, pagina: data as Pagina, melding: "De pagina is weer een concept en niet meer zichtbaar op de site." };
-}
-
-/**
- * Stap 1 van een foto uploaden: een eenmalige upload-URL in de openbare bucket
- * "blog", onder paginas/omslag/ of paginas/afbeeldingen/. De browser uploadt daarna zelf.
- */
-export async function maakPaginaUpload(
-  type: string,
-  grootte: number,
-  map: UploadMap,
-): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
-  await vereisBeheerder("paginas");
-  const ext = BLOG_AFBEELDING_TYPES[type];
-  if (!ext) return fout("Kies een afbeelding van het type JPG, PNG, GIF of WebP.");
-  if (!(grootte > 0) || grootte > BLOG_AFBEELDING_MAX_BYTES) return fout("De afbeelding is te groot. Kies een bestand van maximaal 5 MB.");
-  const pad = `paginas/${map === "omslag" ? "omslag" : "afbeeldingen"}/${randomUUID()}.${ext}`;
-  const supabase = adminClient();
-  const { data, error } = await supabase.storage.from(BLOG_BUCKET).createSignedUploadUrl(pad);
-  if (error || !data) return fout(`Uploaden is niet gelukt (${error?.message ?? "onbekend"}).`);
-  const url = supabase.storage.from(BLOG_BUCKET).getPublicUrl(pad).data.publicUrl;
-  return { ok: true, pad, token: data.token, url };
 }

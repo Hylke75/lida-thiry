@@ -9,6 +9,7 @@ import { vindSectie } from "@/lib/inhoud/register";
 import { herstelVerwijderd, haalVersie, huidigeSnapshot, lijstVersies, wisGeschiedenis, zetTerug } from "@/lib/versies/beheer";
 import { regelDiff, type DiffRegel } from "@/lib/versies/diff";
 import { blogAlsTekst, isVersieSoort, paginaAlsTekst, tekstAlsTekst, type VersieMeta, type VersieSoort } from "@/lib/versies/regels";
+import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { zichtbaarheid, type BlogBericht, type Zichtbaarheid } from "@/lib/blog/regels";
 import type { Pagina } from "@/lib/paginas/beheer";
 
@@ -67,7 +68,11 @@ export async function zetPaginaVersieTerug(id: string): Promise<{ ok: true; pagi
     details: { versie: id },
     gebruiker: user,
   });
-  return { ok: true, pagina: r.pagina, melding: "De versie is teruggezet. De vorige inhoud staat in de geschiedenis." };
+  return {
+    ok: true,
+    pagina: r.pagina,
+    melding: metWaarschuwing("De versie is teruggezet. De vorige inhoud staat in de geschiedenis.", r.waarschuwing),
+  };
 }
 
 export async function zetBerichtVersieTerug(
@@ -89,7 +94,7 @@ export async function zetBerichtVersieTerug(
     ok: true,
     bericht: r.bericht,
     zichtbaar: zichtbaarheid(r.bericht),
-    melding: "De versie is teruggezet. De vorige inhoud staat in de geschiedenis.",
+    melding: metWaarschuwing("De versie is teruggezet. De vorige inhoud staat in de geschiedenis.", r.waarschuwing),
   };
 }
 
@@ -103,7 +108,7 @@ export async function zetTekstVersieTerug(
   await logActie({
     actie: "tekst.versie_terugzetten",
     onderwerpSoort: "tekst",
-    onderwerpId: id,
+    onderwerpId: r.sleutel,
     omschrijving: "Eerdere versie van een tekst teruggezet",
     details: { versie: id },
     gebruiker: user,

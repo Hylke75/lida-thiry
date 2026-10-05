@@ -9,7 +9,10 @@ import { haalBericht, haalGerelateerd } from "@/lib/blog/publiek";
 import { leestijdMinuten, metaOmschrijving } from "@/lib/blog/regels";
 import { blogHref, formatteerDatum } from "@/lib/blog/lijst";
 import { deelLinks } from "@/lib/blog/delen";
-import { blogPostingJsonLd, veiligeJson } from "@/lib/blog/structuur";
+import { blogPostingJsonLd } from "@/lib/blog/structuur";
+import { deelMetadata } from "@/lib/seo/delen";
+import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
+import { leesWebsite } from "@/lib/website/lees";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
@@ -33,12 +36,11 @@ type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  const b = await haalBericht(slug);
+  const [b, site] = await Promise.all([haalBericht(slug), leesWebsite()]);
   if (!b) return { title: "Bericht niet gevonden", robots: { index: false } };
   const titel = b.seo_titel.trim() || b.titel;
   const omschrijving = metaOmschrijving(b);
   const beeld = berichtBeeld(b);
-  const afbeeldingen = beeld ? [{ url: beeld.url, alt: beeld.alt }] : undefined;
   return {
     title: titel,
     description: omschrijving,
@@ -48,26 +50,19 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       canonical: `/blog/${b.slug}`,
       types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Blog · Lida Thiry" }] },
     },
-    openGraph: {
-      type: "article",
-      locale: "nl_NL",
-      siteName: "Lida Thiry Imago & Kledingadvies",
+    ...deelMetadata(site, {
+      titel,
+      omschrijving,
       url: `/blog/${b.slug}`,
-      title: titel,
-      description: omschrijving,
-      publishedTime: b.gepubliceerd_op ?? undefined,
-      modifiedTime: b.bijgewerkt_op,
-      authors: [b.auteur || "Lida Thiry"],
-      section: b.categorie ?? undefined,
-      tags: b.tags,
-      ...(afbeeldingen ? { images: afbeeldingen } : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: titel,
-      description: omschrijving,
-      ...(afbeeldingen ? { images: afbeeldingen.map((a) => a.url) } : {}),
-    },
+      beeld: beeld ? { url: beeld.url, alt: beeld.alt } : null,
+      artikel: {
+        publishedTime: b.gepubliceerd_op ?? undefined,
+        modifiedTime: b.bijgewerkt_op,
+        authors: [b.auteur || "Lida Thiry"],
+        section: b.categorie ?? undefined,
+        tags: b.tags,
+      },
+    }),
   };
 }
 
@@ -113,15 +108,11 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
     categorie: b.categorie,
     siteUrl: basis,
   });
-  const breadcrumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${basis}/` },
-      { "@type": "ListItem", position: 2, name: "Blog", item: `${basis}/blog` },
-      { "@type": "ListItem", position: 3, name: b.titel, item: url },
-    ],
-  };
+  const breadcrumbs = kruimelpadJsonLd(basis, [
+    { naam: "Home", pad: "/" },
+    { naam: "Blog", pad: "/blog" },
+    { naam: b.titel, pad: `/blog/${b.slug}` },
+  ]);
 
   return (
     <main className="flex w-full flex-1 flex-col">

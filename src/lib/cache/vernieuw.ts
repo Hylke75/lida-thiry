@@ -1,5 +1,6 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
+import { vergeetLaatstBekend } from "./publiek";
 import { tagsVoorTabellen, type CacheTabel } from "./tags";
 
 /**
@@ -11,7 +12,10 @@ import { tagsVoorTabellen, type CacheTabel } from "./tags";
  * Bestaande revalidatePath-aanroepen blijven staan (die vernieuwen de pagina's).
  */
 export function vernieuwPubliekeData(...tabellen: CacheTabel[]): void {
-  for (const tag of tagsVoorTabellen(tabellen)) {
+  const tags = tagsVoorTabellen(tabellen);
+  // Ook de noodvoorraad in het geheugen vergeten (zie lib/cache/publiek.ts).
+  vergeetLaatstBekend(tags);
+  for (const tag of tags) {
     try {
       revalidateTag(tag, { expire: 0 });
     } catch (e) {

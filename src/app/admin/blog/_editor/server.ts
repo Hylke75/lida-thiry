@@ -4,7 +4,11 @@ import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { AiFout } from "@/lib/blog/ai";
 import { AI_LIMIET_PER_UUR, uniekeSlug } from "@/lib/blog/beheer";
-import { BERICHT_VELDEN, type BlogBericht } from "@/lib/blog/regels";
+import { BERICHT_VELDEN, zichtbaarheid, type BlogBericht } from "@/lib/blog/regels";
+import { werkDoorverwijzingenBij } from "@/lib/doorverwijzingen/beheer";
+import { vrijeSlugIn } from "@/lib/paginas/vrije-slug";
+
+export { isDubbel } from "@/lib/paginas/vrije-slug";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 
 export const BLOG_PAD = "/admin/blog";
@@ -17,20 +21,21 @@ export async function haalBericht(id: string): Promise<BlogBericht | null> {
 }
 
 /** Een slug op basis van `basis` die nog door geen enkel bericht gebruikt wordt. */
-export async function vrijeSlug(basis: string, behalveId?: string): Promise<string> {
-  const kandidaat = uniekeSlug(basis, []);
-  let q = adminClient().from("blog_berichten").select("slug").like("slug", `${kandidaat.slice(0, 90)}%`).limit(1000);
-  if (behalveId) q = q.neq("id", behalveId);
-  const { data } = await q;
-  return uniekeSlug(kandidaat, (data ?? []).map((r) => r.slug as string));
-}
-
-/** Postgres-fout voor een dubbele waarde (de slug is uniek). */
-export function isDubbel(error: { code?: string } | null): boolean {
-  return error?.code === "23505";
+export function vrijeSlug(basis: string, behalveId?: string): Promise<string> {
+  return vrijeSlugIn("blog_berichten", uniekeSlug, 90, basis, behalveId);
 }
 
 export const SLUG_BEZET = "Dit webadres wordt al gebruikt door een ander bericht. Kies een ander webadres (of pas de titel aan).";
+
+/**
+ * Na opslaan: staat het bericht (nu) gepubliceerd of ingepland, dan verwijst een
+ * oud online adres door naar het nieuwe en vervalt een doorverwijzing vanaf het
+ * eigen adres (anders blijft het bericht verborgen). Geeft een waarschuwing of null.
+ */
+export async function doorverwijzingenNaOpslaan(oud: BlogBericht, nieuw: BlogBericht): Promise<string | null> {
+  if (nieuw.status !== "gepubliceerd") return null;
+  return werkDoorverwijzingenBij(`/blog/${nieuw.slug}`, zichtbaarheid(oud) === "online" ? `/blog/${oud.slug}` : null);
+}
 
 /** Ververs de openbare blogpagina's (en het oude adres als de slug is veranderd). */
 export function vernieuwBlog(...slugs: (string | null | undefined)[]) {

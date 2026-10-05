@@ -3,13 +3,13 @@ import { revalidatePath } from "next/cache";
 import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
 import { adminClient } from "@/lib/supabase/admin";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
-import { PAGINA_VELDEN, valideerPagina, type Pagina } from "@/lib/paginas/beheer";
-import { BERICHT_VELDEN, valideerBericht, zichtbaarheid, type BlogBericht } from "@/lib/blog/regels";
+import { PAGINA_VELDEN, publicatieProblemen as paginaProblemen, valideerPagina, type Pagina } from "@/lib/paginas/beheer";
+import { BERICHT_VELDEN, publicatieProblemen as berichtProblemen, valideerBericht, type BlogBericht } from "@/lib/blog/regels";
 import { vindSectie } from "@/lib/inhoud/register";
+import { isDubbel } from "@/lib/paginas/vrije-slug";
 import { combineer, valideer } from "@/lib/inhoud/schema";
-import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
-import { haalPaginaBeheer, PAGINAS_PAD, vernieuwPaginas, vrijePaginaSlug } from "@/app/admin/paginas/_editor/server";
-import { BLOG_PAD, haalBericht, vernieuwBlog, vrijeSlug } from "@/app/admin/blog/_editor/server";
+import { doorverwijzingenNaOpslaan as paginaDoorverwijzingen, haalPaginaBeheer, PAGINAS_PAD, vernieuwPaginas, vrijePaginaSlug } from "@/app/admin/paginas/_editor/server";
+import { BLOG_PAD, doorverwijzingenNaOpslaan as berichtDoorverwijzingen, haalBericht, vernieuwBlog, vrijeSlug } from "@/app/admin/blog/_editor/server";
 import {
   beslisVersie,
   blogSnapshot,
@@ -117,15 +117,20 @@ type Fout = { ok: false; fouten: string[] };
 const fout = (...fouten: string[]): Fout => ({ ok: false, fouten });
 
 export type Teruggezet =
-  | { ok: true; soort: "pagina"; pagina: Pagina }
-  | { ok: true; soort: "blog"; bericht: BlogBericht }
-  | { ok: true; soort: "tekst"; waarden: Record<string, unknown>; aangepast: boolean }
+  | { ok: true; soort: "pagina"; pagina: Pagina; waarschuwing: string | null }
+  | { ok: true; soort: "blog"; bericht: BlogBericht; waarschuwing: string | null }
+  | { ok: true; soort: "tekst"; sleutel: string; waarden: Record<string, unknown>; aangepast: boolean }
   | Fout;
+
+const SLUG_BEZET =
+  "Deze versie kan niet worden teruggezet: het webadres ervan wordt inmiddels door iets anders gebruikt. Geef dat eerst een ander webadres.";
 
 /**
  * Zet een versie terug: bewaart eerst de huidige toestand ("Voor terugzetten"),
  * zet dan de inhoud terug en ververst dezelfde pagina's als gewoon opslaan.
- * De publicatiestatus blijft zoals hij nu is; alleen de inhoud verandert.
+ * De publicatiestatus blijft zoals hij nu is; alleen de inhoud verandert. Staat
+ * het onderdeel online, dan moet de versie publiceerbaar zijn (zoals bij gewoon
+ * opslaan). Het webadres van de versie moet vrij zijn (geen stil achtervoegsel).
  */
 export async function zetTerug(id: string, door: string | null | undefined): Promise<Teruggezet> {
   const versie = await haalVersie(id);
@@ -137,14 +142,19 @@ export async function zetTerug(id: string, door: string | null | undefined): Pro
     if (!huidig) return fout("Deze pagina bestaat niet meer. Herstel hem via de prullenbak.");
     const v = valideerPagina(snap);
     if (!v.ok) return fout("Deze versie kan niet worden teruggezet:", ...v.fouten);
-    const slug = await vrijePaginaSlug(v.waarde.slug, huidig.id);
+    if (huidig.status === "gepubliceerd") {
+      const problemen = paginaProblemen(v.waarde);
+      if (problemen.length) return fout("Deze pagina staat online en deze versie is niet compleet genoeg om te publiceren:", ...problemen);
+    }
+    if ((await vrijePaginaSlug(v.waarde.slug, huidig.id)) !== v.waarde.slug) return fout(SLUG_BEZET);
     await bewaarVersie({ soort: "pagina", ref: huidig.id, inhoud: paginaSnapshot(huidig), omschrijving: "Voor terugzetten", door, forceer: true });
-    const { data, error } = await adminClient().from("paginas").update({ ...v.waarde, slug }).eq("id", huidig.id).select(PAGINA_VELDEN).single();
+    const { data, error } = await adminClient().from("paginas").update(v.waarde).eq("id", huidig.id).select(PAGINA_VELDEN).single();
+    if (isDubbel(error)) return fout(SLUG_BEZET);
     if (error || !data) return fout(`Terugzetten is niet gelukt (${error?.message ?? "onbekend"}).`);
-    if (huidig.status === "gepubliceerd" && huidig.slug !== slug) await registreerSlugWijziging(`/${huidig.slug}`, `/${slug}`);
-    vernieuwPaginas(huidig.slug, slug);
+    const waarschuwing = await paginaDoorverwijzingen(huidig, data as Pagina);
+    vernieuwPaginas(huidig.slug, v.waarde.slug);
     revalidatePath(`${PAGINAS_PAD}/${huidig.id}`);
-    return { ok: true, soort: "pagina", pagina: data as Pagina };
+    return { ok: true, soort: "pagina", pagina: data as Pagina, waarschuwing };
   }
 
   if (versie.soort === "blog") {
@@ -152,19 +162,19 @@ export async function zetTerug(id: string, door: string | null | undefined): Pro
     if (!huidig) return fout("Dit bericht bestaat niet meer. Herstel het via de prullenbak.");
     const v = valideerBericht(snap);
     if (!v.ok) return fout("Deze versie kan niet worden teruggezet:", ...v.fouten);
-    const slug = await vrijeSlug(v.waarde.slug, huidig.id);
+    if (huidig.status === "gepubliceerd") {
+      const problemen = berichtProblemen(v.waarde);
+      if (problemen.length) return fout("Dit bericht staat online of is ingepland, en deze versie is niet compleet genoeg om te publiceren:", ...problemen);
+    }
+    if ((await vrijeSlug(v.waarde.slug, huidig.id)) !== v.waarde.slug) return fout(SLUG_BEZET);
     await bewaarVersie({ soort: "blog", ref: huidig.id, inhoud: blogSnapshot(huidig), omschrijving: "Voor terugzetten", door, forceer: true });
-    const { data, error } = await adminClient()
-      .from("blog_berichten")
-      .update({ ...v.waarde, slug })
-      .eq("id", huidig.id)
-      .select(BERICHT_VELDEN)
-      .single();
+    const { data, error } = await adminClient().from("blog_berichten").update(v.waarde).eq("id", huidig.id).select(BERICHT_VELDEN).single();
+    if (isDubbel(error)) return fout(SLUG_BEZET);
     if (error || !data) return fout(`Terugzetten is niet gelukt (${error?.message ?? "onbekend"}).`);
-    if (zichtbaarheid(huidig) === "online" && huidig.slug !== slug) await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${slug}`);
-    vernieuwBlog(huidig.slug, slug);
+    const waarschuwing = await berichtDoorverwijzingen(huidig, data as BlogBericht);
+    vernieuwBlog(huidig.slug, v.waarde.slug);
     revalidatePath(`${BLOG_PAD}/${huidig.id}`);
-    return { ok: true, soort: "blog", bericht: data as BlogBericht };
+    return { ok: true, soort: "blog", bericht: data as BlogBericht, waarschuwing };
   }
 
   // Tekst
@@ -187,7 +197,7 @@ export async function zetTerug(id: string, door: string | null | undefined): Pro
   if (error) return fout(`Terugzetten is niet gelukt (${error.message}).`);
   vernieuwPubliekeData("inhoud");
   revalidatePath("/", "layout");
-  return { ok: true, soort: "tekst", waarden: combineer(gevonden.sectie, schoon), aangepast: Boolean(schoon) };
+  return { ok: true, soort: "tekst", sleutel: versie.ref, waarden: combineer(gevonden.sectie, schoon), aangepast: Boolean(schoon) };
 }
 
 // Prullenbak ------------------------------------------------------------------------------
@@ -216,8 +226,47 @@ async function bestaandeIds(soort: "pagina" | "blog", ids: string[]): Promise<Se
   return uit;
 }
 
-/** Verwijderde pagina's en berichten: versies waarvan het onderdeel niet meer bestaat. */
+/** Ontbreekt de databasefunctie (migratie nog niet uitgevoerd)? */
+function functieOntbreekt(e: { code?: string; message?: string }): boolean {
+  return e.code === "PGRST202" || e.code === "42883" || /could not find the function/i.test(e.message ?? "");
+}
+
+/**
+ * Verwijderde pagina's en berichten: per onderdeel dat niet meer bestaat de
+ * nieuwste versie (nieuwste verwijdering eerst). De database bepaalt dat over
+ * álle versies (functie prullenbak_items), zodat oude verwijderingen niet wegvallen.
+ */
 export async function lijstPrullenbak(): Promise<PrullenbakItem[]> {
+  const { data, error } = await adminClient().rpc("prullenbak_items", { p_limiet: 500 });
+  if (!error) {
+    type Rij = {
+      versie_id: string;
+      soort: "pagina" | "blog";
+      ref: string;
+      op: string;
+      gemaakt_door: string | null;
+      titel: string | null;
+      slug: string | null;
+      aantal_versies: number;
+    };
+    return ((data ?? []) as Rij[]).map((r) => ({
+      versieId: r.versie_id,
+      soort: r.soort,
+      ref: r.ref,
+      titel: snapshotTitel({ titel: r.titel }),
+      slug: r.slug ?? "",
+      op: r.op,
+      door: r.gemaakt_door,
+      aantalVersies: r.aantal_versies,
+    }));
+  }
+  if (!functieOntbreekt(error)) throw new Error(`Prullenbak lezen: ${error.message}`);
+  console.error("Prullenbak: functie prullenbak_items ontbreekt (migratie 20261005160000); terugval op de nieuwste 5000 versies.");
+  return lijstPrullenbakTerugval();
+}
+
+/** Terugval zolang de migratie niet is uitgevoerd: zoekt alleen in de nieuwste 5000 versies. */
+async function lijstPrullenbakTerugval(): Promise<PrullenbakItem[]> {
   const { data, error } = await adminClient()
     .from("versies")
     .select("id, soort, ref, op, gemaakt_door, titel:inhoud->>titel, slug:inhoud->>slug")

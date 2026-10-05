@@ -41,11 +41,3 @@ export function blogPostingJsonLd(b: BlogPostingInvoer): Record<string, unknown>
     ...(b.tags?.length ? { keywords: b.tags.join(", ") } : {}),
   };
 }
-
-/**
- * JSON voor in een <script type="application/ld+json">. elk `<` wordt een JSON-escape (backslash-u003c), zodat
- * tekst als "</script>" in een titel de pagina niet kan openbreken.
- */
-export function veiligeJson(waarde: unknown): string {
-  return JSON.stringify(waarde).replace(/</g, "\\u003c");
-}

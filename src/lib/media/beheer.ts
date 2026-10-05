@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
 import { vernieuwPubliekeData } from "@/lib/cache/vernieuw";
+import { vindSectie } from "@/lib/inhoud/register";
 import { maakVersies } from "./verkleinen";
 import { alleOptPaden, isOptPad } from "./verkleinen-regels";
 import {
@@ -11,6 +12,7 @@ import {
   gebruikPatroon,
   isImporteerbaar,
   isMediaBucket,
+  isSvg,
   isVeiligPad,
   mapVoorImport,
   MEDIA_BUCKET,
@@ -20,6 +22,7 @@ import {
   normaliseerMap,
   schoneBestandsnaam,
   STANDAARD_MAP,
+  SVG_ALLEEN_EIGENAAR,
   TYPE_FILTERS,
   WEBSITE_BEELD_INSTELLINGEN,
   zoekFilter,
@@ -102,10 +105,14 @@ export interface UploadPlek {
   url: string;
 }
 
-/** Stap 1: een eenmalige upload-URL in de bucket "media" (pad "<map>/<uuid>.<ext>"). */
-export async function maakUpload(mime: string, grootte: number, map: string): Promise<Uitkomst<UploadPlek>> {
+/**
+ * Stap 1: een eenmalige upload-URL in de bucket "media" (pad "<map>/<uuid>.<ext>").
+ * SVG alleen met `magSvg` (de eigenaar; zie SVG_ALLEEN_EIGENAAR).
+ */
+export async function maakUpload(mime: string, grootte: number, map: string, o: { magSvg: boolean }): Promise<Uitkomst<UploadPlek>> {
   const probleem = controleerBestand({ type: mime, size: grootte }, "alle");
   if (probleem) return { ok: false, fout: probleem };
+  if (isSvg(mime) && !o.magSvg) return { ok: false, fout: SVG_ALLEEN_EIGENAAR };
   const ext = extensieVoorMime(mime)!;
   const pad = mediaPad(map, randomUUID(), ext);
   const opslag = adminClient().storage.from(MEDIA_BUCKET);
@@ -156,13 +163,22 @@ const afmeting = (n: unknown): number | null => {
  * (zie verkleinen-regels.ts). Het origineel blijft staan; de afmetingen meten we
  * hier zelf (na EXIF-rotatie). `webUrl` is het adres van de webversie, of null
  * als er geen is (SVG, ICO, GIF, of het verkleinen lukte niet: dan gewoon het origineel).
+ * Een nieuw SVG-bestand alleen met `magSvg`: anders wordt het uit de opslag
+ * verwijderd (iemand kan met een upload-URL voor .png toch een SVG sturen).
  */
-export async function registreerMedia(r: Registratie): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
+export async function registreerMedia(r: Registratie, o: { magSvg: boolean }): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
   if (!isMediaBucket(r.bucket) || !isVeiligPad(r.pad) || isOptPad(r.pad)) return { ok: false, fout: "Onbekend bestand." };
   const bestand = await zoekBestand(r.bucket, r.pad);
   if (!bestand) return { ok: false, fout: "Het bestand is niet (meer) gevonden in de opslag." };
   const mime = bestand.metadata?.mimetype || mimeVoorNaam(r.pad);
   if (!mime || !extensieVoorMime(mime)) return { ok: false, fout: "Dit is geen ondersteunde afbeelding." };
+  if ((isSvg(mime) || isSvg(mimeVoorNaam(r.pad))) && !o.magSvg) {
+    const { data: bekend } = await adminClient().from("media").select("id").eq("bucket", r.bucket).eq("pad", r.pad).maybeSingle();
+    if (!bekend) {
+      await adminClient().storage.from(r.bucket).remove([r.pad]);
+      return { ok: false, fout: SVG_ALLEEN_EIGENAAR };
+    }
+  }
   const naam = schoneBestandsnaam(r.naam || bestand.name);
   const versies = await maakVersies(r.bucket, r.pad, mime).catch((e) => {
     console.error("Verkleinen na upload mislukt; alleen het origineel wordt gebruikt.", e);
@@ -213,19 +229,21 @@ export async function werkMediaBij(id: string, w: { naam?: string; alt?: string;
 
 // Gebruik -------------------------------------------------------------------------------
 
-/** Waar wordt deze afbeelding gebruikt? Pagina's, blog, nieuwsbrieven en instellingen. */
+/** Waar wordt deze afbeelding gebruikt? Pagina's, blog, nieuwsbrieven, teksten en instellingen. */
 export async function zoekGebruik(m: { bucket: string; pad: string }): Promise<Gebruik[]> {
   const supabase = adminClient();
   const patroon = gebruikPatroon(m);
-  const [pInhoud, pOmslag, bInhoud, bOmslag, campagnes, instellingen] = await Promise.all([
+  const [pInhoud, pOmslag, bInhoud, bOmslag, campagnes, instellingen, teksten] = await Promise.all([
     supabase.from("paginas").select("id, titel").ilike("inhoud", patroon).limit(100),
     supabase.from("paginas").select("id, titel").ilike("omslag_url", patroon).limit(100),
     supabase.from("blog_berichten").select("id, titel").ilike("inhoud", patroon).limit(100),
     supabase.from("blog_berichten").select("id, titel").ilike("omslag_url", patroon).limit(100),
     supabase.from("nb_campagnes").select("id, naam, soort, blokken").limit(2000),
     supabase.from("instellingen").select("sleutel, waarde").ilike("waarde", patroon).limit(100),
+    // Beheerbare teksten (Teksten): JSON, dus doorzoeken we ze hier zelf (een paar honderd rijen).
+    supabase.from("inhoud").select("sleutel, waarde").limit(2000),
   ]);
-  const fout = [pInhoud, pOmslag, bInhoud, bOmslag, campagnes, instellingen].find((r) => r.error)?.error;
+  const fout = [pInhoud, pOmslag, bInhoud, bOmslag, campagnes, instellingen, teksten].find((r) => r.error)?.error;
   if (fout) throw new Error(`Gebruik zoeken: ${fout.message}`);
 
   const uit: Gebruik[] = [];
@@ -241,6 +259,15 @@ export async function zoekGebruik(m: { bucket: string; pad: string }): Promise<G
     if (!bevatVerwijzing(c.blokken, m)) continue;
     const pad = c.soort === "automatisch" ? "automatisch" : "campagnes";
     voeg({ soort: "nieuwsbrief", titel: c.naam as string, href: `/admin/nieuwsbrief/${pad}/${c.id}` });
+  }
+  for (const t of teksten.data ?? []) {
+    if (!bevatVerwijzing(t.waarde, m)) continue;
+    const gevonden = vindSectie(t.sleutel as string);
+    voeg({
+      soort: "tekst",
+      titel: gevonden ? `${gevonden.groep.titel}: ${gevonden.sectie.titel}` : (t.sleutel as string),
+      href: gevonden ? `/admin/teksten/${gevonden.groep.sleutel}#${gevonden.sectie.sleutel}` : "/admin/teksten",
+    });
   }
   for (const i of instellingen.data ?? []) {
     const sleutel = i.sleutel as string;

@@ -3,7 +3,13 @@
 // terug; de pagina zet ze met veiligeJson() in een <script type="application/ld+json">.
 // (Voor blogberichten: zie lib/blog/structuur.ts.)
 
-export { veiligeJson } from "../blog/structuur";
+/**
+ * JSON voor in een <script type="application/ld+json">. elk `<` wordt een JSON-escape (backslash-u003c), zodat
+ * tekst als "</script>" in een titel de pagina niet kan openbreken.
+ */
+export function veiligeJson(waarde: unknown): string {
+  return JSON.stringify(waarde).replace(/</g, "\\u003c");
+}
 
 const CONTEXT = "https://schema.org";
 

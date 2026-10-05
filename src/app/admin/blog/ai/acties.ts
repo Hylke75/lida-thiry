@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
-import { AI_MODEL, aiBeschikbaar, schrijfConcept, type Concept } from "@/lib/blog/ai";
+import { aiBeschikbaar, schrijfConcept, type Concept } from "@/lib/blog/ai";
 import { normaliseerOpdracht, type SchrijfOpdracht } from "@/lib/blog/ai-prompt";
 import { aiFoutmelding, aiLimietFout, BLOG_PAD, isDubbel, vrijeSlug } from "../_editor/server";
 
 export type SchrijfUitkomst = { ok: false; fout: string };
 
-async function bewaarConcept(concept: Concept, opdracht: SchrijfOpdracht): Promise<string | null> {
+async function bewaarConcept(concept: Concept, opdracht: SchrijfOpdracht, model: string): Promise<string | null> {
   const rij = {
     titel: concept.titel,
     samenvatting: concept.samenvatting,
@@ -22,7 +22,7 @@ async function bewaarConcept(concept: Concept, opdracht: SchrijfOpdracht): Promi
     ai_opdracht: {
       ...opdracht,
       omslag_suggestie: concept.omslag_suggestie,
-      model: AI_MODEL,
+      model,
       geschreven_op: new Date().toISOString(),
     },
   };
@@ -43,19 +43,10 @@ async function bewaarConcept(concept: Concept, opdracht: SchrijfOpdracht): Promi
   return null;
 }
 
-/** Koppelt de zojuist gelogde 'schrijven'-regel aan het nieuwe bericht (voor het kostenoverzicht). */
-async function koppelGebruik(berichtId: string, sinds: Date) {
-  const supabase = adminClient();
-  const { data } = await supabase
-    .from("blog_ai_gebruik")
-    .select("id")
-    .eq("soort", "schrijven")
-    .is("bericht_id", null)
-    .gte("op", sinds.toISOString())
-    .order("op", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (data) await supabase.from("blog_ai_gebruik").update({ bericht_id: berichtId }).eq("id", data.id);
+/** Koppelt de gelogde 'schrijven'-regel (op id) aan het nieuwe bericht (voor het kostenoverzicht). */
+async function koppelGebruik(gebruikId: number, berichtId: string) {
+  const { error } = await adminClient().from("blog_ai_gebruik").update({ bericht_id: berichtId }).eq("id", gebruikId);
+  if (error) throw error;
 }
 
 /** Laat de AI een concept schrijven, slaat het op en opent het in de editor. */
@@ -67,17 +58,19 @@ export async function schrijfMetAi(ruw: unknown): Promise<SchrijfUitkomst> {
   const limiet = await aiLimietFout();
   if (limiet) return { ok: false, fout: limiet };
 
-  const begin = new Date(Date.now() - 1000);
-  let concept: Concept;
+  let resultaat: Awaited<ReturnType<typeof schrijfConcept>>;
   try {
-    concept = (await schrijfConcept(n.opdracht)).concept;
+    resultaat = await schrijfConcept(n.opdracht);
   } catch (e) {
     return { ok: false, fout: aiFoutmelding(e) };
   }
+  const { concept, gebruik, gebruikId } = resultaat;
 
-  const id = await bewaarConcept(concept, n.opdracht);
+  const id = await bewaarConcept(concept, n.opdracht, gebruik.model);
   if (!id) return { ok: false, fout: "De tekst is geschreven, maar kon niet worden opgeslagen. Probeer het opnieuw." };
-  await koppelGebruik(id, begin).catch((e: unknown) => console.error("blog: AI-gebruik koppelen mislukt", e));
+  if (gebruikId !== null) {
+    await koppelGebruik(gebruikId, id).catch((e: unknown) => console.error("blog: AI-gebruik koppelen mislukt", e));
+  }
   revalidatePath(BLOG_PAD);
   redirect(`${BLOG_PAD}/${id}?ai=1`);
 }

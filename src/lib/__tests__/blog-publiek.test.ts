@@ -10,7 +10,8 @@ import {
   telWaarden,
 } from "../blog/lijst";
 import { bouwRss, rfc822, xmlTekst } from "../blog/rss";
-import { blogPostingJsonLd, veiligeJson } from "../blog/structuur";
+import { blogPostingJsonLd } from "../blog/structuur";
+import { veiligeJson } from "../seo/structuur";
 import { deelLinks } from "../blog/delen";
 
 describe("blog: paginering", () => {

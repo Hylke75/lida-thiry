@@ -4,16 +4,21 @@ import { useRef, useState } from "react";
 import { registreerEditorUpload } from "@/components/admin/mediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
-import { maakPaginaUpload } from "../acties";
+import { maakEditorUpload, type EditorUploadSoort } from "./upload-actie";
 import { knopRand } from "../../nieuwsbrief/_editor/stijl";
 
-/** Knop om een foto te kiezen; uploadt naar de bucket "blog" (map paginas/) en geeft de openbare URL terug. */
-export function PaginaUpload({
+/**
+ * Knop om een foto te kiezen in de blog- of pagina-editor; uploadt naar de bucket
+ * "blog" (pagina's onder paginas/) en geeft de openbare URL terug.
+ */
+export function FotoUpload({
+  soort,
   map,
   label,
   disabled,
   onUrl,
 }: {
+  soort: EditorUploadSoort;
   map: UploadMap;
   label: string;
   disabled?: boolean;
@@ -29,7 +34,7 @@ export function PaginaUpload({
     if (bestand.size > BLOG_AFBEELDING_MAX_BYTES) return setFout("De foto is te groot. Kies een bestand van maximaal 5 MB.");
     setBezig(true);
     try {
-      const u = await maakPaginaUpload(bestand.type, bestand.size, map);
+      const u = await maakEditorUpload(soort, bestand.type, bestand.size, map);
       if (!u.ok) return setFout(u.fouten.join(" "));
       const { error } = await createClient()
         .storage.from(BLOG_BUCKET)
@@ -37,7 +42,7 @@ export function PaginaUpload({
       if (error) return setFout(`Uploaden is niet gelukt (${error.message}).`);
       // Ook in de mediabibliotheek zetten; de server maakt daarbij een verkleinde
       // versie zonder EXIF/GPS. Die voegen we in; lukt dat niet, dan het origineel.
-      const webUrl = await registreerEditorUpload(bestand, "blog", u.pad, "paginas");
+      const webUrl = await registreerEditorUpload(bestand, "blog", u.pad, soort);
       onUrl(webUrl ?? u.url);
     } catch {
       setFout("Uploaden is niet gelukt. Controleer je internetverbinding en probeer het opnieuw.");

@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
@@ -8,24 +7,19 @@ import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import { aiBeschikbaar, bewerkMetAi, stelVoor, type Suggesties } from "@/lib/blog/ai";
 import { BEWERKINGEN, type Bewerking } from "@/lib/blog/ai-prompt";
-import {
-  BLOG_AFBEELDING_MAX_BYTES,
-  BLOG_AFBEELDING_TYPES,
-  BLOG_BUCKET,
-  campagneBlokkenUitBericht,
-  type UploadMap,
-} from "@/lib/blog/beheer";
+import { campagneBlokkenUitBericht } from "@/lib/blog/beheer";
 import { BERICHT_VELDEN, publicatieProblemen, valideerBericht, zichtbaarheid, type BlogBericht, type Zichtbaarheid } from "@/lib/blog/regels";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { amsterdamNaarUtc, controleerInplanmoment, toonDatumTijd } from "@/lib/nieuwsbrief/tijd";
 import { siteUrl } from "@/lib/site";
-import { registreerSlugWijziging } from "@/lib/doorverwijzingen/beheer";
+import { metWaarschuwing } from "@/lib/doorverwijzingen/beheer";
 import { bewaarVersie } from "@/lib/versies/beheer";
 import { blogSnapshot, omschrijvingVoor } from "@/lib/versies/regels";
 import {
   aiFoutmelding,
   aiLimietFout,
   BLOG_PAD,
+  doorverwijzingenNaOpslaan,
   haalBericht,
   isDubbel,
   SLUG_BEZET,
@@ -143,12 +137,15 @@ export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUit
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Opslaan is niet gelukt (${error?.message ?? "onbekend"}).`);
-  if (zichtbaarheid(huidig) === "online" && huidig.slug !== v.waarde.slug) {
-    await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${v.waarde.slug}`);
-  }
+  const waarschuwing = await doorverwijzingenNaOpslaan(huidig, data as BlogBericht);
   vernieuwBlog(huidig.slug, v.waarde.slug);
   revalidatePath(`${BLOG_PAD}/${id}`);
-  return { ok: true, bericht: data as BlogBericht, zichtbaar: zichtbaarheid(data as BlogBericht), melding: "Opgeslagen." };
+  return {
+    ok: true,
+    bericht: data as BlogBericht,
+    zichtbaar: zichtbaarheid(data as BlogBericht),
+    melding: metWaarschuwing("Opgeslagen.", waarschuwing),
+  };
 }
 
 /**
@@ -196,9 +193,7 @@ export async function publiceer(
     .single();
   if (isDubbel(error)) return fout(SLUG_BEZET);
   if (error || !data) return fout(`Publiceren is niet gelukt (${error?.message ?? "onbekend"}).`);
-  if (zichtbaarheid(huidig) === "online" && huidig.slug !== v.waarde.slug) {
-    await registreerSlugWijziging(`/blog/${huidig.slug}`, `/blog/${v.waarde.slug}`);
-  }
+  const waarschuwing = await doorverwijzingenNaOpslaan(huidig, data as BlogBericht);
   await logActie({
     actie: opties.moment === null ? "blog.publiceren" : "blog.inplannen",
     onderwerpSoort: "blog",
@@ -216,10 +211,12 @@ export async function publiceer(
     ok: true,
     bericht: data as BlogBericht,
     zichtbaar: zichtbaarheid(data as BlogBericht),
-    melding:
+    melding: metWaarschuwing(
       opties.moment === null
         ? "Gepubliceerd! Het bericht staat nu online."
         : `Ingepland: het bericht verschijnt op ${toonDatumTijd(moment)}.`,
+      waarschuwing,
+    ),
   };
 }
 
@@ -270,27 +267,6 @@ export async function alsNieuwsbrief(formData: FormData) {
   if (error || !data) redirect(`${BLOG_PAD}/${id}?fout=nieuwsbrief`);
   revalidatePath("/admin/nieuwsbrief", "layout");
   redirect(`/admin/nieuwsbrief/campagnes/${data.id}`);
-}
-
-/**
- * Stap 1 van een foto uploaden: een eenmalige upload-URL in de openbare bucket
- * "blog" (map omslag/ of afbeeldingen/). De browser uploadt daarna zelf.
- */
-export async function maakBlogUpload(
-  type: string,
-  grootte: number,
-  map: UploadMap,
-): Promise<Uitkomst<{ pad: string; token: string; url: string }>> {
-  await vereisBeheerder("blog");
-  const ext = BLOG_AFBEELDING_TYPES[type];
-  if (!ext) return fout("Kies een afbeelding van het type JPG, PNG, GIF of WebP.");
-  if (!(grootte > 0) || grootte > BLOG_AFBEELDING_MAX_BYTES) return fout("De afbeelding is te groot. Kies een bestand van maximaal 5 MB.");
-  const pad = `${map === "omslag" ? "omslag" : "afbeeldingen"}/${randomUUID()}.${ext}`;
-  const supabase = adminClient();
-  const { data, error } = await supabase.storage.from(BLOG_BUCKET).createSignedUploadUrl(pad);
-  if (error || !data) return fout(`Uploaden is niet gelukt (${error?.message ?? "onbekend"}).`);
-  const url = supabase.storage.from(BLOG_BUCKET).getPublicUrl(pad).data.publicUrl;
-  return { ok: true, pad, token: data.token, url };
 }
 
 // AI ----------------------------------------------------------------------------------

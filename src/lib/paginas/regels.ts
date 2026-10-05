@@ -33,20 +33,27 @@ export function geldigePaginaSlug(slug: string): boolean {
  * {nieuwsbrief} = het standaard aanmeldblok; {nieuwsbrief_<slug>} = een specifiek
  * aanmeldformulier uit Beheer → Nieuwsbrief → Formulieren.
  */
-export const PAGINA_BLOKKEN: Record<string, string> = {
-  contactformulier: "het contactformulier",
-  afspraak: "het formulier om online een afspraak te maken",
-  nieuwsbrief: "het standaard aanmeldblok voor de nieuwsbrief",
-  test: "een knop en korte uitnodiging om de kledingadviestest te doen",
-  laatste_blogs: "de drie nieuwste blogberichten",
-  bedrijfsgegevens: "naam, adres, KvK en contactgegevens uit de instellingen",
+const BLOKKEN: Record<string, { label: string; uitleg: string }> = {
+  contactformulier: { label: "Contactformulier", uitleg: "het contactformulier" },
+  afspraak: { label: "Afspraak maken (boekingsformulier)", uitleg: "het formulier om online een afspraak te maken" },
+  nieuwsbrief: { label: "Aanmeldblok nieuwsbrief", uitleg: "het standaard aanmeldblok voor de nieuwsbrief" },
+  test: { label: "Uitnodiging voor de test (knop naar /bestellen)", uitleg: "een knop en korte uitnodiging om de kledingadviestest te doen" },
+  laatste_blogs: { label: "De drie nieuwste blogberichten", uitleg: "de drie nieuwste blogberichten" },
+  bedrijfsgegevens: { label: "Bedrijfsgegevens (uit de instellingen)", uitleg: "naam, adres, KvK en contactgegevens uit de instellingen" },
 };
+
+/** Blok → uitleg (voor "Blok invoegen"). */
+export const PAGINA_BLOKKEN: Record<string, string> = Object.fromEntries(Object.entries(BLOKKEN).map(([k, v]) => [k, v.uitleg]));
+
+/** Blok → kort label (voor het voorbeeld in de editor). */
+export const PAGINA_BLOK_LABELS: Record<string, string> = Object.fromEntries(Object.entries(BLOKKEN).map(([k, v]) => [k, v.label]));
 
 /** Alle blokverwijzingen in een tekst, zoals "contactformulier" of "nieuwsbrief_zomer". */
 export function blokkenInTekst(inhoud: string): string[] {
   const uit: string[] = [];
   for (const regel of inhoud.split(/\r?\n/)) {
-    const m = /^\s*\{([a-z0-9_]+)\}\s*$/.exec(regel);
+    // Zelfde patroon als parseerTekst in lib/inhoud/opmaak.ts (wat daar een blok is, telt hier).
+    const m = /^\{([a-z][a-z0-9_]*)\}$/.exec(regel.trim());
     if (m) uit.push(m[1]);
   }
   return uit;

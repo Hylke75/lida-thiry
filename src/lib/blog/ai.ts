@@ -3,13 +3,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import { adminClient } from "../supabase/admin";
 import { haalLichaamstypes } from "../lichaamstypes";
 import {
+  berekenGebruik,
   bewerkVraag,
-  kostenDollarcent,
   schrijfVraag,
   SCHRIJF_SCHEMA,
   suggestieVraag,
   SUGGESTIE_SCHEMA,
   systeemPrompt,
+  type AiGebruik,
   type Bewerking,
   type SchrijfOpdracht,
 } from "./ai-prompt";
@@ -34,38 +35,47 @@ async function systeem(): Promise<string> {
   return systeemPrompt(types.map((t) => t.naam));
 }
 
-interface Gebruik {
-  invoer: number;
-  uitvoer: number;
-}
-
-async function logGebruik(soort: string, g: Gebruik, berichtId: string | null): Promise<void> {
-  await adminClient()
-    .from("blog_ai_gebruik")
-    .insert({
-      bericht_id: berichtId,
-      soort,
-      model: AI_MODEL,
-      invoer_tokens: g.invoer,
-      uitvoer_tokens: g.uitvoer,
-      kosten_dollarcent: kostenDollarcent(g.invoer, g.uitvoer),
-    })
-    .then(
-      () => undefined,
-      (e: unknown) => console.error("AI-gebruik niet gelogd", e),
-    );
+/**
+ * Logt het gebruik van één aanroep (ook als het antwoord daarna onbruikbaar blijkt,
+ * want ook dan is ervoor betaald en telt het mee voor de uurlimiet). Geeft het id
+ * van de regel terug, of null als loggen mislukte.
+ */
+async function logGebruik(soort: string, g: AiGebruik, berichtId: string | null): Promise<number | null> {
+  try {
+    const { data, error } = await adminClient()
+      .from("blog_ai_gebruik")
+      .insert({
+        bericht_id: berichtId,
+        soort,
+        model: g.model,
+        invoer_tokens: g.invoer,
+        uitvoer_tokens: g.uitvoer,
+        kosten_dollarcent: g.kosten,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return (data?.id as number | undefined) ?? null;
+  } catch (e) {
+    console.error("AI-gebruik niet gelogd", e);
+    return null;
+  }
 }
 
 /**
  * Eén aanroep naar Claude. Streamt (lange teksten mogen niet tegen een time-out
  * lopen), met adaptief denken en automatische terugval bij een weigering.
- * Geeft de tekst van het antwoord en het tokengebruik terug.
+ * Het gebruik wordt direct na het antwoord gelogd (vóór de controles op weigering
+ * en afbreken), met het model dat het antwoord echt leverde.
+ * Geeft de tekst van het antwoord, het tokengebruik en het id van de logregel terug.
  */
 async function vraag(opties: {
   vraag: string;
   schema?: Record<string, unknown>;
   maxTokens: number;
-}): Promise<{ tekst: string; gebruik: Gebruik }> {
+  soort: string;
+  berichtId: string | null;
+}): Promise<{ tekst: string; gebruik: AiGebruik; gebruikId: number | null }> {
   const stream = client().beta.messages.stream({
     model: AI_MODEL,
     max_tokens: opties.maxTokens,
@@ -91,13 +101,8 @@ async function vraag(opties: {
     throw e;
   }
 
-  const iteraties = bericht.usage.iterations ?? [];
-  const gebruik: Gebruik = iteraties.length
-    ? iteraties.reduce(
-        (som, it) => ({ invoer: som.invoer + (it.input_tokens ?? 0), uitvoer: som.uitvoer + (it.output_tokens ?? 0) }),
-        { invoer: 0, uitvoer: 0 },
-      )
-    : { invoer: bericht.usage.input_tokens, uitvoer: bericht.usage.output_tokens };
+  const gebruik = berekenGebruik(bericht.model || AI_MODEL, bericht.usage);
+  const gebruikId = await logGebruik(opties.soort, gebruik, opties.berichtId);
 
   if (bericht.stop_reason === "refusal") {
     throw new AiFout("De AI wilde deze opdracht niet uitvoeren. Pas de steekwoorden of wensen aan en probeer het opnieuw.");
@@ -109,7 +114,7 @@ async function vraag(opties: {
     .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
     .map((b) => b.text)
     .join("");
-  return { tekst, gebruik };
+  return { tekst, gebruik, gebruikId };
 }
 
 function leesJson(tekst: string): Record<string, unknown> {
@@ -136,15 +141,23 @@ export interface Concept {
 }
 
 /** Schrijft een volledig concept op basis van steekwoorden. */
-export async function schrijfConcept(opdracht: SchrijfOpdracht): Promise<{ concept: Concept; gebruik: Gebruik }> {
-  const { tekst, gebruik } = await vraag({ vraag: schrijfVraag(opdracht), schema: SCHRIJF_SCHEMA, maxTokens: 32_000 });
-  await logGebruik("schrijven", gebruik, null);
+export async function schrijfConcept(
+  opdracht: SchrijfOpdracht,
+): Promise<{ concept: Concept; gebruik: AiGebruik; gebruikId: number | null }> {
+  const { tekst, gebruik, gebruikId } = await vraag({
+    vraag: schrijfVraag(opdracht),
+    schema: SCHRIJF_SCHEMA,
+    maxTokens: 32_000,
+    soort: "schrijven",
+    berichtId: null,
+  });
   const o = leesJson(tekst);
   const titel = str(o.titel).slice(0, 200);
   const inhoud = str(o.inhoud);
   if (!titel || !inhoud) throw new AiFout("De AI leverde geen bruikbare tekst. Probeer het opnieuw.");
   return {
     gebruik,
+    gebruikId,
     concept: {
       titel,
       slug: maakSlug(str(o.slug) || titel),
@@ -162,8 +175,7 @@ export async function schrijfConcept(opdracht: SchrijfOpdracht): Promise<{ conce
 export async function bewerkMetAi(bewerking: Bewerking, tekst: string, berichtId: string | null): Promise<string> {
   if (!tekst.trim()) throw new AiFout("Er is geen tekst om te bewerken.");
   if (tekst.length > 60_000) throw new AiFout("De tekst is te lang om in één keer te bewerken. Selecteer een deel.");
-  const { tekst: nieuw, gebruik } = await vraag({ vraag: bewerkVraag(bewerking, tekst), maxTokens: 32_000 });
-  await logGebruik(bewerking, gebruik, berichtId);
+  const { tekst: nieuw } = await vraag({ vraag: bewerkVraag(bewerking, tekst), maxTokens: 32_000, soort: bewerking, berichtId });
   if (!nieuw.trim()) throw new AiFout("De AI leverde geen tekst. Probeer het opnieuw.");
   return nieuw.trim();
 }
@@ -179,8 +191,13 @@ export interface Suggesties {
 /** Stelt titels, samenvatting, SEO-teksten en tags voor bij een bestaand bericht. */
 export async function stelVoor(titel: string, inhoud: string, berichtId: string | null): Promise<Suggesties> {
   if (!inhoud.trim()) throw new AiFout("Schrijf eerst wat tekst; daarna kan de AI voorstellen doen.");
-  const { tekst, gebruik } = await vraag({ vraag: suggestieVraag(titel, inhoud), schema: SUGGESTIE_SCHEMA, maxTokens: 8_000 });
-  await logGebruik("suggesties", gebruik, berichtId);
+  const { tekst } = await vraag({
+    vraag: suggestieVraag(titel, inhoud),
+    schema: SUGGESTIE_SCHEMA,
+    maxTokens: 8_000,
+    soort: "suggesties",
+    berichtId,
+  });
   const o = leesJson(tekst);
   return {
     titels: (Array.isArray(o.titels) ? o.titels : []).map(str).filter(Boolean).slice(0, 5),

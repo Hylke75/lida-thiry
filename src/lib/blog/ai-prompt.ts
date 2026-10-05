@@ -152,7 +152,66 @@ ${inhoud}
 </tekst>`;
 }
 
-/** Kosten in dollarcent voor Claude Opus 5.5 ($4 / $20 per miljoen tokens). */
-export function kostenDollarcent(invoer: number, uitvoer: number): number {
-  return Math.round(((invoer * 4 + uitvoer * 20) / 1_000_000) * 100 * 100) / 100;
+/**
+ * Prijzen in dollar per miljoen tokens (invoer, uitvoer). Bij een weigering kan de
+ * API het verzoek op een ander model afmaken (server-side fallback); dan telt de
+ * prijs van dát model. Onbekend model: de prijs van Claude Opus 5.5.
+ */
+const PRIJZEN: Record<string, readonly [number, number]> = {
+  "claude-opus-5-5": [4, 20],
+  "claude-opus-5": [5, 25],
+  "claude-opus-4-8": [5, 25],
+  "claude-opus-4-7": [5, 25],
+  "claude-opus-4-6": [5, 25],
+  "claude-fable-5-1": [10, 50],
+  "claude-fable-5": [10, 50],
+  "claude-sonnet-5-5": [2, 10],
+  "claude-sonnet-5": [2, 10],
+  "claude-sonnet-4-6": [3, 15],
+  "claude-haiku-4-5": [1, 5],
+};
+
+export interface AiGebruik {
+  invoer: number;
+  uitvoer: number;
+  kosten: number;
+  /** Het model dat het antwoord leverde (bij een fallback niet het gevraagde model). */
+  model: string;
+}
+
+/**
+ * Tokengebruik en kosten van één antwoord. Met `iterations` (bijv. bij een
+ * fallback: eerst het geweigerde model, dan het fallbackmodel) telt elke stap
+ * tegen de prijs van het model dat hem uitvoerde.
+ */
+export function berekenGebruik(
+  model: string,
+  usage: {
+    input_tokens: number | null;
+    output_tokens: number;
+    iterations?: readonly { input_tokens?: number | null; output_tokens?: number | null; model?: string | null }[] | null;
+  },
+): AiGebruik {
+  const stappen = usage.iterations ?? [];
+  if (!stappen.length) {
+    const invoer = usage.input_tokens ?? 0;
+    return { invoer, uitvoer: usage.output_tokens, kosten: kostenDollarcent(invoer, usage.output_tokens, model), model };
+  }
+  let invoer = 0;
+  let uitvoer = 0;
+  let kosten = 0;
+  for (const s of stappen) {
+    const i = s.input_tokens ?? 0;
+    const u = s.output_tokens ?? 0;
+    invoer += i;
+    uitvoer += u;
+    kosten += kostenDollarcent(i, u, s.model || model);
+  }
+  return { invoer, uitvoer, kosten: Math.round(kosten * 100) / 100, model };
+}
+
+/** Kosten in dollarcent (standaard Claude Opus 5.5: $4 / $20 per miljoen tokens). */
+export function kostenDollarcent(invoer: number, uitvoer: number, model = "claude-opus-5-5"): number {
+  const [pIn, pUit] = PRIJZEN[model] ?? PRIJZEN["claude-opus-5-5"];
+  return Math.round(((invoer * pIn + uitvoer * pUit) / 1_000_000) * 100 * 100) / 100;
 }
