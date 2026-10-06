@@ -5,15 +5,38 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Het geheim voor ondertekende links. In productie (VERCEL_ENV=production) is
- * LINK_GEHEIM verplicht; lokaal en op previews valt het terug op andere geheimen.
+ * Een geheim afgeleid van de service-role-sleutel, met een eigen label per doel
+ * (zodat het niet de sleutel zelf is). Alleen als noodoplossing in productie
+ * wanneer het eigen geheim (nog) niet is ingesteld: de site blijft dan werken,
+ * en de checklist "Klaar voor livegang" waarschuwt. Null als er geen sleutel is.
+ */
+export function afgeleidGeheim(doel: string, env: Record<string, string | undefined> = process.env): string | null {
+  const basis = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!basis) return null;
+  return createHmac("sha256", basis).update(`lida-thiry:${doel}`).digest("base64url");
+}
+
+const gewaarschuwd = new Set<string>();
+/** Eén waarschuwing per proces in de serverlogs als een eigen geheim ontbreekt. */
+export function waarschuwOntbrekendGeheim(naam: string) {
+  if (gewaarschuwd.has(naam)) return;
+  gewaarschuwd.add(naam);
+  console.warn(`${naam} ontbreekt in productie; er wordt een afgeleid geheim gebruikt. Zet ${naam} in Vercel.`);
+}
+
+/**
+ * Het geheim voor ondertekende links. In productie (VERCEL_ENV=production) hoort
+ * LINK_GEHEIM ingesteld te zijn; ontbreekt het, dan een afgeleid geheim (zie
+ * afgeleidGeheim) in plaats van kapotte links. Lokaal en op previews valt het
+ * terug op andere geheimen.
  */
 export function linkGeheim(env: Record<string, string | undefined> = process.env): string {
   if (env.VERCEL_ENV === "production") {
-    if (!env.LINK_GEHEIM) {
-      throw new Error("LINK_GEHEIM ontbreekt: in productie is een eigen geheim voor ondertekende links verplicht.");
-    }
-    return env.LINK_GEHEIM;
+    if (env.LINK_GEHEIM) return env.LINK_GEHEIM;
+    const afgeleid = afgeleidGeheim("link", env);
+    if (!afgeleid) throw new Error("LINK_GEHEIM ontbreekt: in productie is een eigen geheim voor ondertekende links nodig.");
+    waarschuwOntbrekendGeheim("LINK_GEHEIM");
+    return afgeleid;
   }
   const g = env.LINK_GEHEIM || env.NIEUWSBRIEF_GEHEIM || env.CRON_SECRET || env.SUPABASE_SERVICE_ROLE_KEY;
   if (!g) throw new Error("Geen geheim voor ondertekende links (zet LINK_GEHEIM).");

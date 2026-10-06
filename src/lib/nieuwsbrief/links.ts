@@ -1,7 +1,7 @@
 // Links in nieuwsbrieven: afmelden, bevestigen, klik- en openmeting. Kliklinks zijn
 // ondertekend (HMAC), zodat de doorstuurroute niet als open redirect te misbruiken is.
 
-import { hmacHandtekening, zelfdeHandtekening } from "../ondertekening";
+import { afgeleidGeheim, hmacHandtekening, waarschuwOntbrekendGeheim, zelfdeHandtekening } from "../ondertekening";
 import { siteUrl } from "../site";
 
 /** Productie: op Vercel de productieomgeving, elders een productiebuild (next start). */
@@ -15,10 +15,15 @@ function isProductie(): boolean {
 function geheim(): string {
   const eigen = process.env.NIEUWSBRIEF_GEHEIM;
   if (eigen) return eigen;
-  // In productie geen terugval op andere geheimen: wie CRON_SECRET of de
-  // service-role-sleutel roteert, zou anders alle verstuurde links breken, en die
-  // sleutels horen niet in een HMAC voor openbare links.
-  if (isProductie()) throw new Error("NIEUWSBRIEF_GEHEIM ontbreekt: verplicht in productie voor nieuwsbrieflinks.");
+  // In productie geen terugval op CRON_SECRET of de kale service-role-sleutel; wel
+  // op een daarvan afgeleid geheim, zodat de site blijft werken tot
+  // NIEUWSBRIEF_GEHEIM is ingesteld (de livegang-checklist waarschuwt).
+  if (isProductie()) {
+    const afgeleid = afgeleidGeheim("nieuwsbrief");
+    if (!afgeleid) throw new Error("NIEUWSBRIEF_GEHEIM ontbreekt: nodig in productie voor nieuwsbrieflinks.");
+    waarschuwOntbrekendGeheim("NIEUWSBRIEF_GEHEIM");
+    return afgeleid;
+  }
   const g = process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!g) throw new Error("Geen geheim voor nieuwsbrieflinks (zet NIEUWSBRIEF_GEHEIM).");
   return g;

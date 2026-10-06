@@ -40,9 +40,13 @@ describe("ondertekende links", () => {
 });
 
 describe("linkGeheim", () => {
-  it("vereist LINK_GEHEIM in productie", () => {
-    expect(() => linkGeheim({ VERCEL_ENV: "production", CRON_SECRET: "x" })).toThrow(/LINK_GEHEIM/);
+  it("gebruikt in productie LINK_GEHEIM, anders een afgeleid geheim (nooit CRON_SECRET of de kale sleutel)", () => {
     expect(linkGeheim({ VERCEL_ENV: "production", LINK_GEHEIM: "g" })).toBe("g");
+    expect(() => linkGeheim({ VERCEL_ENV: "production", CRON_SECRET: "x" })).toThrow(/LINK_GEHEIM/);
+    const afgeleid = linkGeheim({ VERCEL_ENV: "production", SUPABASE_SERVICE_ROLE_KEY: "s", CRON_SECRET: "x" });
+    expect(afgeleid).not.toBe("s");
+    expect(afgeleid).not.toBe("x");
+    expect(afgeleid).toBe(linkGeheim({ VERCEL_ENV: "production", SUPABASE_SERVICE_ROLE_KEY: "s" }));
   });
 
   it("valt buiten productie terug op andere geheimen", () => {
