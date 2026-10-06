@@ -5,7 +5,7 @@ import { registreerEditorUpload } from "@/components/admin/mediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { maakAfbeeldingUpload } from "./acties";
 import { AFBEELDING_MAX_BYTES, AFBEELDING_TYPES, BUCKET } from "./regels";
-import { knopRand } from "./stijl";
+import { knopSecundair, tekstFout } from "@/components/admin/stijl";
 
 /** Knop om een afbeelding te kiezen; geeft na het uploaden de openbare URL terug. */
 export function AfbeeldingUpload({ heeftAfbeelding, onUrl }: { heeftAfbeelding: boolean; onUrl: (url: string) => void }) {
@@ -49,10 +49,10 @@ export function AfbeeldingUpload({ heeftAfbeelding, onUrl }: { heeftAfbeelding: 
           if (bestand) void upload(bestand);
         }}
       />
-      <button type="button" disabled={bezig} onClick={() => invoer.current?.click()} className={`${knopRand} w-fit`}>
+      <button type="button" disabled={bezig} onClick={() => invoer.current?.click()} className={`${knopSecundair} w-fit`}>
         {bezig ? "Bezig met uploaden…" : heeftAfbeelding ? "Andere afbeelding uploaden" : "Afbeelding uploaden"}
       </button>
-      {fout && <p className="text-sm text-red-600 dark:text-red-400">{fout}</p>}
+      {fout && <p className={`text-sm ${tekstFout}`}>{fout}</p>}
     </div>
   );
 }

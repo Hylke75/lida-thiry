@@ -7,7 +7,9 @@ import { AFSPRAAK_VELDEN, afspraakInstellingen, haalSoort, type AfspraakRij } fr
 import { bedragLabel, duurLabel, geldigeUuid, MAX, STATUS_LABEL, toegestaneOvergangen, type AfspraakStatus } from "@/lib/afspraken/regels";
 import { datumLabel, tijdLabel } from "@/lib/datum";
 import { bewaarNotitie, koppelAanAdresboek, stuurBevestigingOpnieuw, verwijderAfspraak, wijzigStatus } from "../acties";
-import { invoer, kaart, knop, knopLicht, Meldingen, NAV_AFSPRAKEN, StatusLabel, zacht } from "../stijl";
+import { Meldingen, NAV_AFSPRAKEN, StatusLabel } from "../onderdelen";
+import { invoer, kaart, knop, knopGevaar, knopSecundair, tekstFout, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -48,50 +50,48 @@ export default async function AfspraakDetail({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <AdminNav actief={NAV_AFSPRAKEN} />
-      <Link href={PAD} className={`text-sm ${zacht} underline-offset-4 hover:underline`}>
-        ← Alle afspraken
-      </Link>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{a.naam}</h1>
-          <p className={`text-sm ${zacht}`}>
+      <AdminKop
+        terug={{ href: PAD, label: "Alle afspraken" }}
+        titel={a.naam}
+        beschrijving={
+          <>
             {soort?.naam ?? "Afspraak"} · <span className="first-letter:uppercase">{datumLabel(a.start_op)}</span> · {tijdLabel(a.start_op)}–
             {tijdLabel(a.eind_op)}
-          </p>
-        </div>
-        <StatusLabel status={a.status} />
-      </header>
+          </>
+        }
+        acties={<StatusLabel status={a.status} />}
+      />
 
       <Meldingen ok={ok} fout={fout} />
 
       <section className={kaart}>
         <h2 className="font-semibold">Gegevens</h2>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
-          <dt className={zacht}>E-mail</dt>
+          <dt className={tekstZacht}>E-mail</dt>
           <dd>
             <a href={`mailto:${a.email}`} className="text-accent underline underline-offset-4">
               {a.email}
             </a>
           </dd>
-          <dt className={zacht}>Telefoon</dt>
+          <dt className={tekstZacht}>Telefoon</dt>
           <dd>{a.telefoon ? <a href={`tel:${a.telefoon.replace(/[^0-9+]/g, "")}`}>{a.telefoon}</a> : "—"}</dd>
-          <dt className={zacht}>Soort</dt>
+          <dt className={tekstZacht}>Soort</dt>
           <dd>
             {soort?.naam ?? "(verwijderd)"} · {duurLabel(duur)}
             {soort?.locatie ? ` · ${soort.locatie}` : soort?.online ? " · online" : ""}
           </dd>
-          <dt className={zacht}>Aanbetaling</dt>
+          <dt className={tekstZacht}>Aanbetaling</dt>
           <dd>
             {a.aanbetaling_cent > 0
               ? `${bedragLabel(a.aanbetaling_cent)} — ${a.betaald_op ? `betaald op ${tijdstip(a.betaald_op)}` : "niet betaald"}`
               : "geen"}
-            {a.mollie_payment_id && <span className={`block text-xs ${zacht}`}>Mollie: {a.mollie_payment_id}</span>}
+            {a.mollie_payment_id && <span className={`block text-xs ${tekstZacht}`}>Mollie: {a.mollie_payment_id}</span>}
           </dd>
-          <dt className={zacht}>Herinnering</dt>
+          <dt className={tekstZacht}>Herinnering</dt>
           <dd>{a.herinnering_op ? `verstuurd op ${tijdstip(a.herinnering_op)}` : "nog niet verstuurd"}</dd>
-          <dt className={zacht}>Geboekt op</dt>
+          <dt className={tekstZacht}>Geboekt op</dt>
           <dd>{tijdstip(a.aangemaakt_op)}</dd>
-          <dt className={zacht}>Adresboek</dt>
+          <dt className={tekstZacht}>Adresboek</dt>
           <dd>
             {a.relatie_id ? (
               <Link href={`/admin/adresboek/${a.relatie_id}`} className="text-accent underline underline-offset-4">
@@ -104,7 +104,7 @@ export default async function AfspraakDetail({
               </form>
             )}
           </dd>
-          <dt className={zacht}>Klantlink</dt>
+          <dt className={tekstZacht}>Klantlink</dt>
           <dd>
             <Link href={`/afspraak/${a.token}`} className="break-all text-accent underline underline-offset-4" target="_blank">
               /afspraak/{a.token.slice(0, 10)}…
@@ -113,7 +113,7 @@ export default async function AfspraakDetail({
         </dl>
         {a.opmerking && (
           <div className="flex flex-col gap-1 text-sm">
-            <p className={zacht}>Opmerking van de klant</p>
+            <p className={tekstZacht}>Opmerking van de klant</p>
             <p className="rounded-lg bg-black/[0.03] px-4 py-3 whitespace-pre-line dark:bg-white/[0.05]">{a.opmerking}</p>
           </div>
         )}
@@ -129,7 +129,7 @@ export default async function AfspraakDetail({
                 <form key={s} action={wijzigStatus} className="flex flex-wrap items-center gap-3 text-sm">
                   <input type="hidden" name="id" value={a.id} />
                   <input type="hidden" name="status" value={s} />
-                  <button className={s === "bevestigd" ? knop : knopLicht}>{KNOP_LABEL[s]}</button>
+                  <button className={s === "bevestigd" ? knop : knopSecundair}>{KNOP_LABEL[s]}</button>
                   {s === "bevestigd" && (
                     <label className="flex items-center gap-2">
                       <input type="checkbox" name="mail" defaultChecked className="accent-accent" />
@@ -140,12 +140,12 @@ export default async function AfspraakDetail({
               ))}
             {overgangen.includes("geannuleerd") && (
               <details className="rounded-lg border border-red-200 p-3 text-sm dark:border-red-900">
-                <summary className="cursor-pointer font-medium text-red-700 dark:text-red-300">Afspraak annuleren…</summary>
+                <summary className={`cursor-pointer font-medium ${tekstFout}`}>Afspraak annuleren…</summary>
                 <form action={wijzigStatus} className="mt-3 flex flex-col gap-3">
                   <input type="hidden" name="id" value={a.id} />
                   <input type="hidden" name="status" value="geannuleerd" />
                   <label className="flex flex-col gap-1">
-                    <span className={zacht}>Toelichting voor de klant (optioneel)</span>
+                    <span className={tekstZacht}>Toelichting voor de klant (optioneel)</span>
                     <textarea name="reden" rows={3} maxLength={MAX.reden} className={invoer} />
                   </label>
                   <label className="flex items-center gap-2">
@@ -153,7 +153,7 @@ export default async function AfspraakDetail({
                     Stuur de klant een annuleringsmail
                   </label>
                   {a.aanbetaling_cent > 0 && a.betaald_op && (
-                    <p className={`text-xs ${zacht}`}>
+                    <p className={`text-xs ${tekstZacht}`}>
                       Er is een aanbetaling gedaan. Terugbetalen doe je zelf in het Mollie-dashboard.
                     </p>
                   )}
@@ -164,7 +164,7 @@ export default async function AfspraakDetail({
               </details>
             )}
             {a.status === "bevestigd" && !gestart && (
-              <p className={`text-xs ${zacht}`}>‘Afgerond’ en ‘Niet verschenen’ kun je kiezen zodra de afspraak is begonnen.</p>
+              <p className={`text-xs ${tekstZacht}`}>‘Afgerond’ en ‘Niet verschenen’ kun je kiezen zodra de afspraak is begonnen.</p>
             )}
           </div>
         </section>
@@ -173,8 +173,8 @@ export default async function AfspraakDetail({
       {a.status === "bevestigd" && (
         <form action={stuurBevestigingOpnieuw} className="flex items-center gap-3 text-sm">
           <input type="hidden" name="id" value={a.id} />
-          <button className={knopLicht}>Bevestiging opnieuw sturen</button>
-          <span className={zacht}>De klant kan tot {inst.minVoorafUren} uur vooraf zelf annuleren.</span>
+          <button className={knopSecundair}>Bevestiging opnieuw sturen</button>
+          <span className={tekstZacht}>De klant kan tot {inst.minVoorafUren} uur vooraf zelf annuleren.</span>
         </form>
       )}
 
@@ -185,15 +185,15 @@ export default async function AfspraakDetail({
           <textarea name="notitie" rows={4} defaultValue={a.notitie} maxLength={MAX.notitie} className={invoer} aria-label="Interne notitie" />
           <button className={`${knop} w-fit`}>Notitie opslaan</button>
         </form>
-        <p className={`text-xs ${zacht}`}>Alleen zichtbaar in het beheer. Status nu: {STATUS_LABEL[a.status]}.</p>
+        <p className={`text-xs ${tekstZacht}`}>Alleen zichtbaar in het beheer. Status nu: {STATUS_LABEL[a.status]}.</p>
       </section>
 
       <details className="text-sm">
-        <summary className={`cursor-pointer ${zacht}`}>Afspraak verwijderen</summary>
+        <summary className={`cursor-pointer ${tekstZacht}`}>Afspraak verwijderen</summary>
         <form action={verwijderAfspraak} className="mt-2 flex flex-wrap items-center gap-3">
           <input type="hidden" name="id" value={a.id} />
-          <span className={zacht}>Verwijdert de afspraak definitief (zonder mail). Annuleren is meestal beter.</span>
-          <button className="rounded-full border border-red-300 px-4 py-1.5 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300">
+          <span className={tekstZacht}>Verwijdert de afspraak definitief (zonder mail). Annuleren is meestal beter.</span>
+          <button className={knopGevaar}>
             Definitief verwijderen
           </button>
         </form>

@@ -4,9 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normaliseerCode } from "@/lib/mfa-regels";
-
-const invoerKlasse =
-  "rounded-lg border border-black/15 bg-transparent px-3 py-2 font-mono tracking-widest outline-none focus:border-black/40 dark:border-white/20";
+import { invoer, knop, tekstFout } from "@/components/admin/stijl";
 
 /**
  * Tweede stap van het inloggen: de code uit de authenticator-app. Verhoogt de
@@ -67,18 +65,18 @@ export function CodeFormulier({ vervolg = "/admin" }: { vervolg?: string }) {
           required
           maxLength={9}
           placeholder="123 456"
-          className={invoerKlasse}
+          className={`${invoer} font-mono tracking-widest`}
         />
       </label>
       {fout && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={`text-sm ${tekstFout}`}>
           {fout}
         </p>
       )}
       <button
         type="submit"
         disabled={bezig}
-        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+        className={knop}
       >
         {bezig ? "Bezig…" : "Bevestigen"}
       </button>

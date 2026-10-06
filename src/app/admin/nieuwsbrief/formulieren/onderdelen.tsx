@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { knopKlein } from "../_editor/stijl";
+import { knopKlein } from "@/components/admin/stijl";
 
 /** Toont een stukje tekst (zoals een blokcode of link) met een kopieerknop. */
 export function Kopieer({ tekst, label = "Kopieer" }: { tekst: string; label?: string }) {

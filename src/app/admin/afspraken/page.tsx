@@ -16,7 +16,9 @@ import {
   vandaagAmsterdam,
   vanAmsterdam,
 } from "@/lib/datum";
-import { kaart, knop, knopLicht, Meldingen, NAV_AFSPRAKEN, StatusLabel, zacht } from "./stijl";
+import { Meldingen, NAV_AFSPRAKEN, StatusLabel } from "./onderdelen";
+import { kaart, knop, knopSecundair, tekstFout, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -55,27 +57,29 @@ export default async function AfsprakenPagina({ searchParams }: { searchParams: 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <AdminNav actief={NAV_AFSPRAKEN} />
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Afspraken</h1>
-          <p className={`text-sm ${zacht}`}>
+      <AdminKop
+        titel="Afspraken"
+        beschrijving={
+          <>
             Klanten boeken via <Link href="/afspraak" className="underline underline-offset-4">/afspraak</Link> of het blok{" "}
             <code>{"{afspraak}"}</code> op een pagina. Soorten, beschikbaarheid en vrije dagen stel je in bij{" "}
             <Link href={`${PAD}/instellingen`} className="underline underline-offset-4">
               Instellingen
             </Link>
             .
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href={`${PAD}/instellingen`} className={knopLicht}>
-            Instellingen
-          </Link>
-          <Link href={`${PAD}/nieuw`} className={knop}>
-            Afspraak inplannen
-          </Link>
-        </div>
-      </header>
+          </>
+        }
+        acties={
+          <>
+            <Link href={`${PAD}/instellingen`} className={knopSecundair}>
+              Instellingen
+            </Link>
+            <Link href={`${PAD}/nieuw`} className={knop}>
+              Afspraak inplannen
+            </Link>
+          </>
+        }
+      />
 
       <Meldingen ok={zoek.ok} fout={zoek.fout} />
 
@@ -91,7 +95,7 @@ export default async function AfsprakenPagina({ searchParams }: { searchParams: 
             key={w}
             href={tabUrl(w, w === "week" ? {} : { status })}
             aria-current={weergave === w ? "page" : undefined}
-            className={`rounded-full px-3 py-1.5 ${weergave === w ? "bg-accent-zacht font-medium text-accent" : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"}`}
+            className={`rounded-full px-3 py-1.5 ${weergave === w ? "bg-accent-zacht font-medium text-accent" : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"}`}
           >
             {label}
           </Link>
@@ -126,7 +130,7 @@ async function Lijst({ weergave, status, nu }: { weergave: "komend" | "voorbij";
       <form className="flex flex-wrap items-center gap-2 text-sm" action={PAD}>
         <input type="hidden" name="weergave" value={weergave} />
         <label className="flex items-center gap-2">
-          <span className={zacht}>Status</span>
+          <span className={tekstZacht}>Status</span>
           <select name="status" defaultValue={status ?? ""} className="rounded-lg border border-black/15 bg-transparent px-2 py-1.5 dark:border-white/20">
             <option value="">{weergave === "komend" ? "Alle (behalve geannuleerd)" : "Alle"}</option>
             {AFSPRAAK_STATUSSEN.map((s) => (
@@ -136,17 +140,17 @@ async function Lijst({ weergave, status, nu }: { weergave: "komend" | "voorbij";
             ))}
           </select>
         </label>
-        <button className={knopLicht}>Filter</button>
+        <button className={knopSecundair}>Filter</button>
       </form>
 
-      {error && <p className="text-sm text-red-700 dark:text-red-300">Laden mislukt: {error.message}</p>}
+      {error && <p className={`text-sm ${tekstFout}`}>Laden mislukt: {error.message}</p>}
       {!error && rijen.length === 0 && (
-        <p className={`text-sm ${zacht}`}>{weergave === "komend" ? "Geen komende afspraken." : "Geen afspraken gevonden."}</p>
+        <p className={`text-sm ${tekstZacht}`}>{weergave === "komend" ? "Geen komende afspraken." : "Geen afspraken gevonden."}</p>
       )}
 
       {[...perDag.entries()].map(([dag, lijst]) => (
         <div key={dag} className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-black/50 uppercase dark:text-white/50">{datumLabel(vanAmsterdam(dag, 720))}</h2>
+          <h2 className="text-sm font-semibold tracking-wide text-foreground/70 uppercase">{datumLabel(vanAmsterdam(dag, 720))}</h2>
           <ul className="flex flex-col gap-2">
             {lijst.map((r) => (
               <li key={r.id}>
@@ -159,7 +163,7 @@ async function Lijst({ weergave, status, nu }: { weergave: "komend" | "voorbij";
                       {tijdLabel(r.start_op)}–{tijdLabel(r.eind_op)}
                     </span>
                     <span className="min-w-0 truncate">
-                      {r.naam} <span className={zacht}>· {soortNaam(r)}</span>
+                      {r.naam} <span className={tekstZacht}>· {soortNaam(r)}</span>
                     </span>
                   </span>
                   <StatusLabel status={r.status} />
@@ -169,7 +173,7 @@ async function Lijst({ weergave, status, nu }: { weergave: "komend" | "voorbij";
           </ul>
         </div>
       ))}
-      {rijen.length === 300 && <p className={`text-xs ${zacht}`}>Alleen de eerste 300 afspraken worden getoond. Gebruik het statusfilter.</p>}
+      {rijen.length === 300 && <p className={`text-xs ${tekstZacht}`}>Alleen de eerste 300 afspraken worden getoond. Gebruik het statusfilter.</p>}
     </section>
   );
 }
@@ -200,18 +204,18 @@ async function Week({ week, nu }: { week?: string; nu: Date }) {
           Week van {datumKortLabel(vanAmsterdam(maandag, 720))} t/m {datumKortLabel(vanAmsterdam(datumPlusDagen(maandag, 6), 720))}
         </h2>
         <div className="flex gap-2 text-sm">
-          <Link href={tabUrl("week", { week: datumPlusDagen(maandag, -7) })} className={knopLicht} aria-label="Vorige week">
+          <Link href={tabUrl("week", { week: datumPlusDagen(maandag, -7) })} className={knopSecundair} aria-label="Vorige week">
             ‹ Vorige
           </Link>
-          <Link href={tabUrl("week")} className={knopLicht}>
+          <Link href={tabUrl("week")} className={knopSecundair}>
             Deze week
           </Link>
-          <Link href={tabUrl("week", { week: datumPlusDagen(maandag, 7) })} className={knopLicht} aria-label="Volgende week">
+          <Link href={tabUrl("week", { week: datumPlusDagen(maandag, 7) })} className={knopSecundair} aria-label="Volgende week">
             Volgende ›
           </Link>
         </div>
       </div>
-      {res.error && <p className="text-sm text-red-700 dark:text-red-300">Laden mislukt: {res.error.message}</p>}
+      {res.error && <p className={`text-sm ${tekstFout}`}>Laden mislukt: {res.error.message}</p>}
       <div className="grid gap-3 md:grid-cols-7 md:gap-2">
         {dagen.map((dag) => {
           const middag = vanAmsterdam(dag, 720);
@@ -227,7 +231,7 @@ async function Week({ week, nu }: { week?: string; nu: Date }) {
             >
               <p className={`text-sm font-semibold first-letter:uppercase ${dag === vandaag ? "text-accent" : ""}`}>{datumKortLabel(middag)}</p>
               {open.length > 0 && (
-                <p className={`text-xs ${zacht}`}>
+                <p className={`text-xs ${tekstZacht}`}>
                   Open {open.map((o) => `${tijdLabel(new Date(o.van))}–${tijdLabel(new Date(o.tot))}`).join(", ")}
                 </p>
               )}
@@ -254,7 +258,7 @@ async function Week({ week, nu }: { week?: string; nu: Date }) {
                   </li>
                 ))}
               </ul>
-              {!lijst.length && !open.length && !geblokt.length && <p className={`text-xs ${zacht}`}>—</p>}
+              {!lijst.length && !open.length && !geblokt.length && <p className={`text-xs ${tekstZacht}`}>—</p>}
             </div>
           );
         })}

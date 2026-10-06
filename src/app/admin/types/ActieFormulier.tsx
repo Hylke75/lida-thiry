@@ -81,7 +81,7 @@ export function ActieFormulier({
           role={uitkomst && !uitkomst.ok ? "alert" : "status"}
           className={`basis-full text-sm ${
             bezig
-              ? "text-black/50 dark:text-white/50"
+              ? "text-foreground/70"
               : uitkomst && !uitkomst.ok
                 ? "text-red-700 dark:text-red-300"
                 : gewijzigd

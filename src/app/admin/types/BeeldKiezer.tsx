@@ -6,6 +6,7 @@ import { useRef, useState, useTransition } from "react";
 import { ONDERDELEN, slug } from "@/lib/beeldbank-regels";
 import { voegBeeldToe, zoekBeelden } from "./acties";
 import type { GevondenBeeld, Uitkomst } from "./uitkomst";
+import { invoer, knop } from "@/components/admin/stijl";
 
 /** Onderdeel dat bij een sectiekop hoort, bijv. "Je jasjes en mantels" -> "jasjes-en-mantels". */
 function onderdeelBijKop(kop: string): string {
@@ -78,7 +79,7 @@ export function BeeldKiezer({
       <button
         type="button"
         onClick={open}
-        className="flex h-full min-h-32 w-32 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-black/25 text-sm text-black/60 hover:border-accent hover:text-accent dark:border-white/25 dark:text-white/60"
+        className="flex h-full min-h-32 w-32 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-black/25 text-sm text-foreground/70 hover:border-accent hover:text-accent dark:border-white/25"
       >
         <span className="text-2xl leading-none">+</span>
         Beeld toevoegen
@@ -93,7 +94,7 @@ export function BeeldKiezer({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Beeld kiezen voor &lsquo;{kop}&rsquo;</h2>
-                <p className="text-sm text-black/60 dark:text-white/60">
+                <p className="text-sm text-foreground/70">
                   Je kiest uit de centrale beeldbank. Het beeld komt achteraan in deze sectie. Je kunt
                   meerdere beelden na elkaar toevoegen.
                 </p>
@@ -101,7 +102,7 @@ export function BeeldKiezer({
               <button
                 type="button"
                 onClick={() => venster.current?.close()}
-                className="rounded-full bg-foreground px-4 py-1.5 text-sm text-background hover:opacity-90"
+                className={knop}
               >
                 Klaar
               </button>
@@ -116,7 +117,7 @@ export function BeeldKiezer({
                   zoekStraks(e.target.value, onderdeel);
                 }}
                 placeholder="Zoek op nummer (B0123), naam of omschrijving"
-                className="flex-1 rounded-lg border border-black/15 bg-kaart px-3 py-2 outline-none focus:border-accent dark:border-white/20"
+                className={`${invoer} flex-1`}
               />
               <select
                 value={onderdeel}
@@ -124,7 +125,7 @@ export function BeeldKiezer({
                   setOnderdeel(e.target.value);
                   voerZoekUit(zoek, e.target.value);
                 }}
-                className="rounded-lg border border-black/15 bg-kaart px-3 py-2 dark:border-white/20"
+                className={invoer}
               >
                 <option value="">Alle onderdelen</option>
                 {ONDERDELEN.map((o) => (
@@ -147,9 +148,9 @@ export function BeeldKiezer({
 
           <div className="overflow-y-auto p-5">
             {resultaten === null || (zoekt && resultaten.length === 0) ? (
-              <p className="text-sm text-black/50 dark:text-white/50">Zoeken…</p>
+              <p className="text-sm text-foreground/70">Zoeken…</p>
             ) : resultaten.length === 0 ? (
-              <p className="text-sm text-black/50 dark:text-white/50">
+              <p className="text-sm text-foreground/70">
                 Geen beelden gevonden. Probeer een ander woord of kies &lsquo;Alle onderdelen&rsquo;.
               </p>
             ) : (
@@ -171,10 +172,10 @@ export function BeeldKiezer({
                         </div>
                         <p className="text-xs">
                           <span className="font-medium">{b.code}</span>
-                          {b.naam && <span className="block break-all text-black/60 dark:text-white/60">{b.naam}</span>}
+                          {b.naam && <span className="block break-all text-foreground/70">{b.naam}</span>}
                         </p>
                         {(b.omschrijving || b.bijschrift) && (
-                          <p className="line-clamp-2 text-xs text-black/50 dark:text-white/50">
+                          <p className="line-clamp-2 text-xs text-foreground/70">
                             {b.omschrijving || b.bijschrift}
                           </p>
                         )}
@@ -184,8 +185,8 @@ export function BeeldKiezer({
                           onClick={() => kies(b)}
                           className={`mt-auto rounded-full px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
                             alGekozen
-                              ? "border border-black/15 text-black/60 dark:border-white/20 dark:text-white/60"
-                              : "bg-accent text-white hover:opacity-90"
+                              ? "border border-black/15 text-foreground/70 dark:border-white/20"
+                              : "bg-accent text-background hover:opacity-90"
                           }`}
                         >
                           {alGekozen ? "Staat er al · nogmaals" : "Toevoegen"}
@@ -195,7 +196,7 @@ export function BeeldKiezer({
                   })}
                 </ul>
                 {resultaten.length === 24 && (
-                  <p className="mt-3 text-xs text-black/50 dark:text-white/50">
+                  <p className="mt-3 text-xs text-foreground/70">
                     De eerste 24 resultaten worden getoond. Zoek specifieker om andere beelden te vinden.
                   </p>
                 )}

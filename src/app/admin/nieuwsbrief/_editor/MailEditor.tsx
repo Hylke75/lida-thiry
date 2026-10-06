@@ -11,7 +11,7 @@ import { DoelgroepKiezer } from "./DoelgroepKiezer";
 import { Voorbeeld } from "./Voorbeeld";
 import { slaMailOp, stuurTest, telOntvangers } from "./acties";
 import { LIMIETEN, type MailInhoud, type TypeKeuze } from "./regels";
-import { invoerKlasse, kaart, knopHoofd, knopRand, zacht } from "./stijl";
+import { invoerBreed, kaart, knop, knopSecundair, tekstZacht, toon } from "@/components/admin/stijl";
 
 /** Wat een zijpaneel (verzenden of aan/uit) van de editor moet weten. */
 export interface EditorStaat {
@@ -31,8 +31,8 @@ function Melding({ soort, tekst }: { soort: "ok" | "fout"; tekst: string[] }) {
       role={soort === "fout" ? "alert" : "status"}
       className={`rounded-lg px-4 py-3 text-sm ${
         soort === "ok"
-          ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+          ? toon.groen
+          : toon.rood
       }`}
     >
       {tekst.map((t) => (
@@ -73,7 +73,7 @@ function AbTestVelden({
         />
         <span>
           A/B-test met een tweede onderwerp
-          <span className={`block text-xs font-normal ${zacht}`}>
+          <span className={`block text-xs font-normal ${tekstZacht}`}>
             Een deel van de ontvangers krijgt onderwerp A, een even groot deel onderwerp B. Het onderwerp dat vaker wordt
             geopend, gaat daarna naar de rest.
           </span>
@@ -93,7 +93,7 @@ function AbTestVelden({
               value={ab.onderwerpB}
               maxLength={LIMIETEN.onderwerp}
               onChange={(e) => onChange({ ...ab, onderwerpB: e.target.value })}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="Een andere formulering om te vergelijken"
             />
           </div>
@@ -106,7 +106,7 @@ function AbTestVelden({
                 id="ab-percentage"
                 value={ab.percentage}
                 onChange={(e) => onChange({ ...ab, percentage: Number(e.target.value) })}
-                className={`${invoerKlasse} w-auto`}
+                className={`${invoerBreed} w-auto`}
               >
                 {PERCENTAGES.map((p) => (
                   <option key={p} value={p}>
@@ -123,7 +123,7 @@ function AbTestVelden({
                 id="ab-wachten"
                 value={ab.wachtUren}
                 onChange={(e) => onChange({ ...ab, wachtUren: Number(e.target.value) })}
-                className={`${invoerKlasse} w-auto`}
+                className={`${invoerBreed} w-auto`}
               >
                 {WACHTUREN.map((u) => (
                   <option key={u} value={u}>
@@ -133,7 +133,7 @@ function AbTestVelden({
               </select>
             </div>
           </div>
-          <p className={`text-xs ${zacht}`}>
+          <p className={`text-xs ${tekstZacht}`}>
             {perVariant === null
               ? ""
               : perVariant < 1
@@ -151,7 +151,7 @@ function AbTestVelden({
 
 function Teller({ waarde, max }: { waarde: string; max: number }) {
   return (
-    <span className={`text-xs ${waarde.length > max * 0.9 ? "text-amber-700 dark:text-amber-300" : zacht}`}>
+    <span className={`text-xs ${waarde.length > max * 0.9 ? "text-amber-700 dark:text-amber-300" : tekstZacht}`}>
       {waarde.length}/{max}
     </span>
   );
@@ -266,7 +266,7 @@ export function MailEditor({
         >
           <fieldset disabled={alleenLezen} className="flex min-w-0 flex-col gap-6">
             {alleenLezen && (
-              <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-sm dark:bg-white/5 ${zacht}`}>
+              <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-sm dark:bg-white/5 ${tekstZacht}`}>
                 Deze campagne is (of wordt) verzonden. De inhoud kan daarom niet meer worden aangepast. Wil je iets
                 vergelijkbaars versturen? Dupliceer de campagne dan in het overzicht.
               </p>
@@ -281,8 +281,8 @@ export function MailEditor({
                   </label>
                   <Teller waarde={inhoud.naam} max={LIMIETEN.naam} />
                 </div>
-                <input id="naam" value={inhoud.naam} maxLength={LIMIETEN.naam} onChange={(e) => zet({ naam: e.target.value })} className={invoerKlasse} />
-                <p className={`text-xs ${zacht}`}>Alleen voor jezelf, ontvangers zien deze naam niet.</p>
+                <input id="naam" value={inhoud.naam} maxLength={LIMIETEN.naam} onChange={(e) => zet({ naam: e.target.value })} className={invoerBreed} />
+                <p className={`text-xs ${tekstZacht}`}>Alleen voor jezelf, ontvangers zien deze naam niet.</p>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -296,7 +296,7 @@ export function MailEditor({
                   value={inhoud.onderwerp}
                   maxLength={LIMIETEN.onderwerp}
                   onChange={(e) => zet({ onderwerp: e.target.value })}
-                  className={invoerKlasse}
+                  className={invoerBreed}
                   placeholder="Bijv. Jouw najaarsgarderobe, {voornaam}"
                 />
               </div>
@@ -315,11 +315,11 @@ export function MailEditor({
                   value={inhoud.preheader}
                   maxLength={LIMIETEN.preheader}
                   onChange={(e) => zet({ preheader: e.target.value })}
-                  className={invoerKlasse}
+                  className={invoerBreed}
                 />
-                <p className={`text-xs ${zacht}`}>Het grijze regeltje dat veel mailprogramma&apos;s naast of onder het onderwerp tonen.</p>
+                <p className={`text-xs ${tekstZacht}`}>Het grijze regeltje dat veel mailprogramma&apos;s naast of onder het onderwerp tonen.</p>
               </div>
-              <div className="rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed text-black/60 dark:bg-white/5 dark:text-white/60">
+              <div className="rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed text-foreground/70 dark:bg-white/5">
                 <p className="font-medium">Persoonlijke invulwaarden (in onderwerp, voorvertoning, koppen en teksten):</p>
                 <ul className="mt-1">
                   {Object.entries(VARIABELEN).map(([naam, uitleg]) => (
@@ -359,7 +359,7 @@ export function MailEditor({
                     id="trigger"
                     value={inhoud.trigger ?? ""}
                     onChange={(e) => zet({ trigger: (e.target.value || null) as Trigger | null })}
-                    className={invoerKlasse}
+                    className={invoerBreed}
                   >
                     {!inhoud.trigger && <option value="">— kies —</option>}
                     {TRIGGERS.map((t) => (
@@ -381,11 +381,11 @@ export function MailEditor({
                     max={365}
                     value={inhoud.vertraging_dagen}
                     onChange={(e) => zet({ vertraging_dagen: Math.min(365, Math.max(0, Math.floor(Number(e.target.value) || 0))) })}
-                    className={`${invoerKlasse} max-w-32`}
+                    className={`${invoerBreed} max-w-32`}
                   />
-                  <p className={`text-xs ${zacht}`}>0 = zo snel mogelijk. {beschrijfMoment(inhoud.trigger, inhoud.vertraging_dagen)}.</p>
+                  <p className={`text-xs ${tekstZacht}`}>0 = zo snel mogelijk. {beschrijfMoment(inhoud.trigger, inhoud.vertraging_dagen)}.</p>
                 </div>
-                <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed dark:bg-white/5 ${zacht}`}>
+                <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed dark:bg-white/5 ${tekstZacht}`}>
                   Deze mail gaat naar iedereen die aangemeld is voor de nieuwsbrief; je kunt hier geen doelgroep kiezen.
                   Iedereen krijgt hem maar één keer. Contacten die zich lang vóór het aanzetten aanmeldden (of hun advies
                   kregen) krijgen hem niet alsnog.
@@ -398,10 +398,10 @@ export function MailEditor({
             <div className="sticky bottom-0 z-10 -mx-1 flex flex-col gap-3 rounded-2xl border border-black/10 bg-background/95 p-3 shadow-sm backdrop-blur dark:border-white/15">
               {melding && <Melding soort={melding.soort} tekst={melding.tekst} />}
               <div className="flex flex-wrap items-center gap-3">
-                <button disabled={bezig || !gewijzigd} className={knopHoofd}>
+                <button disabled={bezig || !gewijzigd} className={knop}>
                   {bezig ? "Bezig…" : "Opslaan"}
                 </button>
-                <span className={`text-xs ${zacht}`}>{gewijzigd ? "Niet opgeslagen wijzigingen" : "Alles is opgeslagen"}</span>
+                <span className={`text-xs ${tekstZacht}`}>{gewijzigd ? "Niet opgeslagen wijzigingen" : "Alles is opgeslagen"}</span>
               </div>
             </div>
           )}
@@ -409,7 +409,7 @@ export function MailEditor({
 
         <section className={kaart}>
           <h2 className="text-lg font-semibold">Testmail versturen</h2>
-          <p className={`text-sm ${zacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             Stuur de huidige versie (ook als die nog niet is opgeslagen) naar jezelf om te zien hoe hij in je mailprogramma
             aankomt. In de testmail wordt niets gemeten.
           </p>
@@ -429,10 +429,10 @@ export function MailEditor({
               required
               value={testNaar}
               onChange={(e) => setTestNaar(e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="jij@voorbeeld.nl"
             />
-            <button disabled={testBezig} className={`${knopRand} shrink-0`}>
+            <button disabled={testBezig} className={`${knopSecundair} shrink-0`}>
               {testBezig ? "Versturen…" : "Testmail sturen"}
             </button>
           </form>

@@ -12,8 +12,11 @@ import {
   type BerichtWeergave,
 } from "@/lib/contact/regels";
 import { AdminNav, Melding } from "../AdminNav";
-import { BerichtStatusLabel, datumTijd, hoofdknop, invoer, kleineKnop } from "./stijl";
+import { BerichtStatusLabel } from "./StatusLabel";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoer, knop, knopKlein } from "@/components/admin/stijl";
+import { datumTijd } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -55,16 +58,18 @@ export default async function BerichtenPagina({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/berichten" />
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Berichten</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Berichten via het contactformulier. Teksten van het formulier en de mails pas je aan in{" "}
-          <Link href="/admin/teksten/contact" className="underline underline-offset-4">
-            Teksten → Contact
-          </Link>
-          .
-        </p>
-      </header>
+      <AdminKop
+        titel="Berichten"
+        beschrijving={
+          <>
+            Berichten via het contactformulier. Teksten van het formulier en de mails pas je aan in{" "}
+            <Link href="/admin/teksten/contact" className="underline underline-offset-4">
+              Teksten → Contact
+            </Link>
+            .
+          </>
+        }
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {(fout || lijst.error) && <Melding soort="fout">{fout ?? "Berichten laden mislukt. Probeer het later opnieuw."}</Melding>}
@@ -89,7 +94,7 @@ export default async function BerichtenPagina({
                   className={`rounded-full px-1.5 text-xs tabular-nums ${
                     t.weergave === "nieuw" && t.aantal > 0
                       ? "bg-accent font-semibold text-background"
-                      : "text-black/50 dark:text-white/50"
+                      : "text-foreground/70"
                   }`}
                 >
                   {t.aantal}
@@ -109,9 +114,9 @@ export default async function BerichtenPagina({
           aria-label="Zoeken"
           className={`${invoer} flex-1`}
         />
-        <button className={hoofdknop}>Zoeken</button>
+        <button className={knop}>Zoeken</button>
       </form>
-      <p className="-mt-3 text-sm text-black/60 dark:text-white/60">
+      <p className="-mt-3 text-sm text-foreground/70">
         {totaal} bericht{totaal === 1 ? "" : "en"}
         {filter.q && (
           <>
@@ -124,7 +129,7 @@ export default async function BerichtenPagina({
       </p>
 
       {berichten.length === 0 ? (
-        <p className="text-sm text-black/50 dark:text-white/50">
+        <p className="text-sm text-foreground/70">
           {filter.q
             ? "Geen berichten gevonden."
             : filter.weergave === "inbox"
@@ -152,13 +157,13 @@ export default async function BerichtenPagina({
                         {ongelezen && <span className="sr-only">Ongelezen: </span>}
                         {b.naam}
                       </span>
-                      <span className="truncate text-black/50 dark:text-white/50">{b.email}</span>
+                      <span className="truncate text-foreground/70">{b.email}</span>
                     </span>
                     {b.onderwerp && <span className={ongelezen ? "font-semibold" : ""}>{b.onderwerp}</span>}
-                    <span className="truncate text-black/60 dark:text-white/60">{voorproef(b.bericht)}</span>
+                    <span className="truncate text-foreground/70">{voorproef(b.bericht)}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="text-xs text-black/50 dark:text-white/50">{datumTijd(b.aangemaakt_op)}</span>
+                    <span className="text-xs text-foreground/70">{datumTijd(b.aangemaakt_op)}</span>
                     {filter.weergave === "inbox" && b.status !== "nieuw" && <BerichtStatusLabel status={b.status} />}
                   </span>
                 </Link>
@@ -172,8 +177,8 @@ export default async function BerichtenPagina({
         pagina={filter.pagina}
         paginas={paginas}
         href={(p) => link({ q: filter.q, pagina: p })}
-        linkKlasse={kleineKnop}
-        tekstKlasse="text-black/60 dark:text-white/60"
+        linkKlasse={knopKlein}
+        tekstKlasse="text-foreground/70"
       />
     </main>
   );

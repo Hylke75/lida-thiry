@@ -12,24 +12,18 @@ import {
 } from "./acties";
 import { MIN_WACHTWOORD } from "@/lib/beheerder-regels";
 import { ROL_LABEL, ROL_UITLEG, ROLLEN, type Rol } from "@/lib/rollen";
+import { invoerBreed, knop, knopKlein } from "@/components/admin/stijl";
 
 type Actie = (vorige: BeheerUitkomst | null, fd: FormData) => Promise<BeheerUitkomst>;
-
-const invoer =
-  "w-full min-w-0 rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const hoofdknop =
-  "rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50";
-const kleineKnop =
-  "rounded-full border border-black/15 px-3 py-1 text-xs hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/5";
 
 function KopieerLink({ link }: { link: string }) {
   const [gekopieerd, setGekopieerd] = useState(false);
   return (
     <span className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-      <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Inloglink" className={`${invoer} font-mono text-xs`} />
+      <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Inloglink" className={`${invoerBreed} font-mono text-xs`} />
       <button
         type="button"
-        className={kleineKnop}
+        className={knopKlein}
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(link);
@@ -46,7 +40,7 @@ function KopieerLink({ link }: { link: string }) {
 }
 
 function Uitkomst({ uitkomst, bezig }: { uitkomst: BeheerUitkomst | null; bezig: boolean }) {
-  if (bezig) return <p className="basis-full text-sm text-black/50 dark:text-white/50">Bezig…</p>;
+  if (bezig) return <p className="basis-full text-sm text-foreground/70">Bezig…</p>;
   if (!uitkomst) return null;
   return (
     <div
@@ -57,7 +51,7 @@ function Uitkomst({ uitkomst, bezig }: { uitkomst: BeheerUitkomst | null; bezig:
       {uitkomst.link && (
         <>
           <KopieerLink link={uitkomst.link} />
-          <p className="mt-1 text-xs text-black/50 dark:text-white/50">
+          <p className="mt-1 text-xs text-foreground/70">
             Deze link logt direct in. Deel hem alleen met de beheerder zelf; hij werkt één keer en is beperkt
             geldig (standaard 1 uur).
           </p>
@@ -114,16 +108,16 @@ export function ToevoegFormulier() {
         autoComplete="off"
         placeholder="naam@voorbeeld.nl"
         aria-label="E-mailadres van de nieuwe beheerder"
-        className={`${invoer} sm:flex-1`}
+        className={`${invoerBreed} sm:flex-1`}
       />
-      <select name="rol" defaultValue="beheerder" aria-label="Rol" className={`${invoer} sm:w-40`}>
+      <select name="rol" defaultValue="beheerder" aria-label="Rol" className={`${invoerBreed} sm:w-40`}>
         {ROLLEN.map((r) => (
           <option key={r} value={r}>
             {ROL_LABEL[r]}
           </option>
         ))}
       </select>
-      <button className={hoofdknop}>Toevoegen</button>
+      <button className={knop}>Toevoegen</button>
     </Formulier>
   );
 }
@@ -131,7 +125,7 @@ export function ToevoegFormulier() {
 export function RolKeuze({ id, email, rol, vergrendeld }: { id: string; email: string; rol: Rol; vergrendeld: string | null }) {
   if (vergrendeld) {
     return (
-      <span className="text-xs text-black/50 dark:text-white/50" title={vergrendeld}>
+      <span className="text-xs text-foreground/70" title={vergrendeld}>
         {ROL_LABEL[rol]}
       </span>
     );
@@ -152,7 +146,7 @@ export function RolKeuze({ id, email, rol, vergrendeld }: { id: string; email: s
           </option>
         ))}
       </select>
-      <button className={kleineKnop}>Rol opslaan</button>
+      <button className={knopKlein}>Rol opslaan</button>
     </Formulier>
   );
 }
@@ -180,12 +174,12 @@ export function RijActies({
             className="flex flex-col gap-1"
           >
             <input type="hidden" name="gebruiker_id" value={id} />
-            <button className={kleineKnop}>Tweestap resetten</button>
+            <button className={knopKlein}>Tweestap resetten</button>
           </Formulier>
         )}
         <Formulier actie={stuurInlogLink} bevestig={`Een inloglink sturen naar ${email}?`} className="flex flex-col gap-1">
           <input type="hidden" name="gebruiker_id" value={id} />
-          <button className={kleineKnop}>Inloglink sturen</button>
+          <button className={knopKlein}>Inloglink sturen</button>
         </Formulier>
         {!isIkZelf && !isLaatste && (
           <Formulier
@@ -194,7 +188,7 @@ export function RijActies({
             className="flex flex-col gap-1"
           >
             <input type="hidden" name="gebruiker_id" value={id} />
-            <button className={`${kleineKnop} text-red-700 dark:text-red-300`}>Verwijderen</button>
+            <button className={`${knopKlein} text-red-700 dark:text-red-300`}>Verwijderen</button>
           </Formulier>
         )}
       </div>
@@ -209,13 +203,13 @@ export function WachtwoordFormulier({ email }: { email: string }) {
       <input type="email" name="gebruikersnaam" value={email} autoComplete="username" readOnly hidden />
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-black/70 dark:text-white/70">Nieuw wachtwoord (minstens {MIN_WACHTWOORD} tekens)</span>
-        <input type="password" name="wachtwoord" required minLength={MIN_WACHTWOORD} autoComplete="new-password" className={invoer} />
+        <input type="password" name="wachtwoord" required minLength={MIN_WACHTWOORD} autoComplete="new-password" className={invoerBreed} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-black/70 dark:text-white/70">Nieuw wachtwoord nog een keer</span>
-        <input type="password" name="herhaling" required minLength={MIN_WACHTWOORD} autoComplete="new-password" className={invoer} />
+        <input type="password" name="herhaling" required minLength={MIN_WACHTWOORD} autoComplete="new-password" className={invoerBreed} />
       </label>
-      <button className={`${hoofdknop} w-fit`}>Wachtwoord opslaan</button>
+      <button className={`${knop} w-fit`}>Wachtwoord opslaan</button>
     </Formulier>
   );
 }

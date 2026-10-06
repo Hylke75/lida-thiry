@@ -5,10 +5,10 @@ import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 import { WachtwoordFormulier } from "../beheerders/Formulieren";
 import { TweestapBeheer } from "./TweestapBeheer";
+import { kaart } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
-
-const kaart = "flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15";
 
 export default async function BeveiligingPagina({
   searchParams,
@@ -25,12 +25,14 @@ export default async function BeveiligingPagina({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/beveiliging" />
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Beveiliging</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Je bent ingelogd als <strong>{ik.email}</strong> ({ROL_LABEL[ik.rol].toLowerCase()}: {ROL_UITLEG[ik.rol]})
-        </p>
-      </div>
+      <AdminKop
+        titel="Beveiliging"
+        beschrijving={
+          <>
+            Je bent ingelogd als <strong>{ik.email}</strong> ({ROL_LABEL[ik.rol].toLowerCase()}: {ROL_UITLEG[ik.rol]})
+          </>
+        }
+      />
 
       {welkom && (
         <Melding soort="ok">
@@ -47,13 +49,13 @@ export default async function BeveiligingPagina({
 
       <section id="tweestap" className={`${kaart} scroll-mt-6 ${moetInstellen ? "border-accent/50" : ""}`}>
         <h2 className="text-lg">Tweestapsverificatie</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Met tweestapsverificatie heb je bij het inloggen naast je wachtwoord ook een code van 6 cijfers nodig uit een
           app op je telefoon. Zo kan niemand inloggen met alleen een gestolen of geraden wachtwoord.
           {verplicht ? " Voor dit beheer is het verplicht." : ""}
         </p>
         <TweestapBeheer verplicht={verplicht} />
-        <details className="text-sm text-black/60 dark:text-white/60">
+        <details className="text-sm text-foreground/70">
           <summary className="cursor-pointer font-medium text-black/80 dark:text-white/80">
             Telefoon kwijt? Zo kom je weer binnen
           </summary>
@@ -78,7 +80,7 @@ export default async function BeveiligingPagina({
 
       <section id="wachtwoord" className={`${kaart} scroll-mt-6 ${welkom ? "border-accent/50" : ""}`}>
         <h2 className="text-lg">Je eigen wachtwoord {welkom ? "instellen" : "wijzigen"}</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Kies een wachtwoord van minstens 10 tekens; een zinnetje van een paar woorden is makkelijk te onthouden en
           toch sterk.
         </p>
@@ -86,7 +88,7 @@ export default async function BeveiligingPagina({
       </section>
 
       {heeftRecht(ik.rol, "beheerders") && !moetInstellen && (
-        <p className="text-xs text-black/50 dark:text-white/50">
+        <p className="text-xs text-foreground/70">
           Tweestapsverificatie voor iedereen verplicht maken kan onder{" "}
           <Link href="/admin/instellingen" className="underline underline-offset-4">
             Instellingen → Algemeen

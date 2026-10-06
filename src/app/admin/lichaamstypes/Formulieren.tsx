@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { FFIT_TYPES } from "@/lib/lichaamstype-regels";
 import { slaToewijzingOp, verwijderLichaamstype, type Status } from "./acties";
+import { invoerBreed, knop, knopGevaar, toon } from "@/components/admin/stijl";
 
 function Uitkomst({ status }: { status: Status | null }) {
   if (!status) return null;
@@ -11,17 +12,14 @@ function Uitkomst({ status }: { status: Status | null }) {
       role={status.ok ? "status" : "alert"}
       className={`rounded-lg px-4 py-3 text-sm ${
         status.ok
-          ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+          ? toon.groen
+          : toon.rood
       }`}
     >
       {status.melding}
     </p>
   );
 }
-
-const invoer =
-  "w-full rounded-lg border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
 
 /** Koppeling: uitkomst van de berekening (FFIT-type) -> lichaamstype. */
 export function ToewijzingFormulier({
@@ -38,7 +36,7 @@ export function ToewijzingFormulier({
         {FFIT_TYPES.map((f) => (
           <label key={f} className="flex flex-col gap-1 text-sm font-medium">
             Uitkomst &ldquo;{f}&rdquo;
-            <select name={`ffit_${f}`} defaultValue={toewijzing[f] ?? ""} required className={invoer}>
+            <select name={`ffit_${f}`} defaultValue={toewijzing[f] ?? ""} required className={invoerBreed}>
               <option value="" disabled>
                 Kies een lichaamstype
               </option>
@@ -56,7 +54,7 @@ export function ToewijzingFormulier({
       <div>
         <button
           disabled={bezig}
-          className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className={knop}
         >
           {bezig ? "Bezig…" : "Koppeling opslaan"}
         </button>
@@ -79,13 +77,13 @@ export function VerwijderFormulier({ code, naam }: { code: string; naam: string 
       <input type="hidden" name="code" value={code} />
       <label className="flex flex-col gap-1 text-sm font-medium">
         Typ ter bevestiging de code <span className="font-mono">{code}</span>
-        <input name="bevestiging" autoComplete="off" className={`${invoer} max-w-40 uppercase`} />
+        <input name="bevestiging" autoComplete="off" className={`${invoerBreed} max-w-40 uppercase`} />
       </label>
       <Uitkomst status={status} />
       <div>
         <button
           disabled={bezig}
-          className="rounded-full border border-red-300 px-5 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+          className={knopGevaar}
         >
           {bezig ? "Bezig…" : "Lichaamstype verwijderen"}
         </button>

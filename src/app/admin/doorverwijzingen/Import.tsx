@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 import { Melding } from "../Melding";
 import { controleerImport, voerImportUit, type ImportVoorbeeld } from "./acties";
-import { heelZacht, hoofdknop } from "./stijl";
+import { knop, tekstZacht } from "@/components/admin/stijl";
 
 const MAX_BYTES = 800_000;
 
@@ -79,12 +79,12 @@ export function ImportDoorverwijzingen() {
 
   return (
     <div className="flex flex-col gap-3 text-sm">
-      <p className={heelZacht}>
+      <p className={tekstZacht}>
         Kolommen <code>van</code>, <code>naar</code> en <code>permanent</code> (ja/nee; leeg = ja), met ; of , als scheidingsteken. Een bestaand oud
         adres wordt bijgewerkt.
       </p>
       <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={kies} disabled={bezig} className="min-w-0 text-sm" />
-      {bezig && <p className={heelZacht}>Bezig…</p>}
+      {bezig && <p className={tekstZacht}>Bezig…</p>}
       {fout && <Melding soort="fout">{fout}</Melding>}
       {klaar && <Melding soort="ok">{klaar}</Melding>}
       {voorbeeld && (
@@ -116,7 +116,7 @@ export function ImportDoorverwijzingen() {
             </details>
           )}
           <div>
-            <button type="button" onClick={importeer} disabled={bezig || teDoen === 0} className={hoofdknop}>
+            <button type="button" onClick={importeer} disabled={bezig || teDoen === 0} className={knop}>
               {teDoen ? `Importeren (${teDoen})` : "Niets te importeren"}
             </button>
           </div>

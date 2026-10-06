@@ -18,10 +18,11 @@ import { kliksPerLink, statistiekPerCampagne } from "@/lib/nieuwsbrief/campagne-
 import { toonDatumTijd } from "@/lib/datum";
 import { Melding } from "../../../../AdminNav";
 import { NieuwsbriefKop, StatusBadge } from "../../../_editor/onderdelen";
-import { invoerKlasse, kaart, knopKlein, knopRand, zacht } from "../../../_editor/stijl";
 import { probeerOpnieuw } from "../../acties";
 import { veiligeZoekterm } from "@/lib/zoeken/regels";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoerBreed, kaart, knopKlein, knopSecundair, tekstFout, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -47,12 +48,12 @@ type Zoek = { q?: string; filter?: string; pagina?: string; opnieuw?: string; wi
 function Cijfer({ label, waarde, van, uitleg }: { label: string; waarde: number; van?: number; uitleg?: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-black/10 p-3 dark:border-white/15">
-      <dt className={`text-xs ${zacht}`}>{label}</dt>
+      <dt className={`text-xs ${tekstZacht}`}>{label}</dt>
       <dd className="text-xl font-semibold">
         {waarde.toLocaleString("nl-NL")}
-        {van !== undefined && <span className={`ml-1.5 text-sm font-normal ${zacht}`}>{toonPercentage(waarde, van)}</span>}
+        {van !== undefined && <span className={`ml-1.5 text-sm font-normal ${tekstZacht}`}>{toonPercentage(waarde, van)}</span>}
       </dd>
-      {uitleg && <p className={`text-xs ${zacht}`}>{uitleg}</p>}
+      {uitleg && <p className={`text-xs ${tekstZacht}`}>{uitleg}</p>}
     </div>
   );
 }
@@ -119,16 +120,16 @@ export default async function RapportPagina({ params, searchParams }: { params: 
             : [{ href: "/admin/nieuwsbrief/campagnes", label: "Campagnes" }, { href: basis, label: c.naam }, { label: "Rapport" }]
         }
       />
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="min-w-0 break-words text-2xl font-semibold tracking-tight">Rapport: {c.naam}</h1>
-          {c.soort === "campagne" && <StatusBadge status={c.status} />}
-        </div>
-        <p className={`break-words text-sm ${zacht}`}>
-          {c.onderwerp}
-          {c.soort === "campagne" && (c.verzonden_op || c.gestart_op) && ` · ${c.verzonden_op ? "verzonden" : "gestart"} ${toonDatumTijd(c.verzonden_op ?? c.gestart_op)}`}
-        </p>
-      </div>
+      <AdminKop
+        titel={`Rapport: ${c.naam}`}
+        naastTitel={c.soort === "campagne" && <StatusBadge status={c.status} />}
+        beschrijving={
+          <>
+            {c.onderwerp}
+            {c.soort === "campagne" && (c.verzonden_op || c.gestart_op) && ` · ${c.verzonden_op ? "verzonden" : "gestart"} ${toonDatumTijd(c.verzonden_op ?? c.gestart_op)}`}
+          </>
+        }
+      />
 
       {opnieuw !== null &&
         (opnieuw > 0 ? (
@@ -156,7 +157,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
           <Cijfer label="Overgeslagen" waarde={t.overgeslagen} uitleg="Afgemeld vóór het versturen." />
           <Cijfer label="Onbestelbaar" waarde={t.gebounced} van={t.verzonden} />
         </dl>
-        <p className={`text-xs ${zacht}`}>
+        <p className={`text-xs ${tekstZacht}`}>
           Percentages zijn ten opzichte van het aantal verzonden mails. Openen wordt niet altijd gemeten (veel
           mailprogramma&apos;s laden afbeeldingen niet automatisch), dus het echte aantal ligt vaak hoger. Een klik telt
           ook als geopend.
@@ -165,7 +166,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
         {t.mislukt > 0 && (
           <form action={probeerOpnieuw}>
             <input type="hidden" name="id" value={id} />
-            <button className={knopRand}>Mislukte mails opnieuw proberen ({t.mislukt})</button>
+            <button className={knopSecundair}>Mislukte mails opnieuw proberen ({t.mislukt})</button>
           </form>
         )}
       </section>
@@ -173,7 +174,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Kliks per link</h2>
         {links.length === 0 ? (
-          <p className={`text-sm ${zacht}`}>Er is nog niet op links geklikt.</p>
+          <p className={`text-sm ${tekstZacht}`}>Er is nog niet op links geklikt.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
             {links.map((l) => (
@@ -181,7 +182,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
                 <a href={l.url} target="_blank" rel="noopener noreferrer" className="min-w-0 break-all text-sm text-accent hover:underline">
                   {l.url}
                 </a>
-                <span className={`shrink-0 text-sm ${zacht}`}>
+                <span className={`shrink-0 text-sm ${tekstZacht}`}>
                   <strong className="text-foreground">{l.uniek}</strong> {l.uniek === 1 ? "persoon" : "personen"} · {l.totaal}{" "}
                   {l.totaal === 1 ? "klik" : "kliks"}
                 </span>
@@ -204,8 +205,8 @@ export default async function RapportPagina({ params, searchParams }: { params: 
             <label htmlFor="q" className="sr-only">
               Zoek op e-mailadres
             </label>
-            <input id="q" name="q" defaultValue={q} placeholder="Zoek op e-mailadres" className={invoerKlasse} />
-            <button className={`${knopRand} shrink-0`}>Zoeken</button>
+            <input id="q" name="q" defaultValue={q} placeholder="Zoek op e-mailadres" className={invoerBreed} />
+            <button className={`${knopSecundair} shrink-0`}>Zoeken</button>
           </form>
           <nav aria-label="Filter" className="flex flex-wrap gap-1.5">
             {(Object.keys(ONTVANGER_FILTERS) as OntvangerFilter[]).map((f) => (
@@ -221,7 +222,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
               </Link>
             ))}
           </nav>
-          <p className={`text-xs ${zacht}`}>{(count ?? 0).toLocaleString("nl-NL")} gevonden</p>
+          <p className={`text-xs ${tekstZacht}`}>{(count ?? 0).toLocaleString("nl-NL")} gevonden</p>
 
           {ontvangers.length > 0 && (
             <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
@@ -229,7 +230,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
                 <li key={o.id} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div className="flex min-w-0 flex-col">
                     <span className="break-all text-sm">{o.email}</span>
-                    {o.fout && <span className="break-words text-xs text-red-700 dark:text-red-300">{o.fout}</span>}
+                    {o.fout && <span className={`break-words text-xs ${tekstFout}`}>{o.fout}</span>}
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-1.5 text-xs">
                     <span className="rounded-full bg-black/5 px-2 py-0.5 dark:bg-white/10">
@@ -262,7 +263,7 @@ export default async function RapportPagina({ params, searchParams }: { params: 
               href={(p) => link({ pagina: String(p) })}
               linkKlasse={knopKlein}
               navKlasse="flex flex-wrap items-center justify-between gap-2 text-sm"
-              tekstKlasse={zacht}
+              tekstKlasse={tekstZacht}
             />
         </section>
       )}

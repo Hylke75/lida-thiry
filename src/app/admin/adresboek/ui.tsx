@@ -1,13 +1,7 @@
+import { badge, toon } from "@/components/admin/stijl";
 import type { Kenmerken } from "@/lib/relaties/zoeken";
 
-export { invoer, hoofdknop, kleineKnop, datum } from "../nieuwsbrief/contacten/stijl";
-
 export const PAD = "/admin/adresboek";
-
-export const gevaarKnop = "border-red-300 text-red-700 dark:border-red-800 dark:text-red-300";
-export const kaart = "flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15";
-export const zacht = "text-black/60 dark:text-white/60";
-export const heelZacht = "text-black/50 dark:text-white/50";
 
 export const BERICHT_STATUS_LABEL: Record<string, string> = {
   nieuw: "Nieuw",
@@ -18,9 +12,9 @@ export const BERICHT_STATUS_LABEL: Record<string, string> = {
 };
 
 const BADGE = {
-  klant: { label: "Klant", kleur: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" },
-  nieuwsbrief: { label: "Nieuwsbrief", kleur: "bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300" },
-  bericht: { label: "Bericht", kleur: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" },
+  klant: { label: "Klant", kleur: toon.groen },
+  nieuwsbrief: { label: "Nieuwsbrief", kleur: toon.blauw },
+  bericht: { label: "Bericht", kleur: toon.amber },
 } as const;
 
 export function Badges({ k }: { k: Kenmerken }) {
@@ -29,7 +23,7 @@ export function Badges({ k }: { k: Kenmerken }) {
   return (
     <span className="flex flex-wrap gap-1">
       {actief.map((s) => (
-        <span key={s} className={`rounded-full px-2 py-0.5 text-xs ${BADGE[s].kleur}`}>
+        <span key={s} className={`${badge} ${BADGE[s].kleur}`}>
           {BADGE[s].label}
         </span>
       ))}

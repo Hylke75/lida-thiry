@@ -22,7 +22,7 @@ export function BerichtenTeller() {
   }, []);
   if (!aantal) return null;
   return (
-    <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold leading-5 text-white">
+    <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold leading-5 text-background">
       <span className="sr-only">nieuw: </span>
       {aantal > 99 ? "99+" : aantal}
     </span>

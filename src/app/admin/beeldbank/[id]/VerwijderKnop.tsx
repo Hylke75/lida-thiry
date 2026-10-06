@@ -1,6 +1,7 @@
 "use client";
 
 import { verwijderBeeld } from "../acties";
+import { knopGevaar } from "@/components/admin/stijl";
 
 export function VerwijderKnop({ id, code }: { id: string; code: string }) {
   return (
@@ -11,7 +12,7 @@ export function VerwijderKnop({ id, code }: { id: string; code: string }) {
       }}
     >
       <input type="hidden" name="id" value={id} />
-      <button className="rounded-full border border-red-300 px-5 py-2 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40">
+      <button className={knopGevaar}>
         Beeld verwijderen
       </button>
     </form>

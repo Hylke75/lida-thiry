@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MEET_BUCKET, MEET_MAX_BYTES, MEET_TYPES } from "@/lib/meetbeelden-regels";
 import { bevestigUpload, maakUploadUrl } from "./acties";
+import { knop, tekstFout, tekstSucces } from "@/components/admin/stijl";
 
 /** Knop om een meetfoto te kiezen en direct te uploaden. */
 export function FotoUpload({ sleutel, heeftFoto }: { sleutel: string; heeftFoto: boolean }) {
@@ -56,12 +57,12 @@ export function FotoUpload({ sleutel, heeftFoto }: { sleutel: string; heeftFoto:
         type="button"
         disabled={bezig}
         onClick={() => invoer.current?.click()}
-        className="w-fit rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        className={`${knop} w-fit`}
       >
         {bezig ? "Bezig met uploaden…" : heeftFoto ? "Andere foto kiezen" : "Foto uploaden"}
       </button>
-      {fout && <p className="text-sm text-red-600 dark:text-red-400">{fout}</p>}
-      {gelukt && <p className="text-sm text-emerald-700 dark:text-emerald-400">✓ Foto opgeslagen.</p>}
+      {fout && <p className={`text-sm ${tekstFout}`}>{fout}</p>}
+      {gelukt && <p className={`text-sm ${tekstSucces}`}>✓ Foto opgeslagen.</p>}
     </div>
   );
 }

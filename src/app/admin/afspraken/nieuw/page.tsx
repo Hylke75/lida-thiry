@@ -5,7 +5,9 @@ import { haalSoorten } from "@/lib/afspraken/data";
 import { duurLabel, MAX } from "@/lib/afspraken/regels";
 import { vandaagAmsterdam } from "@/lib/datum";
 import { maakAfspraak } from "../acties";
-import { invoer, kaart, knop, Meldingen, NAV_AFSPRAKEN, zacht } from "../stijl";
+import { Meldingen, NAV_AFSPRAKEN } from "../onderdelen";
+import { invoer, kaartVlak, knop, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +19,15 @@ export default async function NieuweAfspraak({ searchParams }: { searchParams: P
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <AdminNav actief={NAV_AFSPRAKEN} />
-      <Link href="/admin/afspraken" className={`text-sm ${zacht} underline-offset-4 hover:underline`}>
-        ← Alle afspraken
-      </Link>
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Afspraak inplannen</h1>
-        <p className={`text-sm ${zacht}`}>
-          Bijvoorbeeld na een telefoontje. Je kunt hier ook buiten je vaste beschikbaarheid plannen; er komt geen aanbetaling bij.
-        </p>
-      </header>
+      <AdminKop
+        terug={{ href: "/admin/afspraken", label: "Alle afspraken" }}
+        titel="Afspraak inplannen"
+        beschrijving={
+          <>
+            Bijvoorbeeld na een telefoontje. Je kunt hier ook buiten je vaste beschikbaarheid plannen; er komt geen aanbetaling bij.
+          </>
+        }
+      />
       <Meldingen ok={ok} fout={fout} />
 
       {soorten.length === 0 ? (
@@ -37,9 +39,9 @@ export default async function NieuweAfspraak({ searchParams }: { searchParams: P
           .
         </p>
       ) : (
-        <form action={maakAfspraak} className={`${kaart} grid grid-cols-1 gap-4 sm:grid-cols-2`}>
+        <form action={maakAfspraak} className={`${kaartVlak} grid grid-cols-1 gap-4 sm:grid-cols-2`}>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className={zacht}>Soort afspraak *</span>
+            <span className={tekstZacht}>Soort afspraak *</span>
             <select name="soort" required className={invoer} defaultValue={soorten.find((s) => s.actief)?.id ?? soorten[0].id}>
               {soorten.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -49,38 +51,38 @@ export default async function NieuweAfspraak({ searchParams }: { searchParams: P
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Datum *</span>
+            <span className={tekstZacht}>Datum *</span>
             <input type="date" name="datum" required min={vandaagAmsterdam(new Date())} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Begintijd *</span>
+            <span className={tekstZacht}>Begintijd *</span>
             <input type="time" name="tijd" required step={300} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Duur in minuten (leeg = duur van de soort)</span>
+            <span className={tekstZacht}>Duur in minuten (leeg = duur van de soort)</span>
             <input type="number" name="duur" min={5} max={720} step={5} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Status</span>
+            <span className={tekstZacht}>Status</span>
             <select name="status" defaultValue="bevestigd" className={invoer}>
               <option value="bevestigd">Bevestigd</option>
               <option value="aangevraagd">Aangevraagd (nog bevestigen)</option>
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Naam *</span>
+            <span className={tekstZacht}>Naam *</span>
             <input name="naam" required maxLength={MAX.naam} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>E-mailadres *</span>
+            <span className={tekstZacht}>E-mailadres *</span>
             <input name="email" type="email" required maxLength={MAX.email} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Telefoon</span>
+            <span className={tekstZacht}>Telefoon</span>
             <input name="telefoon" type="tel" maxLength={MAX.telefoon} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className={zacht}>Opmerking (bijv. wat de klant al vertelde)</span>
+            <span className={tekstZacht}>Opmerking (bijv. wat de klant al vertelde)</span>
             <textarea name="opmerking" rows={3} maxLength={MAX.opmerking} className={invoer} />
           </label>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">

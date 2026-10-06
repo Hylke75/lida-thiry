@@ -9,7 +9,10 @@ import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { AdminNav, Melding } from "../../AdminNav";
 import { beantwoord, bewaarNotitie, verwijderBericht, wijzigStatus } from "../acties";
 import { BevestigKnop, Tekstvak, VerzendKnop } from "../Knoppen";
-import { BerichtStatusLabel, datumTijd, gevaarKnop, hoofdknop, invoer, kleineKnop } from "../stijl";
+import { BerichtStatusLabel } from "../StatusLabel";
+import { invoer, kaart, kaartVlak, knop, knopGevaarKlein, knopKlein } from "@/components/admin/stijl";
+import { datumTijd } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +21,13 @@ const PAD = "/admin/berichten";
 function Gegeven({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
-      <dt className="shrink-0 text-black/50 sm:w-32 dark:text-white/50">{label}</dt>
+      <dt className="shrink-0 text-foreground/70 sm:w-32">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
   );
 }
 
-function ActieKnop({ id, actie, children, className = kleineKnop }: { id: string; actie: string; children: ReactNode; className?: string }) {
+function ActieKnop({ id, actie, children, className = knopKlein }: { id: string; actie: string; children: ReactNode; className?: string }) {
   return (
     <form action={wijzigStatus}>
       <input type="hidden" name="id" value={id} />
@@ -80,18 +83,12 @@ export default async function BerichtPagina({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/berichten" />
-      <header className="flex flex-col gap-1">
-        <Link href={PAD} className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">
-          ← Berichten
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">{bericht.onderwerp || "Bericht"}</h1>
-          <BerichtStatusLabel status={bericht.status} />
-        </div>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Van {bericht.naam} · {datumTijd(bericht.aangemaakt_op)}
-        </p>
-      </header>
+      <AdminKop
+        terug={{ href: PAD, label: "Berichten" }}
+        titel={bericht.onderwerp || "Bericht"}
+        naastTitel={<BerichtStatusLabel status={bericht.status} />}
+        beschrijving={`Van ${bericht.naam} · ${datumTijd(bericht.aangemaakt_op)}`}
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {fout && <Melding soort="fout">{fout}</Melding>}
@@ -124,14 +121,14 @@ export default async function BerichtPagina({
           <input type="hidden" name="id" value={id} />
           <BevestigKnop
             bevestiging="Dit bericht en de antwoorden definitief verwijderen? Dit kan niet ongedaan worden gemaakt."
-            className={gevaarKnop}
+            className={knopGevaarKlein}
           >
             Verwijderen
           </BevestigKnop>
         </form>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={`${kaartVlak} flex flex-col gap-4`}>
         <dl className="flex flex-col gap-1.5 text-sm">
           <Gegeven label="Naam">{bericht.naam}</Gegeven>
           <Gegeven label="E-mail">
@@ -154,7 +151,7 @@ export default async function BerichtPagina({
                 Bekijk in het adresboek
               </Link>
             ) : (
-              <span className="text-black/50 dark:text-white/50">Niet gekoppeld</span>
+              <span className="text-foreground/70">Niet gekoppeld</span>
             )}
           </Gegeven>
         </dl>
@@ -172,7 +169,7 @@ export default async function BerichtPagina({
                 key={a.id}
                 className="ml-4 flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 text-sm sm:ml-10 dark:border-emerald-900 dark:bg-emerald-950/20"
               >
-                <p className="text-xs text-black/50 dark:text-white/50">
+                <p className="text-xs text-foreground/70">
                   {datumTijd(a.verzonden_op)}
                   {a.verzonden_door ? ` · verstuurd door ${a.verzonden_door}` : ""}
                 </p>
@@ -184,9 +181,9 @@ export default async function BerichtPagina({
       )}
 
       {!isSpam && (
-        <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+        <section className={kaart}>
           <h2 className="text-lg font-semibold">{antwoorden.length ? "Opnieuw antwoorden" : "Beantwoorden"}</h2>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Wordt per e-mail verstuurd naar {bericht.email}, met het oorspronkelijke bericht als citaat eronder. Reageert{" "}
             {voornaamVan(bericht.naam) || "de afzender"} op je mail, dan komt die reactie binnen op het contact-e-mailadres uit de
             instellingen.
@@ -206,7 +203,7 @@ export default async function BerichtPagina({
               className={`${invoer} w-full resize-y leading-relaxed`}
             />
             <div>
-              <VerzendKnop bezig="Bezig met versturen…" className={hoofdknop}>
+              <VerzendKnop bezig="Bezig met versturen…" className={knop}>
                 Antwoord versturen
               </VerzendKnop>
             </div>
@@ -214,7 +211,7 @@ export default async function BerichtPagina({
         </section>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Interne notitie</h2>
         <form action={bewaarNotitie} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={id} />
@@ -231,7 +228,7 @@ export default async function BerichtPagina({
             className={`${invoer} w-full resize-y`}
           />
           <div>
-            <button className={kleineKnop}>Notitie opslaan</button>
+            <button className={knopKlein}>Notitie opslaan</button>
           </div>
         </form>
       </section>

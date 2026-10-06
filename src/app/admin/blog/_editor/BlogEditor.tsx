@@ -27,7 +27,6 @@ import {
 } from "@/lib/blog/regels";
 import { toonDatumTijd } from "@/lib/datum";
 import { aiBewerk, aiVoorstel, alsNieuwsbrief, naarConcept, publiceer, slaBerichtOp, type BerichtUitkomst } from "../acties";
-import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
 import { Geschiedenis } from "../../versies/Geschiedenis";
 import { zetBerichtVersieTerug } from "../../versies/acties";
 import { ArtikelTekst } from "./Artikel";
@@ -35,6 +34,7 @@ import { FotoUpload } from "./FotoUpload";
 import { AiBadge, ZichtbaarheidBadge } from "./badges";
 import { TagInvoer } from "./TagInvoer";
 import { slugify } from "@/lib/slug";
+import { invoerBreed, kaart, knop, knopKlein, knopSecundair, tekstFout, tekstSucces, tekstZacht, toon } from "@/components/admin/stijl";
 
 interface Velden {
   titel: string;
@@ -89,7 +89,7 @@ const WERKBALK: { knop: Opmaakknop; label: ReactNode; titel: string }[] = [
 function Teller({ waarde, max }: { waarde: string; max: number }) {
   const n = waarde.length;
   return (
-    <span className={`text-xs tabular-nums ${n > max ? "font-medium text-red-700 dark:text-red-400" : n > max * 0.9 ? "text-amber-700 dark:text-amber-300" : zacht}`}>
+    <span className={`text-xs tabular-nums ${n > max ? "font-medium text-red-700 dark:text-red-300" : n > max * 0.9 ? "text-amber-700 dark:text-amber-300" : tekstZacht}`}>
       {n}/{max}
     </span>
   );
@@ -101,8 +101,8 @@ function Meldingen({ soort, tekst }: { soort: "ok" | "fout"; tekst: string[] }) 
       role={soort === "fout" ? "alert" : "status"}
       className={`rounded-lg px-4 py-3 text-sm ${
         soort === "ok"
-          ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+          ? toon.groen
+          : toon.rood
       }`}
     >
       {tekst.map((t, i) => (
@@ -126,7 +126,7 @@ function Veld({ label, htmlFor, teller, uitleg, children }: { label: string; htm
         {teller}
       </div>
       {children}
-      {uitleg && <p className={`text-xs ${zacht}`}>{uitleg}</p>}
+      {uitleg && <p className={`text-xs ${tekstZacht}`}>{uitleg}</p>}
     </div>
   );
 }
@@ -395,23 +395,23 @@ export function BlogEditor({
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
           <ZichtbaarheidBadge status={zichtbaar} />
           {opgeslagen.ai_gegenereerd && <AiBadge />}
-          {zichtbaar === "ingepland" && <span className={zacht}>verschijnt {toonDatumTijd(opgeslagen.gepubliceerd_op)}</span>}
-          <span className={gewijzigd ? "font-medium text-amber-700 dark:text-amber-300" : zacht}>
+          {zichtbaar === "ingepland" && <span className={tekstZacht}>verschijnt {toonDatumTijd(opgeslagen.gepubliceerd_op)}</span>}
+          <span className={gewijzigd ? "font-medium text-amber-700 dark:text-amber-300" : tekstZacht}>
             {gewijzigd ? "● Niet opgeslagen" : "Alles opgeslagen"}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Geschiedenis soort="blog" refId={id} onTerugzetten={versieTerugzetten} gewijzigd={gewijzigd} knopKlasse={knopRand} />
+          <Geschiedenis soort="blog" refId={id} onTerugzetten={versieTerugzetten} gewijzigd={gewijzigd} knopKlasse={knopSecundair} />
           {zichtbaar === "online" && !gewijzigd ? (
-            <a href={`/blog/${opgeslagen.slug}`} target="_blank" rel="noopener noreferrer" className={knopRand}>
+            <a href={`/blog/${opgeslagen.slug}`} target="_blank" rel="noopener noreferrer" className={knopSecundair}>
               Bekijken ↗
             </a>
           ) : (
-            <Link href={`/admin/blog/${id}/voorbeeld`} className={knopRand} title={gewijzigd ? "Het voorbeeld toont de laatst opgeslagen versie" : undefined}>
+            <Link href={`/admin/blog/${id}/voorbeeld`} className={knopSecundair} title={gewijzigd ? "Het voorbeeld toont de laatst opgeslagen versie" : undefined}>
               Voorbeeld
             </Link>
           )}
-          <button type="button" onClick={opslaan} disabled={Boolean(bezig) || !gewijzigd} className={knopHoofd} title="Opslaan (Ctrl+S of ⌘S)">
+          <button type="button" onClick={opslaan} disabled={Boolean(bezig) || !gewijzigd} className={knop} title="Opslaan (Ctrl+S of ⌘S)">
             {bezig === "opslaan" ? (
               <>
                 <Draaier /> Opslaan…
@@ -435,7 +435,7 @@ export function BlogEditor({
           value={v.titel}
           maxLength={200}
           onChange={(e) => zetTitel(e.target.value)}
-          className={`${invoerKlasse} font-serif text-xl sm:text-2xl`}
+          className={`${invoerBreed} font-serif text-xl sm:text-2xl`}
           placeholder="Bijv. Zo kies je de perfecte jurk voor jouw figuur"
         />
       </div>
@@ -450,7 +450,7 @@ export function BlogEditor({
               role="tab"
               aria-selected={tab === t}
               onClick={() => setTab(t)}
-              className={`flex-1 rounded-full px-3 py-1.5 ${tab === t ? "bg-kaart font-medium shadow-sm" : zacht}`}
+              className={`flex-1 rounded-full px-3 py-1.5 ${tab === t ? "bg-kaart font-medium shadow-sm" : tekstZacht}`}
             >
               {t === "schrijven" ? "Schrijven" : "Voorbeeld"}
             </button>
@@ -472,26 +472,26 @@ export function BlogEditor({
                     Voorstel van de AI: {BEWERKING_LABEL[aiTekst.bewerking].toLowerCase()} {aiTekst.geheel ? "(hele tekst)" : "(selectie)"}
                   </h2>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setAiTekst(null)} className={knopRand}>
+                    <button type="button" onClick={() => setAiTekst(null)} className={knopSecundair}>
                       Annuleren
                     </button>
-                    <button type="button" onClick={aiOvernemen} className={knopHoofd}>
+                    <button type="button" onClick={aiOvernemen} className={knop}>
                       Overnemen
                     </button>
                   </div>
                 </div>
-                <p className={`text-xs ${zacht}`}>
+                <p className={`text-xs ${tekstZacht}`}>
                   Lees het voorstel kritisch. Er verandert pas iets aan je tekst als je op Overnemen klikt (en daarna opslaat).
                 </p>
                 <div className="grid min-w-0 gap-3 md:grid-cols-2">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-xs font-medium uppercase tracking-wide text-red-700 dark:text-red-400">Nu ({woorden(aiTekst.voor)} woorden)</span>
+                    <span className={`text-xs font-medium uppercase tracking-wide ${tekstFout}`}>Nu ({woorden(aiTekst.voor)} woorden)</span>
                     <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-red-50 p-3 font-sans text-sm leading-relaxed text-red-950 dark:bg-red-950/30 dark:text-red-100">
                       {aiTekst.voor}
                     </pre>
                   </div>
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Voorstel ({woorden(aiTekst.na)} woorden)</span>
+                    <span className={`text-xs font-medium uppercase tracking-wide ${tekstSucces}`}>Voorstel ({woorden(aiTekst.na)} woorden)</span>
                     <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-emerald-50 p-3 font-sans text-sm leading-relaxed text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100">
                       {aiTekst.na}
                     </pre>
@@ -525,12 +525,12 @@ export function BlogEditor({
             {foto && (
               <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-black/10 bg-black/[0.02] p-3 dark:border-white/15 dark:bg-white/5">
                 <Veld label="Korte omschrijving van de foto" htmlFor="foto-alt" uitleg="Voor slechtzienden en Google. De foto komt op de plek van de cursor (of vervangt de [foto: …]-regel waar de cursor op staat).">
-                  <input id="foto-alt" value={foto.alt} maxLength={200} onChange={(e) => setFoto({ alt: e.target.value })} className={invoerKlasse} placeholder="Bijv. Vrouw in een donkerblauwe wikkeljurk" />
+                  <input id="foto-alt" value={foto.alt} maxLength={200} onChange={(e) => setFoto({ alt: e.target.value })} className={invoerBreed} placeholder="Bijv. Vrouw in een donkerblauwe wikkeljurk" />
                 </Veld>
                 <div className="flex flex-wrap items-start gap-2">
                   <FotoUpload soort="blog" map="afbeeldingen" label="Foto kiezen en invoegen" disabled={!foto.alt.trim()} onUrl={(u) => fotoIngevoegd(u)} />
                   <MediaKiezer accept="foto" map="blog" knopTekst="Uit mediabibliotheek" titel="Foto invoegen" onKies={(m) => fotoIngevoegd(m.url, m.alt)} />
-                  <button type="button" onClick={() => setFoto(null)} className={knopRand}>
+                  <button type="button" onClick={() => setFoto(null)} className={knopSecundair}>
                     Annuleren
                   </button>
                 </div>
@@ -539,7 +539,7 @@ export function BlogEditor({
 
             {aiAan ? (
               <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label="AI-hulp">
-                <span className={`text-xs ${zacht}`}>✨ AI:</span>
+                <span className={`text-xs ${tekstZacht}`}>✨ AI:</span>
                 {(Object.keys(BEWERKING_LABEL) as Bewerking[]).map((b) => (
                   <button
                     key={b}
@@ -552,7 +552,7 @@ export function BlogEditor({
                     {BEWERKING_LABEL[b]}
                   </button>
                 ))}
-                <span className={`text-xs ${zacht}`}>— werkt op de geselecteerde tekst, of op alles als er niets geselecteerd is.</span>
+                <span className={`text-xs ${tekstZacht}`}>— werkt op de geselecteerde tekst, of op alles als er niets geselecteerd is.</span>
               </div>
             ) : null}
 
@@ -565,26 +565,26 @@ export function BlogEditor({
               rows={24}
               spellCheck
               lang="nl"
-              className={`${invoerKlasse} min-h-[50vh] resize-y font-mono text-[13px] leading-relaxed lg:min-h-[70vh]`}
+              className={`${invoerBreed} min-h-[50vh] resize-y font-mono text-[13px] leading-relaxed lg:min-h-[70vh]`}
               placeholder={"Schrijf hier je bericht.\n\n## Tussenkop\n\nEen alinea met **vette tekst** en een [link](/bestellen).\n\n- een opsomming\n- nog een punt"}
             />
-            <p className={`text-xs ${zacht}`}>
+            <p className={`text-xs ${tekstZacht}`}>
               {aantalWoorden} {aantalWoorden === 1 ? "woord" : "woorden"} · ongeveer {leestijdMinuten(v.inhoud)} min lezen. Opmaak: <code>## kop</code>,{" "}
               <code>### subkop</code>, <code>- lijst</code>, <code>**vet**</code>, <code>[tekst](https://…)</code>, een lege regel voor een nieuwe alinea.
             </p>
           </div>
 
           <div className={`${voorbeeldKolom} min-w-0 flex-col gap-2 lg:sticky lg:top-20`}>
-            <p className={`hidden text-xs lg:block ${zacht}`}>Voorbeeld (werkt direct bij)</p>
+            <p className={`hidden text-xs lg:block ${tekstZacht}`}>Voorbeeld (werkt direct bij)</p>
             <div className="max-h-none min-w-0 overflow-y-auto rounded-2xl border border-black/10 bg-background p-4 sm:p-6 lg:max-h-[75vh] dark:border-white/15">
               <h1 className="mb-4 break-words text-2xl font-semibold tracking-tight sm:text-3xl">{v.titel || "(nog geen titel)"}</h1>
-              {v.inhoud.trim() ? <ArtikelTekst inhoud={v.inhoud} /> : <p className={`text-sm ${zacht}`}>Nog geen tekst.</p>}
+              {v.inhoud.trim() ? <ArtikelTekst inhoud={v.inhoud} /> : <p className={`text-sm ${tekstZacht}`}>Nog geen tekst.</p>}
             </div>
           </div>
         </div>
 
         {!aiAan && (
-          <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-xs dark:bg-white/5 ${zacht}`}>
+          <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-xs dark:bg-white/5 ${tekstZacht}`}>
             ✨ De AI-schrijfhulp staat uit. Je webbouwer kan hem aanzetten door in Vercel de omgevingsvariabele <code>ANTHROPIC_API_KEY</code> in te
             stellen (een sleutel van console.anthropic.com) en de site opnieuw te publiceren.
           </p>
@@ -623,21 +623,21 @@ export function BlogEditor({
                     const schoon = slugify(v.slug);
                     if (schoon && schoon !== v.slug) zet({ slug: schoon });
                   }}
-                  className={invoerKlasse}
+                  className={invoerBreed}
                 />
                 {!slugAuto && slugify(v.titel) && slugify(v.titel) !== v.slug && (
-                  <button type="button" onClick={() => zet({ slug: slugify(v.titel) })} className={`${knopRand} shrink-0`} title="Webadres opnieuw maken uit de titel">
+                  <button type="button" onClick={() => zet({ slug: slugify(v.titel) })} className={`${knopSecundair} shrink-0`} title="Webadres opnieuw maken uit de titel">
                     Uit titel
                   </button>
                 )}
               </div>
             </Veld>
             <Veld label="Samenvatting" htmlFor="samenvatting" teller={<Teller waarde={v.samenvatting} max={500} />} uitleg="Een of twee zinnen voor het blogoverzicht (en als voorvertoning in de nieuwsbrief).">
-              <textarea id="samenvatting" value={v.samenvatting} maxLength={500} rows={3} onChange={(e) => zet({ samenvatting: e.target.value })} className={invoerKlasse} />
+              <textarea id="samenvatting" value={v.samenvatting} maxLength={500} rows={3} onChange={(e) => zet({ samenvatting: e.target.value })} className={invoerBreed} />
             </Veld>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Veld label="Categorie" htmlFor="categorie" uitleg="Kies een bestaande of typ een nieuwe.">
-                <input id="categorie" value={v.categorie} maxLength={60} list="blog-categorieen" onChange={(e) => zet({ categorie: e.target.value })} className={invoerKlasse} placeholder="Bijv. Stijladvies" />
+                <input id="categorie" value={v.categorie} maxLength={60} list="blog-categorieen" onChange={(e) => zet({ categorie: e.target.value })} className={invoerBreed} placeholder="Bijv. Stijladvies" />
                 <datalist id="blog-categorieen">
                   {categorieen.map((c) => (
                     <option key={c} value={c} />
@@ -645,7 +645,7 @@ export function BlogEditor({
                 </datalist>
               </Veld>
               <Veld label="Auteur" htmlFor="auteur">
-                <input id="auteur" value={v.auteur} maxLength={80} onChange={(e) => zet({ auteur: e.target.value })} className={invoerKlasse} />
+                <input id="auteur" value={v.auteur} maxLength={80} onChange={(e) => zet({ auteur: e.target.value })} className={invoerBreed} />
               </Veld>
             </div>
             <Veld label="Tags" htmlFor="tags">
@@ -655,7 +655,7 @@ export function BlogEditor({
               <input type="checkbox" checked={v.uitgelicht} onChange={(e) => zet({ uitgelicht: e.target.checked })} className="mt-0.5 size-4 accent-[var(--accent)]" />
               <span>
                 <span className="font-medium">Uitgelicht</span>
-                <span className={`block text-xs ${zacht}`}>Uitgelichte berichten krijgen een prominente plek op de site.</span>
+                <span className={`block text-xs ${tekstZacht}`}>Uitgelichte berichten krijgen een prominente plek op de site.</span>
               </span>
             </label>
           </section>
@@ -681,31 +681,31 @@ export function BlogEditor({
                 onKies={(m) => zet({ omslag_url: m.url, ...(v.omslag_alt.trim() || !m.alt ? {} : { omslag_alt: m.alt }) })}
               />
               {v.omslag_url && (
-                <button type="button" onClick={() => zet({ omslag_url: "", omslag_alt: "" })} className={`${knopRand} text-red-700 dark:text-red-300`}>
+                <button type="button" onClick={() => zet({ omslag_url: "", omslag_alt: "" })} className={`${knopSecundair} text-red-700 dark:text-red-300`}>
                   Foto weghalen
                 </button>
               )}
             </div>
             <Veld label="Of plak een adres (https://…)" htmlFor="omslag-url" uitleg="JPG, PNG, GIF of WebP, maximaal 5 MB bij uploaden. Liefst liggend (16:9).">
-              <input id="omslag-url" type="url" inputMode="url" value={v.omslag_url} onChange={(e) => zet({ omslag_url: e.target.value.trim() })} className={invoerKlasse} placeholder="https://…" />
+              <input id="omslag-url" type="url" inputMode="url" value={v.omslag_url} onChange={(e) => zet({ omslag_url: e.target.value.trim() })} className={invoerBreed} placeholder="https://…" />
             </Veld>
             <Veld label="Omschrijving van de foto" htmlFor="omslag-alt" teller={<Teller waarde={v.omslag_alt} max={300} />} uitleg="Kort beschrijven wat er op de foto staat (voor slechtzienden en Google).">
-              <input id="omslag-alt" value={v.omslag_alt} maxLength={300} onChange={(e) => zet({ omslag_alt: e.target.value })} className={invoerKlasse} />
+              <input id="omslag-alt" value={v.omslag_alt} maxLength={300} onChange={(e) => zet({ omslag_alt: e.target.value })} className={invoerBreed} />
             </Veld>
           </section>
 
           {/* Google */}
           <section className={kaart}>
             <h2 className="text-lg font-semibold">Vindbaarheid in Google</h2>
-            <p className={`text-xs ${zacht}`}>Laat je deze velden leeg, dan gebruikt de site de titel en de samenvatting.</p>
+            <p className={`text-xs ${tekstZacht}`}>Laat je deze velden leeg, dan gebruikt de site de titel en de samenvatting.</p>
             <Veld label="SEO-titel" htmlFor="seo-titel" teller={<Teller waarde={v.seo_titel} max={SEO_TITEL_MAX} />}>
-              <input id="seo-titel" value={v.seo_titel} maxLength={70} onChange={(e) => zet({ seo_titel: e.target.value })} className={invoerKlasse} placeholder={v.titel} />
+              <input id="seo-titel" value={v.seo_titel} maxLength={70} onChange={(e) => zet({ seo_titel: e.target.value })} className={invoerBreed} placeholder={v.titel} />
             </Veld>
             <Veld label="SEO-omschrijving" htmlFor="seo-omschrijving" teller={<Teller waarde={v.seo_omschrijving} max={SEO_OMSCHRIJVING_MAX} />}>
-              <textarea id="seo-omschrijving" value={v.seo_omschrijving} maxLength={170} rows={3} onChange={(e) => zet({ seo_omschrijving: e.target.value })} className={invoerKlasse} />
+              <textarea id="seo-omschrijving" value={v.seo_omschrijving} maxLength={170} rows={3} onChange={(e) => zet({ seo_omschrijving: e.target.value })} className={invoerBreed} />
             </Veld>
             <div className="flex min-w-0 flex-col gap-1">
-              <span className={`text-xs ${zacht}`}>Zo ongeveer zie je het bericht in Google:</span>
+              <span className={`text-xs ${tekstZacht}`}>Zo ongeveer zie je het bericht in Google:</span>
               <GoogleVoorbeeld titel={v.seo_titel || v.titel} url={url} omschrijving={metaOmschrijving(v)} />
             </div>
           </section>
@@ -718,7 +718,7 @@ export function BlogEditor({
               <h2 className="text-lg font-semibold">Publiceren</h2>
               <ZichtbaarheidBadge status={zichtbaar} />
             </div>
-            <p className={`text-sm ${zacht}`}>
+            <p className={`text-sm ${tekstZacht}`}>
               {zichtbaar === "online"
                 ? `Dit bericht staat online sinds ${toonDatumTijd(opgeslagen.gepubliceerd_op)}. Wijzigingen zijn zichtbaar zodra je opslaat.`
                 : zichtbaar === "ingepland"
@@ -770,7 +770,7 @@ export function BlogEditor({
 
             <div className="flex flex-col gap-3">
               {zichtbaar !== "online" && (
-                <button type="button" onClick={nuPubliceren} disabled={!kanPubliceren} className={`${knopHoofd} w-fit`}>
+                <button type="button" onClick={nuPubliceren} disabled={!kanPubliceren} className={`${knop} w-fit`}>
                   {bezig === "publiceren" ? (
                     <>
                       <Draaier /> Publiceren…
@@ -786,20 +786,20 @@ export function BlogEditor({
                     {zichtbaar === "ingepland" ? "Ander moment kiezen" : "Of inplannen voor later"}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    <input id="moment" type="datetime-local" value={moment} onChange={(e) => setMoment(e.target.value)} className={`${invoerKlasse} w-auto`} />
-                    <button type="button" onClick={inplannen} disabled={!kanPubliceren || !moment} className={knopRand}>
+                    <input id="moment" type="datetime-local" value={moment} onChange={(e) => setMoment(e.target.value)} className={`${invoerBreed} w-auto`} />
+                    <button type="button" onClick={inplannen} disabled={!kanPubliceren || !moment} className={knopSecundair}>
                       {bezig === "inplannen" ? "Bezig…" : zichtbaar === "ingepland" ? "Planning wijzigen" : "Inplannen"}
                     </button>
                   </div>
-                  <p className={`text-xs ${zacht}`}>Nederlandse tijd.</p>
+                  <p className={`text-xs ${tekstZacht}`}>Nederlandse tijd.</p>
                 </div>
               )}
               {zichtbaar !== "concept" && (
-                <button type="button" onClick={terugNaarConcept} disabled={Boolean(bezig)} className={`${knopRand} w-fit`}>
+                <button type="button" onClick={terugNaarConcept} disabled={Boolean(bezig)} className={`${knopSecundair} w-fit`}>
                   {zichtbaar === "online" ? "Offline halen (terug naar concept)" : "Planning annuleren (terug naar concept)"}
                 </button>
               )}
-              {zichtbaar !== "concept" && gewijzigd && <p className={`text-xs ${zacht}`}>Wijzigingen aan een gepubliceerd bericht worden zichtbaar zodra je opslaat.</p>}
+              {zichtbaar !== "concept" && gewijzigd && <p className={`text-xs ${tekstZacht}`}>Wijzigingen aan een gepubliceerd bericht worden zichtbaar zodra je opslaat.</p>}
             </div>
           </section>
 
@@ -808,7 +808,7 @@ export function BlogEditor({
             <section className={kaart}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-semibold">✨ Titels &amp; SEO voorstellen</h2>
-                <button type="button" onClick={() => void aiSuggesties()} disabled={Boolean(aiBezig) || !v.inhoud.trim()} className={knopRand}>
+                <button type="button" onClick={() => void aiSuggesties()} disabled={Boolean(aiBezig) || !v.inhoud.trim()} className={knopSecundair}>
                   {aiBezig === "Titels & SEO bedenken" ? (
                     <>
                       <Draaier /> Bezig…
@@ -820,7 +820,7 @@ export function BlogEditor({
                   )}
                 </button>
               </div>
-              <p className={`text-xs ${zacht}`}>De AI leest je tekst en stelt titels, een samenvatting, SEO-teksten en tags voor. Jij kiest wat je gebruikt.</p>
+              <p className={`text-xs ${tekstZacht}`}>De AI leest je tekst en stelt titels, een samenvatting, SEO-teksten en tags voor. Jij kiest wat je gebruikt.</p>
               {suggesties && (
                 <div className="flex min-w-0 flex-col gap-4 text-sm">
                   {suggesties.titels.length > 0 && (
@@ -872,19 +872,19 @@ export function BlogEditor({
           {/* Nieuwsbrief */}
           <section className={kaart}>
             <h2 className="text-lg font-semibold">Als nieuwsbrief versturen</h2>
-            <p className={`text-sm ${zacht}`}>
+            <p className={`text-sm ${tekstZacht}`}>
               Maakt een nieuwe campagne met de omslagfoto, de titel, de samenvatting, het begin van de tekst en een knop &quot;Lees verder&quot; naar dit bericht. Je
               kunt de campagne daarna nog aanpassen en kiest zelf wanneer en naar wie hij gaat.
             </p>
             {zichtbaar === "concept" ? (
-              <p className={`text-xs ${zacht}`}>Beschikbaar zodra het bericht online staat of is ingepland.</p>
+              <p className={`text-xs ${tekstZacht}`}>Beschikbaar zodra het bericht online staat of is ingepland.</p>
             ) : (
               <form action={alsNieuwsbrief} className="flex flex-col gap-1">
                 <input type="hidden" name="id" value={id} />
-                <button disabled={gewijzigd || Boolean(bezig)} className={`${knopRand} w-fit`}>
+                <button disabled={gewijzigd || Boolean(bezig)} className={`${knopSecundair} w-fit`}>
                   Nieuwsbrief maken van dit bericht
                 </button>
-                {gewijzigd && <p className={`text-xs ${zacht}`}>Sla eerst je wijzigingen op.</p>}
+                {gewijzigd && <p className={`text-xs ${tekstZacht}`}>Sla eerst je wijzigingen op.</p>}
               </form>
             )}
           </section>

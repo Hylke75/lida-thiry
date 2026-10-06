@@ -50,7 +50,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </Link>
         </div>
         {recent.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">Nog geen bestellingen.</p>
+          <p className="text-sm text-foreground/70">Nog geen bestellingen.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {recent.map((o) => (

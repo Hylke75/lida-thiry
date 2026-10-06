@@ -33,12 +33,12 @@ export function Trechter({ stappen }: { stappen: readonly TrechterStap[] }) {
             </span>
             <span className="min-w-[6.5rem] text-right tabular-nums">
               <span className="font-medium">{s.aantal.toLocaleString("nl-NL")}</span>
-              {i > 0 && <span className="ml-1.5 text-xs text-black/55 dark:text-white/55">({pct(s.vanVorige)})</span>}
+              {i > 0 && <span className="ml-1.5 text-xs text-foreground/70">({pct(s.vanVorige)})</span>}
             </span>
           </li>
         ))}
       </ol>
-      <p className="text-xs text-black/55 dark:text-white/55">
+      <p className="text-xs text-foreground/70">
         Tussen haakjes: het deel van de vorige stap. Van aangemaakt tot advies verzonden:{" "}
         {pct(stappen[stappen.length - 1]?.vanStart ?? null)}.
       </p>
@@ -69,14 +69,14 @@ export function DagStaven({
     <figure className="flex flex-col gap-2">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium">{titel}</span>
-        <span className="text-black/60 dark:text-white/60">
+        <span className="text-foreground/70">
           totaal {totaal.toLocaleString("nl-NL")} · hoogste dag {Math.max(0, ...reeks.map((d) => d.aantal))}
         </span>
       </figcaption>
       <div className="grid grid-cols-[auto_1fr] gap-2">
         <div
           aria-hidden="true"
-          className="flex flex-col justify-between pb-5 text-right text-xs tabular-nums text-black/50 dark:text-white/50"
+          className="flex flex-col justify-between pb-5 text-right text-xs tabular-nums text-foreground/70"
         >
           <span>{max}</span>
           <span>0</span>
@@ -111,13 +111,13 @@ export function DagStaven({
               );
             })}
           </svg>
-          <div aria-hidden="true" className="flex justify-between text-xs text-black/50 dark:text-white/50">
+          <div aria-hidden="true" className="flex justify-between text-xs text-foreground/70">
             <span>{kortDatum(reeks[0].datum)}</span>
             <span>{kortDatum(reeks[reeks.length - 1].datum)}</span>
           </div>
         </div>
       </div>
-      <details className="text-xs text-black/60 dark:text-white/60">
+      <details className="text-xs text-foreground/70">
         <summary className="cursor-pointer">Toon als tabel</summary>
         <table className="mt-2 w-full max-w-xs tabular-nums">
           <thead>
@@ -142,7 +142,7 @@ export function DagStaven({
 
 /** Eenvoudige horizontale balken (bijv. top figuurtypes). */
 export function Balken({ rijen, leeg }: { rijen: readonly { label: string; aantal: number }[]; leeg: string }) {
-  if (!rijen.length) return <p className="text-sm text-black/55 dark:text-white/55">{leeg}</p>;
+  if (!rijen.length) return <p className="text-sm text-foreground/70">{leeg}</p>;
   const max = Math.max(1, ...rijen.map((r) => r.aantal));
   return (
     <ul className="flex flex-col gap-1.5">

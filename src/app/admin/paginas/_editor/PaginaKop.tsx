@@ -6,7 +6,7 @@ export function PaginaKop({ pad }: { pad: { href?: string; label: string }[] }) 
   return (
     <>
       <AdminNav actief="/admin/paginas" />
-      <nav aria-label="Kruimelpad" className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-black/55 dark:text-white/55">
+      <nav aria-label="Kruimelpad" className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-foreground/70">
         <Link href="/admin/paginas" className="hover:text-accent hover:underline">
           Pagina&apos;s
         </Link>

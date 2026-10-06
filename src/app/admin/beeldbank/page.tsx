@@ -19,6 +19,8 @@ import { BeeldUpload } from "./BeeldUpload";
 import { bepaalAfmetingen } from "./acties";
 import { StatusBadge, TeKleinBadge } from "./badges";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoer, kaart, kaartVlak, knop } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 // Afmetingen bepalen en uploads verwerken (sharp) kan even duren.
@@ -51,14 +53,11 @@ async function leesAlleBeelden(): Promise<Rij[]> {
   return rijen;
 }
 
-const invoerKlasse =
-  "rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-
 function Teller({ label, waarde, href }: { label: string; waarde: number; href?: string }) {
   const inhoud = (
     <>
       <span className="text-2xl font-semibold tabular-nums">{waarde}</span>
-      <span className="text-xs text-black/60 dark:text-white/60">{label}</span>
+      <span className="text-xs text-foreground/70">{label}</span>
     </>
   );
   const klasse = "flex flex-col rounded-xl border border-black/10 bg-kaart px-4 py-3 dark:border-white/15";
@@ -73,7 +72,7 @@ function Teller({ label, waarde, href }: { label: string; waarde: number; href?:
 
 function Werkwijze() {
   return (
-    <details className="rounded-2xl border border-black/10 bg-kaart p-5 text-sm dark:border-white/15">
+    <details className={`${kaartVlak} text-sm`}>
       <summary className="cursor-pointer font-medium">Werkwijze: zo houd je de beeldbank netjes</summary>
       <div className="mt-4 flex flex-col gap-4 leading-relaxed text-black/75 dark:text-white/75">
         <section>
@@ -151,17 +150,11 @@ export default async function BeeldbankPagina({
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/beeldbank" />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex max-w-2xl flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Beeldbank</h1>
-          <p className="text-sm text-black/60 dark:text-white/60">
-            Alle tekeningen uit de adviezen staan hier één keer. Klik op een beeld om de gegevens aan te passen of
-            het te vervangen; de nieuwe versie verschijnt dan automatisch in alle adviestypes waarin het gebruikt
-            wordt.
-          </p>
-        </div>
-        <BeeldUpload beeldId={null} label="Nieuw beeld toevoegen" />
-      </div>
+      <AdminKop
+        titel="Beeldbank"
+        beschrijving="Alle tekeningen uit de adviezen staan hier één keer. Klik op een beeld om de gegevens aan te passen of het te vervangen; de nieuwe versie verschijnt dan automatisch in alle adviestypes waarin het gebruikt wordt."
+        acties={<BeeldUpload beeldId={null} label="Nieuw beeld toevoegen" />}
+      />
 
       {verwijderd && <Melding soort="ok">Beeld {verwijderd} is verwijderd.</Melding>}
       {bepaald != null && open != null && (
@@ -181,7 +174,7 @@ export default async function BeeldbankPagina({
             beelden (dat duurt even).
           </p>
           <form action={bepaalAfmetingen}>
-            <button className="whitespace-nowrap rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90">
+            <button className={`${knop} whitespace-nowrap`}>
               Afmetingen bepalen
             </button>
           </form>
@@ -204,7 +197,7 @@ export default async function BeeldbankPagina({
       <form
         method="get"
         action="/admin/beeldbank"
-        className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15"
+        className={kaart}
       >
         <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
           <label className="flex flex-col gap-1 text-xs font-medium">
@@ -213,12 +206,12 @@ export default async function BeeldbankPagina({
               name="zoek"
               defaultValue={filters.zoek}
               placeholder="Nummer, naam, omschrijving of bijschrift"
-              className={invoerKlasse}
+              className={invoer}
             />
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Onderdeel
-            <select name="onderdeel" defaultValue={filters.onderdeel} className={invoerKlasse}>
+            <select name="onderdeel" defaultValue={filters.onderdeel} className={invoer}>
               <option value="">Alle onderdelen</option>
               {ONDERDELEN.map((o) => (
                 <option key={o} value={o}>
@@ -235,7 +228,7 @@ export default async function BeeldbankPagina({
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Status
-            <select name="status" defaultValue={filters.status} className={invoerKlasse}>
+            <select name="status" defaultValue={filters.status} className={invoer}>
               <option value="">Alle statussen</option>
               {STATUSSEN.map((s) => (
                 <option key={s} value={s}>
@@ -262,18 +255,18 @@ export default async function BeeldbankPagina({
           </label>
           <div className="flex items-center gap-3 sm:ml-auto">
             {filtersActief && (
-              <Link href="/admin/beeldbank" className="text-black/60 underline underline-offset-4 dark:text-white/60">
+              <Link href="/admin/beeldbank" className="text-foreground/70 underline underline-offset-4">
                 Filters wissen
               </Link>
             )}
-            <button className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90">
+            <button className={knop}>
               Zoeken
             </button>
           </div>
         </div>
       </form>
 
-      <p className="text-sm text-black/60 dark:text-white/60">
+      <p className="text-sm text-foreground/70">
         {gefilterd.length === alle.length
           ? `${alle.length} beelden`
           : `${gefilterd.length} van de ${alle.length} beelden gevonden`}
@@ -281,7 +274,7 @@ export default async function BeeldbankPagina({
       </p>
 
       {items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-black/15 p-8 text-center text-sm text-black/50 dark:border-white/20 dark:text-white/50">
+        <p className="rounded-2xl border border-dashed border-black/15 p-8 text-center text-sm text-foreground/70 dark:border-white/20">
           Geen beelden gevonden. Pas de zoekopdracht aan of{" "}
           <Link href="/admin/beeldbank" className="underline underline-offset-4">
             wis de filters
@@ -315,11 +308,11 @@ export default async function BeeldbankPagina({
                     <span className={`break-all ${b.naam ? "font-medium" : "italic text-black/45 dark:text-white/45"}`}>
                       {b.naam ?? "(nog geen naam)"}
                     </span>
-                    {b.onderdeel && <span className="text-black/60 dark:text-white/60">{b.onderdeel}</span>}
-                    <span className="text-black/60 dark:text-white/60">
+                    {b.onderdeel && <span className="text-foreground/70">{b.onderdeel}</span>}
+                    <span className="text-foreground/70">
                       {b.verhouding_b && b.verhouding_h ? verhoudingLabel(b.verhouding_b, b.verhouding_h) : "verhouding onbekend"}
                     </span>
-                    <span className="flex flex-wrap items-center gap-1.5 text-black/60 dark:text-white/60">
+                    <span className="flex flex-wrap items-center gap-1.5 text-foreground/70">
                       {afmetingTekst(b.breedte, b.hoogte)}
                       {isTeKlein(b) && <TeKleinBadge />}
                     </span>

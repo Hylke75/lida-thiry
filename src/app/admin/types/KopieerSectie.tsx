@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import type { LetterKeuze } from "@/lib/adviestypes-beheer";
 import { kopieerSectie } from "./acties";
 import type { Uitkomst } from "./uitkomst";
+import { knop, knopKlein } from "@/components/admin/stijl";
 
 export interface TypeKeuze {
   sleutel: string;
@@ -69,16 +70,13 @@ export function KopieerSectie({
     });
   }
 
-  const knop =
-    "rounded-full border border-black/15 px-3 py-1 text-xs hover:border-accent hover:text-accent dark:border-white/20";
-
   return (
     <details className="group rounded-xl border border-black/10 dark:border-white/15">
       <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-black/70 dark:text-white/70">
         Dit veld overnemen in andere types…
       </summary>
       <div className="flex flex-col gap-3 border-t border-black/10 p-4 dark:border-white/15">
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Kies de types die voor dit veld dezelfde tekst en beelden moeten krijgen. Wat daar nu in dit veld staat,{" "}
           <strong>wordt vervangen</strong>; je kunt het daarna per type nog aanpassen.
         </p>
@@ -87,7 +85,7 @@ export function KopieerSectie({
             <button
               key={l.letter}
               type="button"
-              className={knop}
+              className={knopKlein}
               onClick={() => wissel(types.filter((t) => t.letter === l.letter).map((t) => t.sleutel))}
             >
               Alle {l.letter} ({l.naam})
@@ -95,19 +93,19 @@ export function KopieerSectie({
           ))}
           <button
             type="button"
-            className={knop}
+            className={knopKlein}
             onClick={() => wissel(types.filter((t) => t.categorie === categorie).map((t) => t.sleutel))}
           >
             Alle in categorie {categorie}
           </button>
-          <button type="button" className={knop} onClick={() => setGekozen(new Set())}>
+          <button type="button" className={knopKlein} onClick={() => setGekozen(new Set())}>
             Niets kiezen
           </button>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-5">
           {letters.map((l) => (
             <fieldset key={l.letter} className="flex flex-col gap-0.5">
-              <legend className="mb-1 text-xs font-medium text-black/50 dark:text-white/50">
+              <legend className="mb-1 text-xs font-medium text-foreground/70">
                 {l.letter} · {l.naam}
               </legend>
               {types
@@ -131,7 +129,7 @@ export function KopieerSectie({
             type="button"
             disabled={bezig || gekozen.size === 0}
             onClick={kopieer}
-            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+            className={knop}
           >
             {bezig
               ? "Bezig met kopiëren…"

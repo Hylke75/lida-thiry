@@ -7,6 +7,8 @@ import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { AdminNav } from "../AdminNav";
 import { toonDatumTijd } from "@/lib/datum";
 import { alles } from "@/lib/supabase/alles";
+import { invoer, kaart, knop } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -69,21 +71,23 @@ export default async function TypesPagina({
     `rounded-full px-3 py-1.5 text-sm ${
       actief
         ? "bg-accent-zacht font-medium text-accent"
-        : "border border-black/10 text-black/60 hover:bg-black/5 dark:border-white/15 dark:text-white/60 dark:hover:bg-white/5"
+        : "border border-black/10 text-foreground/70 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5"
     }`;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/types" />
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Adviestypes</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Hier beheer je de {types.length} hand-outs: per type de titel, de vaste velden met tekst en de beelden. Klik op een
-          type om het te bewerken. Wijzigingen gelden voor nieuwe PDF&rsquo;s; al verstuurde PDF&rsquo;s veranderen niet.
-        </p>
-      </div>
+      <AdminKop
+        titel="Adviestypes"
+        beschrijving={
+          <>
+            Hier beheer je de {types.length} hand-outs: per type de titel, de vaste velden met tekst en de beelden. Klik op een
+            type om het te bewerken. Wijzigingen gelden voor nieuwe PDF&rsquo;s; al verstuurde PDF&rsquo;s veranderen niet.
+          </>
+        }
+      />
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
+      <div className={kaart}>
         <form action="/admin/types" className="flex flex-col gap-2 sm:flex-row">
           {letter && <input type="hidden" name="letter" value={letter} />}
           {aandacht && <input type="hidden" name="aandacht" value={aandacht} />}
@@ -92,12 +96,12 @@ export default async function TypesPagina({
             name="q"
             defaultValue={q}
             placeholder="Zoek op code (bijv. 6A) of titel"
-            className="flex-1 rounded-lg border border-black/15 bg-background px-3 py-2 outline-none focus:border-accent dark:border-white/20"
+            className={`${invoer} flex-1`}
           />
           <select
             name="categorie"
             defaultValue={categorie}
-            className="rounded-lg border border-black/15 bg-background px-3 py-2 dark:border-white/20"
+            className={invoer}
           >
             <option value="">Alle categorieën</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((c) => (
@@ -106,7 +110,7 @@ export default async function TypesPagina({
               </option>
             ))}
           </select>
-          <button className="rounded-full bg-foreground px-5 py-2 text-sm text-background hover:opacity-90">Zoeken</button>
+          <button className={knop}>Zoeken</button>
         </form>
         <div className="flex flex-wrap items-center gap-2">
           <Link href={link({ letter: undefined })} className={chip(!letter)}>
@@ -128,7 +132,7 @@ export default async function TypesPagina({
           )}
         </div>
         {gefilterd && (
-          <p className="text-xs text-black/50 dark:text-white/50">
+          <p className="text-xs text-foreground/70">
             {zichtbaar.length} van {types.length} types.{" "}
             <Link href="/admin/types" className="underline underline-offset-2">
               Filters wissen
@@ -138,11 +142,11 @@ export default async function TypesPagina({
       </div>
 
       {zichtbaar.length === 0 ? (
-        <p className="text-sm text-black/50 dark:text-white/50">Geen types gevonden.</p>
+        <p className="text-sm text-foreground/70">Geen types gevonden.</p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-black/10 bg-kaart dark:border-white/15">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-black/10 text-xs uppercase tracking-wide text-black/50 dark:border-white/15 dark:text-white/50">
+            <thead className="border-b border-black/10 text-xs uppercase tracking-wide text-foreground/70 dark:border-white/15">
               <tr>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Titel</th>
@@ -159,7 +163,7 @@ export default async function TypesPagina({
                   <tr
                     key={t.sleutel}
                     className={`hover:bg-black/[0.03] dark:hover:bg-white/[0.04] ${
-                      nieuweCategorie && i > 0 ? "border-t-2 border-black/10 dark:border-white/15" : "border-t border-black/5 dark:border-white/5"
+                      nieuweCategorie && i > 0 ? "border-t-2 border-black/10 dark:border-white/15" : "border-t border-black/5 dark:border-white/10"
                     }`}
                   >
                     <td className="px-4 py-2.5">
@@ -189,7 +193,7 @@ export default async function TypesPagina({
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{tel.secties}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{tel.beelden}</td>
-                    <td className="px-4 py-2.5 whitespace-nowrap text-black/60 dark:text-white/60">
+                    <td className="px-4 py-2.5 whitespace-nowrap text-foreground/70">
                       {toonDatumTijd(tel.laatstBewerkt)}
                     </td>
                   </tr>

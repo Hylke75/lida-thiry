@@ -8,8 +8,11 @@ import { filterQuery, leesFilter, PER_PAGINA } from "@/lib/nieuwsbrief/contactre
 import { AdminNav, Melding } from "../../AdminNav";
 import { bulkActie, voegContactToe } from "./acties";
 import { BevestigKnop, SelecteerAlles, TagInvoer } from "./Invoer";
-import { StatusLabel, datum, invoer, hoofdknop, kleineKnop } from "./stijl";
+import { StatusLabel } from "./StatusLabel";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoer, kaart, knop, knopKlein } from "@/components/admin/stijl";
+import { datum } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -47,22 +50,20 @@ export default async function ContactenPagina({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/nieuwsbrief/contacten" />
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <Link href="/admin/nieuwsbrief" className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">
-            ← Nieuwsbrief
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">Contacten</h1>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`${PAD}/import`} className={kleineKnop}>
-            CSV importeren
-          </Link>
-          <a href={`${PAD}/export${exportQuery ? `?${exportQuery}` : ""}`} className={kleineKnop}>
-            CSV exporteren{gefilterd ? " (huidig filter)" : ""}
-          </a>
-        </div>
-      </header>
+      <AdminKop
+        terug={{ href: "/admin/nieuwsbrief", label: "Nieuwsbrief" }}
+        titel="Contacten"
+        acties={
+          <>
+            <Link href={`${PAD}/import`} className={knopKlein}>
+              CSV importeren
+            </Link>
+            <a href={`${PAD}/export${exportQuery ? `?${exportQuery}` : ""}`} className={knopKlein}>
+              CSV exporteren{gefilterd ? " (huidig filter)" : ""}
+            </a>
+          </>
+        }
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {(fout || lijst.error) && <Melding soort="fout">{fout ?? `Contacten laden mislukt: ${lijst.error?.message}`}</Melding>}
@@ -80,7 +81,7 @@ export default async function ContactenPagina({
             }`}
           >
             <span className="text-lg font-semibold tabular-nums">{tellingen[s]}</span>
-            <span className="text-black/60 dark:text-white/60">{STATUS_LABEL[s]}</span>
+            <span className="text-foreground/70">{STATUS_LABEL[s]}</span>
           </Link>
         ))}
       </nav>
@@ -112,7 +113,7 @@ export default async function ContactenPagina({
           ))}
         </select>
         {filter.formulier && <input type="hidden" name="formulier" value={filter.formulier} />}
-        <button className={hoofdknop}>Zoeken</button>
+        <button className={knop}>Zoeken</button>
       </form>
       {filter.formulier && (
         <p className="-mt-3 text-sm">
@@ -126,7 +127,7 @@ export default async function ContactenPagina({
           </Link>
         </p>
       )}
-      <p className="-mt-3 text-sm text-black/60 dark:text-white/60">
+      <p className="-mt-3 text-sm text-foreground/70">
         {totaal} contact{totaal === 1 ? "" : "en"}
         {gefilterd && (
           <>
@@ -147,24 +148,24 @@ export default async function ContactenPagina({
               <span>Alles</span>
             </label>
             <span className="text-black/40 dark:text-white/40">·</span>
-            <span className="text-black/60 dark:text-white/60">Met selectie:</span>
+            <span className="text-foreground/70">Met selectie:</span>
             <input name="tag" list="bestaande-tags" placeholder="tag" aria-label="Tag voor de selectie" className={`${invoer} w-32 py-1`} />
             <datalist id="bestaande-tags">
               {tags.map((t) => (
                 <option key={t} value={t} />
               ))}
             </datalist>
-            <button name="actie" value="tag_toevoegen" className={kleineKnop}>
+            <button name="actie" value="tag_toevoegen" className={knopKlein}>
               Tag toevoegen
             </button>
-            <button name="actie" value="tag_verwijderen" className={kleineKnop}>
+            <button name="actie" value="tag_verwijderen" className={knopKlein}>
               Tag weghalen
             </button>
             <BevestigKnop
               name="actie"
               value="afmelden"
               bevestiging="De geselecteerde contacten afmelden? Ze ontvangen dan geen nieuwsbrieven meer."
-              className={kleineKnop}
+              className={knopKlein}
             >
               Afmelden
             </BevestigKnop>
@@ -172,7 +173,7 @@ export default async function ContactenPagina({
               name="actie"
               value="verwijderen"
               bevestiging="De geselecteerde contacten definitief verwijderen? Dit kan niet ongedaan worden gemaakt."
-              className={`${kleineKnop} border-red-300 text-red-700 dark:border-red-800 dark:text-red-300`}
+              className={`${knopKlein} border-red-300 text-red-700 dark:border-red-800 dark:text-red-300`}
             >
               Verwijderen
             </BevestigKnop>
@@ -180,7 +181,7 @@ export default async function ContactenPagina({
         )}
 
         {contacten.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">
+          <p className="text-sm text-foreground/70">
             {gefilterd ? "Geen contacten gevonden." : "Nog geen contacten. Voeg er hieronder een toe of importeer een CSV-bestand."}
           </p>
         ) : (
@@ -193,9 +194,9 @@ export default async function ContactenPagina({
                     <Link href={`${PAD}/${c.id}`} className="truncate font-medium hover:text-accent hover:underline">
                       {c.email}
                     </Link>
-                    {c.naam && <span className="text-black/60 dark:text-white/60">{c.naam}</span>}
+                    {c.naam && <span className="text-foreground/70">{c.naam}</span>}
                   </span>
-                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-black/50 dark:text-white/50">
+                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-foreground/70">
                     <span>{BRON_LABEL[c.bron]}</span>
                     {c.formulier_id && formulieren.has(c.formulier_id) && (
                       <Link href={link({ formulier: c.formulier_id })} className="hover:text-accent hover:underline">
@@ -221,11 +222,11 @@ export default async function ContactenPagina({
         pagina={filter.pagina}
         paginas={paginas}
         href={(p) => link({ pagina: p })}
-        linkKlasse={kleineKnop}
-        tekstKlasse="text-black/60 dark:text-white/60"
+        linkKlasse={knopKlein}
+        tekstKlasse="text-foreground/70"
       />
 
-      <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Contact toevoegen</h2>
         <form action={voegContactToe} className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
@@ -244,13 +245,13 @@ export default async function ContactenPagina({
             <input type="checkbox" name="toestemming" required className="mt-1 accent-accent" />
             <span>
               Deze persoon heeft toestemming gegeven om de nieuwsbrief te ontvangen.{" "}
-              <span className="text-black/50 dark:text-white/50">
+              <span className="text-foreground/70">
                 Dit wordt met je naam en de datum vastgelegd als bewijs van toestemming.
               </span>
             </span>
           </label>
           <div className="sm:col-span-2">
-            <button className={hoofdknop}>Toevoegen</button>
+            <button className={knop}>Toevoegen</button>
           </div>
         </form>
       </section>

@@ -7,6 +7,7 @@ import { Lichaam } from "@/components/Lichaam";
 import { STANDAARD_VORM, VORM_GRENZEN, type Lichaamstype } from "@/lib/lichaamstype-regels";
 import type { Lichaamsvorm } from "@/lib/test-config";
 import { maakLichaamstype, slaLichaamstypeOp, zoekFotos, type FotoKeuze, type Status } from "./acties";
+import { invoerBreed, kaart, kaartVlak, knop, label, tekstUitleg, toon } from "@/components/admin/stijl";
 
 const VORM_VELDEN: { sleutel: keyof Lichaamsvorm; label: string }[] = [
   { sleutel: "schouder", label: "Schouders" },
@@ -15,11 +16,6 @@ const VORM_VELDEN: { sleutel: keyof Lichaamsvorm; label: string }[] = [
   { sleutel: "hogeHeup", label: "Hoge heup" },
   { sleutel: "heup", label: "Heupen" },
 ];
-
-const invoer =
-  "w-full rounded-lg border border-black/15 bg-background px-3 py-2 outline-none focus:border-accent dark:border-white/20";
-const label = "flex flex-col gap-1 text-sm font-medium";
-const uitleg = "text-xs font-normal text-black/55 dark:text-white/55";
 
 export function LichaamstypeFormulier({
   type,
@@ -47,7 +43,7 @@ export function LichaamstypeFormulier({
       {!nieuw && <input type="hidden" name="code" value={type.code} />}
       <input type="hidden" name="beeld_id" value={gekozenFoto?.id ?? ""} />
 
-      <section className="grid gap-4 rounded-2xl border border-black/10 bg-kaart p-5 sm:grid-cols-2 dark:border-white/15">
+      <section className={`${kaartVlak} grid gap-4 sm:grid-cols-2`}>
         <h2 className="text-lg font-semibold sm:col-span-2">Naam en omschrijving</h2>
         {nieuw ? (
           <label className={label}>
@@ -58,9 +54,9 @@ export function LichaamstypeFormulier({
               maxLength={3}
               pattern="[A-Za-z]{1,3}"
               placeholder="bijv. Y"
-              className={`${invoer} uppercase`}
+              className={`${invoerBreed} uppercase`}
             />
-            <span className={uitleg}>
+            <span className={tekstUitleg}>
               1 tot 3 letters. De code komt in de typecodes (bijv. 6Y) en kan later niet meer worden gewijzigd.
             </span>
           </label>
@@ -68,23 +64,23 @@ export function LichaamstypeFormulier({
           <div className={label}>
             Code
             <p className="rounded-lg bg-accent-zacht px-3 py-2 font-mono">{type.code}</p>
-            <span className={uitleg}>Vast: hoort bij de typecodes 1{type.code} t/m 12{type.code}.</span>
+            <span className={tekstUitleg}>Vast: hoort bij de typecodes 1{type.code} t/m 12{type.code}.</span>
           </div>
         )}
         <label className={label}>
           Naam
-          <input name="naam" required value={naam} onChange={(e) => setNaam(e.target.value)} className={invoer} />
-          <span className={uitleg}>Zoals de klant het ziet, bijv. &ldquo;Zandloper&rdquo;.</span>
+          <input name="naam" required value={naam} onChange={(e) => setNaam(e.target.value)} className={invoerBreed} />
+          <span className={tekstUitleg}>Zoals de klant het ziet, bijv. &ldquo;Zandloper&rdquo;.</span>
         </label>
         <label className={label}>
           Ook wel genoemd
-          <input name="alias" defaultValue={type?.alias ?? ""} placeholder="bijv. de Driehoek of de Peer" className={invoer} />
-          <span className={uitleg}>Wordt gebruikt in zinnen als &ldquo;Je hebt het A-silhouet, ook wel …&rdquo;.</span>
+          <input name="alias" defaultValue={type?.alias ?? ""} placeholder="bijv. de Driehoek of de Peer" className={invoerBreed} />
+          <span className={tekstUitleg}>Wordt gebruikt in zinnen als &ldquo;Je hebt het A-silhouet, ook wel …&rdquo;.</span>
         </label>
         <label className={label}>
           Volgorde
-          <input name="volgorde" type="number" min={0} defaultValue={type?.volgorde ?? ""} className={invoer} />
-          <span className={uitleg}>Bepaalt de volgorde in de test, op de website en in de lijsten.</span>
+          <input name="volgorde" type="number" min={0} defaultValue={type?.volgorde ?? ""} className={invoerBreed} />
+          <span className={tekstUitleg}>Bepaalt de volgorde in de test, op de website en in de lijsten.</span>
         </label>
         <label className={`${label} sm:col-span-2`}>
           Korte omschrijving
@@ -93,14 +89,14 @@ export function LichaamstypeFormulier({
             maxLength={160}
             defaultValue={type?.korte_omschrijving ?? ""}
             placeholder="bijv. Schouders en heupen in balans, duidelijke taille."
-            className={invoer}
+            className={invoerBreed}
           />
-          <span className={uitleg}>Eén zin onder het silhouet bij de keuze in de test en op de website.</span>
+          <span className={tekstUitleg}>Eén zin onder het silhouet bij de keuze in de test en op de website.</span>
         </label>
         <label className={`${label} sm:col-span-2`}>
           Uitleg bij de uitslag
-          <textarea name="uitleg" rows={5} defaultValue={type?.uitleg ?? ""} className={`${invoer} leading-relaxed`} />
-          <span className={uitleg}>2–3 zinnen: wat betekent dit figuur voor je kleding. Staat op het uitslagscherm en het PDF-voorblad.</span>
+          <textarea name="uitleg" rows={5} defaultValue={type?.uitleg ?? ""} className={`${invoerBreed} leading-relaxed`} />
+          <span className={tekstUitleg}>2–3 zinnen: wat betekent dit figuur voor je kleding. Staat op het uitslagscherm en het PDF-voorblad.</span>
         </label>
         <label className={`${label} sm:col-span-2`}>
           Kenmerken
@@ -109,9 +105,9 @@ export function LichaamstypeFormulier({
             rows={5}
             defaultValue={type?.kenmerken ?? ""}
             placeholder={"- heupen die breder zijn dan je borstomvang\n- een smalle taille"}
-            className={`${invoer} font-mono text-sm leading-relaxed`}
+            className={`${invoerBreed} font-mono text-sm leading-relaxed`}
           />
-          <span className={uitleg}>Herkenbare kenmerken van dit figuur, één per regel beginnend met &ldquo;- &rdquo;.</span>
+          <span className={tekstUitleg}>Herkenbare kenmerken van dit figuur, één per regel beginnend met &ldquo;- &rdquo;.</span>
         </label>
         <label className="flex items-center gap-2 text-sm font-medium sm:col-span-2">
           <input type="checkbox" name="actief" defaultChecked={type?.actief ?? true} className="h-4 w-4 accent-[var(--accent)]" />
@@ -119,10 +115,10 @@ export function LichaamstypeFormulier({
         </label>
       </section>
 
-      <section className="grid gap-5 rounded-2xl border border-black/10 bg-kaart p-5 sm:grid-cols-[1fr_200px] dark:border-white/15">
+      <section className={`${kaartVlak} grid gap-5 sm:grid-cols-[1fr_200px]`}>
         <div className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Tekening van het silhouet</h2>
-          <p className={uitleg}>
+          <p className={tekstUitleg}>
             Met de schuifjes bepaal je de verhoudingen van de getekende figuur (gebruikt als er geen foto is gekoppeld en op
             het PDF-voorblad).
           </p>
@@ -138,7 +134,7 @@ export function LichaamstypeFormulier({
                 onChange={(e) => setVorm((x) => ({ ...x, [v.sleutel]: Number(e.target.value) }))}
                 className="accent-[var(--accent)]"
               />
-              <span className="text-right tabular-nums text-black/60 dark:text-white/60">{vorm[v.sleutel]}</span>
+              <span className="text-right tabular-nums text-foreground/70">{vorm[v.sleutel]}</span>
             </label>
           ))}
         </div>
@@ -150,13 +146,13 @@ export function LichaamstypeFormulier({
       <FotoKiezer gekozen={gekozenFoto} kies={setGekozenFoto} />
 
       {nieuw && bronnen && bronnen.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+        <section className={`${kaartVlak} flex flex-col gap-2`}>
           <h2 className="text-lg font-semibold">Startinhoud van de hand-outs</h2>
-          <p className={uitleg}>
+          <p className={tekstUitleg}>
             Er worden automatisch 12 adviestypes aangemaakt (één per categorie lengte/gewicht). Kies een bestaand type om de
             teksten en beelden daarvan als startpunt over te nemen, of begin leeg.
           </p>
-          <select name="bron_code" defaultValue="" className={invoer}>
+          <select name="bron_code" defaultValue="" className={invoerBreed}>
             <option value="">Leeg beginnen</option>
             {bronnen.map((b) => (
               <option key={b.code} value={b.code}>
@@ -172,8 +168,8 @@ export function LichaamstypeFormulier({
           role={status.ok ? "status" : "alert"}
           className={`rounded-lg px-4 py-3 text-sm ${
             status.ok
-              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+              ? toon.groen
+              : toon.rood
           }`}
         >
           {status.melding}
@@ -182,7 +178,7 @@ export function LichaamstypeFormulier({
       <div>
         <button
           disabled={bezig}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className={knop}
         >
           {bezig ? "Bezig…" : nieuw ? "Lichaamstype aanmaken" : "Opslaan"}
         </button>
@@ -200,9 +196,9 @@ function FotoKiezer({ gekozen, kies }: { gekozen: FotoKeuze | null; kies: (f: Fo
   const zoekNu = (term: string) => start(async () => setResultaten(await zoekFotos(term)));
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+    <section className={kaart}>
       <h2 className="text-lg font-semibold">Foto of illustratie (optioneel)</h2>
-      <p className={uitleg}>
+      <p className={tekstUitleg}>
         Kies een beeld uit de beeldbank. Het verschijnt in plaats van de tekening bij de keuze in de test en op het
         uitslagscherm. Een nieuw beeld voeg je eerst toe in de{" "}
         <Link href="/admin/beeldbank" target="_blank" className="text-accent underline underline-offset-2">
@@ -218,14 +214,14 @@ function FotoKiezer({ gekozen, kies }: { gekozen: FotoKeuze | null; kies: (f: Fo
             </div>
             <div className="text-sm">
               <p className="font-medium">{gekozen.code}</p>
-              <p className="text-black/55 dark:text-white/55">{gekozen.naam ?? gekozen.omschrijving ?? ""}</p>
-              <button type="button" onClick={() => kies(null)} className="mt-1 text-xs text-red-700 underline dark:text-red-400">
+              <p className="text-foreground/70">{gekozen.naam ?? gekozen.omschrijving ?? ""}</p>
+              <button type="button" onClick={() => kies(null)} className="mt-1 text-xs text-red-700 underline dark:text-red-300">
                 Foto loskoppelen (tekening gebruiken)
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-black/55 dark:text-white/55">Geen foto gekoppeld: de tekening wordt gebruikt.</p>
+          <p className="text-sm text-foreground/70">Geen foto gekoppeld: de tekening wordt gebruikt.</p>
         )}
         <button
           type="button"
@@ -251,7 +247,7 @@ function FotoKiezer({ gekozen, kies }: { gekozen: FotoKeuze | null; kies: (f: Fo
                 }
               }}
               placeholder="Zoek op code, naam of omschrijving (leeg = silhouetten)"
-              className={invoer}
+              className={invoerBreed}
             />
             <button
               type="button"
@@ -262,9 +258,9 @@ function FotoKiezer({ gekozen, kies }: { gekozen: FotoKeuze | null; kies: (f: Fo
             </button>
           </div>
           {bezig ? (
-            <p className="text-sm text-black/55 dark:text-white/55">Zoeken…</p>
+            <p className="text-sm text-foreground/70">Zoeken…</p>
           ) : resultaten.length === 0 ? (
-            <p className="text-sm text-black/55 dark:text-white/55">Niets gevonden.</p>
+            <p className="text-sm text-foreground/70">Niets gevonden.</p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {resultaten.map((r) => (

@@ -17,6 +17,8 @@ import { AdminNav } from "../AdminNav";
 import { ActieFormulier } from "../types/ActieFormulier";
 import { Groeigrafiek } from "./Groeigrafiek";
 import { verwerkWachtrijNu } from "./acties";
+import { kaartVlak, knop, knopSecundair } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 // Ook de verzendronde na het laden (after) en de knop "Wachtrij nu verwerken"
@@ -100,10 +102,10 @@ async function campagneCijfers(supabase: Supabase, id: string): Promise<Campagne
 
 function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
-      <span className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">{titel}</span>
+    <div className={`${kaartVlak} flex flex-col gap-1`}>
+      <span className="text-xs uppercase tracking-wide text-foreground/70">{titel}</span>
       <span className="font-serif text-3xl tabular-nums">{waarde}</span>
-      <span className="text-xs text-black/50 dark:text-white/50">{sub}</span>
+      <span className="text-xs text-foreground/70">{sub}</span>
     </div>
   );
 }
@@ -249,35 +251,25 @@ export default async function NieuwsbriefOverzicht() {
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-6 sm:p-8">
       <AdminNav actief="/admin/nieuwsbrief" />
 
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="font-serif text-2xl">Nieuwsbrief</h1>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/admin/nieuwsbrief/campagnes"
-            className="rounded-full bg-accent px-4 py-2 font-medium text-white hover:opacity-90"
-          >
-            Nieuwe campagne
-          </Link>
-          <Link
-            href="/admin/nieuwsbrief/contacten"
-            className="rounded-full border border-black/15 px-4 py-2 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
-          >
-            Contacten
-          </Link>
-          <Link
-            href="/admin/nieuwsbrief/automatisch"
-            className="rounded-full border border-black/15 px-4 py-2 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
-          >
-            Automatische mails
-          </Link>
-          <Link
-            href="/admin/nieuwsbrief/afleverbaarheid"
-            className="rounded-full border border-black/15 px-4 py-2 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5"
-          >
-            Afleverbaarheid
-          </Link>
-        </div>
-      </div>
+      <AdminKop
+        titel="Nieuwsbrief"
+        acties={
+          <>
+            <Link href="/admin/nieuwsbrief/campagnes" className={knop}>
+              Nieuwe campagne
+            </Link>
+            <Link href="/admin/nieuwsbrief/contacten" className={knopSecundair}>
+              Contacten
+            </Link>
+            <Link href="/admin/nieuwsbrief/automatisch" className={knopSecundair}>
+              Automatische mails
+            </Link>
+            <Link href="/admin/nieuwsbrief/afleverbaarheid" className={knopSecundair}>
+              Afleverbaarheid
+            </Link>
+          </>
+        }
+      />
 
       <section aria-label="Kerncijfers" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kaart
@@ -308,7 +300,7 @@ export default async function NieuwsbriefOverzicht() {
         />
       </section>
 
-      <section className="rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
+      <section className={kaartVlak}>
         <Groeigrafiek reeks={reeks} />
       </section>
 
@@ -320,7 +312,7 @@ export default async function NieuwsbriefOverzicht() {
           </Link>
         </div>
         {recenteCampagnes.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">
+          <p className="text-sm text-foreground/70">
             Nog geen campagnes.{" "}
             <Link href="/admin/nieuwsbrief/campagnes" className="text-accent underline underline-offset-2">
               Maak je eerste nieuwsbrief
@@ -348,12 +340,12 @@ export default async function NieuwsbriefOverzicht() {
                   >
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{c.naam}</span>
-                      <span className="text-xs text-black/50 dark:text-white/50">
+                      <span className="text-xs text-foreground/70">
                         {STATUS_LABEL[c.status] ?? c.status} · {moment}
                       </span>
                     </span>
                     {toonCijfers && (
-                      <span className="tabular-nums text-black/60 dark:text-white/60">
+                      <span className="tabular-nums text-foreground/70">
                         {cf.verzonden} verzonden · {pct(percentage(cf.geopend, cf.verzonden))} geopend ·{" "}
                         {pct(percentage(cf.geklikt, cf.verzonden))} geklikt
                       </span>
@@ -374,7 +366,7 @@ export default async function NieuwsbriefOverzicht() {
           </Link>
         </div>
         {actieveAutos.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">
+          <p className="text-sm text-foreground/70">
             Er staat geen automatische mail aan (bijvoorbeeld een welkomstmail na aanmelding).
           </p>
         ) : (
@@ -389,10 +381,10 @@ export default async function NieuwsbriefOverzicht() {
                   >
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{a.naam}</span>
-                      <span className="text-xs text-black/50 dark:text-white/50">{triggerTekst(a)}</span>
+                      <span className="text-xs text-foreground/70">{triggerTekst(a)}</span>
                     </span>
                     {cf && cf.verzonden > 0 && (
-                      <span className="tabular-nums text-black/60 dark:text-white/60">
+                      <span className="tabular-nums text-foreground/70">
                         {cf.verzonden} verzonden · {pct(percentage(cf.geopend, cf.verzonden))} geopend
                       </span>
                     )}
@@ -406,25 +398,25 @@ export default async function NieuwsbriefOverzicht() {
 
       <section
         aria-labelledby="wachtrij-kop"
-        className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15"
+        className={`${kaartVlak} flex flex-col gap-4`}
       >
         <h2 id="wachtrij-kop" className="text-lg">
           Verzenden
         </h2>
         <dl className="grid grid-cols-3 gap-3 text-sm">
           <div className="flex flex-col">
-            <dt className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">In de wachtrij</dt>
+            <dt className="text-xs uppercase tracking-wide text-foreground/70">In de wachtrij</dt>
             <dd className="font-serif text-2xl tabular-nums">{wachtrij.toLocaleString("nl-NL")}</dd>
           </div>
           <div className="flex flex-col">
-            <dt className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">Vandaag verzonden</dt>
+            <dt className="text-xs uppercase tracking-wide text-foreground/70">Vandaag verzonden</dt>
             <dd className="font-serif text-2xl tabular-nums">
               {verzonden24u.toLocaleString("nl-NL")}
-              <span className="font-sans text-sm text-black/50 dark:text-white/50"> / {maxPerDag} per dag</span>
+              <span className="font-sans text-sm text-foreground/70"> / {maxPerDag} per dag</span>
             </dd>
           </div>
           <div className="flex flex-col">
-            <dt className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">Mislukt</dt>
+            <dt className="text-xs uppercase tracking-wide text-foreground/70">Mislukt</dt>
             <dd className={`font-serif text-2xl tabular-nums ${mislukt > 0 ? "text-red-700 dark:text-red-300" : ""}`}>
               {mislukt.toLocaleString("nl-NL")}
             </dd>
@@ -445,7 +437,7 @@ export default async function NieuwsbriefOverzicht() {
           </p>
         )}
         {mislukt > 0 && (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Bij de campagne zie je wat er misging; daar kun je mislukte mails opnieuw in de wachtrij zetten.
           </p>
         )}
@@ -454,13 +446,13 @@ export default async function NieuwsbriefOverzicht() {
           <button className="rounded-full border border-accent/40 px-4 py-2 text-sm font-medium text-accent hover:bg-accent-zacht disabled:opacity-50">
             Wachtrij nu verwerken
           </button>
-          <span className="text-xs text-black/50 dark:text-white/50">
+          <span className="text-xs text-foreground/70">
             Verstuurt nu maximaal {Math.min(300, ruimte)} mails (ruimte binnen de daglimiet).
           </span>
         </ActieFormulier>
 
         <details className="text-sm">
-          <summary className="cursor-pointer text-black/60 dark:text-white/60">Wanneer worden mails verstuurd?</summary>
+          <summary className="cursor-pointer text-foreground/70">Wanneer worden mails verstuurd?</summary>
           <div className="mt-2 flex flex-col gap-2 text-black/70 dark:text-white/70">
             <p>
               De site draait op een abonnement dat maar één automatische taak per dag toestaat. Daarom gaan mails op

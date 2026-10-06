@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MailEditor, type EditorStaat } from "../../_editor/MailEditor";
 import type { MailInhoud } from "../../_editor/regels";
-import { kaart, knopRand, zacht } from "../../_editor/stijl";
 import { zetActief } from "../acties";
+import { kaart, knopSecundair, tekstZacht, toon } from "@/components/admin/stijl";
 
 function AanUit({ id, staat }: { id: string; staat: EditorStaat }) {
   const router = useRouter();
@@ -29,7 +29,7 @@ function AanUit({ id, staat }: { id: string; staat: EditorStaat }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-lg font-semibold">Status</h2>
-          <p className={`text-sm ${zacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             {staat.actief ? "Deze mail staat aan en wordt automatisch verstuurd." : "Deze mail staat uit; er wordt niets verstuurd."}
           </p>
         </div>
@@ -61,16 +61,16 @@ function AanUit({ id, staat }: { id: string; staat: EditorStaat }) {
       )}
       {staat.gewijzigd && !staat.actief && <p className="text-sm text-amber-800 dark:text-amber-300">Sla je wijzigingen eerst op.</p>}
       {staat.actief && (
-        <p className="text-xs text-black/60 dark:text-white/60">
+        <p className="text-xs text-foreground/70">
           Deze mail staat aan. Iedereen die zich aanmeldt (of een advies krijgt) sinds je hem aanzette, ontvangt hem.
           Wijzigingen gelden voor mails die nog verstuurd moeten worden. Zet je hem uit en weer aan, dan tellen alleen
           nieuwe aanmeldingen (of adviezen) vanaf dat moment.
         </p>
       )}
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         Automatische mails tellen mee voor de daglimiet en worden in dezelfde verzendrondes verstuurd als campagnes.
       </p>
-      <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={`${knopRand} w-fit`}>
+      <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={`${knopSecundair} w-fit`}>
         Rapport bekijken
       </Link>
       {melding && (
@@ -78,8 +78,8 @@ function AanUit({ id, staat }: { id: string; staat: EditorStaat }) {
           role={melding.soort === "fout" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm ${
             melding.soort === "ok"
-              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+              ? toon.groen
+              : toon.rood
           }`}
         >
           {melding.tekst.map((t) => (

@@ -5,9 +5,10 @@ import { mediaMappen, zoekMedia, type ZoekResultaat } from "@/lib/media/beheer";
 import { formatAfmetingen, formatGrootte, leesTypeFilter, normaliseerMap, schoneZoekterm, TYPE_FILTERS } from "@/lib/media/regels";
 import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
-import { invoerKlasse, knopKlein, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
 import { ImporteerKnop, UploadPaneel } from "./MediaOverzicht";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoerBreed, knopKlein, knopSecundair, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -43,13 +44,11 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-8">
       {/* "Media" staat (nog) niet in de navigatie; daarom geen actieve link. */}
       <AdminNav actief="/admin/media" />
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Mediabibliotheek</h1>
-          <p className={`text-sm ${zacht}`}>Alle afbeeldingen voor je website, blog en nieuwsbrief op één plek.</p>
-        </div>
-        <ImporteerKnop />
-      </div>
+      <AdminKop
+        titel="Mediabibliotheek"
+        beschrijving="Alle afbeeldingen voor je website, blog en nieuwsbrief op één plek."
+        acties={<ImporteerKnop />}
+      />
 
       {sp.verwijderd && <Melding soort="ok">De afbeelding is verwijderd.</Melding>}
       {fout && <Melding soort="fout">De mediabibliotheek kon niet worden geladen ({fout}).</Melding>}
@@ -59,11 +58,11 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
       <form method="get" className="flex flex-col gap-2 sm:flex-row sm:items-end" role="search">
         <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-medium text-black/70 dark:text-white/70">
           Zoeken
-          <input type="search" name="q" defaultValue={filters.q} placeholder="Naam of omschrijving…" className={invoerKlasse} />
+          <input type="search" name="q" defaultValue={filters.q} placeholder="Naam of omschrijving…" className={invoerBreed} />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-black/70 dark:text-white/70 sm:w-44">
           Map
-          <select name="map" defaultValue={filters.map} className={invoerKlasse}>
+          <select name="map" defaultValue={filters.map} className={invoerBreed}>
             <option value="">Alle mappen</option>
             {mappen.map((m) => (
               <option key={m} value={m}>
@@ -74,7 +73,7 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-black/70 dark:text-white/70 sm:w-40">
           Type
-          <select name="type" defaultValue={filters.type} className={invoerKlasse}>
+          <select name="type" defaultValue={filters.type} className={invoerBreed}>
             {Object.entries(TYPE_FILTERS).map(([k, f]) => (
               <option key={k} value={k}>
                 {f.label}
@@ -83,9 +82,9 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
           </select>
         </label>
         <div className="flex gap-2">
-          <button className={knopRand}>Zoeken</button>
+          <button className={knopSecundair}>Zoeken</button>
           {gefilterd && (
-            <Link href="/admin/media" className={knopRand}>
+            <Link href="/admin/media" className={knopSecundair}>
               Wissen
             </Link>
           )}
@@ -94,14 +93,14 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
 
       {resultaat && (
         <>
-          <p className={`text-sm ${zacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             {resultaat.totaal === 1 ? "1 afbeelding" : `${resultaat.totaal} afbeeldingen`}
             {gefilterd && " gevonden"}
             {resultaat.paginas > 1 && ` · pagina ${resultaat.pagina} van ${resultaat.paginas}`}
           </p>
 
           {resultaat.items.length === 0 ? (
-            <p className={`rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm dark:border-white/20 ${zacht}`}>
+            <p className={`rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm dark:border-white/20 ${tekstZacht}`}>
               {gefilterd
                 ? "Geen afbeeldingen gevonden met deze zoekopdracht."
                 : "Nog geen afbeeldingen. Upload er hierboven een paar, of importeer de afbeeldingen die je al eerder bij blog en nieuwsbrief hebt geüpload."}
@@ -120,7 +119,7 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
                     </span>
                     <span className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5">
                       <span className="truncate text-xs font-medium group-hover:text-accent">{m.naam}</span>
-                      <span className={`truncate text-[11px] ${zacht}`}>
+                      <span className={`truncate text-[11px] ${tekstZacht}`}>
                         {m.map} · {formatGrootte(m.grootte)}
                         {formatAfmetingen(m.breedte, m.hoogte) && ` · ${formatAfmetingen(m.breedte, m.hoogte)}`}
                       </span>
@@ -140,7 +139,7 @@ export default async function MediaBibliotheek({ searchParams }: { searchParams:
               uitKlasse={`${knopKlein} opacity-30`}
               navKlasse="flex items-center justify-center gap-2"
               tekst="kort"
-              tekstKlasse={`text-xs ${zacht}`}
+              tekstKlasse={`text-xs ${tekstZacht}`}
             />
         </>
       )}

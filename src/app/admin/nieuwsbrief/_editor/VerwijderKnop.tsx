@@ -1,6 +1,6 @@
 "use client";
 
-import { knopKlein } from "./stijl";
+import { knopKlein } from "@/components/admin/stijl";
 
 /** Verwijderknop met bevestiging; roept een server action aan met het id. */
 export function VerwijderKnop({

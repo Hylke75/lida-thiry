@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { meldBrowserFout } from "@/lib/fouten/browser";
+import { knop, knopSecundair } from "@/components/admin/stijl";
 
 /**
  * Foutpagina in het beheer. Toont de foutcode (digest) waarmee de fout in de
@@ -66,13 +67,13 @@ export default function BeheerFout({ error, retry }: { error: Error & { digest?:
         <button
           type="button"
           onClick={() => retry()}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90"
+          className={knop}
         >
           Opnieuw proberen
         </button>
         <Link
           href="/admin"
-          className="rounded-full border border-black/15 px-6 py-2.5 text-sm hover:border-accent/40 dark:border-white/20"
+          className={knopSecundair}
         >
           Naar het overzicht
         </Link>

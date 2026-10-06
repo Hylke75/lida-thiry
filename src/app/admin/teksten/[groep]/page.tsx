@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { leesAlleInhoud } from "@/lib/inhoud/lees";
@@ -6,6 +5,7 @@ import { vindGroep } from "@/lib/inhoud/register";
 import { combineer } from "@/lib/inhoud/schema";
 import { AdminNav } from "../../AdminNav";
 import { SectieEditor } from "../SectieEditor";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +19,18 @@ export default async function GroepPagina({ params }: { params: Promise<{ groep:
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/teksten" />
-      <div className="flex flex-col gap-2">
-        <Link href="/admin/teksten" className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">
-          ← Alle teksten
-        </Link>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Teksten: {groep.titel}</h1>
-          {groep.bekijkUrl && (
+      <AdminKop
+        terug={{ href: "/admin/teksten", label: "Alle teksten" }}
+        titel={`Teksten: ${groep.titel}`}
+        beschrijving={groep.omschrijving}
+        acties={
+          groep.bekijkUrl && (
             <a href={groep.bekijkUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-accent underline underline-offset-4">
               Bekijk op de site ↗
             </a>
-          )}
-        </div>
-        <p className="text-sm text-black/60 dark:text-white/60">{groep.omschrijving}</p>
-      </div>
+          )
+        }
+      />
 
       {groep.secties.length > 1 && (
         <nav aria-label="Onderdelen" className="flex flex-wrap gap-1.5 text-sm">

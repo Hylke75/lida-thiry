@@ -21,7 +21,7 @@ export function OrderRij({ o }: { o: OrderRijGegevens }) {
     >
       <span className="flex min-w-0 flex-col">
         <span className="font-medium">{o.klantnaam}</span>
-        <span className="truncate text-black/50 dark:text-white/50">{o.email}</span>
+        <span className="truncate text-foreground/70">{o.email}</span>
         <span className="text-xs text-black/40 dark:text-white/40">
           {new Date(o.aangemaakt_op).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
         </span>

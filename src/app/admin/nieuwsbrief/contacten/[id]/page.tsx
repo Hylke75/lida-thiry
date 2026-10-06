@@ -12,7 +12,10 @@ import { statusLabel } from "@/lib/admin/status";
 import { AdminNav, Melding } from "../../../AdminNav";
 import { bewaarContact, meldContactAf, meldContactOpnieuwAan, verwijderContact } from "../acties";
 import { BevestigKnop, TagInvoer } from "../Invoer";
-import { StatusLabel, datum, hoofdknop, invoer, kleineKnop } from "../stijl";
+import { StatusLabel } from "../StatusLabel";
+import { invoer, kaart, knop, knopKlein, tekstFout } from "@/components/admin/stijl";
+import { datum } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +54,7 @@ const VERZEND_STATUS: Record<string, string> = {
 function Gegeven({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
-      <dt className="shrink-0 text-black/50 sm:w-40 dark:text-white/50">{label}</dt>
+      <dt className="shrink-0 text-foreground/70 sm:w-40">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
   );
@@ -96,32 +99,31 @@ export default async function ContactPagina({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/nieuwsbrief/contacten" />
-      <header className="flex flex-col gap-2">
-        <Link href={PAD} className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">
-          ← Alle contacten
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="min-w-0 break-all text-2xl font-semibold tracking-tight">{c.email}</h1>
-          <StatusLabel status={c.status} />
-        </div>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          {BRON_LABEL[c.bron]}
-          {formulier && (
-            <>
-              {" "}via formulier{" "}
-              <Link href={`/admin/nieuwsbrief/formulieren/${formulier.id}`} className="underline underline-offset-4 hover:text-accent">
-                {formulier.naam}
-              </Link>
-            </>
-          )}{" "}
-          · toegevoegd op {datum(c.aangemaakt_op)}
-        </p>
-      </header>
+      <AdminKop
+        terug={{ href: PAD, label: "Alle contacten" }}
+        titel={c.email}
+        titelKlasse="break-all"
+        naastTitel={<StatusLabel status={c.status} />}
+        beschrijving={
+          <>
+            {BRON_LABEL[c.bron]}
+            {formulier && (
+              <>
+                {" "}via formulier{" "}
+                <Link href={`/admin/nieuwsbrief/formulieren/${formulier.id}`} className="underline underline-offset-4 hover:text-accent">
+                  {formulier.naam}
+                </Link>
+              </>
+            )}{" "}
+            · toegevoegd op {datum(c.aangemaakt_op)}
+          </>
+        }
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {fout && <Melding soort="fout">{fout}</Melding>}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Gegevens</h2>
         <form action={bewaarContact} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={c.id} />
@@ -134,12 +136,12 @@ export default async function ContactPagina({
             <TagInvoer name="tags" begin={c.tags} suggesties={tags} />
           </div>
           <div>
-            <button className={hoofdknop}>Opslaan</button>
+            <button className={knop}>Opslaan</button>
           </div>
         </form>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Aanmelding en toestemming</h2>
         <dl className="flex flex-col gap-2 text-sm">
           <Gegeven label="Status">
@@ -160,7 +162,7 @@ export default async function ContactPagina({
         {c.status === "aangemeld" || c.status === "onbevestigd" ? (
           <form action={meldContactAf}>
             <input type="hidden" name="id" value={c.id} />
-            <BevestigKnop bevestiging={`${c.email} afmelden voor de nieuwsbrief?`} className={kleineKnop}>
+            <BevestigKnop bevestiging={`${c.email} afmelden voor de nieuwsbrief?`} className={knopKlein}>
               Afmelden
             </BevestigKnop>
           </form>
@@ -175,7 +177,7 @@ export default async function ContactPagina({
           <form action={meldContactOpnieuwAan} className="flex flex-col gap-2 border-t border-black/10 pt-3 text-sm dark:border-white/15">
             <input type="hidden" name="id" value={c.id} />
             {c.status === "gebounced" && (
-              <p className="text-black/60 dark:text-white/60">
+              <p className="text-foreground/70">
                 Mails naar dit adres kwamen niet aan. Controleer eerst of het adres klopt.
               </p>
             )}
@@ -184,18 +186,18 @@ export default async function ContactPagina({
               <span>Deze persoon heeft (opnieuw) toestemming gegeven om de nieuwsbrief te ontvangen.</span>
             </label>
             <div>
-              <button className={kleineKnop}>{c.status === "onbevestigd" ? "Aanmelding bevestigen" : "Opnieuw aanmelden"}</button>
+              <button className={knopKlein}>{c.status === "onbevestigd" ? "Aanmelding bevestigen" : "Opnieuw aanmelden"}</button>
             </div>
           </form>
         )}
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/70">
           Ontvangen mails ({ontvangen.length})
         </h2>
         {ontvangen.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">Nog geen nieuwsbrieven ontvangen.</p>
+          <p className="text-sm text-foreground/70">Nog geen nieuwsbrieven ontvangen.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/5 rounded-lg border border-black/10 bg-kaart text-sm dark:divide-white/10 dark:border-white/15">
             {ontvangen.map((v) => (
@@ -204,10 +206,10 @@ export default async function ContactPagina({
                   <span className="font-medium">
                     {v.campagne?.naam ?? "Verwijderde campagne"}
                     {v.campagne?.soort === "automatisch" && (
-                      <span className="ml-2 text-xs font-normal text-black/50 dark:text-white/50">automatisch</span>
+                      <span className="ml-2 text-xs font-normal text-foreground/70">automatisch</span>
                     )}
                   </span>
-                  <span className="text-xs text-black/50 dark:text-white/50">
+                  <span className="text-xs text-foreground/70">
                     {VERZEND_STATUS[v.status] ?? v.status}
                     {v.verzonden_op ? ` · ${datumTijd(v.verzonden_op)}` : ""}
                   </span>
@@ -219,8 +221,8 @@ export default async function ContactPagina({
                   <span className={v.geklikt_op ? "text-emerald-700 dark:text-emerald-300" : "text-black/40 dark:text-white/40"}>
                     · {v.geklikt_op ? `Geklikt (${v.aantal_kliks}×)` : "Niet geklikt"}
                   </span>
-                  {v.afgemeld_op && <span className="text-red-700 dark:text-red-300">· Afgemeld</span>}
-                  {v.gebounced_op && <span className="text-red-700 dark:text-red-300">· Onbestelbaar</span>}
+                  {v.afgemeld_op && <span className={tekstFout}>· Afgemeld</span>}
+                  {v.gebounced_op && <span className={tekstFout}>· Onbestelbaar</span>}
                 </span>
               </li>
             ))}
@@ -232,11 +234,11 @@ export default async function ContactPagina({
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/70">
           Bestellingen met dit e-mailadres ({bestellingen.length})
         </h2>
         {bestellingen.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">Geen bestellingen.</p>
+          <p className="text-sm text-foreground/70">Geen bestellingen.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/5 rounded-lg border border-black/10 bg-kaart text-sm dark:divide-white/10 dark:border-white/15">
             {bestellingen.map((o) => (
@@ -244,7 +246,7 @@ export default async function ContactPagina({
                 <Link href={`/admin/order/${o.id}`} className="font-medium hover:text-accent hover:underline">
                   {datum(o.aangemaakt_op)}
                 </Link>
-                <span className="text-black/60 dark:text-white/60">
+                <span className="text-foreground/70">
                   {statusLabel(o.status)}
                   {o.toegekend_type ? ` · figuurtype ${o.toegekend_type}` : ""}
                 </span>
@@ -256,21 +258,21 @@ export default async function ContactPagina({
 
       <section className="flex flex-col gap-3 rounded-xl border border-black/10 p-5 dark:border-white/15">
         <h2 className="text-lg font-semibold">Privacy (AVG)</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Bij een inzageverzoek download je alle gegevens die over dit e-mailadres zijn opgeslagen (nieuwsbrief, ontvangen
           mails, kliks, bestellingen en testresultaten). Bij een verzoek om vergeten te worden verwijder je het contact:
           het e-mailadres verdwijnt dan ook uit de verzendgeschiedenis. Bestellingen blijven bestaan vanwege de wettelijke
           bewaarplicht.
         </p>
         <div className="flex flex-wrap gap-2">
-          <a href={`${PAD}/${c.id}/gegevens`} className={kleineKnop}>
+          <a href={`${PAD}/${c.id}/gegevens`} className={knopKlein}>
             Gegevens downloaden (JSON)
           </a>
           <form action={verwijderContact}>
             <input type="hidden" name="id" value={c.id} />
             <BevestigKnop
               bevestiging={`${c.email} definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`}
-              className={`${kleineKnop} border-red-300 text-red-700 dark:border-red-800 dark:text-red-300`}
+              className={`${knopKlein} border-red-300 text-red-700 dark:border-red-800 dark:text-red-300`}
             >
               Contact verwijderen (vergeten)
             </BevestigKnop>

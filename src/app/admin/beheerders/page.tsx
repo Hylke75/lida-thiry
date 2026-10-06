@@ -6,10 +6,10 @@ import { ROL_LABEL, ROL_UITLEG, ROLLEN } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
 import { toonDatumTijd } from "@/lib/datum";
 import { RijActies, RolKeuze, ToevoegFormulier } from "./Formulieren";
+import { kaart } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
-
-const kaart = "flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15";
 
 export default async function BeheerdersPagina({ searchParams }: { searchParams: Promise<{ welkom?: string }> }) {
   const { welkom } = await searchParams;
@@ -25,17 +25,19 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/beheerders" />
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Beheerders</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Wie kan inloggen in dit beheer, en wat mag iedereen. Je eigen wachtwoord en tweestapsverificatie regel je
-          onder{" "}
-          <Link href="/admin/beveiliging" className="underline underline-offset-4">
-            Beveiliging
-          </Link>
-          .
-        </p>
-      </div>
+      <AdminKop
+        titel="Beheerders"
+        beschrijving={
+          <>
+            Wie kan inloggen in dit beheer, en wat mag iedereen. Je eigen wachtwoord en tweestapsverificatie regel je
+            onder{" "}
+            <Link href="/admin/beveiliging" className="underline underline-offset-4">
+              Beveiliging
+            </Link>
+            .
+          </>
+        }
+      />
 
       <section className={kaart}>
         <h2 className="text-lg">Rollen</h2>
@@ -43,7 +45,7 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
           {ROLLEN.map((r) => (
             <div key={r} className="contents">
               <dt className="font-medium">{ROL_LABEL[r]}</dt>
-              <dd className="text-black/60 dark:text-white/60">{ROL_UITLEG[r]}</dd>
+              <dd className="text-foreground/70">{ROL_UITLEG[r]}</dd>
             </div>
           ))}
         </dl>
@@ -58,10 +60,10 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
                 <span className="break-all font-medium">
                   {b.email}
                   {b.gebruiker_id === ik.id && (
-                    <span className="ml-2 font-normal text-black/50 dark:text-white/50">(jij)</span>
+                    <span className="ml-2 font-normal text-foreground/70">(jij)</span>
                   )}
                 </span>
-                <span className="text-xs text-black/50 dark:text-white/50">
+                <span className="text-xs text-foreground/70">
                   {b.tweestap ? "Tweestapsverificatie aan" : "Geen tweestapsverificatie"} · Toegevoegd{" "}
                   {toonDatumTijd(b.aangemaakt_op)} ·{" "}
                   {b.laatstIngelogd ? `laatst ingelogd ${toonDatumTijd(b.laatstIngelogd)}` : "nog nooit ingelogd"}
@@ -96,7 +98,7 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
 
       <section className={kaart}>
         <h2 className="text-lg">Beheerder toevoegen</h2>
-        <div className="flex flex-col gap-1 text-sm text-black/60 dark:text-white/60">
+        <div className="flex flex-col gap-1 text-sm text-foreground/70">
           <p>
             <strong>Nieuw e-mailadres:</strong> de nieuwe beheerder krijgt een e-mail met een uitnodigingslink. Na een
             klik daarop is die ingelogd en kiest die een eigen wachtwoord. De link werkt één keer en is beperkt geldig
@@ -112,7 +114,7 @@ export default async function BeheerdersPagina({ searchParams }: { searchParams:
         <ToevoegFormulier />
       </section>
 
-      <p className="text-xs text-black/50 dark:text-white/50">
+      <p className="text-xs text-foreground/70">
         Verwijderen trekt alleen de toegang tot het beheer in; het account zelf blijft bestaan en kan later weer worden
         toegevoegd. Je kunt jezelf niet verwijderen of je eigen rol wijzigen, en de laatste eigenaar blijft altijd staan.
         Alle wijzigingen hier komen in het logboek.

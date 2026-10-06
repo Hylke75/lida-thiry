@@ -17,7 +17,10 @@ import { BevestigKnop } from "../../nieuwsbrief/contacten/Invoer";
 import { vergeetActie, voegNotitieToeActie } from "../acties";
 import { KopieerKnop } from "../Knoppen";
 import { RelatieFormulier } from "../RelatieFormulier";
-import { BERICHT_STATUS_LABEL, Badges, datum, gevaarKnop, heelZacht, hoofdknop, invoer, kaart, kleineKnop, PAD, zacht } from "../ui";
+import { BERICHT_STATUS_LABEL, Badges, PAD } from "../ui";
+import { invoer, kaart, knop, knopGevaarKlein, knopKlein, tekstZacht } from "@/components/admin/stijl";
+import { datum } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -81,48 +84,47 @@ export default async function RelatiePagina({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <AdminNav actief="/admin/adresboek" />
-      <header className="flex flex-col gap-2">
-        <Link href={PAD} className={`text-sm underline underline-offset-4 ${heelZacht}`}>
-          ← Adresboek
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="min-w-0 break-words text-2xl font-semibold tracking-tight">{naam}</h1>
-          <Badges k={k} />
-        </div>
-        <p className={`text-sm ${zacht}`}>
-          {RELATIE_BRON_LABEL[r.bron]} · in het adresboek sinds {datum(r.aangemaakt_op)}
-          {r.tags.length > 0 && (
-            <>
-              {" · "}
-              {r.tags.map((t) => (
-                <Link key={t} href={`${PAD}?tag=${encodeURIComponent(t)}`} className="mr-1 rounded-full bg-accent-zacht px-2 py-0.5 text-xs text-accent">
-                  {t}
-                </Link>
-              ))}
-            </>
-          )}
-        </p>
-        <div className="flex flex-wrap gap-2">
+      <AdminKop
+        terug={{ href: PAD, label: "Adresboek" }}
+        titel={naam}
+        naastTitel={<Badges k={k} />}
+        beschrijving={
+          <>
+            {RELATIE_BRON_LABEL[r.bron]} · in het adresboek sinds {datum(r.aangemaakt_op)}
+            {r.tags.length > 0 && (
+              <>
+                {" · "}
+                {r.tags.map((t) => (
+                  <Link key={t} href={`${PAD}?tag=${encodeURIComponent(t)}`} className="mr-1 rounded-full bg-accent-zacht px-2 py-0.5 text-xs text-accent">
+                    {t}
+                  </Link>
+                ))}
+              </>
+            )}
+          </>
+        }
+      >
+        <div className="mt-1 flex flex-wrap gap-2">
           {r.email && (
-            <a href={`mailto:${r.email}`} className={kleineKnop}>
+            <a href={`mailto:${r.email}`} className={knopKlein}>
               Mail sturen
             </a>
           )}
           {tel && (
-            <a href={`tel:${tel}`} className={kleineKnop}>
+            <a href={`tel:${tel}`} className={knopKlein}>
               Bel {r.telefoon}
             </a>
           )}
           {adres && (
-            <KopieerKnop tekst={adresMetNaam} className={kleineKnop}>
+            <KopieerKnop tekst={adresMetNaam} className={knopKlein}>
               Adres kopiëren
             </KopieerKnop>
           )}
-          <Link href={`${PAD}/dubbel?a=${r.id}`} className={kleineKnop}>
+          <Link href={`${PAD}/dubbel?a=${r.id}`} className={knopKlein}>
             Samenvoegen met…
           </Link>
         </div>
-      </header>
+      </AdminKop>
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {fout && <Melding soort="fout">{fout}</Melding>}
@@ -146,17 +148,17 @@ export default async function RelatiePagina({
             aria-label="Nieuwe notitie"
             className={invoer}
           />
-          <p className={`text-xs ${heelZacht}`}>Komt bovenaan de notities, met de datum en je naam.</p>
+          <p className={`text-xs ${tekstZacht}`}>Komt bovenaan de notities, met de datum en je naam.</p>
           <div>
-            <button className={hoofdknop}>Notitie toevoegen</button>
+            <button className={knop}>Notitie toevoegen</button>
           </div>
         </form>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className={`text-sm font-semibold uppercase tracking-wide ${heelZacht}`}>Geschiedenis</h2>
+        <h2 className={`text-sm font-semibold uppercase tracking-wide ${tekstZacht}`}>Geschiedenis</h2>
         {!r.email && (
-          <p className={`text-sm ${zacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             Deze relatie heeft geen e-mailadres, dus bestellingen en de nieuwsbrief kunnen niet gekoppeld worden.
           </p>
         )}
@@ -166,7 +168,7 @@ export default async function RelatiePagina({
               {i < tijdlijn.length - 1 && <span aria-hidden className="absolute left-[0.6rem] top-4 bottom-0 w-px bg-black/10 dark:bg-white/15" />}
               <span aria-hidden className={`relative mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${SOORT_STIJL[item.soort].kleur}`} />
               <div className="flex min-w-0 flex-col gap-0.5 text-sm">
-                <span className={`text-xs ${heelZacht}`}>
+                <span className={`text-xs ${tekstZacht}`}>
                   {datumTijd(item.op)} · {SOORT_STIJL[item.soort].label}
                 </span>
                 {item.link ? (
@@ -176,30 +178,30 @@ export default async function RelatiePagina({
                 ) : (
                   <span className="break-words font-medium">{item.titel}</span>
                 )}
-                {item.details.length > 0 && <span className={zacht}>{item.details.join(" · ")}</span>}
+                {item.details.length > 0 && <span className={tekstZacht}>{item.details.join(" · ")}</span>}
               </div>
             </li>
           ))}
         </ol>
         {r.email && g.bestellingen.length === 0 && !g.nieuwsbrief && g.berichten.length === 0 && (
-          <p className={`text-sm ${heelZacht}`}>Nog geen bestellingen, nieuwsbrief of berichten bij dit e-mailadres.</p>
+          <p className={`text-sm ${tekstZacht}`}>Nog geen bestellingen, nieuwsbrief of berichten bij dit e-mailadres.</p>
         )}
       </section>
 
       <section className="flex flex-col gap-3 rounded-xl border border-black/10 p-5 dark:border-white/15">
         <h2 className="text-lg font-semibold">Privacy (AVG)</h2>
-        <p className={`text-sm ${zacht}`}>
+        <p className={`text-sm ${tekstZacht}`}>
           Bij een inzageverzoek download je alles wat over deze persoon is opgeslagen: de gegevens in het adresboek,
           bestellingen en testresultaten, de nieuwsbrief (met ontvangen mails), contactberichten en afspraken.
         </p>
         <div>
-          <a href={`${PAD}/${r.id}/gegevens`} className={kleineKnop}>
+          <a href={`${PAD}/${r.id}/gegevens`} className={knopKlein}>
             Gegevens downloaden (JSON)
           </a>
         </div>
         <form action={vergeetActie} className="flex flex-col gap-2 border-t border-black/10 pt-3 text-sm dark:border-white/15">
           <input type="hidden" name="id" value={r.id} />
-          <p className={zacht}>
+          <p className={tekstZacht}>
             Bij een verzoek om vergeten te worden verwijder je de relatie uit het adresboek. Kies wat er nog meer weg moet.
             Bij afspraken worden naam, e-mailadres, telefoon en opmerkingen altijd gewist (datum en betaling blijven).{" "}
             <strong>Bestellingen en facturen blijven bewaard</strong>: daarvoor geldt een wettelijke bewaarplicht van
@@ -221,7 +223,7 @@ export default async function RelatiePagina({
             </label>
           )}
           <div>
-            <BevestigKnop bevestiging={`${naam} definitief vergeten? Dit kan niet ongedaan worden gemaakt.`} className={`${kleineKnop} ${gevaarKnop}`}>
+            <BevestigKnop bevestiging={`${naam} definitief vergeten? Dit kan niet ongedaan worden gemaakt.`} className={knopGevaarKlein}>
               Vergeten (verwijderen)
             </BevestigKnop>
           </div>

@@ -7,7 +7,7 @@ export function FormulierenKop({ pad }: { pad: { href?: string; label: string }[
     <>
       {/* Valt onder "Nieuwsbrief"; licht "Formulieren" op zodra die link in de navigatie staat. */}
       <AdminNav actief="/admin/nieuwsbrief/formulieren" />
-      <nav aria-label="Kruimelpad" className="flex flex-wrap items-center gap-1 text-sm text-black/55 dark:text-white/55">
+      <nav aria-label="Kruimelpad" className="flex flex-wrap items-center gap-1 text-sm text-foreground/70">
         <Link href="/admin/nieuwsbrief" className="hover:text-accent hover:underline">
           Nieuwsbrief
         </Link>

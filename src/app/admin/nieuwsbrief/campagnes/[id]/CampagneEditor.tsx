@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MailEditor, type EditorStaat } from "../../_editor/MailEditor";
 import type { MailInhoud, TypeKeuze } from "../../_editor/regels";
-import { invoerKlasse, kaart, knopHoofd, knopRand, zacht } from "../../_editor/stijl";
 import { toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/datum";
 import { annuleerPlanning, hervat, kiesWinnaarNu, pauzeer, planIn, verzendNu } from "../acties";
+import { invoerBreed, kaart, knop, knopSecundair, tekstZacht, toon } from "@/components/admin/stijl";
 
 /** A/B-test van de opgeslagen campagne. */
 export interface AbStand {
@@ -92,7 +92,7 @@ function Verzenden({
             </div>
           )}
           {staat.gewijzigd && <p className="text-sm text-amber-800 dark:text-amber-300">Sla je wijzigingen eerst op.</p>}
-          <p className={`text-sm ${zacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             Gaat naar <strong className="text-foreground">{aantalTekst}</strong>. Er gaan maximaal {maxPerDag} mails per dag
             de deur uit (instelling bij Instellingen → Algemeen).
             {meerDagen
@@ -101,7 +101,7 @@ function Verzenden({
           </p>
 
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={nuVerzenden} disabled={!kanVerzenden} className={knopHoofd}>
+            <button type="button" onClick={nuVerzenden} disabled={!kanVerzenden} className={knop}>
               {bezig ? "Bezig…" : "Nu verzenden"}
             </button>
           </div>
@@ -116,18 +116,18 @@ function Verzenden({
                 type="datetime-local"
                 value={moment}
                 onChange={(e) => setMoment(e.target.value)}
-                className={`${invoerKlasse} sm:max-w-60`}
+                className={`${invoerBreed} sm:max-w-60`}
               />
-              <button type="button" disabled={!kanVerzenden || !moment} onClick={() => voerUit(() => planIn(id, moment))} className={`${knopRand} shrink-0`}>
+              <button type="button" disabled={!kanVerzenden || !moment} onClick={() => voerUit(() => planIn(id, moment))} className={`${knopSecundair} shrink-0`}>
                 {status === "ingepland" ? "Nieuw moment opslaan" : "Inplannen"}
               </button>
               {status === "ingepland" && (
-                <button type="button" disabled={bezig} onClick={() => voerUit(() => annuleerPlanning(id))} className={`${knopRand} shrink-0`}>
+                <button type="button" disabled={bezig} onClick={() => voerUit(() => annuleerPlanning(id))} className={`${knopSecundair} shrink-0`}>
                   Inplannen annuleren
                 </button>
               )}
             </div>
-            <p className={`text-xs ${zacht}`}>Het versturen start bij de eerstvolgende verzendronde na dit moment.</p>
+            <p className={`text-xs ${tekstZacht}`}>Het versturen start bij de eerstvolgende verzendronde na dit moment.</p>
           </div>
         </>
       )}
@@ -148,7 +148,7 @@ function Verzenden({
                   voerUit(() => kiesWinnaarNu(id));
                 }
               }}
-              className={knopHoofd}
+              className={knop}
             >
               Kies winnaar nu
             </button>
@@ -172,15 +172,15 @@ function Verzenden({
           </p>
           <div className="flex flex-wrap gap-2">
             {status === "bezig" ? (
-              <button type="button" disabled={bezig} onClick={() => voerUit(() => pauzeer(id))} className={knopRand}>
+              <button type="button" disabled={bezig} onClick={() => voerUit(() => pauzeer(id))} className={knopSecundair}>
                 Pauzeren
               </button>
             ) : (
-              <button type="button" disabled={bezig} onClick={() => voerUit(() => hervat(id))} className={knopHoofd}>
+              <button type="button" disabled={bezig} onClick={() => voerUit(() => hervat(id))} className={knop}>
                 Verder met versturen
               </button>
             )}
-            <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={knopRand}>
+            <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={knopSecundair}>
               Rapport bekijken
             </Link>
           </div>
@@ -190,7 +190,7 @@ function Verzenden({
       {status === "verzonden" && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm">Deze campagne is verzonden.</p>
-          <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={knopHoofd}>
+          <Link href={`/admin/nieuwsbrief/campagnes/${id}/rapport`} className={knop}>
             Rapport bekijken
           </Link>
         </div>
@@ -201,8 +201,8 @@ function Verzenden({
           role={melding.soort === "fout" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm ${
             melding.soort === "ok"
-              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+              ? toon.groen
+              : toon.rood
           }`}
         >
           {melding.tekst.map((t) => (

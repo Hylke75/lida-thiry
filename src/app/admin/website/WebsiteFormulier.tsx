@@ -15,13 +15,9 @@ import {
   valideerSocialUrl,
   type WebsiteSleutel,
 } from "@/lib/website/instellingen";
+import { invoerBreed, kaart, knop, tekstFout, tekstUitleg } from "@/components/admin/stijl";
 
 type Waarden = Record<WebsiteSleutel, string>;
-
-const invoerKlasse =
-  "w-full rounded-lg border border-black/15 bg-kaart px-3 py-2 outline-none focus:border-accent aria-[invalid=true]:border-red-400 dark:border-white/20";
-const kaartKlasse = "flex flex-col gap-5 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15";
-const uitlegKlasse = "text-xs leading-relaxed text-black/50 dark:text-white/50";
 
 function inkorten(tekst: string, max: number): string {
   return tekst.length > max ? `${tekst.slice(0, max - 1).trimEnd()}…` : tekst;
@@ -94,7 +90,7 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
       className="flex flex-col gap-6"
     >
       {/* Naam en omschrijving ------------------------------------------------------ */}
-      <section className={kaartKlasse} aria-labelledby="kop-naam">
+      <section className={kaart} aria-labelledby="kop-naam">
         <h2 id="kop-naam" className="text-lg font-semibold">
           Naam en omschrijving
         </h2>
@@ -108,9 +104,9 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
             maxLength={MAX_NAAM}
             placeholder={STANDAARD_SITE.korteNaam}
             onChange={(e) => zet("site_naam", e.target.value)}
-            className={invoerKlasse}
+            className={invoerBreed}
           />
-          <p className={uitlegKlasse}>
+          <p className={tekstUitleg}>
             Staat bovenaan de site (als er geen logo is), achter elke paginatitel in het tabblad en in zoekresultaten, en in de
             footer. Leeg laten: &lsquo;{STANDAARD_SITE.korteNaam}&rsquo; (en &lsquo;{STANDAARD_SITE.volledigeNaam}&rsquo; in de
             footer en bij delen).
@@ -128,9 +124,9 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
             placeholder={STANDAARD_SITE.omschrijving}
             onChange={(e) => zet("site_omschrijving", e.target.value)}
             aria-describedby="site_omschrijving-uitleg"
-            className={invoerKlasse}
+            className={invoerBreed}
           />
-          <p id="site_omschrijving-uitleg" className={uitlegKlasse}>
+          <p id="site_omschrijving-uitleg" className={tekstUitleg}>
             Eén of twee zinnen over wat bezoekers hier vinden. Google toont ongeveer {ADVIES_OMSCHRIJVING.max} tekens.{" "}
             {omsLengte > 0 && (
               <span
@@ -153,7 +149,7 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
       </section>
 
       {/* Afbeeldingen ------------------------------------------------------------- */}
-      <section className={kaartKlasse} aria-labelledby="kop-beelden">
+      <section className={kaart} aria-labelledby="kop-beelden">
         <h2 id="kop-beelden" className="text-lg font-semibold">
           Logo, favicon en deelafbeelding
         </h2>
@@ -201,12 +197,12 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
       </section>
 
       {/* Social media ------------------------------------------------------------- */}
-      <section className={kaartKlasse} aria-labelledby="kop-social">
+      <section className={kaart} aria-labelledby="kop-social">
         <div className="flex flex-col gap-1">
           <h2 id="kop-social" className="text-lg font-semibold">
             Social media
           </h2>
-          <p className={uitlegKlasse}>Ingevulde netwerken verschijnen als pictogram in de footer. Laat leeg wat je niet gebruikt.</p>
+          <p className={tekstUitleg}>Ingevulde netwerken verschijnen als pictogram in de footer. Laat leeg wat je niet gebruikt.</p>
         </div>
         {SOCIAL_NETWERKEN.map((s) => {
           const u = valideerSocialUrl(s.netwerk, w[s.sleutel]);
@@ -226,10 +222,10 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
                 onChange={(e) => zet(s.sleutel, e.target.value)}
                 aria-invalid={fout ? true : undefined}
                 aria-describedby={fout ? `${s.sleutel}-fout` : undefined}
-                className={invoerKlasse}
+                className={invoerBreed}
               />
               {fout && (
-                <p id={`${s.sleutel}-fout`} className="text-xs text-red-700 dark:text-red-300">
+                <p id={`${s.sleutel}-fout`} className={`text-xs ${tekstFout}`}>
                   {fout}
                 </p>
               )}
@@ -239,19 +235,19 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
       </section>
 
       {/* Voorbeelden -------------------------------------------------------------- */}
-      <section className={kaartKlasse} aria-labelledby="kop-voorbeeld">
+      <section className={kaart} aria-labelledby="kop-voorbeeld">
         <div className="flex flex-col gap-1">
           <h2 id="kop-voorbeeld" className="text-lg font-semibold">
             Zo ziet het eruit
           </h2>
-          <p className={uitlegKlasse}>
+          <p className={tekstUitleg}>
             Een benadering voor de homepage; Google en social media bepalen zelf de precieze weergave. Na het opslaan kan het
             even duren voordat zij de nieuwe gegevens oppikken.
           </p>
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-black/60 dark:text-white/60">In Google</h3>
+          <h3 className="text-sm font-medium text-foreground/70">In Google</h3>
           <div className="rounded-xl bg-white p-4 font-sans text-[#202124] ring-1 ring-black/10">
             <div className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f1f3f4] ring-1 ring-black/5">
@@ -271,7 +267,7 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-black/60 dark:text-white/60">Bij delen op social media</h3>
+          <h3 className="text-sm font-medium text-foreground/70">Bij delen op social media</h3>
           <div className="w-full max-w-md overflow-hidden rounded-xl bg-white font-sans text-[#1c1e21] ring-1 ring-black/10">
             {/* eslint-disable-next-line @next/next/no-img-element -- voorbeeld */}
             <img src={deelbeeld} alt="Voorbeeld van de deelafbeelding" className="aspect-[1200/630] w-full bg-[#f0f2f5] object-cover" />
@@ -300,11 +296,11 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
       <div className="sticky bottom-0 -mx-1 flex items-center gap-3 bg-background/90 px-1 py-3 backdrop-blur">
         <button
           disabled={bezig}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+          className={knop}
         >
           {bezig ? "Bezig met opslaan…" : "Opslaan"}
         </button>
-        {gewijzigd && !bezig && <span className="text-xs text-black/50 dark:text-white/50">Niet-opgeslagen wijzigingen</span>}
+        {gewijzigd && !bezig && <span className="text-xs text-foreground/70">Niet-opgeslagen wijzigingen</span>}
       </div>
     </form>
   );

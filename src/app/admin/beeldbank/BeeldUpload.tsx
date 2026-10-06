@@ -10,6 +10,7 @@ import {
   controleerUpload,
 } from "@/lib/beeldbank-regels";
 import { verwerkBeeld, vraagUploadUrl } from "./acties";
+import { knop, tekstSucces } from "@/components/admin/stijl";
 
 /** Leest de werkelijke afmetingen van een afbeelding in de browser. */
 async function leesAfmetingen(bestand: File): Promise<{ breedte: number; hoogte: number }> {
@@ -122,7 +123,7 @@ export function BeeldUpload({
         type="button"
         disabled={bezig !== null}
         onClick={() => invoer.current?.click()}
-        className="w-fit rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        className={`${knop} w-fit`}
       >
         {bezig ?? label}
       </button>
@@ -137,12 +138,12 @@ export function BeeldUpload({
         </div>
       )}
       {melding && !fouten.length && (
-        <p role="status" className="text-sm text-black/60 dark:text-white/60">
+        <p role="status" className="text-sm text-foreground/70">
           {melding}
         </p>
       )}
       {gelukt && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p role="status" className={`text-sm ${tekstSucces}`}>
           ✓ Het beeld is vervangen. Alle adviestypes gebruiken nu het nieuwe beeld.
         </p>
       )}

@@ -1,8 +1,8 @@
 import { beslismoment, bepaalWinnaar, type AbInstelling, type Variant, type VariantCijfers } from "@/lib/nieuwsbrief/ab-test";
 import { toonPercentage } from "@/lib/nieuwsbrief/rapport";
 import { toonDatumTijd } from "@/lib/datum";
-import { kaart, knopHoofd, zacht } from "../../../_editor/stijl";
 import { kiesWinnaarNuFormulier } from "../../acties";
+import { kaart, knop, tekstZacht } from "@/components/admin/stijl";
 
 function Kolom({
   variant,
@@ -25,29 +25,29 @@ function Kolom({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-semibold dark:bg-white/10">Onderwerp {variant.toUpperCase()}</span>
-        {winnaar && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-white">Winnaar</span>}
-        {!winnaar && leidt && <span className={`text-xs ${zacht}`}>staat voor</span>}
+        {winnaar && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-background">Winnaar</span>}
+        {!winnaar && leidt && <span className={`text-xs ${tekstZacht}`}>staat voor</span>}
       </div>
       <p className="break-words text-sm font-medium">{onderwerp}</p>
       <dl className="grid grid-cols-3 gap-2 text-sm">
         <div>
-          <dt className={`text-xs ${zacht}`}>Verzonden</dt>
+          <dt className={`text-xs ${tekstZacht}`}>Verzonden</dt>
           <dd className="font-semibold tabular-nums">{c.verzonden.toLocaleString("nl-NL")}</dd>
         </div>
         <div>
-          <dt className={`text-xs ${zacht}`}>Geopend</dt>
+          <dt className={`text-xs ${tekstZacht}`}>Geopend</dt>
           <dd className="font-semibold tabular-nums">
-            {c.geopend.toLocaleString("nl-NL")} <span className={`text-xs font-normal ${zacht}`}>{toonPercentage(c.geopend, c.verzonden)}</span>
+            {c.geopend.toLocaleString("nl-NL")} <span className={`text-xs font-normal ${tekstZacht}`}>{toonPercentage(c.geopend, c.verzonden)}</span>
           </dd>
         </div>
         <div>
-          <dt className={`text-xs ${zacht}`}>Geklikt</dt>
+          <dt className={`text-xs ${tekstZacht}`}>Geklikt</dt>
           <dd className="font-semibold tabular-nums">
-            {c.geklikt.toLocaleString("nl-NL")} <span className={`text-xs font-normal ${zacht}`}>{toonPercentage(c.geklikt, c.verzonden)}</span>
+            {c.geklikt.toLocaleString("nl-NL")} <span className={`text-xs font-normal ${tekstZacht}`}>{toonPercentage(c.geklikt, c.verzonden)}</span>
           </dd>
         </div>
       </dl>
-      {c.wachtrij > 0 && <p className={`text-xs ${zacht}`}>Nog {c.wachtrij} in de wachtrij.</p>}
+      {c.wachtrij > 0 && <p className={`text-xs ${tekstZacht}`}>Nog {c.wachtrij} in de wachtrij.</p>}
     </div>
   );
 }
@@ -76,7 +76,7 @@ export function AbTest({
       <h2 id="ab-kop" className="text-lg font-semibold">
         A/B-test onderwerp
       </h2>
-      <p className={`text-sm ${zacht}`}>
+      <p className={`text-sm ${tekstZacht}`}>
         Testgroep: {ab.percentage}% van de doelgroep ({ab.percentage / 2}% per onderwerp), wachttijd {ab.wachtUren} uur.{" "}
         {winnaar
           ? `Onderwerp ${winnaar.toUpperCase()} heeft gewonnen; de rest van de doelgroep kreeg dat onderwerp. Hieronder staan alleen de cijfers van de testgroep.`
@@ -88,14 +88,14 @@ export function AbTest({
         <Kolom variant="a" onderwerp={onderwerpA} c={cijfers.a} winnaar={winnaar === "a"} leidt={!winnaar && voorlopig.reden !== "gelijk" && voorlopig.winnaar === "a"} />
         <Kolom variant="b" onderwerp={ab.onderwerpB} c={cijfers.b} winnaar={winnaar === "b"} leidt={!winnaar && voorlopig.reden !== "gelijk" && voorlopig.winnaar === "b"} />
       </div>
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         De winnaar is het onderwerp met het hoogste percentage unieke opens; bij gelijkspel telt het klikpercentage, en is
         dat ook gelijk, dan wint A.
       </p>
       {kanKiezen && (
         <form action={kiesWinnaarNuFormulier}>
           <input type="hidden" name="id" value={id} />
-          <button className={knopHoofd}>Kies winnaar nu</button>
+          <button className={knop}>Kies winnaar nu</button>
         </form>
       )}
     </section>

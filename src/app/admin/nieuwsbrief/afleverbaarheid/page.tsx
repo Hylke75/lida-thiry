@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { afzenderDomein, beoordeel, totaal, type Controle, type Oordeel } from "@/lib/nieuwsbrief/afleverbaarheid";
 import { zoekDns } from "@/lib/nieuwsbrief/afleverbaarheid-dns";
 import { AdminNav } from "../../AdminNav";
+import { AdminKop } from "@/components/admin/AdminKop";
+import { kaartVlak } from "@/components/admin/stijl";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ function Badge({ oordeel }: { oordeel: Oordeel }) {
 
 function ControleKaart({ c }: { c: Controle }) {
   return (
-    <li className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
+    <li className={`${kaartVlak} flex flex-col gap-2`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-medium">{c.label}</h2>
         <Badge oordeel={c.oordeel} />
@@ -40,18 +41,18 @@ function ControleKaart({ c }: { c: Controle }) {
         <div className="flex flex-col gap-1 rounded-xl bg-black/[0.03] p-3 text-sm dark:bg-white/[0.04]">
           <span className="font-medium">Toevoegen bij je domeinbeheerder:</span>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-            <dt className="text-black/55 dark:text-white/55">Type</dt>
+            <dt className="text-foreground/70">Type</dt>
             <dd className="font-mono">{c.actie.type}</dd>
-            <dt className="text-black/55 dark:text-white/55">Naam</dt>
+            <dt className="text-foreground/70">Naam</dt>
             <dd className="font-mono break-all">{c.actie.naam}</dd>
-            <dt className="text-black/55 dark:text-white/55">Waarde</dt>
+            <dt className="text-foreground/70">Waarde</dt>
             <dd className="font-mono break-all">{c.actie.waarde}</dd>
           </dl>
-          {c.actie.toelichting && <p className="text-xs text-black/55 dark:text-white/55">{c.actie.toelichting}</p>}
+          {c.actie.toelichting && <p className="text-xs text-foreground/70">{c.actie.toelichting}</p>}
         </div>
       )}
       {c.gevonden.length > 0 && (
-        <details className="text-xs text-black/55 dark:text-white/55">
+        <details className="text-xs text-foreground/70">
           <summary className="cursor-pointer">Gevonden in de DNS</summary>
           <ul className="mt-1 flex flex-col gap-0.5 font-mono break-all">
             {c.gevonden.map((g, i) => (
@@ -77,17 +78,11 @@ export default async function Afleverbaarheid() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/nieuwsbrief/afleverbaarheid" />
-      <div className="flex flex-col gap-2">
-        <Link href="/admin/nieuwsbrief" className="text-sm text-accent underline underline-offset-4">
-          ← Nieuwsbrief
-        </Link>
-        <h1 className="font-serif text-2xl">Afleverbaarheid van e-mail</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Om nieuwsbrieven en andere mails in de inbox te laten belanden (en niet in de spam), moet je domein laten zien dat
-          Resend namens jou mag mailen. Dat doe je met een paar records in de DNS, bij de partij waar je domeinnaam staat
-          (bijv. TransIP, Strato of Cloudflare). De precieze waarden vind je in het Resend-dashboard onder Domains.
-        </p>
-      </div>
+      <AdminKop
+        terug={{ href: "/admin/nieuwsbrief", label: "Nieuwsbrief" }}
+        titel="Afleverbaarheid van e-mail"
+        beschrijving="Om nieuwsbrieven en andere mails in de inbox te laten belanden (en niet in de spam), moet je domein laten zien dat Resend namens jou mag mailen. Dat doe je met een paar records in de DNS, bij de partij waar je domeinnaam staat (bijv. TransIP, Strato of Cloudflare). De precieze waarden vind je in het Resend-dashboard onder Domains."
+      />
 
       {afzender.soort === "standaard" && (
         <section className="flex flex-col gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
@@ -118,7 +113,7 @@ export default async function Afleverbaarheid() {
         <>
           <section
             aria-label="Totaaloordeel"
-            className="flex flex-wrap items-center gap-3 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15"
+            className={`${kaartVlak} flex flex-wrap items-center gap-3`}
           >
             <Badge oordeel={totaal(controles)} />
             <p className="min-w-0 flex-1 text-sm">
@@ -135,7 +130,7 @@ export default async function Afleverbaarheid() {
               <ControleKaart key={c.id} c={c} />
             ))}
           </ul>
-          <p className="text-xs text-black/50 dark:text-white/50">
+          <p className="text-xs text-foreground/70">
             Net iets aangepast? DNS-wijzigingen zijn soms pas na een paar minuten tot enkele uren overal zichtbaar. Ververs
             deze pagina om opnieuw te controleren.
           </p>

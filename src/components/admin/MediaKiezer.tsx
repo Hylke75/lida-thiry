@@ -6,6 +6,7 @@ import { zoekInMedia } from "@/lib/media/acties";
 import { formatAfmetingen, MAP_SUGGESTIES, normaliseerMap, STANDAARD_MAP, type MediaItem, type MediaSoort } from "@/lib/media/regels";
 import { Afbeelding } from "@/components/Afbeelding";
 import { MediaUploader } from "./MediaUploader";
+import { invoerBreed, knop, knopSecundair } from "@/components/admin/stijl";
 
 /** Wat de kiezer teruggeeft. */
 interface GekozenMedia {
@@ -35,10 +36,6 @@ export interface MediaKiezerProps {
   disabled?: boolean;
 }
 
-const KNOP =
-  "w-fit rounded-full border border-black/15 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-40 dark:border-white/20 dark:hover:bg-white/5";
-const INVOER =
-  "w-full min-w-0 rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
 const PER_PAGINA = 24;
 
 /**
@@ -53,21 +50,21 @@ export function MediaKiezer({
   accept = "afbeelding",
   map = STANDAARD_MAP,
   knopTekst = "Kies uit mediabibliotheek",
-  knopKlasse = KNOP,
+  knopKlasse = knopSecundair,
   titel = "Afbeelding kiezen",
   disabled,
 }: MediaKiezerProps) {
   const [open, setOpen] = useState(false);
-  const knop = useRef<HTMLButtonElement>(null);
+  const knopRef = useRef<HTMLButtonElement>(null);
 
   const sluit = useCallback(() => {
     setOpen(false);
-    knop.current?.focus();
+    knopRef.current?.focus();
   }, []);
 
   return (
     <>
-      <button ref={knop} type="button" disabled={disabled} onClick={() => setOpen(true)} className={knopKlasse} aria-haspopup="dialog">
+      <button ref={knopRef} type="button" disabled={disabled} onClick={() => setOpen(true)} className={knopKlasse} aria-haspopup="dialog">
         {knopTekst}
       </button>
       {open &&
@@ -175,7 +172,7 @@ function KiezerDialoog({
   }
 
   const tabKlasse = (actief: boolean) =>
-    `rounded-full px-3 py-1.5 text-sm ${actief ? "bg-accent-zacht font-medium text-accent" : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"}`;
+    `rounded-full px-3 py-1.5 text-sm ${actief ? "bg-accent-zacht font-medium text-accent" : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"}`;
 
   return (
     <div
@@ -220,9 +217,9 @@ function KiezerDialoog({
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Zoek op naam of omschrijving…"
                 aria-label="Zoeken"
-                className={INVOER}
+                className={invoerBreed}
               />
-              <select value={filterMap} onChange={(e) => setFilterMap(e.target.value)} aria-label="Map" className={`${INVOER} sm:w-48`}>
+              <select value={filterMap} onChange={(e) => setFilterMap(e.target.value)} aria-label="Map" className={`${invoerBreed} sm:w-48`}>
                 <option value="">Alle mappen</option>
                 {mappen.map((m) => (
                   <option key={m} value={m}>
@@ -234,7 +231,7 @@ function KiezerDialoog({
             <div className="min-h-40 flex-1 overflow-y-auto px-4 pb-3">
               {fout && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">{fout}</p>}
               {!laden && !fout && items.length === 0 && (
-                <p className="py-8 text-center text-sm text-black/55 dark:text-white/55">
+                <p className="py-8 text-center text-sm text-foreground/70">
                   {q || filterMap ? "Niets gevonden." : "Nog geen afbeeldingen. "}
                   <button type="button" className="text-accent underline underline-offset-2" onClick={() => setTab("uploaden")}>
                     Upload er een
@@ -267,17 +264,17 @@ function KiezerDialoog({
                   );
                 })}
               </ul>
-              {laden && <p className="py-4 text-center text-sm text-black/55 dark:text-white/55">Laden…</p>}
+              {laden && <p className="py-4 text-center text-sm text-foreground/70">Laden…</p>}
               {!laden && pagina < paginas && (
                 <div className="flex justify-center pt-3">
-                  <button type="button" onClick={() => void laad(pagina + 1, true)} className={KNOP}>
+                  <button type="button" onClick={() => void laad(pagina + 1, true)} className={knopSecundair}>
                     Meer laden
                   </button>
                 </div>
               )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/10 px-4 py-3 dark:border-white/15">
-              <p className="min-w-0 truncate text-sm text-black/60 dark:text-white/60">
+              <p className="min-w-0 truncate text-sm text-foreground/70">
                 {gekozen ? (
                   <>
                     <span className="font-medium text-foreground">{gekozen.naam}</span>
@@ -288,14 +285,14 @@ function KiezerDialoog({
                 )}
               </p>
               <div className="flex gap-2">
-                <button type="button" onClick={onSluit} className={KNOP}>
+                <button type="button" onClick={onSluit} className={knopSecundair}>
                   Annuleren
                 </button>
                 <button
                   type="button"
                   disabled={!gekozen}
                   onClick={() => gekozen && onKies(gekozen)}
-                  className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+                  className={knop}
                 >
                   Gebruiken
                 </button>
@@ -311,7 +308,7 @@ function KiezerDialoog({
                 value={uploadMap}
                 onChange={(e) => setUploadMap(e.target.value)}
                 onBlur={() => setUploadMap(normaliseerMap(uploadMap) ?? map)}
-                className={INVOER}
+                className={invoerBreed}
               />
               <datalist id={`${titelId}-mappen`}>
                 {[...new Set([...MAP_SUGGESTIES, ...mappen])].map((m) => (
@@ -333,7 +330,7 @@ function KiezerDialoog({
                 }
               }}
             />
-            <p className="text-xs text-black/55 dark:text-white/55">
+            <p className="text-xs text-foreground/70">
               Eén bestand wordt na het uploaden meteen gekozen. Bij meerdere bestanden kies je daarna zelf in de bibliotheek. Pas de omschrijving (alt-tekst) aan in de
               mediabibliotheek of in het veld van je editor.
             </p>

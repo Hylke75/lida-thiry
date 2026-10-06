@@ -1,9 +1,10 @@
 import { STATUS_LABELS, type BeeldStatus } from "@/lib/beeldbank-beheer";
+import { toon } from "@/components/admin/stijl";
 
 const STATUS_KLASSE: Record<BeeldStatus, string> = {
-  origineel: "bg-black/5 text-black/70 dark:bg-white/10 dark:text-white/70",
-  vervangen: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300",
-  goedgekeurd: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+  origineel: toon.grijs,
+  vervangen: toon.blauw,
+  goedgekeurd: toon.groen,
 };
 
 export function StatusBadge({ status }: { status: string }) {

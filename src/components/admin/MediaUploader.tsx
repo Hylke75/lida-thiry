@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { MEDIA_MAX_BYTES, SOORT_MIMES, SOORT_UITLEG, formatGrootte, type MediaItem, type MediaSoort } from "@/lib/media/regels";
 import { uploadNaarMedia } from "./mediaUpload";
+import { tekstFout } from "@/components/admin/stijl";
 
 interface Regel {
   sleutel: string;
@@ -99,7 +100,7 @@ export function MediaUploader({
           ⬆️
         </span>
         <span className="font-medium">{meerdere ? "Sleep afbeeldingen hierheen" : "Sleep een afbeelding hierheen"}</span>
-        <span className="text-black/55 dark:text-white/55">
+        <span className="text-foreground/70">
           of <span className="text-accent underline underline-offset-2">kies {meerdere ? "bestanden" : "een bestand"}</span> · {SOORT_UITLEG[soort]}, max.{" "}
           {formatGrootte(MEDIA_MAX_BYTES)}
         </span>
@@ -119,7 +120,7 @@ export function MediaUploader({
 
       {regels.length > 0 && (
         <div className="flex flex-col gap-2" aria-live="polite">
-          <p className="text-xs text-black/55 dark:text-white/55">
+          <p className="text-xs text-foreground/70">
             {bezig ? "Bezig met uploaden…" : `${aantalKlaar} van ${regels.length} geüpload.`}
           </p>
           <ul className="flex flex-col gap-2">
@@ -132,8 +133,8 @@ export function MediaUploader({
                       r.status === "fout"
                         ? "text-red-700 dark:text-red-300"
                         : r.status === "klaar"
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-black/55 dark:text-white/55"
+                          ? "text-emerald-700 dark:text-emerald-300"
+                          : "text-foreground/70"
                     }`}
                   >
                     {r.status === "wacht" && "Wacht…"}
@@ -154,7 +155,7 @@ export function MediaUploader({
                     <div className="h-full bg-accent transition-[width]" style={{ width: `${Math.round(r.voortgang * 100)}%` }} />
                   </div>
                 )}
-                {r.fout && <p className="text-xs text-red-700 dark:text-red-300">{r.fout}</p>}
+                {r.fout && <p className={`text-xs ${tekstFout}`}>{r.fout}</p>}
               </li>
             ))}
           </ul>

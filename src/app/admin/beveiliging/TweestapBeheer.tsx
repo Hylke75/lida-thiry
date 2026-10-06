@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { factorNaam, normaliseerCode } from "@/lib/mfa-regels";
 import { meldTweestapWijziging } from "./acties";
+import { invoerBreed, knop, knopKlein, tekstFout, tekstSucces } from "@/components/admin/stijl";
 
 interface Factor {
   id: string;
@@ -19,13 +20,6 @@ interface Koppeling {
   qr: string;
   geheim: string;
 }
-
-const invoer =
-  "w-full min-w-0 rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const hoofdknop =
-  "rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50";
-const kleineKnop =
-  "rounded-full border border-black/15 px-3 py-1 text-xs hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/5";
 
 function datum(iso: string): string {
   return new Date(iso).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
@@ -144,17 +138,17 @@ export function TweestapBeheer({ verplicht }: { verplicht: boolean }) {
     router.refresh();
   }
 
-  if (factoren === null) return <p className="text-sm text-black/50 dark:text-white/50">Laden…</p>;
+  if (factoren === null) return <p className="text-sm text-foreground/70">Laden…</p>;
 
   return (
     <div className="flex flex-col gap-4">
       {melding && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
+        <p role="status" className={`text-sm ${tekstSucces}`}>
           ✓ {melding}
         </p>
       )}
       {fout && (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+        <p role="alert" className={`text-sm ${tekstFout}`}>
           {fout}
         </p>
       )}
@@ -165,16 +159,16 @@ export function TweestapBeheer({ verplicht }: { verplicht: boolean }) {
             <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span>
                 <span className="font-medium">{f.friendly_name ?? "Authenticator-app"}</span>
-                <span className="text-black/50 dark:text-white/50"> · gekoppeld {datum(f.created_at)}</span>
+                <span className="text-foreground/70"> · gekoppeld {datum(f.created_at)}</span>
               </span>
-              <button type="button" className={`${kleineKnop} text-red-700 dark:text-red-300`} disabled={bezig} onClick={() => verwijder(f)}>
+              <button type="button" className={`${knopKlein} text-red-700 dark:text-red-300`} disabled={bezig} onClick={() => verwijder(f)}>
                 Verwijderen
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-black/60 dark:text-white/60">Je hebt nog geen authenticator-app gekoppeld.</p>
+        <p className="text-sm text-foreground/70">Je hebt nog geen authenticator-app gekoppeld.</p>
       )}
 
       {koppeling ? (
@@ -186,7 +180,7 @@ export function TweestapBeheer({ verplicht }: { verplicht: boolean }) {
           {/* QR-code als data-URL (SVG) van Supabase; geen beeldoptimalisatie nodig. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={koppeling.qr} alt="QR-code voor je authenticator-app" width={180} height={180} className="rounded-lg bg-white p-2" />
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Lukt scannen niet? Voer dan deze sleutel handmatig in:
             <code className="mt-1 block break-all rounded bg-black/5 px-2 py-1 font-mono text-xs dark:bg-white/10">{koppeling.geheim}</code>
           </p>
@@ -202,14 +196,14 @@ export function TweestapBeheer({ verplicht }: { verplicht: boolean }) {
               pattern="[0-9 \-]*"
               maxLength={9}
               required
-              className={`${invoer} max-w-40 font-mono tracking-widest`}
+              className={`${invoerBreed} max-w-40 font-mono tracking-widest`}
             />
           </label>
           <div className="flex flex-wrap gap-2">
-            <button className={hoofdknop} disabled={bezig}>
+            <button className={knop} disabled={bezig}>
               {bezig ? "Bezig…" : "Bevestigen"}
             </button>
-            <button type="button" className={kleineKnop} disabled={bezig} onClick={annuleer}>
+            <button type="button" className={knopKlein} disabled={bezig} onClick={annuleer}>
               Annuleren
             </button>
           </div>
@@ -223,10 +217,10 @@ export function TweestapBeheer({ verplicht }: { verplicht: boolean }) {
               onChange={(e) => setNaam(e.target.value)}
               maxLength={40}
               placeholder={geverifieerd.length ? "bijv. Reservetelefoon" : "bijv. Telefoon van Lida"}
-              className={invoer}
+              className={invoerBreed}
             />
           </label>
-          <button type="button" className={hoofdknop} disabled={bezig} onClick={begin}>
+          <button type="button" className={knop} disabled={bezig} onClick={begin}>
             {bezig ? "Bezig…" : geverifieerd.length ? "Nog een app koppelen" : "App koppelen"}
           </button>
         </div>

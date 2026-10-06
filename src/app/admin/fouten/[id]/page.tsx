@@ -9,9 +9,10 @@ import type { FoutRij } from "@/lib/fouten/registreer";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { AdminNav, Melding } from "../../AdminNav";
 import { BevestigKnop } from "../../berichten/Knoppen";
-import { datumTijd, gevaarKnop, hoofdknop, kleineKnop } from "../../berichten/stijl";
 import { heropen, markeerOpgelost, verwijderFout } from "../acties";
-import { BRON_KLEUR } from "../stijl";
+import { BRON_KLEUR } from "../bronKleur";
+import { badge, knop, knopGevaarKlein, knopKlein, toon } from "@/components/admin/stijl";
+import { datumTijd } from "@/lib/datum";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Fout · Beheer" };
@@ -21,7 +22,7 @@ const PAD = "/admin/fouten";
 function Gegeven({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
-      <dt className="shrink-0 text-black/50 sm:w-36 dark:text-white/50">{label}</dt>
+      <dt className="shrink-0 text-foreground/70 sm:w-36">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
   );
@@ -57,7 +58,7 @@ export default async function FoutPagina({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/fouten" />
-      <Link href={PAD} className="text-sm text-black/60 underline underline-offset-4 dark:text-white/60">
+      <Link href={PAD} className="text-sm text-foreground/70 underline underline-offset-4">
         ← Alle fouten
       </Link>
 
@@ -66,13 +67,13 @@ export default async function FoutPagina({
 
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className={`rounded-full px-2 py-0.5 text-xs ${BRON_KLEUR[f.bron] ?? BRON_KLEUR.test}`}>
+          <span className={`${badge} ${BRON_KLEUR[f.bron] ?? BRON_KLEUR.test}`}>
             {BRON_LABEL[f.bron as FoutBron] ?? f.bron}
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-xs ${
               f.opgelost
-                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                ? toon.groen
                 : "bg-accent-zacht text-accent"
             }`}
           >
@@ -92,7 +93,7 @@ export default async function FoutPagina({
         </Gegeven>
         <Gegeven label="Laatste mail">{f.gemeld_op ? datumTijd(f.gemeld_op) : "—"}</Gegeven>
         <Gegeven label="Vingerafdruk">
-          <code className="font-mono text-xs text-black/50 dark:text-white/50">{f.vingerafdruk}</code>
+          <code className="font-mono text-xs text-foreground/70">{f.vingerafdruk}</code>
         </Gegeven>
       </dl>
 
@@ -112,9 +113,9 @@ export default async function FoutPagina({
             {f.stack}
           </pre>
         ) : (
-          <p className="text-sm text-black/50 dark:text-white/50">Geen stack trace beschikbaar.</p>
+          <p className="text-sm text-foreground/70">Geen stack trace beschikbaar.</p>
         )}
-        <p className="text-xs text-black/50 dark:text-white/50">
+        <p className="text-xs text-foreground/70">
           Meer context staat in de serverlogs (Vercel → Logs); zoek daar op de foutcode of het tijdstip.
         </p>
       </section>
@@ -122,15 +123,15 @@ export default async function FoutPagina({
       <div className="flex flex-wrap items-center gap-3">
         <form action={f.opgelost ? heropen : markeerOpgelost}>
           <input type="hidden" name="id" value={f.id} />
-          <button className={hoofdknop}>{f.opgelost ? "Heropen" : "Markeer als opgelost"}</button>
+          <button className={knop}>{f.opgelost ? "Heropen" : "Markeer als opgelost"}</button>
         </form>
         <form action={verwijderFout}>
           <input type="hidden" name="id" value={f.id} />
-          <BevestigKnop bevestiging="Deze fout verwijderen? Komt hij terug, dan verschijnt hij als nieuwe fout." className={gevaarKnop}>
+          <BevestigKnop bevestiging="Deze fout verwijderen? Komt hij terug, dan verschijnt hij als nieuwe fout." className={knopGevaarKlein}>
             Verwijderen
           </BevestigKnop>
         </form>
-        <Link href={PAD} className={kleineKnop}>
+        <Link href={PAD} className={knopKlein}>
           Terug naar de lijst
         </Link>
       </div>
