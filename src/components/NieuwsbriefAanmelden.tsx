@@ -13,21 +13,27 @@ export type NieuwsbriefAanmeldTeksten = SectieWaarden<typeof NIEUWSBRIEF_AANMELD
 export function NieuwsbriefAanmelden({
   teksten,
   toestemming,
+  weergave = "standaard",
 }: {
   teksten: NieuwsbriefAanmeldTeksten;
   toestemming: ReactNode;
+  /** "paneel": de homepage-variant (tekst en formulier naast elkaar). */
+  weergave?: "standaard" | "paneel";
 }) {
   return (
     <NieuwsbriefFormulier
       titel={teksten.titel}
       tekst={<p>{teksten.tekst}</p>}
-      naamVeld="optioneel"
+      // Op de homepage (paneel) alleen het e-mailadres, zoals in het ontwerp; de naam is toch optioneel.
+      naamVeld={weergave === "paneel" ? "verborgen" : "optioneel"}
       naamLabel={teksten.naam_label}
       emailLabel={teksten.email_label}
       knop={teksten.knop}
       succes={teksten.succes}
       fout={teksten.fout}
       toestemming={toestemming}
+      weergave={weergave}
+      bovenschrift={weergave === "paneel" ? teksten.bovenschrift : undefined}
     />
   );
 }

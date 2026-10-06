@@ -23,6 +23,10 @@ export interface NieuwsbriefFormulierProps {
   kop?: "h1" | "h2";
   /** Voorbeeld in het beheer: verstuurt niets. */
   voorbeeld?: boolean;
+  /** "paneel": tekst en formulier naast elkaar met pil-velden (homepage); standaard: gecentreerd blok. */
+  weergave?: "standaard" | "paneel";
+  /** Klein label boven de titel (alleen bij "paneel"). */
+  bovenschrift?: string;
 }
 
 const veld =
@@ -46,6 +50,8 @@ export function NieuwsbriefFormulier({
   formulier,
   kop = "h2",
   voorbeeld = false,
+  weergave = "standaard",
+  bovenschrift,
 }: NieuwsbriefFormulierProps) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
@@ -87,6 +93,89 @@ export function NieuwsbriefFormulier({
   const Kop = kop;
   const metNaam = naamVeld !== "verborgen";
 
+  // Honeypot tegen spambots: onzichtbaar voor mensen en schermlezers.
+  const honeypot = (
+    <input
+      type="text"
+      name="website"
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
+    />
+  );
+
+  if (weergave === "paneel") {
+    // Nieuwsbriefpaneel van de homepage (docs/ontwerp: .newsletter-inner): tekst
+    // links, formulier rechts; pil-velden met (verborgen) labels.
+    const pil =
+      "min-h-[54px] w-full min-w-0 rounded-full border border-[rgba(47,36,65,.2)] bg-white px-5 text-ink outline-none placeholder:text-ink-soft focus:border-berry focus:shadow-[0_0_0_3px_rgba(111,45,89,.1)] focus-visible:outline-none";
+    return (
+      <div className="grid items-center gap-[44px] desktop:grid-cols-2">
+        <div>
+          {bovenschrift && (
+            <p className="mt-0 mb-[14px] text-[12px] font-extrabold tracking-[0.13em] text-berry uppercase">{bovenschrift}</p>
+          )}
+          {titel && (
+            <Kop className="mt-0 mb-[10px] font-serif text-[39px] leading-[1.02] font-normal tracking-[-0.02em] tablet:text-[clamp(38px,4.4vw,58px)]">
+              {titel}
+            </Kop>
+          )}
+          {tekst && <div className="text-ink-soft [&_a]:text-berry [&_a]:underline [&_p]:m-0">{tekst}</div>}
+        </div>
+        {gelukt ? (
+          <div role="status">
+            <p className="m-0 rounded-ontwerp-sm bg-white px-5 py-4 whitespace-pre-line">{succes}</p>
+          </div>
+        ) : (
+          <form onSubmit={verstuur} className="relative flex flex-col gap-3">
+            {honeypot}
+            <div className="flex flex-col gap-[10px] tablet:flex-row">
+              {metNaam && (
+                <label className="tablet:w-[38%] tablet:shrink-0">
+                  <span className="sr-only">{naamLabel}</span>
+                  <input
+                    name="naam"
+                    autoComplete="given-name"
+                    maxLength={120}
+                    required={naamVeld === "verplicht"}
+                    placeholder={naamLabel}
+                    className={pil}
+                  />
+                </label>
+              )}
+              <label className="flex-1">
+                <span className="sr-only">{emailLabel}</span>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  maxLength={254}
+                  placeholder="jouw@email.nl"
+                  className={pil}
+                />
+              </label>
+              <button
+                disabled={bezig}
+                className="inline-flex min-h-[52px] w-full shrink-0 cursor-pointer items-center justify-center gap-[10px] self-center rounded-full border border-berry bg-berry px-[22px] text-[14px] font-bold text-white transition-[transform,box-shadow] duration-[180ms] hover:shadow-[0_12px_30px_rgba(111,45,89,.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry disabled:opacity-60 motion-safe:hover:-translate-y-0.5 tablet:w-auto"
+              >
+                {bezig ? "Bezig…" : knop}
+                {!bezig && <span aria-hidden="true">→</span>}
+              </button>
+            </div>
+            {fout && (
+              <p role="alert" className="m-0 rounded-ontwerp-sm bg-white px-4 py-3 text-sm text-red-800">
+                {fout}
+              </p>
+            )}
+            <div className="text-[12px] leading-[1.5] text-ink-soft [&_a]:text-berry [&_a]:underline [&_p]:m-0">{toestemming}</div>
+          </form>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4 text-center">
       {titel && (
@@ -108,15 +197,7 @@ export function NieuwsbriefFormulier({
         </div>
       ) : (
         <form onSubmit={verstuur} className="mt-2 flex flex-col gap-3 text-left">
-          {/* Honeypot tegen spambots: onzichtbaar voor mensen en schermlezers. */}
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
-          />
+          {honeypot}
           <div className={metNaam ? "grid gap-3 sm:grid-cols-[1fr_1.4fr]" : "grid gap-3"}>
             {metNaam && (
               <label className="flex flex-col gap-1 text-sm">

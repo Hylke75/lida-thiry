@@ -2,20 +2,37 @@
 // als JSON in de instelling homepage_indeling, bijvoorbeeld
 // [{ "blok": "stappen", "zichtbaar": true }, ...]. Puur, zodat het te testen is.
 
+/**
+ * Alle blokken in de standaardvolgorde. De eerste acht volgen het ontwerp
+ * (docs/ontwerp, StoryBrand: resultaat → routes → probleem → plan → gids →
+ * bewijs → zelf ontdekken → nieuwsbrief). Daarna de veelgestelde vragen
+ * (zichtbaar: goed voor bezoekers en zoekmachines) en drie oudere blokken die
+ * standaard uit staan maar in het beheer aan te zetten zijn.
+ */
 export const HOMEPAGE_BLOKKEN = [
   "hero",
+  "diensten",
+  "probleem",
   "stappen",
-  "figuurtypes",
-  "advies",
   "over",
   "ervaringen",
   "blog",
   "nieuwsbrief",
   "vragen",
+  "figuurtypes",
+  "advies",
   "afsluiting",
 ] as const;
 
 export type HomepageBlok = (typeof HOMEPAGE_BLOKKEN)[number];
+
+/** Blokken die standaard verborgen zijn (niet in het ontwerp, wel beschikbaar). */
+const STANDAARD_VERBORGEN: ReadonlySet<HomepageBlok> = new Set(["figuurtypes", "advies", "afsluiting"]);
+
+/** Of een blok zichtbaar is zolang er niets is opgeslagen. */
+export function standaardZichtbaar(blok: HomepageBlok): boolean {
+  return !STANDAARD_VERBORGEN.has(blok);
+}
 
 export interface IndelingItem {
   blok: HomepageBlok;
@@ -38,6 +55,12 @@ export const BLOK_INFO: Readonly<Record<HomepageBlok, BlokInfo>> = {
     uitleg: "Staat altijd bovenaan en is altijd zichtbaar.",
     tekstenHref: tekst("website", "website.hero"),
   },
+  diensten: {
+    naam: "Adviesroutes (drie kaarten)",
+    uitleg: "Figuurtest, persoonlijk advies en cadeaubon, met prijs en link.",
+    tekstenHref: tekst("website", "website.diensten"),
+  },
+  probleem: { naam: "Herken je dit? (probleem en oplossing)", tekstenHref: tekst("website", "website.probleem") },
   stappen: { naam: "Zo werkt het", tekstenHref: tekst("website", "website.stappen") },
   figuurtypes: { naam: "De figuurtypes", tekstenHref: tekst("website", "website.figuurtypes") },
   advies: { naam: "Wat zit er in je advies", tekstenHref: tekst("website", "website.advies") },
@@ -53,7 +76,11 @@ export const BLOK_INFO: Readonly<Record<HomepageBlok, BlokInfo>> = {
     tekstenHref: tekst("website", "website.blog"),
   },
   nieuwsbrief: { naam: "Aanmelden voor de nieuwsbrief", tekstenHref: tekst("nieuwsbrief", "nieuwsbrief.aanmelden") },
-  vragen: { naam: "Veelgestelde vragen", tekstenHref: tekst("website", "website.vragen") },
+  vragen: {
+    naam: "Veelgestelde vragen",
+    uitleg: "Zichtbaar? Dan staan de vragen ook als gestructureerde gegevens voor zoekmachines in de pagina.",
+    tekstenHref: tekst("website", "website.vragen"),
+  },
   afsluiting: { naam: "Afsluiting onderaan (met knop)", tekstenHref: tekst("website", "website.afsluiting") },
 };
 
@@ -61,15 +88,17 @@ function isHomepageBlok(w: unknown): w is HomepageBlok {
   return typeof w === "string" && (HOMEPAGE_BLOKKEN as readonly string[]).includes(w);
 }
 
-/** De standaardindeling: alle blokken zichtbaar, in de vaste volgorde. */
+/** De standaardindeling: de vaste volgorde, met de oudere extra blokken verborgen. */
 export function standaardIndeling(): IndelingItem[] {
-  return HOMEPAGE_BLOKKEN.map((blok) => ({ blok, zichtbaar: true }));
+  return HOMEPAGE_BLOKKEN.map((blok) => ({ blok, zichtbaar: standaardZichtbaar(blok) }));
 }
 
 /**
  * Maakt van een opgeslagen (of ingestuurde) indeling altijd een volledige lijst:
- * onbekende en dubbele blokken vallen weg, ontbrekende blokken komen achteraan
- * (zichtbaar), en de hero staat altijd zichtbaar bovenaan. Accepteert de
+ * onbekende en dubbele blokken vallen weg en de hero staat altijd zichtbaar
+ * bovenaan. Ontbrekende blokken (bijv. nieuwe blokken na een update) komen op
+ * hun plek uit de standaardvolgorde: direct na het dichtstbijzijnde blok dat er
+ * in de standaard vóór staat, met hun standaardzichtbaarheid. Accepteert de
  * JSON-tekst of een al geparste lijst; alles wat niet klopt geeft de standaard.
  */
 export function normaliseerIndeling(ruw: unknown): IndelingItem[] {
@@ -92,9 +121,14 @@ export function normaliseerIndeling(ruw: unknown): IndelingItem[] {
     const zichtbaar = typeof item === "object" && item !== null && (item as { zichtbaar?: unknown }).zichtbaar === false ? false : true;
     uit.push({ blok, zichtbaar });
   }
-  for (const blok of HOMEPAGE_BLOKKEN) {
-    if (!gezien.has(blok)) uit.push({ blok, zichtbaar: true });
-  }
+  HOMEPAGE_BLOKKEN.forEach((blok, n) => {
+    if (gezien.has(blok)) return;
+    // Het dichtstbijzijnde eerdere blok uit de standaard (de hero is er altijd).
+    const voorganger = HOMEPAGE_BLOKKEN.slice(0, n).findLast((b) => gezien.has(b)) ?? "hero";
+    const plek = uit.findIndex((i) => i.blok === voorganger) + 1;
+    uit.splice(plek, 0, { blok, zichtbaar: standaardZichtbaar(blok) });
+    gezien.add(blok);
+  });
   return uit;
 }
 

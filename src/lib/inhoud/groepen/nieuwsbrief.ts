@@ -14,17 +14,23 @@ export const NIEUWSBRIEF_AANMELDEN = sectie({
   titel: "Aanmeldblok op de website",
   uitleg: "Het blok op de homepage waarmee bezoekers zich aanmelden. Ze krijgen eerst een mail om hun aanmelding te bevestigen.",
   velden: {
-    titel: { soort: "tekst", label: "Titel", standaard: "Blijf op de hoogte" },
+    bovenschrift: {
+      soort: "tekst",
+      label: "Klein label boven de titel (homepage)",
+      max: 80,
+      standaard: "Een beetje kleur in je inbox",
+    },
+    titel: { soort: "tekst", label: "Titel", standaard: "Blijf geïnspireerd" },
     tekst: {
       soort: "tekstvak",
       label: "Tekst",
       regels: 3,
       standaard:
-        "Ontvang af en toe stijltips, inspiratie voor je garderobe en als eerste nieuws over acties. Geen spam, en afmelden kan altijd met één klik.",
+        "Praktische stijltips, nieuwe artikelen en af en toe iets moois om zelf te proberen. Geen spam, en afmelden kan altijd met één klik.",
     },
     naam_label: { soort: "tekst", label: "Label bij het naamveld", standaard: "Voornaam (optioneel)" },
     email_label: { soort: "tekst", label: "Label bij het e-mailveld", standaard: "E-mailadres" },
-    knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Aanmelden" },
+    knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Ja, stuur maar" },
     toestemming_tekst: {
       soort: "opmaak",
       label: "Toestemmingstekst onder het formulier",
