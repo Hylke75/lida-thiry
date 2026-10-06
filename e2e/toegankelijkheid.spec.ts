@@ -72,8 +72,8 @@ test("toegankelijkheid: contactformulier met foutmeldingen", async ({ page }) =>
 test("toegankelijkheid: mobiel menu open", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto("/");
-  await page.locator("summary", { hasText: "Menu" }).click();
-  await expect(page.getByRole("navigation", { name: "Hoofdmenu" }).last()).toBeVisible();
+  await page.getByRole("banner").getByRole("button", { name: "Menu" }).click();
+  await expect(page.getByRole("navigation", { name: "Hoofdmenu" })).toBeVisible();
   const { violations } = await analyseer(page);
   const ernstig = violations.filter((v) => ERNSTIG.has(v.impact ?? ""));
   expect(ernstig.length, beschrijf(ernstig)).toBe(0);

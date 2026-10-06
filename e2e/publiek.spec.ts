@@ -21,11 +21,42 @@ test.describe("publieke pagina's", () => {
     expect(res?.status()).toBe(200);
     await controleerGeraamte(page);
     await expect(page).toHaveTitle(/Lida Thiry/);
-    // De knop naar de test staat altijd in de kop.
-    await expect(page.getByRole("banner").getByRole("link", { name: "Doe de test" }).first()).toHaveAttribute(
+    // De knop rechtsboven (standaard naar de test) staat altijd in de kop.
+    await expect(page.getByRole("banner").getByRole("link", { name: /Vraag advies aan/ }).first()).toHaveAttribute(
       "href",
       "/bestellen",
     );
+    // De blokken uit het ontwerp, in volgorde: hero, adviesroutes, herkenning, stappen, Over Lida.
+    const koppen = await page.getByRole("main").getByRole("heading", { level: 2 }).allTextContents();
+    const verwacht = ["Kies wat jij nu nodig hebt", "Een volle kledingkast", "Zo werkt het", "Niet vertellen wat"];
+    const plekken = verwacht.map((k) => koppen.findIndex((t) => t.includes(k)));
+    expect(plekken.every((p) => p >= 0), koppen.join(" | ")).toBe(true);
+    expect([...plekken].sort((a, b) => a - b)).toEqual(plekken);
+    // De hero-knop springt naar de adviesroutes; die verwijzen naar bestaande routes.
+    await expect(page.getByRole("main").getByRole("link", { name: /Bekijk mijn adviesmogelijkheden/ })).toHaveAttribute("href", "#advies");
+    const routes = page.locator("#advies article a");
+    await expect(routes).toHaveCount(3);
+    expect(await routes.evaluateAll((a) => a.map((x) => x.getAttribute("href")))).toEqual(["/bestellen", "/afspraak", "/cadeaubon"]);
+  });
+
+  test("ga naar inhoud en het mobiele menu", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto("/");
+    await page.keyboard.press("Tab");
+    const overslaan = page.getByRole("link", { name: "Ga naar inhoud" });
+    await expect(overslaan).toBeFocused();
+    await expect(overslaan).toHaveAttribute("href", "#inhoud");
+
+    const knop = page.getByRole("banner").getByRole("button", { name: "Menu" });
+    await expect(knop).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("#hoofdmenu")).toBeHidden();
+    await knop.click();
+    await expect(knop).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator("#hoofdmenu")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(knop).toHaveAttribute("aria-expanded", "false");
+    await expect(knop).toBeFocused();
+    await expect(page.locator("#hoofdmenu")).toBeHidden();
   });
 
   test("startpagina van de test (bestellen)", async ({ page }) => {

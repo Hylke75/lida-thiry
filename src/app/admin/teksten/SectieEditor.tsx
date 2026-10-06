@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Opmaak } from "@/components/Opmaak";
+import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import { bevatPlaceholder, nieuweId, type EnkelVeld, type LijstVeld, type Sectie } from "@/lib/inhoud/schema";
 import { Geschiedenis } from "../versies/Geschiedenis";
 import { zetTekstVersieTerug } from "../versies/acties";
@@ -25,6 +26,33 @@ function EnkelInvoer({
   const [voorbeeld, setVoorbeeld] = useState(false);
   if (veld.soort === "tekst") {
     return <input id={id} value={waarde} onChange={(e) => onChange(e.target.value)} className={invoerBreed} />;
+  }
+  if (veld.soort === "afbeelding") {
+    // Adres uit de mediabibliotheek (kiezen of uploaden) of een eigen https-adres.
+    return (
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          id={id}
+          type="url"
+          inputMode="url"
+          value={waarde}
+          placeholder="https://…"
+          onChange={(e) => onChange(e.target.value)}
+          className={invoerKlasse}
+        />
+        <MediaKiezer
+          onKies={({ url }) => onChange(url)}
+          accept="foto"
+          knopTekst="Kies of upload"
+          knopKlasse={`${knopKlein} shrink-0 self-start sm:self-auto`}
+        />
+        {waarde && (
+          <button type="button" onClick={() => onChange("")} className={`${knopKlein} shrink-0 self-start sm:self-auto`}>
+            Weghalen
+          </button>
+        )}
+      </div>
+    );
   }
   const vak = (
     <textarea

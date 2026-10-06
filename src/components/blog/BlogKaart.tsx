@@ -66,7 +66,7 @@ export function BlogBeeld({
 export function BerichtMeta({ bericht, className = "" }: { bericht: BlogBericht; className?: string }) {
   const minuten = leestijdMinuten(bericht.inhoud);
   return (
-    <p className={`flex flex-wrap items-center gap-x-2 text-xs text-foreground/50 ${className}`}>
+    <p className={`flex flex-wrap items-center gap-x-2 text-xs text-foreground/75 ${className}`}>
       {bericht.gepubliceerd_op && <time dateTime={bericht.gepubliceerd_op}>{formatteerDatum(bericht.gepubliceerd_op)}</time>}
       <span aria-hidden="true">·</span>
       <span>{minuten} min lezen</span>

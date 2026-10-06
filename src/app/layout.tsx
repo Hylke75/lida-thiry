@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { DM_Serif_Display, Manrope } from "next/font/google";
 import { Bezoekersstatistiek } from "@/components/Bezoekersstatistiek";
 import { FoutRapporteur } from "@/components/FoutRapporteur";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { siteUrl } from "@/lib/site";
 import { leesWebsite } from "@/lib/website/lees";
 import { bouwSiteMetadata } from "@/lib/website/metadata";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+/** Koppen (handboek: DM Serif Display, alleen gewicht 400; cursief voor één accentwoord). */
+const dmSerif = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+/** Lopende tekst en navigatie (Manrope, variabel lettertype 200–800). */
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -33,12 +37,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="nl"
-      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${dmSerif.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {/* Verbergt zich zelf in het beheer, bij inloggen en in de test (zie SiteHeaderWeergave). */}
+      <body className="flex min-h-full flex-col">
+        {/* Met "Ga naar inhoud"; verbergt zich zelf in het beheer, bij inloggen en in de test. */}
         <SiteHeader />
+        {/* Doel van de link "Ga naar inhoud" (elke pagina heeft een eigen <main>). */}
+        <span id="inhoud" tabIndex={-1} className="block scroll-mt-24 outline-none" />
         {children}
+        {/* Niet in het beheer (dat heeft een eigen navigatie). */}
         <SiteFooter />
         {/* Anoniem en zonder cookies; uit in het beheer (zie Bezoekersstatistiek). */}
         <Bezoekersstatistiek />

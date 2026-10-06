@@ -6,6 +6,7 @@
 //   npm run e2e:lokaal -- --geen-build     # bestaande e2e-build hergebruiken
 //   npm run e2e:lokaal -- e2e/publiek.spec.ts --headed   # extra argumenten gaan naar Playwright
 //   npm run e2e:lokaal -- --alleen-server  # alleen bouwen en starten (stoppen met Ctrl+C)
+//   npm run e2e:lokaal -- --alleen-server --voorbeelddata  # met voorbeeldreviews en -blogberichten
 //
 // Wat het doet:
 //   1. Start een mini-"Supabase" op 127.0.0.1 (zie nepSupabase hieronder). Die
@@ -41,7 +42,7 @@ const PLAYWRIGHT_BIN = join(ROOT, "node_modules", "@playwright", "test", "cli.js
 const args = process.argv.slice(2);
 const geenBuild = args.includes("--geen-build") || process.env.E2E_GEEN_BUILD === "1";
 const alleenServer = args.includes("--alleen-server");
-const playwrightArgs = args.filter((a) => a !== "--geen-build" && a !== "--alleen-server");
+const playwrightArgs = args.filter((a) => !["--geen-build", "--alleen-server", "--voorbeelddata"].includes(a));
 
 /** Dummywaarden: genoeg om te bouwen en te starten, nergens echt geldig. */
 const ENV = {
@@ -65,7 +66,7 @@ for (const sleutel of ["RESEND_API_KEY", "MOLLIE_API_KEY", "ANTHROPIC_API_KEY", 
 /** Kenmerk van een build van dit script: dezelfde instellingen én dezelfde BUILD_ID. */
 function buildKenmerk() {
   const buildId = existsSync(join(ROOT, ".next", "BUILD_ID")) ? readFileSync(join(ROOT, ".next", "BUILD_ID"), "utf8").trim() : null;
-  return JSON.stringify({ supabase: ENV.NEXT_PUBLIC_SUPABASE_URL, site: BASIS, buildId });
+  return JSON.stringify({ supabase: ENV.NEXT_PUBLIC_SUPABASE_URL, site: BASIS, buildId, voorbeelddata });
 }
 
 // ── Nep-database ─────────────────────────────────────────────────────────────
@@ -95,6 +96,63 @@ const INSTELLINGEN = [
   { sleutel: "valuta", waarde: "EUR" },
 ];
 
+// Voorbeeldgegevens (alleen met --voorbeelddata): reviews en blogberichten, zodat
+// alle homepageblokken zichtbaar zijn, bijv. voor schermafbeeldingen van het
+// ontwerp. Zonder deze vlag blijven de gewone tests "zonder database" werken.
+const voorbeelddata = args.includes("--voorbeelddata") || process.env.E2E_VOORBEELDDATA === "1";
+
+const REVIEWS = [
+  {
+    id: "00000000-0000-4000-8000-0000000000a1",
+    naam: "Marianne de Vries",
+    sterren: 5,
+    tekst: "Alles viel ineens op zijn plek. Ik snap nu waarom sommige broeken mij wel goed staan en andere juist niet.",
+    ingevuld_op: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a2",
+    naam: "Sandra",
+    sterren: 5,
+    tekst: "Ik winkel veel gerichter en heb veel minder miskopen. Dat scheelt geld én onrust.",
+    ingevuld_op: "2026-04-01T10:00:00Z",
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a3",
+    naam: "Monique",
+    sterren: 4,
+    tekst:
+      "Vooral fijn dat het advies niet voelt als regels. Ik weet nu beter hoe ik mijn eigen stijl kan gebruiken, welke lengtes ik kies en waarom een jasje op de heup mij zoveel beter staat dan een lang vest dat ik altijd droeg.",
+    ingevuld_op: "2026-03-01T10:00:00Z",
+  },
+];
+
+const blogBericht = (n, slug, titel, categorie) => ({
+  id: `00000000-0000-4000-8000-0000000000b${n}`,
+  slug,
+  titel,
+  samenvatting: "Een voorbeeldbericht voor de lokale e2e-omgeving.",
+  inhoud: "Een voorbeeldbericht voor de lokale e2e-omgeving.",
+  omslag_url: null,
+  omslag_alt: "",
+  categorie,
+  tags: [],
+  status: "gepubliceerd",
+  gepubliceerd_op: `2026-0${n}-01T10:00:00Z`,
+  seo_titel: "",
+  seo_omschrijving: "",
+  auteur: "Lida Thiry",
+  uitgelicht: false,
+  ai_gegenereerd: false,
+  aangemaakt_op: `2026-0${n}-01T10:00:00Z`,
+  bijgewerkt_op: `2026-0${n}-01T10:00:00Z`,
+});
+
+const BLOG = [
+  blogBericht(3, "garderobe-stap-voor-stap", "Zo bouw je stap voor stap een garderobe die bij je figuur past", "Stijl"),
+  blogBericht(2, "verhouding-boven-trend", "Waarom de juiste verhouding vaak meer doet dan een nieuwe trend", "Figuur"),
+  blogBericht(1, "vijf-kleurcombinaties", "Vijf onverwachte kleurcombinaties die vrolijk zijn zonder druk te worden", null),
+];
+
 /**
  * Antwoordt als PostgREST/GoTrue, maar kent bijna niets: alleen
  * `paginas?slug=eq.contact` en `instellingen` (een prijs) geven rijen. Al het
@@ -116,6 +174,19 @@ function nepSupabase() {
     if (req.method === "GET" && url.pathname === "/rest/v1/instellingen") {
       // Een prijs, zodat /bestellen het bestelformulier toont.
       return json(200, INSTELLINGEN);
+    }
+    if (voorbeelddata && req.method === "GET" && url.pathname === "/rest/v1/beoordelingen") {
+      const limiet = Number(url.searchParams.get("limit")) || REVIEWS.length;
+      return json(200, REVIEWS.slice(0, limiet));
+    }
+    if (voorbeelddata && req.method === "GET" && url.pathname === "/rest/v1/blog_berichten") {
+      const slug = url.searchParams.get("slug")?.replace(/^eq\./, "");
+      const rijen = slug ? BLOG.filter((b) => b.slug === slug) : BLOG;
+      if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {
+        return rijen[0] ? json(200, rijen[0]) : json(406, { code: "PGRST116", message: "Geen rij" });
+      }
+      res.setHeader("content-range", rijen.length ? `0-${rijen.length - 1}/${rijen.length}` : "*/0");
+      return json(200, rijen);
     }
     if (url.pathname.startsWith("/auth/")) {
       return json(401, { code: 401, error_code: "e2e_geen_database", msg: "Geen database in de e2e-omgeving" });

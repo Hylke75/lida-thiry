@@ -30,7 +30,17 @@ interface OpmaakVeld extends VeldBasis {
   regels?: number;
 }
 
-export type EnkelVeld = TekstVeld | TekstvakVeld | OpmaakVeld;
+/**
+ * Een afbeelding: adres uit de mediabibliotheek (https) of een eigen pad ("/foto.jpg").
+ * Leeg = geen afbeelding (de site toont dan een rustig kleurvlak). Zet de
+ * beschrijving (alt-tekst) in een apart tekstveld.
+ */
+export interface AfbeeldingVeld extends VeldBasis {
+  soort: "afbeelding";
+  standaard: string;
+}
+
+export type EnkelVeld = TekstVeld | TekstvakVeld | OpmaakVeld | AfbeeldingVeld;
 
 /** Herhaalbare lijst (bijv. veelgestelde vragen); items kunnen worden toegevoegd en verschoven. */
 export interface LijstVeld {
@@ -81,7 +91,7 @@ export type SectieWaarden<S extends Sectie> = {
   -readonly [K in keyof S["velden"]]: WaardeVan<S["velden"][K]>;
 };
 
-const STANDAARD_MAX = { tekst: 300, tekstvak: 5_000, opmaak: 60_000 } as const;
+const STANDAARD_MAX = { tekst: 300, tekstvak: 5_000, opmaak: 60_000, afbeelding: 1_000 } as const;
 const STANDAARD_LIJST_MAX = 50;
 
 const ID_PATROON = /^[A-Za-z0-9_-]{1,40}$/;
@@ -150,7 +160,29 @@ function maxVoor(v: EnkelVeld): number {
 
 function schoon(s: string, v: EnkelVeld): string {
   const genormaliseerd = s.replace(/\r\n?/g, "\n");
+  if (v.soort === "afbeelding") return genormaliseerd.replace(/\s+/g, "");
   return v.soort === "tekst" ? genormaliseerd.replace(/\n+/g, " ").trim() : genormaliseerd.trim();
+}
+
+/**
+ * Een afbeeldingsadres: https of een eigen pad ("/…", niet "//…"). Leeg is goed.
+ * (Gelijk aan valideerAfbeeldingUrl in lib/website/instellingen.ts.)
+ */
+export function isGeldigAfbeeldingAdres(w: string): boolean {
+  if (w === "") return true;
+  if (/^\/(?!\/)\S*$/.test(w)) return true;
+  try {
+    const u = new URL(w);
+    return u.protocol === "https:" && u.hostname.includes(".") && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
+function controleerAfbeelding(tekst: string, def: EnkelVeld, label: string, fouten: string[]) {
+  if (def.soort === "afbeelding" && !isGeldigAfbeeldingAdres(tekst)) {
+    fouten.push(`${label}: kies een afbeelding uit de mediabibliotheek of vul een adres in dat met https:// begint.`);
+  }
 }
 
 /** Controleert de invoer uit het beheerscherm tegen de beschrijving van de sectie. */
@@ -181,6 +213,7 @@ export function valideer(s: Sectie, ruw: unknown): Validatie {
           if (tekst.length > maxVoor(def)) {
             fouten.push(`${v.label}, ${v.itemNaam} ${i + 1}, ${def.label}: maximaal ${maxVoor(def)} tekens.`);
           }
+          controleerAfbeelding(tekst, def, `${v.label}, ${v.itemNaam} ${i + 1}, ${def.label}`, fouten);
           schoonItem[veld] = tekst;
         }
         return schoonItem;
@@ -188,6 +221,7 @@ export function valideer(s: Sectie, ruw: unknown): Validatie {
     } else {
       const tekst = typeof w === "string" ? schoon(w, v) : "";
       if (tekst.length > maxVoor(v)) fouten.push(`${v.label}: maximaal ${maxVoor(v)} tekens.`);
+      controleerAfbeelding(tekst, v, v.label, fouten);
       uit[k] = tekst;
     }
   }

@@ -5,6 +5,7 @@ import {
   isStandaardIndeling,
   normaliseerIndeling,
   standaardIndeling,
+  standaardZichtbaar,
   verschuifBlok,
   zetZichtbaar,
 } from "../website/homepage";
@@ -27,10 +28,42 @@ describe("normaliseerIndeling", () => {
       expect(normaliseerIndeling(ruw)).toEqual(standaardIndeling());
     }
     expect(blokken(standaardIndeling())).toEqual([...HOMEPAGE_BLOKKEN]);
-    expect(standaardIndeling().every((i) => i.zichtbaar)).toBe(true);
   });
 
-  it("houdt de opgeslagen volgorde aan en vult ontbrekende blokken achteraan aan", () => {
+  it("volgt standaard het ontwerp; de oudere extra blokken staan uit", () => {
+    const zichtbaar = standaardIndeling().filter((i) => i.zichtbaar);
+    expect(blokken(zichtbaar)).toEqual(["hero", "diensten", "probleem", "stappen", "over", "ervaringen", "blog", "nieuwsbrief", "vragen"]);
+    for (const blok of ["figuurtypes", "advies", "afsluiting"] as const) expect(standaardZichtbaar(blok)).toBe(false);
+  });
+
+  it("zet nieuwe blokken in een oude opgeslagen indeling op hun eigen plek", () => {
+    // Een indeling zoals die vóór de adviesroutes en het probleemblok werd opgeslagen.
+    const oud = ["hero", "stappen", "figuurtypes", "advies", "over", "ervaringen", "blog", "nieuwsbrief", "vragen", "afsluiting"].map(
+      (blok) => ({ blok, zichtbaar: blok !== "advies" }),
+    );
+    const uit = normaliseerIndeling(JSON.stringify(oud));
+    expect(blokken(uit)).toEqual([
+      "hero",
+      "diensten",
+      "probleem",
+      "stappen",
+      "figuurtypes",
+      "advies",
+      "over",
+      "ervaringen",
+      "blog",
+      "nieuwsbrief",
+      "vragen",
+      "afsluiting",
+    ]);
+    // Wat opgeslagen was, blijft gelden; de nieuwe blokken zijn zichtbaar.
+    expect(uit.find((i) => i.blok === "figuurtypes")?.zichtbaar).toBe(true);
+    expect(uit.find((i) => i.blok === "advies")?.zichtbaar).toBe(false);
+    expect(uit.find((i) => i.blok === "diensten")?.zichtbaar).toBe(true);
+    expect(uit.find((i) => i.blok === "probleem")?.zichtbaar).toBe(true);
+  });
+
+  it("houdt de opgeslagen volgorde aan en vult ontbrekende blokken op hun standaardplek aan", () => {
     const uit = normaliseerIndeling(
       JSON.stringify([
         { blok: "vragen", zichtbaar: true },
@@ -39,18 +72,22 @@ describe("normaliseerIndeling", () => {
     );
     expect(blokken(uit)).toEqual([
       "hero",
+      "diensten",
+      "probleem",
       "vragen",
-      "stappen",
       "figuurtypes",
       "advies",
+      "afsluiting",
+      "stappen",
       "over",
       "ervaringen",
       "blog",
       "nieuwsbrief",
-      "afsluiting",
     ]);
     expect(uit.find((i) => i.blok === "stappen")?.zichtbaar).toBe(false);
-    expect(uit.find((i) => i.blok === "figuurtypes")?.zichtbaar).toBe(true);
+    // Ontbrekende blokken krijgen hun standaardzichtbaarheid.
+    expect(uit.find((i) => i.blok === "figuurtypes")?.zichtbaar).toBe(false);
+    expect(uit.find((i) => i.blok === "over")?.zichtbaar).toBe(true);
   });
 
   it("laat onbekende en dubbele blokken weg", () => {
@@ -63,8 +100,10 @@ describe("normaliseerIndeling", () => {
       "advies",
     ]);
     expect(uit).toHaveLength(HOMEPAGE_BLOKKEN.length);
-    expect(blokken(uit).slice(0, 3)).toEqual(["hero", "over", "advies"]);
-    expect(uit[1].zichtbaar).toBe(false);
+    const volgorde = blokken(uit);
+    expect(volgorde[0]).toBe("hero");
+    expect(volgorde.indexOf("over")).toBeLessThan(volgorde.indexOf("advies"));
+    expect(uit.find((i) => i.blok === "over")?.zichtbaar).toBe(false);
     expect(new Set(blokken(uit)).size).toBe(uit.length);
   });
 
@@ -74,7 +113,7 @@ describe("normaliseerIndeling", () => {
       { blok: "hero", zichtbaar: false },
     ]);
     expect(uit[0]).toEqual({ blok: "hero", zichtbaar: true });
-    expect(uit[1].blok).toBe("afsluiting");
+    expect(blokken(uit).filter((b) => b === "hero")).toHaveLength(1);
   });
 
   it("alleen expliciet false verbergt een blok", () => {
@@ -87,11 +126,11 @@ describe("normaliseerIndeling", () => {
 describe("homepage-indeling bewerken", () => {
   it("verschuift blokken, maar nooit boven de hero", () => {
     const std = standaardIndeling();
-    expect(blokken(verschuifBlok(std, "figuurtypes", "omhoog")).slice(0, 3)).toEqual(["hero", "figuurtypes", "stappen"]);
-    expect(verschuifBlok(std, "stappen", "omhoog")).toEqual(std);
+    expect(blokken(verschuifBlok(std, "probleem", "omhoog")).slice(0, 3)).toEqual(["hero", "probleem", "diensten"]);
+    expect(verschuifBlok(std, "diensten", "omhoog")).toEqual(std);
     expect(verschuifBlok(std, "hero", "omlaag")).toEqual(std);
     expect(verschuifBlok(std, "afsluiting", "omlaag")).toEqual(std);
-    expect(blokken(verschuifBlok(std, "vragen", "omlaag")).slice(-2)).toEqual(["afsluiting", "vragen"]);
+    expect(blokken(verschuifBlok(std, "advies", "omlaag")).slice(-2)).toEqual(["afsluiting", "advies"]);
   });
 
   it("zet zichtbaarheid, de hero blijft zichtbaar", () => {

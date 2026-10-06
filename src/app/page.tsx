@@ -8,10 +8,12 @@ import {
   WEBSITE_ADVIES,
   WEBSITE_AFSLUITING,
   WEBSITE_BLOG,
+  WEBSITE_DIENSTEN,
   WEBSITE_ERVARINGEN,
   WEBSITE_FIGUURTYPES,
   WEBSITE_HERO,
   WEBSITE_OVER,
+  WEBSITE_PROBLEEM,
   WEBSITE_STAPPEN,
   WEBSITE_VRAGEN,
 } from "@/lib/inhoud/groepen/website";
@@ -21,8 +23,11 @@ import { leesWebsite } from "@/lib/website/lees";
 import { normaliseerIndeling } from "@/lib/website/homepage";
 import { siteUrl } from "@/lib/site";
 import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type ReviewSamenvatting } from "@/lib/seo/structuur";
-import { HOMEPAGE_WEERGAVE, type HomepageGegevens } from "@/components/homepage/Blokken";
+import { HOMEPAGE_WEERGAVE, MAX_ERVARINGEN, type HomepageGegevens } from "@/components/homepage/Blokken";
 import { formatteerBedrag } from "@/lib/prijs";
+import { haalActieveSoortenPubliek } from "@/lib/afspraken/data";
+import { eersteBestaandeLink } from "@/lib/website/links";
+import { veiligeLink } from "@/lib/website/weergave";
 
 // Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
 // bezoeker gelijk: teksten, instellingen, silhouetten, reviews en de nieuwste
@@ -40,19 +45,22 @@ const telwoord = (n: number) => (n === 0 ? "verschillende" : (TELWOORDEN[n] ?? S
 
 /**
  * De homepage. De blokken staan in components/homepage/Blokken.tsx; volgorde en
- * zichtbaarheid komen uit Beheer → Website → Homepage (standaard: alle blokken
- * in de vaste volgorde). De hero staat altijd bovenaan.
+ * zichtbaarheid komen uit Beheer → Website → Homepage (standaard: de volgorde
+ * van het ontwerp in docs/ontwerp). De hero staat altijd bovenaan.
  */
 export default async function Home() {
   const site = await leesWebsite();
   const indeling = normaliseerIndeling(site.homepageIndeling).filter((i) => i.zichtbaar);
   const toontBlog = indeling.some((i) => i.blok === "blog");
   const toontErvaringen = indeling.some((i) => i.blok === "ervaringen");
+  const toontDiensten = indeling.some((i) => i.blok === "diensten");
 
-  const [silhouetten, hero, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews] =
+  const [silhouetten, hero, diensten, probleem, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews, afspraakSoorten] =
     await Promise.all([
       haalSilhouettenPubliek().catch(() => []),
       leesSectie(WEBSITE_HERO),
+      leesSectie(WEBSITE_DIENSTEN),
+      leesSectie(WEBSITE_PROBLEEM),
       leesSectie(WEBSITE_STAPPEN),
       leesSectie(WEBSITE_FIGUURTYPES),
       leesSectie(WEBSITE_ADVIES),
@@ -63,7 +71,8 @@ export default async function Home() {
       leesSectie(NIEUWSBRIEF_AANMELDEN),
       leesSectie(WEBSITE_BLOG),
       toontBlog ? haalLaatste(3) : Promise.resolve([]),
-      toontErvaringen ? haalGoedgekeurdeReviews(6) : Promise.resolve([]),
+      toontErvaringen ? haalGoedgekeurdeReviews(MAX_ERVARINGEN) : Promise.resolve([]),
+      toontDiensten ? haalActieveSoortenPubliek().catch(() => []) : Promise.resolve([]),
     ]);
   let prijsLabel: string | null = null;
   let prijsCent: number | null = null;
@@ -77,13 +86,22 @@ export default async function Home() {
     prijsLabel = null;
   }
 
+  // "vanaf €…" voor de kaart Persoonlijk advies: de laagste prijs van de afspraaksoorten.
+  const afspraakPrijzen = afspraakSoorten.map((s) => s.prijs_cent).filter((c) => c > 0);
+  const afspraakVanaf = afspraakPrijzen.length ? `vanaf ${formatteerBedrag(Math.min(...afspraakPrijzen), valuta)}` : "";
+  // De knop bij Over Lida: de ingestelde pagina als die bestaat, anders contact.
+  const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact");
+
   const gegevens: HomepageGegevens = {
     silhouetten,
     vorm: (i) => silhouetten[i]?.vorm ?? STANDAARD_VORM,
     aantal: { aantal: telwoord(silhouetten.length) },
-    prijsLabel,
-    ctaTekst: prijsLabel ? `${hero.knop} — ${prijsLabel}` : hero.knop,
+    prijzen: { prijs: prijsLabel ?? "", afspraak_vanaf: afspraakVanaf },
+    ctaTekst: prijsLabel ? `${afsluiting.knop} — ${prijsLabel}` : afsluiting.knop,
+    overLink,
     hero,
+    diensten,
+    probleem,
     stappen,
     figuurtypes,
     advies,
@@ -105,7 +123,8 @@ export default async function Home() {
   });
 
   return (
-    <main className="flex w-full flex-1 flex-col">
+    // -mb-16: de voettekst heeft een marge voor gewone pagina's; de homepage eindigt met eigen ruimte.
+    <main className="-mb-16 flex w-full flex-1 flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: veiligeJson(jsonLd) }} />
       {indeling.map(({ blok }) => (
         <Fragment key={blok}>{HOMEPAGE_WEERGAVE[blok](gegevens)}</Fragment>
