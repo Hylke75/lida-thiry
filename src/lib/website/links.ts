@@ -1,14 +1,31 @@
 import "server-only";
+import { haalActieveSoortenPubliek } from "../afspraken/data";
 import { haalPagina } from "../paginas/publiek";
 import { geldigePaginaSlug } from "../paginas/regels";
 import { paginaSlugVan } from "./weergave";
 
 /**
+ * Kan er online een afspraak gemaakt worden (minstens één actieve afspraaksoort)?
+ * Zo niet, dan is /afspraak een doodlopende weg: menu, voettekst en homepage
+ * laten de link dan weg of verwijzen naar contact. Faalt zacht: is de database
+ * niet bereikbaar, dan geldt "nee" (het boekingsblok toont dan ook niets te boeken).
+ */
+export async function afspraakBoekbaar(): Promise<boolean> {
+  try {
+    return (await haalActieveSoortenPubliek()).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Bestaat de pagina achter deze link? Vaste routes (/blog, /bestellen …),
  * ankers en externe links gelden als bestaand; een link naar een beheerbare
- * pagina ("/over-mij") alleen als die gepubliceerd is. Faalt zacht (haalPagina).
+ * pagina ("/over-mij") alleen als die gepubliceerd is, en /afspraak alleen als
+ * er iets te boeken is (afspraakBoekbaar). Faalt zacht (haalPagina).
  */
 export async function linkBestaat(link: string): Promise<boolean> {
+  if (link.trim() === "/afspraak") return afspraakBoekbaar();
   const slug = paginaSlugVan(link);
   if (!slug || !geldigePaginaSlug(slug)) return true;
   return (await haalPagina(slug)) !== null;

@@ -8,6 +8,7 @@ test.skip(!process.env.E2E_BASE_URL, "E2E_BASE_URL is niet gezet (zie playwright
 
 const PAGINAS: { pad: string; naam: string; status?: number }[] = [
   { pad: "/", naam: "homepage" },
+  { pad: "/figuurtest", naam: "figuurtest" },
   { pad: "/bestellen", naam: "bestellen" },
   { pad: "/blog", naam: "blogoverzicht" },
   { pad: "/contact", naam: "contact" },

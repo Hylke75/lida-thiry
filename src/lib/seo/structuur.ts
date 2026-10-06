@@ -138,6 +138,8 @@ export interface TestProductInvoer {
   omschrijving: string;
   /** Absolute basis-URL van de site. */
   url: string;
+  /** Pad van de productpagina (standaard /bestellen); het aanbod linkt altijd naar /bestellen. */
+  pad?: string;
   /** Prijs in centen; null = (nog) geen prijs → een Service zonder aanbod. */
   prijsCent: number | null;
   valuta?: string;
@@ -164,7 +166,7 @@ export function testProductJsonLd(p: TestProductInvoer): Record<string, unknown>
     "@type": metPrijs ? "Product" : "Service",
     name: p.naam,
     description: p.omschrijving,
-    url: bestelUrl,
+    url: p.pad ? `${basis}${p.pad}` : bestelUrl,
     ...(afbeelding ? { image: afbeelding } : {}),
     ...(metPrijs ? { brand: { "@id": organisatieId(basis) } } : { provider: { "@id": organisatieId(basis) } }),
     ...(metPrijs

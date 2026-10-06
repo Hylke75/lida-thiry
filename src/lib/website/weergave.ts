@@ -155,3 +155,21 @@ export function zonderDubbele(...lijsten: readonly (readonly MenuItem[])[]): Men
     return true;
   });
 }
+
+/**
+ * De dienstenkaarten zonder doodlopende link naar /afspraak: is er niets te
+ * boeken, dan krijgt een kaart met de link /afspraak de vervangende linktekst en
+ * link (bijv. "Stel je vraag" → /contact), of geen link als er geen vervanging
+ * is. Met iets te boeken blijven de kaarten zoals ze zijn.
+ */
+export function zonderDoodlopendeAfspraak<K extends { link: string; linkTekst: string }>(
+  kaarten: readonly K[],
+  boekbaar: boolean,
+  vervanging: { tekst: string; link: string } | null,
+): K[] {
+  if (boekbaar) return [...kaarten];
+  const tekst = vervanging?.tekst.trim() && vervanging.link.trim() ? vervanging.tekst : "";
+  return kaarten.map((k) =>
+    veiligeLink(k.link, "") === "/afspraak" ? { ...k, linkTekst: tekst, link: tekst ? vervanging!.link : "" } : k,
+  );
+}

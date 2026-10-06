@@ -66,7 +66,10 @@ export async function POST(request: Request) {
   const valuta = (await leesInstelling("valuta")) || "EUR";
   // Vinkje voor de nieuwsbrief (standaard uit); aanmelden gebeurt pas na betaling.
   const nieuwsbrief = body.nieuwsbrief === true ? { nieuwsbrief_akkoord: true } : {};
-  // Alleen adres/postcode/plaats/land als (begrensde) tekst bewaren.
+  // Optioneel: het bestelformulier vraagt geen adres meer (digitaal product; een
+  // factuur aan een consument heeft geen klantadres nodig en laat het dan weg).
+  // Stuurt een ouder formulier het nog mee, dan alleen adres/postcode/plaats/land
+  // als (begrensde) tekst bewaren.
   const factuurgegevens = schoonFactuurgegevens(body.factuurgegevens);
 
   // Gratis testmodus (env-gated): sla Mollie over, maak direct een betaalde order

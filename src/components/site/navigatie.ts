@@ -35,7 +35,7 @@ export async function leesSiteNavigatie(): Promise<SiteNavigatie> {
     menu,
     footer,
     subregel: kop.subregel.trim(),
-    knop: { tekst: kop.knop.trim() || "Vraag advies aan", href: veiligeLink(kop.knopLink, "/bestellen") },
+    knop: { tekst: kop.knop.trim() || "Start de figuurtest", href: veiligeLink(kop.knopLink, "/figuurtest") },
     logo: site.logoUrl ? { url: site.logoUrl, alt: logoAlt(site), breedte: afm?.breedte ?? null, hoogte: afm?.hoogte ?? null } : null,
   };
 }

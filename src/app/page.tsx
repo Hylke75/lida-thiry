@@ -24,8 +24,8 @@ import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type Revi
 import { HOMEPAGE_WEERGAVE, MAX_ERVARINGEN, type HomepageGegevens } from "@/components/homepage/Blokken";
 import { formatteerBedrag } from "@/lib/prijs";
 import { haalActieveSoortenPubliek } from "@/lib/afspraken/data";
-import { eersteBestaandeLink } from "@/lib/website/links";
-import { veiligeLink } from "@/lib/website/weergave";
+import { eersteBestaandeLink, linkBestaat } from "@/lib/website/links";
+import { veiligeLink, zonderDoodlopendeAfspraak } from "@/lib/website/weergave";
 
 // Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
 // bezoeker gelijk: teksten, instellingen, reviews en de nieuwste
@@ -83,6 +83,15 @@ export default async function Home() {
   // "vanaf €…" voor de kaart Persoonlijk advies: de laagste prijs van de afspraaksoorten.
   const afspraakPrijzen = afspraakSoorten.map((s) => s.prijs_cent).filter((c) => c > 0);
   const afspraakVanaf = afspraakPrijzen.length ? `vanaf ${formatteerBedrag(Math.min(...afspraakPrijzen), valuta)}` : "";
+  // Niets te boeken (geen actieve afspraaksoort, of de database is weg)? Dan
+  // verwijst de kaart naar /afspraak naar contact (als die pagina bestaat) of heeft geen link.
+  const boekbaar = afspraakSoorten.length > 0;
+  let vervanging: { tekst: string; link: string } | null = null;
+  if (toontDiensten && !boekbaar) {
+    const link = veiligeLink(diensten.zonderAfspraakLink, "");
+    if (link && link !== "/afspraak" && (await linkBestaat(link))) vervanging = { tekst: diensten.zonderAfspraakLinkTekst, link };
+  }
+  const dienstenZichtbaar = { ...diensten, kaarten: zonderDoodlopendeAfspraak(diensten.kaarten, boekbaar, vervanging) };
   // De knop bij Over Lida: de ingestelde pagina als die bestaat, anders contact.
   const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact", "/afspraak");
 
@@ -91,7 +100,7 @@ export default async function Home() {
     ctaTekst: prijsLabel ? `${afsluiting.knop} — ${prijsLabel}` : afsluiting.knop,
     overLink,
     hero,
-    diensten,
+    diensten: dienstenZichtbaar,
     probleem,
     stappen,
     figuurtypes,
@@ -167,6 +176,7 @@ async function structuur(o: {
       naam: echt(inst.product_naam) ?? "Online kledingadviestest",
       omschrijving: o.site.omschrijving,
       url: basis,
+      pad: "/figuurtest",
       prijsCent: o.prijsCent,
       valuta: o.valuta,
       afbeelding: o.site.deelAfbeeldingUrl ?? o.site.logoUrl,
