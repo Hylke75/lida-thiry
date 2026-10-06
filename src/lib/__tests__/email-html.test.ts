@@ -30,14 +30,14 @@ describe("e-mails: bevestiging", () => {
 
   it("vult de standaardteksten en variabelen in, met escaping", () => {
     expect(mail.onderwerp).toBe("Bedankt voor je bestelling – je kledingadviestest staat klaar");
-    expect(mail.html).toContain('<h1 style="font-size:20px">Bedankt voor je bestelling!</h1>');
+    expect(mail.html).toMatch(/<h1 style="[^"]*DM Serif Display[^"]*">Bedankt voor je bestelling!<\/h1>/);
     expect(mail.html).toContain(`<p>Beste ${NAAM_HTML},</p>`);
     expect(mail.html).not.toContain("<b>");
     expect(mail.html).toContain("<p>Je kunt later verdergaan met dezelfde link; die is 30 dagen geldig.</p>");
-    expect(mail.html).toContain('<p style="font-size:13px;color:#555">Bij je bestelling heb je ingestemd');
+    expect(mail.html).toContain('<p style="font-size:13px;color:#5D536A">Bij je bestelling heb je ingestemd');
     expect(mail.html).toContain("Werkt de knop niet? Kopieer deze link:<br>https://example.com/test/abc");
     expect(mail.html).toContain(">Start de test</a>");
-    expect(mail.html).toContain(">© Lida Thiry Imago &amp; Kledingadvies</p></div>");
+    expect(mail.html).toContain(">© Lida Thiry Imago &amp; Kledingadvies</p></td>");
     zonderOnvervuld(mail.html);
   });
 
@@ -45,8 +45,8 @@ describe("e-mails: bevestiging", () => {
     expect(mail.html).toContain("Korting (&lt;WELKOM&gt;)");
     expect(mail.html).toContain("Factuurnummer F-2026-001");
     // Volgorde: tekst, overzicht, knop.
-    expect(mail.html.indexOf("Wat fijn")).toBeLessThan(mail.html.indexOf("<table"));
-    expect(mail.html.indexOf("<table")).toBeLessThan(mail.html.indexOf(">Start de test</a>"));
+    expect(mail.html.indexOf("Wat fijn")).toBeLessThan(mail.html.indexOf("Totaal (incl. btw)"));
+    expect(mail.html.indexOf("Totaal (incl. btw)")).toBeLessThan(mail.html.indexOf(">Start de test</a>"));
   });
 
   it("gebruikt aangepaste teksten", () => {
@@ -59,8 +59,8 @@ describe("e-mails: bevestiging", () => {
     expect(m.onderwerp).toBe("Hoi Bo");
     expect(m.html).toContain("<p><strong>Welkom</strong> Bo</p>");
     expect(m.html).toContain(">Begin &lt;nu&gt;</a>");
-    expect(m.html).toContain(">Groet</p></div>");
-    expect(m.html).not.toContain("<table");
+    expect(m.html).toContain(">Groet</p></td>");
+    expect(m.html).not.toContain("Totaal (incl. btw)");
   });
 });
 
@@ -99,11 +99,43 @@ describe("e-mails: advies", () => {
       downloadUrl: "https://example.com/advies.pdf?token=a&b=c",
     });
     expect(mail.onderwerp).toBe("Je persoonlijke kledingadvies staat klaar");
-    expect(mail.html).toContain('<h1 style="font-size:20px">Je persoonlijke kledingadvies</h1>');
+    expect(mail.html).toMatch(/<h1 style="[^"]*">Je persoonlijke kledingadvies<\/h1>/);
     expect(mail.html).toContain(`<p>Beste ${NAAM_HTML},</p>`);
     expect(mail.html).toContain("jouw type <strong>6H</strong>. Je vindt je persoonlijke advies in de bijgevoegde PDF.</p>");
     expect(mail.html).toContain('href="https://example.com/advies.pdf?token=a&amp;b=c"');
     expect(mail.html).toContain(">Bekijk je advies (PDF)</a>");
     zonderOnvervuld(mail.html);
+  });
+});
+
+describe("e-mails: huisstijl", () => {
+  const mail = bevestigingMail(standaardWaarden(EMAILS_BEVESTIGING), algemeen, {
+    naam: "Anna",
+    link: "https://example.com/test/abc",
+    geldigDagen: 30,
+  });
+
+  it("is een volledig, mailveilig document met woordmerk en kleurstrook", () => {
+    expect(mail.html.startsWith("<!doctype html>")).toBe(true);
+    expect(mail.html).toContain(">LIDA THIRY</div>");
+    expect(mail.html).toContain(">KLEUR- EN STIJLADVIES</div>");
+    for (const k of ["#FF8877", "#F6D879", "#B8D3AE", "#B9D9EF", "#D8A7C6"]) expect(mail.html).toContain(`bgcolor="${k}"`);
+    // Webveilige reserves voor de lettertypen.
+    expect(mail.html).toContain("Manrope,Arial,Helvetica,sans-serif");
+    expect(mail.html).toContain("'DM Serif Display',Georgia");
+  });
+
+  it("maakt de knop als tabelcel in berry (werkt ook in Outlook)", () => {
+    expect(mail.html).toMatch(/<td align="center" bgcolor="#6F2D59"[^>]*><a href="https:\/\/example\.com\/test\/abc"[^>]*>Start de test<\/a><\/td>/);
+  });
+
+  it("neemt een eigen woordmerk over (ge-escaped)", () => {
+    const m = bevestigingMail(
+      standaardWaarden(EMAILS_BEVESTIGING),
+      { ...algemeen, merk: { naam: "Lida <T>", subregel: "" } },
+      { naam: "Bo", link: "https://x/t", geldigDagen: 7 },
+    );
+    expect(m.html).toContain(">LIDA &lt;T&gt;</div>");
+    expect(m.html).not.toContain("STIJLADVIES");
   });
 });
