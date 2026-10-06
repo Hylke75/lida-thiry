@@ -244,19 +244,33 @@ export const WEBSITE_STAPPEN = sectie({
 
 export const WEBSITE_FIGUURTYPES = sectie({
   sleutel: "website.figuurtypes",
-  titel: "De figuurtypes",
-  uitleg: "De figuurtypes zelf (naam, tekening, omschrijving) beheer je bij Lichaamstypes.",
-  variabelen: { aantal: "het aantal actieve figuurtypes, in letters (bijv. vijf)" },
+  titel: "Figuurtypes (algemeen)",
+  uitleg:
+    "Een algemeen blok over figuurtypes, standaard verborgen (Website → Homepage). De figuurtypes zelf (namen, tekeningen, uitleg) zijn alleen voor betalende klanten en staan nooit op de openbare site; schrijf hier dus geen typenamen of -kenmerken.",
   velden: {
     bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Ieder lichaam is anders" },
-    titel: { soort: "tekst", label: "Titel", standaard: "De {aantal} figuurtypes" },
+    titel: { soort: "tekst", label: "Titel", uitleg: ACCENT_UITLEG, standaard: "Welk *figuurtype* heb jij?" },
     intro: {
       soort: "tekstvak",
       label: "Introductie",
       regels: 3,
       standaard:
-        "Ieder lichaam is anders, maar de verhoudingen tussen schouders, taille en heupen vallen grofweg in {aantal} types. De test bepaalt welk type het beste bij jou past.",
+        "De verhoudingen tussen je schouders, taille en heupen bepalen welke kleding jou het mooist laat uitkomen. Met de figuurtest ontdek je welk figuurtype bij jou past, met uitleg en persoonlijk advies.",
     },
+    punten: {
+      soort: "lijst",
+      label: "Opsomming (met vinkjes)",
+      itemNaam: "punt",
+      max: 5,
+      velden: { tekst: { soort: "tekst", label: "Tekst", max: 120, standaard: "" } },
+      standaard: [
+        { tekst: "Je meet jezelf thuis op met een meetlint en duidelijke uitleg" },
+        { tekst: "Je ziet direct je figuurtype, met tekening en uitleg" },
+        { tekst: "Je advies is afgestemd op je figuur, lengte en postuur" },
+      ],
+    },
+    knop: { soort: "tekst", label: "Knoptekst (leeg = geen knop)", max: 60, standaard: "Ontdek jouw figuurtype" },
+    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/bestellen" },
   },
 });
 

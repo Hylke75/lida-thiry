@@ -1,6 +1,7 @@
 import "server-only";
 import { adminClient } from "./supabase/admin";
 import { adviesDownloadbaar, tokenVerlopen } from "./advies-toegang";
+import { AFGERONDE_STATUSSEN, isOpen } from "./order-status";
 
 interface TestOrder {
   id: string;
@@ -36,18 +37,13 @@ export async function beoordeelToken(token: string): Promise<TokenToestand> {
     // bereikbaar, zodat de klant haar advies kan blijven downloaden.
     return adviesDownloadbaar(order) ? { toestand: "al_afgerond", order } : { toestand: "verlopen" };
   }
-  if (order.status === "aangemaakt" || order.status === "betaling_mislukt") {
-    return { toestand: "niet_betaald", order };
-  }
-  if (
-    order.status === "test_afgerond" ||
-    order.status === "handmatige_beoordeling" ||
-    order.status === "advies_verzonden"
-  ) {
+  // Niet (meer) betaald: aangemaakt, betaling mislukt of betaling verlopen.
+  if (isOpen(order.status)) return { toestand: "niet_betaald", order };
+  if ((AFGERONDE_STATUSSEN as readonly string[]).includes(order.status)) {
     return { toestand: "al_afgerond", order };
   }
-  // status === 'betaald' -> test mag gedaan worden.
-  return { toestand: "geldig", order };
+  // Alleen 'betaald' geeft toegang tot de test; een onbekende status nooit.
+  return order.status === "betaald" ? { toestand: "geldig", order } : { toestand: "onbekend" };
 }
 
 /** Titel van een adviestype (bijv. "6A"), of null als het type (nog) niet bestaat. */

@@ -37,7 +37,12 @@ describe("mijn advies: links", () => {
     );
     expect(r.naam).toBe("Anna");
     expect(r.adviezen).toEqual([
-      { type: "6H", afgerondOp: "2026-09-01T10:00:00Z", url: "https://lidathiry.nl/api/test/a%2Fb/pdf" },
+      {
+        type: "6H",
+        afgerondOp: "2026-09-01T10:00:00Z",
+        url: "https://lidathiry.nl/api/test/a%2Fb/pdf",
+        figuurUrl: "https://lidathiry.nl/test/a%2Fb/figuurtype",
+      },
     ]);
     expect(r.tests).toEqual([
       { besteldOp: "2026-10-01T10:05:00Z", verlooptOp: "2026-11-01T10:00:00Z", url: "https://lidathiry.nl/test/open" },

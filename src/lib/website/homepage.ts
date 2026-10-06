@@ -62,7 +62,11 @@ export const BLOK_INFO: Readonly<Record<HomepageBlok, BlokInfo>> = {
   },
   probleem: { naam: "Herken je dit? (probleem en oplossing)", tekstenHref: tekst("website", "website.probleem") },
   stappen: { naam: "Zo werkt het", tekstenHref: tekst("website", "website.stappen") },
-  figuurtypes: { naam: "De figuurtypes", tekstenHref: tekst("website", "website.figuurtypes") },
+  figuurtypes: {
+    naam: "Figuurtypes (algemene uitleg)",
+    uitleg: "Zonder de types zelf: namen, tekeningen en uitleg zijn alleen voor klanten (achter de testlink).",
+    tekstenHref: tekst("website", "website.figuurtypes"),
+  },
   advies: { naam: "Wat zit er in je advies", tekstenHref: tekst("website", "website.advies") },
   over: { naam: "Over Lida", tekstenHref: tekst("website", "website.over") },
   ervaringen: {

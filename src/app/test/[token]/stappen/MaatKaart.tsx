@@ -35,16 +35,19 @@ export function MaatKaart({
         fout ? "border-[#b42318]" : "border-line"
       }`}
     >
-      {beeld ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={beeld}
-          alt={`Zo meet je je ${label.toLowerCase()}`}
-          className="mx-auto h-40 w-auto rounded-ontwerp-sm object-contain tablet:h-56"
-        />
-      ) : (
-        <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="mx-auto h-40 tablet:h-56" />
-      )}
+      {/* Meetbeeld: eigen foto (Beheer → Meetinstructies) of de getekende figuur met meetlint. */}
+      <div className="mx-auto flex w-full max-w-[220px] items-center justify-center self-start rounded-[46%_54%_46%_54%/52%_42%_58%_48%] bg-cream px-4 py-5 [--lichaam-vulling:var(--white)] tablet:max-w-none">
+        {beeld ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={beeld}
+            alt={`Zo meet je je ${label.toLowerCase()}`}
+            className="h-40 w-auto rounded-ontwerp-sm object-contain tablet:h-56"
+          />
+        ) : (
+          <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="h-40 tablet:h-56" />
+        )}
+      </div>
       <div className="flex flex-col gap-3">
         <h2 className={`${H3} m-0 text-[27px]`}>
           {label}

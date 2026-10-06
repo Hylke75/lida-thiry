@@ -11,7 +11,8 @@
 // Wat het doet:
 //   1. Start een mini-"Supabase" op 127.0.0.1 (zie nepSupabase hieronder). Die
 //      kent alleen de gepubliceerde pagina "contact" (zodat het contactformulier
-//      getest kan worden) en een prijs (zodat /bestellen het bestelformulier toont),
+//      getest kan worden), een prijs (zodat /bestellen het bestelformulier toont)
+//      en de lichaamstypes met twee vaste testlinks (zie klantOrder),
 //      en geeft op al het andere een nette foutmelding. De site
 //      valt dan overal terug op zijn standaardteksten, net als bij een storing.
 //   2. Bouwt de site (`next build`) met dummywaarden voor alle sleutels. NEXT_PUBLIC_*
@@ -94,6 +95,9 @@ const CONTACTPAGINA = {
 const INSTELLINGEN = [
   { sleutel: "prijs_cent", waarde: "4900" },
   { sleutel: "valuta", waarde: "EUR" },
+  // Optioneel een eigen indeling van de homepage (JSON), bijv. om een standaard
+  // verborgen blok te fotograferen: E2E_HOMEPAGE_INDELING='["hero","figuurtypes"]'.
+  ...(process.env.E2E_HOMEPAGE_INDELING ? [{ sleutel: "homepage_indeling", waarde: process.env.E2E_HOMEPAGE_INDELING }] : []),
 ];
 
 // Voorbeeldgegevens (alleen met --voorbeelddata): reviews en blogberichten, zodat
@@ -339,6 +343,16 @@ function nepSupabase() {
     if (req.method === "GET" && url.pathname === "/rest/v1/instellingen") {
       // Een prijs, zodat /bestellen het bestelformulier toont.
       return json(200, INSTELLINGEN);
+    }
+    // Ook zonder --voorbeelddata: de lichaamstypes en de bestellingen achter de vaste
+    // testlinks (e2e/figuurtype.spec.ts test de pagina's achter de betaalmuur). Elke
+    // andere testlink is onbekend en wordt geweigerd.
+    if (
+      req.method === "GET" &&
+      (url.pathname === "/rest/v1/lichaamstypes" || (url.pathname === "/rest/v1/orders" && url.searchParams.has("testtoken")))
+    ) {
+      const klant = klantrouteAntwoord(url, req.headers.accept ?? "");
+      if (klant) return json(klant[0], klant[1]);
     }
     if (voorbeelddata && req.method === "GET") {
       const klant = klantrouteAntwoord(url, req.headers.accept ?? "");

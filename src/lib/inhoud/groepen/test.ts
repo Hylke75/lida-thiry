@@ -205,6 +205,93 @@ export const TEST_UITSLAG = sectie({
       standaard:
         "In je advies lees je precies welke kleding, vormen en stoffen jouw figuur het mooist laten uitkomen. We sturen het ook naar je e-mail.",
     },
+    figuurtype_link: {
+      soort: "tekst",
+      label: "Link naar ‘Jouw figuurtype’",
+      uitleg: "De pagina met meer uitleg over het type; alleen bereikbaar via de persoonlijke testlink.",
+      max: 60,
+      standaard: "Lees alles over jouw figuurtype",
+    },
+  },
+});
+
+export const TEST_FIGUURTYPE = sectie({
+  sleutel: "test.figuurtype",
+  titel: "Jouw figuurtype",
+  uitleg:
+    "De pagina met uitleg over het figuurtype van de klant. Alleen te zien met de persoonlijke testlink, na het afronden van de test (niet openbaar). Naam, tekening, omschrijving en kenmerken van het type zelf beheer je bij Lichaamstypes; de inhoud van het advies staat alleen in de PDF.",
+  variabelen: {
+    naam: "naam van de klant",
+    categorie: "lengte en postuur van de klant, bijv. ‘Gemiddeld – gemiddeld’ (alleen bij de introductie van het advies)",
+  },
+  velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "{naam}, jouw figuurtype is" },
+    kenmerken_kop: { soort: "tekst", label: "Kop boven de uitleg en kenmerken", max: 80, standaard: "Wat kenmerkt jouw figuur" },
+    verhoudingen_kop: { soort: "tekst", label: "Kop boven de verhoudingen", max: 80, standaard: "Je verhoudingen in het kort" },
+    anderen_kop: {
+      soort: "tekst",
+      label: "Kop boven de andere figuurtypes",
+      uitleg: "Zet één kort woord tussen *sterretjes* om het als cursief koraalrood accent te tonen.",
+      max: 100,
+      standaard: "Zo verhoudt jouw type zich tot de *andere*",
+    },
+    anderen_intro: {
+      soort: "tekstvak",
+      label: "Introductie bij de andere figuurtypes",
+      regels: 2,
+      standaard:
+        "Geen enkel lichaam past precies in één vakje. Daarom zie je hier ook de andere figuurtypes, het meest verwante eerst. Zo begrijp je beter waarom bepaalde kleding jou wel of niet goed staat.",
+    },
+    jouw_type_label: { soort: "tekst", label: "Label bij het eigen type in het overzicht", max: 30, standaard: "Jouw type" },
+    advies_kop: { soort: "tekst", label: "Kop boven ‘wat staat er in je advies’", max: 100, standaard: "Wat staat er in je persoonlijke advies?" },
+    advies_intro: {
+      soort: "tekstvak",
+      label: "Introductie bij het advies",
+      regels: 2,
+      standaard:
+        "Je advies is afgestemd op jouw figuurtype én op je lengte en postuur ({categorie}). Je vindt er onder meer:",
+    },
+    advies_punten: {
+      soort: "lijst",
+      label: "Onderwerpen in het advies",
+      uitleg: "Een algemene opsomming; de adviezen zelf staan alleen in de PDF.",
+      itemNaam: "onderwerp",
+      max: 10,
+      velden: { tekst: { soort: "tekst", label: "Tekst", max: 120, standaard: "" } },
+      standaard: [
+        { tekst: "Welke snitten en vormen jouw figuur mooi laten uitkomen" },
+        { tekst: "De lengtes van rokken, jurken, broeken en jasjes die bij je passen" },
+        { tekst: "Halslijnen, mouwen en details die je in balans brengen" },
+        { tekst: "Stoffen en patronen die goed voor je werken" },
+        { tekst: "Wat je beter kunt laten hangen, en waarom" },
+      ],
+    },
+    download_kop: {
+      soort: "tekst",
+      label: "Kop van het downloadvlak",
+      uitleg: "Zet één kort woord tussen *sterretjes* om het als cursief koraalrood accent te tonen.",
+      max: 100,
+      standaard: "Je advies staat *klaar*",
+    },
+    download_tekst: {
+      soort: "tekstvak",
+      label: "Tekst in het downloadvlak",
+      regels: 2,
+      standaard: "Bewaar je advies, print het of neem het mee als je gaat winkelen.",
+    },
+    niet_klaar_tekst: {
+      soort: "tekstvak",
+      label: "Tekst als het advies (nog) niet te downloaden is",
+      regels: 2,
+      standaard: "Je persoonlijke advies wordt nog voor je klaargemaakt. Je ontvangt het per e-mail zodra het klaar is.",
+    },
+    terug_link: { soort: "tekst", label: "Link terug naar de uitslag", max: 60, standaard: "Terug naar je uitslag" },
+    kwijt_tekst: {
+      soort: "tekst",
+      label: "Zin met link naar ‘Mijn advies’",
+      max: 120,
+      standaard: "Link of advies kwijt? Vraag het opnieuw aan via Mijn advies.",
+    },
   },
 });
 
@@ -266,6 +353,7 @@ export const TEST: Groep = {
     TEST_VRAGEN,
     TEST_AFRONDEN,
     TEST_UITSLAG,
+    TEST_FIGUURTYPE,
     TEST_MELDINGEN,
   ],
 };

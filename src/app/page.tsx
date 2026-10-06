@@ -1,8 +1,6 @@
 import { haalGoedgekeurdeReviews, haalReviewSamenvatting } from "@/lib/reviews/publiek";
 import { Fragment } from "react";
 import { leesPubliekeInstellingen, leesPubliekePrijs } from "@/lib/instellingen";
-import { haalSilhouettenPubliek } from "@/lib/lichaamstypes";
-import { STANDAARD_VORM } from "@/lib/lichaamstype-regels";
 import { leesSectie } from "@/lib/inhoud/lees";
 import {
   WEBSITE_ADVIES,
@@ -30,7 +28,7 @@ import { eersteBestaandeLink } from "@/lib/website/links";
 import { veiligeLink } from "@/lib/website/weergave";
 
 // Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
-// bezoeker gelijk: teksten, instellingen, silhouetten, reviews en de nieuwste
+// bezoeker gelijk: teksten, instellingen, reviews en de nieuwste
 // blogberichten. Die staan in de datacache met tags (lib/cache/tags.ts); opslaan
 // in het beheer vernieuwt de tags en daarmee deze pagina direct. Zonder wijziging
 // wordt de pagina elk uur opnieuw opgebouwd; staat het blogblok aan, dan hooguit
@@ -38,10 +36,6 @@ import { veiligeLink } from "@/lib/website/weergave";
 // ingeplande berichten op tijd verschijnen. Geen cookies of zoekparameters
 // nodig, dus geen force-dynamic meer.
 export const revalidate = 3600;
-
-const TELWOORDEN = ["nul", "één", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen", "tien"];
-// Zonder figuurtypes (bijv. database onbereikbaar) liever "De verschillende figuurtypes" dan "De nul".
-const telwoord = (n: number) => (n === 0 ? "verschillende" : (TELWOORDEN[n] ?? String(n)));
 
 /**
  * De homepage. De blokken staan in components/homepage/Blokken.tsx; volgorde en
@@ -55,9 +49,9 @@ export default async function Home() {
   const toontErvaringen = indeling.some((i) => i.blok === "ervaringen");
   const toontDiensten = indeling.some((i) => i.blok === "diensten");
 
-  const [silhouetten, hero, diensten, probleem, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews, afspraakSoorten] =
+  // Geen lichaamstypes op de homepage: die zijn alleen voor klanten (achter de testlink).
+  const [hero, diensten, probleem, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews, afspraakSoorten] =
     await Promise.all([
-      haalSilhouettenPubliek().catch(() => []),
       leesSectie(WEBSITE_HERO),
       leesSectie(WEBSITE_DIENSTEN),
       leesSectie(WEBSITE_PROBLEEM),
@@ -93,9 +87,6 @@ export default async function Home() {
   const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact", "/afspraak");
 
   const gegevens: HomepageGegevens = {
-    silhouetten,
-    vorm: (i) => silhouetten[i]?.vorm ?? STANDAARD_VORM,
-    aantal: { aantal: telwoord(silhouetten.length) },
     prijzen: { prijs: prijsLabel ?? "", afspraak_vanaf: afspraakVanaf },
     ctaTekst: prijsLabel ? `${afsluiting.knop} — ${prijsLabel}` : afsluiting.knop,
     overLink,

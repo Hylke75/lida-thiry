@@ -1,21 +1,25 @@
-// Getekende vrouwenfiguur (vooraanzicht) voor de meetinstructies en silhouetkeuze.
-// Alles is inline SVG: geen externe beelden nodig, scherp op elk scherm.
+// Getekende vrouwenfiguur (vooraanzicht) voor de meetinstructies, de silhouetkeuze,
+// de uitslag en "Jouw figuurtype". Alles is inline SVG: geen externe beelden
+// nodig, scherp op elk scherm.
+//
+// Kleuren uit de huisstijl (globals.css): de figuur is perzik met een zachte
+// inktlijn (≥ 3:1 op papier en wit, WCAG 1.4.11), het meetlint koraal. Een ouder
+// kan de kleuren per plek aanpassen met de CSS-variabelen --lichaam-vulling,
+// --lichaam-lijn en --lichaam-lint (bijv. [--lichaam-vulling:var(--white)]).
 
 import type { Lichaamsvorm, MaatSleutel } from "@/lib/test-config";
 import { CX, HOOFD, STANDAARD_VORM, Y, armPad, lichaamsPad } from "@/lib/lichaam-pad";
 
-const LINT = "var(--accent)";
+const VULLING = "var(--lichaam-vulling, var(--peach))";
+const LIJN = "var(--lichaam-lijn, var(--ink-soft))";
+const LINT = "var(--lichaam-lint, var(--coral-tekst))";
 
 /** Meetlint rond het lichaam: voorkant doorgetrokken, achterkant gestippeld. */
 function Lint({ y, r }: { y: number; r: number }) {
   const ry = 6;
   return (
     <g stroke={LINT} strokeWidth={3} fill="none" strokeLinecap="round">
-      <path
-        d={`M${CX - r},${y} A${r},${ry} 0 0 1 ${CX + r},${y}`}
-        strokeDasharray="4 4"
-        opacity={0.55}
-      />
+      <path d={`M${CX - r},${y} A${r},${ry} 0 0 1 ${CX + r},${y}`} strokeDasharray="4 4" opacity={0.55} />
       <path d={`M${CX - r},${y} A${r},${ry} 0 0 0 ${CX + r},${y}`} />
     </g>
   );
@@ -46,83 +50,43 @@ export function Lichaam({
   /** Zonder armen is de lichaamsvorm beter te zien (silhouetkeuze). */
   armen?: boolean;
   className?: string;
+  /** Beschrijving voor schermlezers; leeg = decoratief (verborgen voor schermlezers). */
   titel: string;
 }) {
   const arm = (kant: -1 | 1) => armPad(vorm, kant);
+  const toegankelijk = titel.trim()
+    ? ({ role: "img", "aria-label": titel } as const)
+    : ({ "aria-hidden": true, focusable: "false" } as const);
 
   return (
-    <svg
-      viewBox="0 0 200 410"
-      role="img"
-      aria-label={titel}
-      className={className}
-    >
-      <g className="text-foreground">
-        <g
-          fill="currentColor"
-          fillOpacity={0.1}
-          stroke="currentColor"
-          strokeOpacity={0.4}
-          strokeWidth={1.5}
-        >
-          <path d={lichaamsPad(vorm)} />
-          <circle cx={HOOFD.cx} cy={HOOFD.cy} r={HOOFD.r} />
+    <svg viewBox="0 0 200 410" className={className} {...toegankelijk}>
+      {armen && (
+        // Armen achter de romp: eerst de lijn (breed), dan de vulling erover.
+        <g fill="none" strokeLinecap="round">
+          <g stroke={LIJN} strokeWidth={13}>
+            <path d={arm(-1)} />
+            <path d={arm(1)} />
+          </g>
+          <g stroke={VULLING} strokeWidth={10}>
+            <path d={arm(-1)} />
+            <path d={arm(1)} />
+          </g>
         </g>
-        {armen && (
-          <>
-            <g
-              fill="none"
-              stroke="currentColor"
-              strokeOpacity={0.4}
-              strokeWidth={13}
-              strokeLinecap="round"
-            >
-              <path d={arm(-1)} />
-              <path d={arm(1)} />
-            </g>
-            <g
-              fill="none"
-              stroke="var(--background)"
-              strokeWidth={10}
-              strokeLinecap="round"
-            >
-              <path d={arm(-1)} />
-              <path d={arm(1)} />
-            </g>
-            <g
-              fill="none"
-              stroke="currentColor"
-              strokeOpacity={0.1}
-              strokeWidth={10}
-              strokeLinecap="round"
-            >
-              <path d={arm(-1)} />
-              <path d={arm(1)} />
-            </g>
-          </>
-        )}
+      )}
+      <g fill={VULLING} stroke={LIJN} strokeWidth={1.5} strokeLinejoin="round">
+        <path d={lichaamsPad(vorm)} />
+        <circle cx={HOOFD.cx} cy={HOOFD.cy} r={HOOFD.r} />
       </g>
 
-      {meet === "schouder" && (
-        <Lint y={Y.schouder + 2} r={vorm.schouder + 11} />
-      )}
+      {meet === "schouder" && <Lint y={Y.schouder + 2} r={vorm.schouder + 11} />}
       {meet === "borst" && <Lint y={Y.borst} r={vorm.borst + 4} />}
       {meet === "taille" && <Lint y={Y.taille} r={vorm.taille + 4} />}
       {meet === "hoge_heup" && <Lint y={Y.hogeHeup} r={vorm.hogeHeup + 4} />}
       {meet === "heup" && <Lint y={Y.heup} r={vorm.heup + 4} />}
-      {meet === "binnenbeen" && (
-        <Maatlijn x={CX - 9} y1={Y.kruis + 4} y2={Y.vloer} />
-      )}
+      {meet === "binnenbeen" && <Maatlijn x={CX - 9} y1={Y.kruis + 4} y2={Y.vloer} />}
       {meet === "lengte" && (
         <>
-          <line
-            x1={150}
-            y1={Y.vloer + 1}
-            x2={196}
-            y2={Y.vloer + 1}
-            stroke="currentColor"
-            strokeOpacity={0.3}
-          />
+          <line x1={150} y1={Y.vloer + 1} x2={196} y2={Y.vloer + 1} stroke={LIJN} strokeOpacity={0.5} />
           <Maatlijn x={178} y1={Y.hoofdBoven} y2={Y.vloer} />
         </>
       )}

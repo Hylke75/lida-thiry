@@ -37,8 +37,6 @@ import type { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import type { BlogBericht } from "@/lib/blog/regels";
 import type { PubliekeReview } from "@/lib/reviews/regels";
 import type { HomepageBlok } from "@/lib/website/homepage";
-import type { Silhouet } from "@/lib/lichaamstype-regels";
-import type { Lichaamsvorm } from "@/lib/test-config";
 import { ervaringItems, kaartKleur, MAX_ERVARINGEN, metAanhalingstekens, veiligeLink } from "@/lib/website/weergave";
 
 // De blokken van de homepage, elk als losse component, in de vormgeving van
@@ -46,12 +44,11 @@ import { ervaringItems, kaartKleur, MAX_ERVARINGEN, metAanhalingstekens, veilige
 // gegevens één keer op en toont de blokken in de volgorde uit
 // Beheer → Website → Homepage (lib/website/homepage.ts).
 
+// Let op: de figuurtypes zelf (namen, tekeningen, uitleg) zijn alleen voor
+// betalende klanten (achter de testlink). Geen enkel blok hier krijgt of toont
+// gegevens van de lichaamstypes; de getekende figuur is de neutrale standaardvorm.
+
 export interface HomepageGegevens {
-  silhouetten: readonly Silhouet[];
-  /** Vorm van het i-de silhouet (of de standaardvorm). */
-  vorm: (i: number) => Lichaamsvorm;
-  /** Het aantal figuurtypes in letters, voor {aantal}. */
-  aantal: { aantal: string };
   /** Invulwaarden voor de prijzen op de dienstenkaarten ({prijs}, {afspraak_vanaf}); leeg als onbekend. */
   prijzen: { prijs: string; afspraak_vanaf: string };
   /** Tekst van de knop naar de test in de afsluiting (met prijs). */
@@ -397,31 +394,44 @@ const Vragen: Blok = ({ vragen }) => {
   );
 };
 
-const Figuurtypes: Blok = ({ figuurtypes, aantal, silhouetten }) => (
-  <section aria-labelledby="figuurtypes-titel" className={`${SECTIE} bg-cream`}>
-    <Container>
-      <SectieKop
-        id="figuurtypes-titel"
-        variant="midden"
-        smal
-        bovenschrift={figuurtypes.bovenschrift}
-        titel={vulIn(figuurtypes.titel, aantal)}
-      />
-      <p className="mx-auto -mt-5 mb-10 max-w-[640px] text-center text-[18px] text-ink-soft">{vulIn(figuurtypes.intro, aantal)}</p>
-      <ul className="m-0 grid list-none grid-cols-2 gap-[18px] p-0 tablet:grid-cols-3 desktop:grid-cols-5">
-        {silhouetten.map((s) => (
-          <li key={s.letter} className="flex flex-col items-center rounded-ontwerp-sm border border-line bg-white p-5 text-center">
-            <Lichaam vorm={s.vorm} armen={false} titel={`Silhouet ${s.naam}`} className="h-36 w-auto" />
-            <h3 className={`${H3} mt-4 mb-2 text-[22px]`}>{s.naam}</h3>
-            <p className="m-0 text-[14px] text-ink-soft">{s.omschrijving}</p>
-          </li>
-        ))}
-      </ul>
-    </Container>
-  </section>
-);
+/**
+ * Algemene uitleg over figuurtypes (standaard verborgen). Bewust zonder de types
+ * zelf: alleen een neutrale tekening met meetlint, tekst en een knop naar de test.
+ */
+const Figuurtypes: Blok = ({ figuurtypes }) => {
+  // Oudere opgeslagen teksten kunnen nog {aantal} bevatten: nooit het echte aantal tonen.
+  const vul = (t: string) => vulIn(t, { aantal: "verschillende" });
+  return (
+    <section aria-labelledby="figuurtypes-titel" className={`${SECTIE} bg-cream`}>
+      <div className={`${CONTAINER} grid grid-cols-1 items-center gap-[42px] tablet:gap-16 desktop:grid-cols-[1.1fr_.9fr]`}>
+        <div className="max-w-[660px]">
+          {figuurtypes.bovenschrift && <Bovenschrift>{figuurtypes.bovenschrift}</Bovenschrift>}
+          <h2 id="figuurtypes-titel" className={H2}>
+            <KopTekst tekst={vul(figuurtypes.titel)} />
+          </h2>
+          {figuurtypes.intro && <p className="mt-0 mb-[18px] text-[18px] text-ink-soft">{vul(figuurtypes.intro)}</p>}
+          <Vinklijst punten={figuurtypes.punten} className="mt-7" />
+          {figuurtypes.knop.trim() && (
+            <Knop href={veiligeLink(figuurtypes.knopLink, "/bestellen")} className="mt-9">
+              {figuurtypes.knop}
+            </Knop>
+          )}
+        </div>
+        {/* Neutrale tekening met meetlint (decoratie; geen figuurtype). */}
+        <div aria-hidden="true" className="relative mx-auto w-full max-w-[420px]">
+          <span className="absolute top-[8%] left-[2%] h-10 w-10 rounded-full bg-butter" />
+          <span className="absolute right-[6%] bottom-[10%] h-7 w-7 rounded-full bg-sage" />
+          <span className="absolute top-[18%] right-[2%] h-5 w-5 rounded-full bg-sky" />
+          <div className="flex aspect-square items-center justify-center rounded-[46%_54%_46%_54%/52%_42%_58%_48%] bg-coral-soft shadow-ontwerp [--lichaam-vulling:var(--white)]">
+            <Lichaam meet="taille" titel="" className="h-[78%] w-auto" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
-const Advies: Blok = ({ advies, vorm }) => (
+const Advies: Blok = ({ advies }) => (
   <section aria-labelledby="advies-inhoud-titel" className={SECTIE}>
     <div className={`${CONTAINER} grid grid-cols-1 items-center gap-[42px] tablet:gap-16 desktop:grid-cols-[1.1fr_.9fr]`}>
       <div className="max-w-[660px]">
@@ -439,9 +449,9 @@ const Advies: Blok = ({ advies, vorm }) => (
       >
         <p className="m-0 text-[10px] font-extrabold tracking-[0.13em] text-berry uppercase">Persoonlijk kledingadvies</p>
         <p className="mt-4 mb-0 font-serif text-2xl leading-tight">Jouw persoonlijke kledingadvies</p>
-        <p className="m-0 mt-1 font-serif text-lg text-berry">Type X — Zandloper</p>
+        <p className="m-0 mt-1 font-serif text-lg text-berry">Jouw figuurtype</p>
         <div className="mt-6 flex gap-4">
-          <Lichaam vorm={vorm(0)} armen={false} titel="" className="h-28 w-auto flex-none" />
+          <Lichaam armen={false} titel="" className="h-28 w-auto flex-none" />
           <div className="flex flex-1 flex-col gap-2 pt-2">
             <div className="h-2 w-full rounded bg-ink/10" />
             <div className="h-2 w-5/6 rounded bg-ink/10" />

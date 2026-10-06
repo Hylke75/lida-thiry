@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { TekstLink } from "@/components/site/Basis";
 import { KlantKaart, KlantKop, KlantPagina } from "@/components/site/KlantPagina";
 import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
@@ -21,6 +22,9 @@ import {
 } from "@/lib/inhoud/groepen/test";
 
 export const dynamic = "force-dynamic";
+
+// Persoonlijke pagina achter de testlink: nooit in zoekmachines.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 function Melding({ titel, tekst }: { titel: string; tekst: string }) {
   return (

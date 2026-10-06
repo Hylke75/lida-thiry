@@ -58,6 +58,26 @@ for (const { pad, naam, status = 200 } of PAGINAS) {
   });
 }
 
+// Pagina's achter de testlink (betaalmuur): de vaste testlinks bestaan alleen in
+// de nep-database van scripts/e2e-lokaal.mjs.
+const TOKEN_PAGINAS: { pad: string; naam: string }[] = [
+  { pad: "/test/e2e-voorbeeld-test", naam: "test (eerste stap)" },
+  { pad: "/test/e2e-voorbeeld-uitslag", naam: "uitslag (onthulling)" },
+  { pad: "/test/e2e-voorbeeld-uitslag/figuurtype", naam: "jouw figuurtype" },
+];
+
+for (const { pad, naam } of TOKEN_PAGINAS) {
+  test(`toegankelijkheid: ${naam} (${pad})`, async ({ page }) => {
+    test.skip(!process.env.E2E_LOKAAL, "Vaste testlinks bestaan alleen in de lokale nep-database.");
+    const res = await page.goto(pad);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const { violations } = await analyseer(page);
+    const ernstig = violations.filter((v) => ERNSTIG.has(v.impact ?? ""));
+    expect(ernstig.length, `Ernstige toegankelijkheidsproblemen op ${pad}:\n${beschrijf(ernstig)}`).toBe(0);
+  });
+}
+
 test("toegankelijkheid: contactformulier met foutmeldingen", async ({ page }) => {
   const res = await page.goto("/contact");
   test.skip(res?.status() === 404, "Geen gepubliceerde pagina 'contact' op deze omgeving.");

@@ -17,7 +17,10 @@ export interface MijnAdviesOrder {
 export interface AdviesLink {
   type: string;
   afgerondOp: string | null;
+  /** Download van de advies-PDF. */
   url: string;
+  /** "Jouw figuurtype": uitleg over het type, achter dezelfde testlink. */
+  figuurUrl: string;
 }
 
 export interface TestLink {
@@ -44,7 +47,12 @@ export function mijnAdviesLinks(
     if (!o.testtoken) continue;
     const token = encodeURIComponent(o.testtoken);
     if (adviesDownloadbaar(o, nu) && o.toegekend_type) {
-      adviezen.push({ type: o.toegekend_type, afgerondOp: o.afgerond_op, url: `${basisUrl}/api/test/${token}/pdf` });
+      adviezen.push({
+        type: o.toegekend_type,
+        afgerondOp: o.afgerond_op,
+        url: `${basisUrl}/api/test/${token}/pdf`,
+        figuurUrl: `${basisUrl}/test/${token}/figuurtype`,
+      });
     } else if (TEST_OPEN.includes(o.status) && !tokenVerlopen(o, nu)) {
       tests.push({
         besteldOp: o.betaald_op ?? o.aangemaakt_op,

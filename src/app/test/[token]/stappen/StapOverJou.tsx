@@ -18,7 +18,9 @@ export function StapOverJou({
 }) {
   return (
     <div className="grid items-center gap-6 rounded-ontwerp-md border border-line bg-white p-5 tablet:grid-cols-[170px_1fr] tablet:gap-8 tablet:p-[30px]">
-      <Lichaam meet="lengte" titel="Lengte meten" className="mx-auto h-56 tablet:h-64" />
+      <div className="mx-auto flex items-center justify-center rounded-[46%_54%_46%_54%/52%_42%_58%_48%] bg-cream px-5 py-6 [--lichaam-vulling:var(--white)]">
+        <Lichaam meet="lengte" titel="Lengte meten" className="h-56 tablet:h-64" />
+      </div>
       <div className="flex flex-col gap-5">
         <p className={`${KLANT_INTRO} m-0 whitespace-pre-line text-[17px]`}>{intro}</p>
         <Invoer
