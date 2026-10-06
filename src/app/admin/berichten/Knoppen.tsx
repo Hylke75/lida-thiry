@@ -37,7 +37,7 @@ export function Tekstvak({ max, begin = "", ...rest }: ComponentProps<"textarea"
         maxLength={max}
         onChange={(e) => setLengte(e.currentTarget.value.length)}
       />
-      <span className="self-end text-xs tabular-nums text-black/50 dark:text-white/50">
+      <span className="self-end text-xs tabular-nums text-foreground/70">
         {lengte.toLocaleString("nl-NL")} / {max.toLocaleString("nl-NL")}
       </span>
     </div>

@@ -6,10 +6,7 @@ import type { VersieMeta, VersieSoort } from "@/lib/versies/regels";
 import { Melding } from "../Melding";
 import { haalVersies, vergelijkVersie } from "./acties";
 import { TIJDZONE } from "@/lib/datum";
-
-const knop =
-  "rounded-full border border-black/15 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-40 dark:border-white/20 dark:hover:bg-white/5";
-const zacht = "text-black/55 dark:text-white/55";
+import { knop, knopSecundair, tekstZacht } from "@/components/admin/stijl";
 
 const datumTijd = new Intl.DateTimeFormat("nl-NL", {
   dateStyle: "medium",
@@ -50,10 +47,10 @@ function Regel({ r }: { r: DiffRegel }) {
 
 function Vergelijking({ regels }: { regels: DiffRegel[] }) {
   const { erbij, weg } = telVerschil(regels);
-  if (!erbij && !weg) return <p className={`text-sm ${zacht}`}>Deze versie is gelijk aan wat er nu is opgeslagen.</p>;
+  if (!erbij && !weg) return <p className={`text-sm ${tekstZacht}`}>Deze versie is gelijk aan wat er nu is opgeslagen.</p>;
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         <span className="rounded bg-red-50 px-1 text-red-900 dark:bg-red-950/40 dark:text-red-200">− rood</span> = staat er nu (verdwijnt bij terugzetten),{" "}
         <span className="rounded bg-emerald-50 px-1 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">+ groen</span> = in deze versie. {weg}{" "}
         regel(s) weg, {erbij} regel(s) erbij.
@@ -61,7 +58,7 @@ function Vergelijking({ regels }: { regels: DiffRegel[] }) {
       <div className="max-h-[50vh] min-w-0 overflow-auto rounded-lg border border-black/10 py-1 font-mono text-xs leading-relaxed dark:border-white/15">
         {compacteer(regels).map((r, i) =>
           r.soort === "overslag" ? (
-            <div key={i} className={`px-2 py-0.5 text-center italic ${zacht}`}>
+            <div key={i} className={`px-2 py-0.5 text-center italic ${tekstZacht}`}>
               … {r.aantal} ongewijzigde regel{r.aantal === 1 ? "" : "s"} …
             </div>
           ) : (
@@ -84,7 +81,7 @@ export function Geschiedenis({
   refId,
   onTerugzetten,
   gewijzigd = false,
-  knopKlasse = knop,
+  knopKlasse = knopSecundair,
   knopTekst = "Geschiedenis",
 }: {
   soort: VersieSoort;
@@ -185,11 +182,11 @@ export function Geschiedenis({
               <h2 id="geschiedenis-titel" className="text-lg font-semibold">
                 Geschiedenis
               </h2>
-              <button type="button" onClick={() => setOpen(false)} className={knop}>
+              <button type="button" onClick={() => setOpen(false)} className={knopSecundair}>
                 Sluiten
               </button>
             </div>
-            <p className={`text-sm ${zacht}`}>
+            <p className={`text-sm ${tekstZacht}`}>
               Bij elke keer opslaan wordt de vorige inhoud bewaard (de laatste 50 versies; snel na elkaar opslaan telt als één keer). Kies een versie om
               te zien wat er anders is dan nu.
             </p>
@@ -203,28 +200,28 @@ export function Geschiedenis({
               </Melding>
             )}
             {versies === null ? (
-              <p className={`text-sm ${zacht}`}>Laden…</p>
+              <p className={`text-sm ${tekstZacht}`}>Laden…</p>
             ) : versies.length === 0 ? (
-              <p className={`text-sm ${zacht}`}>Er zijn nog geen eerdere versies. Die verschijnen hier zodra je wijzigingen opslaat.</p>
+              <p className={`text-sm ${tekstZacht}`}>Er zijn nog geen eerdere versies. Die verschijnen hier zodra je wijzigingen opslaat.</p>
             ) : (
               <ul className="flex min-w-0 flex-col gap-2">
                 {versies.map((v) => (
                   <li key={v.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-black/10 p-3 dark:border-white/15">
                     <button type="button" onClick={() => void kies(v.id)} aria-expanded={gekozen === v.id} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-left">
                       <span className="font-medium">{datumTijd.format(new Date(v.op))}</span>
-                      <span className={`min-w-0 text-sm ${zacht}`}>
+                      <span className={`min-w-0 text-sm ${tekstZacht}`}>
                         {v.omschrijving || "Opgeslagen"}
                         {v.gemaakt_door ? ` · ${v.gemaakt_door}` : ""}
                       </span>
                     </button>
                     {gekozen === v.id && (
                       <div className="flex min-w-0 flex-col gap-3">
-                        {regels === null ? <p className={`text-sm ${zacht}`}>Vergelijken…</p> : <Vergelijking regels={regels} />}
+                        {regels === null ? <p className={`text-sm ${tekstZacht}`}>Vergelijken…</p> : <Vergelijking regels={regels} />}
                         <button
                           type="button"
                           onClick={() => void terugzetten(v)}
                           disabled={bezig}
-                          className="w-fit rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+                          className={`${knop} w-fit`}
                         >
                           {bezig ? "Bezig…" : "Deze versie terugzetten"}
                         </button>

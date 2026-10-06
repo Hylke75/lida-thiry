@@ -4,6 +4,7 @@ import { AFGERONDE_STATUSSEN, BETAALDE_STATUSSEN, OMZET_STATUSSEN } from "@/lib/
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
 import { formatteerBedrag } from "@/lib/prijs";
+import { kaartVlak } from "@/components/admin/stijl";
 
 interface DashOrder {
   status: string;
@@ -36,10 +37,10 @@ async function leesOrders(dagen: number | null): Promise<DashOrder[]> {
 
 function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
-      <span className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">{titel}</span>
+    <div className={`${kaartVlak} flex flex-col gap-1`}>
+      <span className="text-xs uppercase tracking-wide text-foreground/70">{titel}</span>
       <span className="font-serif text-3xl">{waarde}</span>
-      <span className="text-xs text-black/50 dark:text-white/50">{sub}</span>
+      <span className="text-xs text-foreground/70">{sub}</span>
     </div>
   );
 }
@@ -47,8 +48,8 @@ function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: str
 function Balken({ titel, rijen }: { titel: string; rijen: { label: string; aantal: number }[] }) {
   const max = Math.max(1, ...rijen.map((r) => r.aantal));
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
-      <span className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">{titel}</span>
+    <div className={`${kaartVlak} flex flex-col gap-2`}>
+      <span className="text-xs uppercase tracking-wide text-foreground/70">{titel}</span>
       <ul className="flex flex-col gap-1">
         {rijen.map((r) => (
           <li key={r.label} className="grid grid-cols-[2.5rem_1fr_2rem] items-center gap-2 text-sm">
@@ -59,7 +60,7 @@ function Balken({ titel, rijen }: { titel: string; rijen: { label: string; aanta
                 style={{ width: `${(r.aantal / max) * 100}%` }}
               />
             </span>
-            <span className="text-right tabular-nums text-black/60 dark:text-white/60">{r.aantal}</span>
+            <span className="text-right tabular-nums text-foreground/70">{r.aantal}</span>
           </li>
         ))}
       </ul>
@@ -90,7 +91,7 @@ export async function Dashboard({ periode, linkVoor }: { periode: string | undef
   }
 
   const knop = (actief: boolean) =>
-    `rounded-full px-3 py-1 ${actief ? "bg-foreground text-background" : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"}`;
+    `rounded-full px-3 py-1 ${actief ? "bg-foreground text-background" : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"}`;
 
   return (
     <section className="flex flex-col gap-3">

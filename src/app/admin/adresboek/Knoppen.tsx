@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
+import { tekstFout } from "@/components/admin/stijl";
 
 /** Downloadt een CSV van de aangevinkte relaties (vinkjes `name="id"` in hetzelfde formulier). */
 export function ExporteerSelectie({ className }: { className?: string }) {
@@ -31,7 +32,7 @@ export function ExporteerSelectie({ className }: { className?: string }) {
         Exporteren (CSV)
       </button>
       {melding && (
-        <span role="status" className="text-xs text-red-700 dark:text-red-300">
+        <span role="status" className={`text-xs ${tekstFout}`}>
           {melding}
         </span>
       )}

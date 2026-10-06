@@ -18,6 +18,8 @@ import { BETAALDE_STATUSSEN, statusLabel } from "@/lib/admin/status";
 import { isOpen, OPEN_STATUSSEN } from "@/lib/order-status";
 import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
+import { invoer, knop, knopGevaar, knopSecundair } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -185,14 +187,11 @@ async function verwijderBestelling(formData: FormData) {
 function Regel({ label, waarde }: { label: string; waarde: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 border-b border-black/5 py-1.5 text-sm dark:border-white/10">
-      <span className="text-black/50 dark:text-white/50">{label}</span>
+      <span className="text-foreground/70">{label}</span>
       <span className="text-right">{waarde}</span>
     </div>
   );
 }
-
-const knopSecundair =
-  "rounded-full border border-black/15 px-5 py-2.5 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5";
 
 export default async function OrderDetail({
   params,
@@ -230,8 +229,10 @@ export default async function OrderDetail({
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/bestellingen" />
-      <Link href="/admin/bestellingen" className="text-sm text-black/50 underline underline-offset-4 dark:text-white/50">← Terug naar bestellingen</Link>
-      <h1 className="text-2xl font-semibold tracking-tight">{order.klantnaam}</h1>
+      <AdminKop
+        terug={{ href: "/admin/bestellingen", label: "Terug naar bestellingen" }}
+        titel={order.klantnaam}
+      />
 
       {m && <Melding soort={m.soort}>{m.tekst}</Melding>}
 
@@ -263,7 +264,7 @@ export default async function OrderDetail({
 
       {r ? (
         <section className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">Testresultaat</h2>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-foreground/70">Testresultaat</h2>
           <Regel label="Lengte" waarde={cm(r.lengte_cm)} />
           <Regel label="Gewicht" waarde={r.gewicht_kg == null ? "–" : `${r.gewicht_kg} kg`} />
           <Regel label="Borst / taille" waarde={`${cm(r.borst)} / ${cm(r.taille)}`} />
@@ -276,17 +277,17 @@ export default async function OrderDetail({
           ))}
         </section>
       ) : (
-        <p className="text-sm text-black/50 dark:text-white/50">Nog geen testresultaat.</p>
+        <p className="text-sm text-foreground/70">Nog geen testresultaat.</p>
       )}
 
       <section className="flex flex-col gap-5 rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">Acties</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/70">Acties</h2>
 
         {betaald && order.testtoken && (
           <form action={stuurTestlinkOpnieuw} className="flex flex-col gap-1">
             <input type="hidden" name="id" value={order.id} />
             <button className={`w-fit ${knopSecundair}`}>Testlink opnieuw sturen</button>
-            <span className="text-xs text-black/50 dark:text-white/50">
+            <span className="text-xs text-foreground/70">
               Stuurt de klant opnieuw de e-mail met de link naar de test. Is de link verlopen, dan wordt hij verlengd.
             </span>
           </form>
@@ -296,7 +297,7 @@ export default async function OrderDetail({
           <form action={verstuurOpnieuw} className="flex flex-col gap-1">
             <input type="hidden" name="id" value={order.id} />
             <button className={`w-fit ${knopSecundair}`}>Advies-PDF opnieuw versturen</button>
-            <span className="text-xs text-black/50 dark:text-white/50">Maakt de PDF opnieuw en mailt die naar de klant.</span>
+            <span className="text-xs text-foreground/70">Maakt de PDF opnieuw en mailt die naar de klant.</span>
           </form>
         )}
 
@@ -305,7 +306,7 @@ export default async function OrderDetail({
             <input type="hidden" name="id" value={order.id} />
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-black/70 dark:text-white/70">Type wijzigen (bijv. 8X of 12A)</span>
-              <span className="text-xs text-black/50 dark:text-white/50">
+              <span className="text-xs text-foreground/70">
                 Alleen nodig als je het berekende type wilt overschrijven. De klant krijgt daarna het nieuwe advies per e-mail.
               </span>
               <span className="flex gap-2">
@@ -313,9 +314,9 @@ export default async function OrderDetail({
                   name="sleutel"
                   defaultValue={order.toegekend_type ?? ""}
                   maxLength={3}
-                  className="w-28 rounded-lg border border-black/15 bg-transparent px-3 py-2 font-mono uppercase outline-none focus:border-accent dark:border-white/20"
+                  className={`${invoer} w-28 font-mono uppercase`}
                 />
-                <button className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background hover:opacity-90">
+                <button className={knop}>
                   Wijzigen + versturen
                 </button>
               </span>
@@ -326,7 +327,7 @@ export default async function OrderDetail({
         {heeftRecht(ik.rol, "bestellingen_verwijderen") && isOpen(order.status) && !order.factuurnummer && (
           <form action={verwijderBestelling} className="border-t border-black/5 pt-4 dark:border-white/10">
             <input type="hidden" name="id" value={order.id} />
-            <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">
+            <button className={knopGevaar}>
               Bestelling verwijderen
             </button>
           </form>

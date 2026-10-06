@@ -7,10 +7,10 @@ import { FFIT_TYPES, ontleedTypeSleutel } from "@/lib/lichaamstype-regels";
 import { Lichaam } from "@/components/Lichaam";
 import { AdminNav, Melding } from "../AdminNav";
 import { ToewijzingFormulier } from "./Formulieren";
+import { kaart, kaartVlak, knop } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
-
-const kaart = "rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15";
 
 export default async function LichaamstypesPagina({
   searchParams,
@@ -40,25 +40,24 @@ export default async function LichaamstypesPagina({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/lichaamstypes" />
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Lichaamstypes</h1>
-          <p className="max-w-2xl text-sm text-black/60 dark:text-white/60">
+      <AdminKop
+        titel="Lichaamstypes"
+        beschrijving={
+          <>
             De figuurtypes die de test kan uitwijzen. Hier beheer je per type de naam, omschrijving, uitleg, kenmerken,
             tekening en foto. Bij elk lichaamstype horen 12 hand-outs (één per categorie lengte/gewicht), die je onder{" "}
             <Link href="/admin/types" className="text-accent underline underline-offset-2">
               Adviestypes
             </Link>{" "}
             bewerkt.
-          </p>
-        </div>
-        <Link
-          href="/admin/lichaamstypes/nieuw"
-          className="shrink-0 rounded-full bg-accent px-5 py-2 text-center text-sm font-medium text-white hover:opacity-90"
-        >
-          + Nieuw lichaamstype
-        </Link>
-      </div>
+          </>
+        }
+        acties={
+          <Link href="/admin/lichaamstypes/nieuw" className={knop}>
+            + Nieuw lichaamstype
+          </Link>
+        }
+      />
 
       {verwijderd && <Melding soort="ok">Lichaamstype {verwijderd} is verwijderd, met de bijbehorende hand-outs.</Melding>}
 
@@ -70,7 +69,7 @@ export default async function LichaamstypesPagina({
             <li key={t.code}>
               <Link
                 href={`/admin/lichaamstypes/${encodeURIComponent(t.code)}`}
-                className={`${kaart} flex h-full gap-4 transition-colors hover:border-accent`}
+                className={`${kaartVlak} flex h-full gap-4 transition-colors hover:border-accent`}
               >
                 <div className="flex h-36 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent-zacht text-accent">
                   {s?.beeldUrl ? (
@@ -80,19 +79,19 @@ export default async function LichaamstypesPagina({
                   )}
                 </div>
                 <div className="flex min-w-0 flex-col gap-1">
-                  <p className="text-xs text-black/50 dark:text-white/50">
+                  <p className="text-xs text-foreground/70">
                     Code {t.code}
                     {!t.actief && (
                       <span className="ml-2 rounded-full bg-black/10 px-2 py-0.5 dark:bg-white/15">niet actief</span>
                     )}
                   </p>
                   <h2 className="font-serif text-xl leading-tight">{t.naam}</h2>
-                  {t.alias && <p className="text-xs text-black/55 dark:text-white/55">ook wel {t.alias}</p>}
+                  {t.alias && <p className="text-xs text-foreground/70">ook wel {t.alias}</p>}
                   <p className="line-clamp-2 text-sm text-black/65 dark:text-white/65">{t.korte_omschrijving}</p>
-                  <p className="mt-auto text-xs text-black/50 dark:text-white/50">
+                  <p className="mt-auto text-xs text-foreground/70">
                     {adviesPer.get(t.code) ?? 0} hand-outs · {ordersPer.get(t.code) ?? 0} bestellingen
                   </p>
-                  <p className="text-xs text-black/50 dark:text-white/50">
+                  <p className="text-xs text-foreground/70">
                     {uitkomsten.length
                       ? `Uitkomst berekening: ${uitkomsten.join(", ")}`
                       : "Nog niet gekoppeld aan een uitkomst van de berekening"}
@@ -104,9 +103,9 @@ export default async function LichaamstypesPagina({
         })}
       </ul>
 
-      <section id="koppeling" className={`${kaart} flex scroll-mt-6 flex-col gap-3`}>
+      <section id="koppeling" className={`${kaart} scroll-mt-6`}>
         <h2 className="text-lg font-semibold">Koppeling met de berekening</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           De test berekent uit de maten een van zeven figuurtypes (FFIT). Hier bepaal je bij welk lichaamstype elke uitkomst
           hoort. Een nieuw lichaamstype kan de test pas uitwijzen als er minstens één uitkomst aan gekoppeld is. Wijzigingen
           gelden voor nieuwe tests.

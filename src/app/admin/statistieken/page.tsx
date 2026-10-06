@@ -19,6 +19,8 @@ import { AdminNav } from "../AdminNav";
 import { Groeigrafiek } from "../nieuwsbrief/Groeigrafiek";
 import { Balken, DagStaven, kortDatum, Trechter } from "./Grafieken";
 import { formatteerBedrag } from "@/lib/prijs";
+import { invoer, kaart, kaartVlak } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -130,44 +132,38 @@ function euro(cent: number | null): string {
 
 function Kaart({ titel, waarde, sub }: { titel: string; waarde: string; sub: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-black/10 bg-kaart p-4 dark:border-white/15">
-      <span className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">{titel}</span>
+    <div className={`${kaartVlak} flex flex-col gap-1`}>
+      <span className="text-xs uppercase tracking-wide text-foreground/70">{titel}</span>
       <span className="font-serif text-3xl tabular-nums">{waarde}</span>
-      <span className="text-xs text-black/50 dark:text-white/50">{sub}</span>
+      <span className="text-xs text-foreground/70">{sub}</span>
     </div>
   );
 }
-
-const kaartKlasse = "flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15";
-const invoer =
-  "rounded-lg border border-black/15 bg-kaart px-2 py-1 text-sm outline-none focus:border-accent dark:border-white/20";
 
 export default async function Statistieken({ searchParams }: { searchParams: Promise<Zoek> }) {
   await vereisBeheerder("statistieken");
   const p = bepaalPeriode(await searchParams);
   const d = await laad(p);
-  const knop = (actief: boolean) =>
-    `rounded-full px-3 py-1 ${actief ? "bg-foreground text-background" : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"}`;
+  const periodeKnop = (actief: boolean) =>
+    `rounded-full px-3 py-1 ${actief ? "bg-foreground text-background" : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"}`;
   const netto = d.groeiSom.nieuw - d.groeiSom.weg;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-6 sm:p-8">
       <AdminNav actief="/admin/statistieken" />
 
-      <div className="flex flex-col gap-3">
-        <h1 className="font-serif text-2xl">Statistieken</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Uit de eigen database, zonder testbestellingen. {kortDatum(p.van)} t/m {kortDatum(p.tot)} ({p.dagen}{" "}
-          {p.dagen === 1 ? "dag" : "dagen"}).
-        </p>
-        <nav aria-label="Periode" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <AdminKop
+        titel="Statistieken"
+        beschrijving={`Uit de eigen database, zonder testbestellingen. ${kortDatum(p.van)} t/m ${kortDatum(p.tot)} (${p.dagen} ${p.dagen === 1 ? "dag" : "dagen"}).`}
+      >
+        <nav aria-label="Periode" className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex gap-1">
             {VASTE_PERIODES.map((n) => (
               <Link
                 key={n}
                 href={`/admin/statistieken?periode=${n}`}
                 aria-current={p.sleutel === String(n) ? "page" : undefined}
-                className={knop(p.sleutel === String(n))}
+                className={periodeKnop(p.sleutel === String(n))}
               >
                 {n} dagen
               </Link>
@@ -175,25 +171,25 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
           </div>
           <form method="get" className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-1">
-              <span className="text-black/60 dark:text-white/60">Van</span>
+              <span className="text-foreground/70">Van</span>
               <input type="date" name="van" defaultValue={p.van} max={p.tot} required className={invoer} />
             </label>
             <label className="flex items-center gap-1">
-              <span className="text-black/60 dark:text-white/60">t/m</span>
+              <span className="text-foreground/70">t/m</span>
               <input type="date" name="tot" defaultValue={p.tot} required className={invoer} />
             </label>
-            <button type="submit" className={`${knop(p.sleutel === "eigen")} border border-black/15 dark:border-white/20`}>
+            <button type="submit" className={`${periodeKnop(p.sleutel === "eigen")} border border-black/15 dark:border-white/20`}>
               Toon
             </button>
           </form>
         </nav>
-      </div>
+      </AdminKop>
 
-      <section aria-labelledby="trechter-kop" className={kaartKlasse}>
+      <section aria-labelledby="trechter-kop" className={kaart}>
         <h2 id="trechter-kop" className="text-lg">
           Conversietrechter
         </h2>
-        <p className="text-xs text-black/55 dark:text-white/55">
+        <p className="text-xs text-foreground/70">
           Bestellingen die in deze periode zijn aangemaakt, en hoe ver ze (tot nu toe) zijn gekomen. Of iemand de test al
           is begonnen, weten we pas bij het afronden; hoeveel mensen de test openen en beginnen, zie je in Vercel Web
           Analytics (gebeurtenis &lsquo;test gestart&rsquo;).
@@ -218,14 +214,14 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
         <Kaart titel="Blogberichten" waarde={d.blogs.toLocaleString("nl-NL")} sub="gepubliceerd in deze periode" />
       </section>
 
-      <section className={kaartKlasse}>
+      <section className={kaart}>
         <DagStaven
           titel="Bestellingen aangemaakt per dag"
           eenheid="bestellingen"
           reeks={d.perDag.map((x) => ({ datum: x.datum, aantal: x.aangemaakt }))}
         />
       </section>
-      <section className={kaartKlasse}>
+      <section className={kaart}>
         <DagStaven
           titel="Betaalde bestellingen per dag"
           eenheid="betaald"
@@ -233,7 +229,7 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
         />
       </section>
 
-      <section aria-labelledby="types-kop" className={kaartKlasse}>
+      <section aria-labelledby="types-kop" className={kaart}>
         <h2 id="types-kop" className="text-lg">
           Meest voorkomende figuurtypes
         </h2>
@@ -241,12 +237,12 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
       </section>
 
       {d.groei.length >= 2 && (
-        <section className={kaartKlasse}>
+        <section className={kaart}>
           <Groeigrafiek reeks={d.groei} />
         </section>
       )}
 
-      <section aria-labelledby="bezoekers-kop" className={kaartKlasse}>
+      <section aria-labelledby="bezoekers-kop" className={kaart}>
         <h2 id="bezoekers-kop" className="text-lg">
           Bezoekers
         </h2>
@@ -265,7 +261,7 @@ export default async function Statistieken({ searchParams }: { searchParams: Pro
             Open Vercel → je project → Analytics ↗
           </a>
         </p>
-        <p className="text-xs text-black/55 dark:text-white/55">
+        <p className="text-xs text-foreground/70">
           Zie je daar nog niets? Zet Web Analytics en Speed Insights eenmalig aan in het Vercel-dashboard (tabbladen
           Analytics en Speed Insights → Enable) en publiceer opnieuw.
         </p>

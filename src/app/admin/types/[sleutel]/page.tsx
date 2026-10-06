@@ -19,6 +19,8 @@ import {
   verwijderSectie,
   vulVeld,
 } from "../acties";
+import { invoerBreed, kaart, kaartVlak, knop, knopKlein, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -134,13 +136,6 @@ async function laad(sleutel: string) {
   return { type, secties, alle, velden };
 }
 
-const invoer =
-  "w-full rounded-lg border border-black/15 bg-background px-3 py-2 outline-none focus:border-accent dark:border-white/20";
-const kleineKnop =
-  "rounded-full border border-black/15 px-3 py-1 text-xs text-black/70 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 dark:border-white/20 dark:text-white/70";
-const hoofdKnop =
-  "rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90";
-
 function Verborgen({ waarden }: { waarden: Record<string, string | number> }) {
   return (
     <>
@@ -154,7 +149,7 @@ function Verborgen({ waarden }: { waarden: Record<string, string | number> }) {
 /** Uitleg van de opmaak die de PDF begrijpt (zie schoon() en blokken() in de PDF-code). */
 function OpmaakUitleg() {
   return (
-    <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-black/60 dark:text-white/60">
+    <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-foreground/70">
       <li>
         <strong>Lege regel</strong> = nieuwe alinea. Regels direct onder elkaar
         (zonder lege regel) worden in de PDF aan elkaar geplakt tot één alinea.
@@ -210,11 +205,11 @@ export default async function TypeEditor({
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <Link
           href="/admin/types"
-          className="text-black/60 underline-offset-4 hover:underline dark:text-white/60"
+          className="text-foreground/70 underline-offset-4 hover:underline"
         >
           ← Alle adviestypes
         </Link>
-        <span className="flex gap-3 text-black/60 dark:text-white/60">
+        <span className="flex gap-3 text-foreground/70">
           {vorige && (
             <Link
               href={`/admin/types/${vorige.sleutel}`}
@@ -234,29 +229,24 @@ export default async function TypeEditor({
         </span>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-black/50 dark:text-white/50">
-            Type {type.sleutel} · categorie {type.categorie} ·{" "}
-            {letterNaam(type.letter, letters)}
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {type.titel}
-          </h1>
-          <p className="text-xs text-black/50 dark:text-white/50">
-            {perVeld.size} van {velden.length} velden ingevuld · {aantalBeelden}{" "}
-            beelden · laatst bewerkt {toonDatumTijd(type.bijgewerkt_op)}
-          </p>
-        </div>
-        <a
-          href={`/admin/types/${type.sleutel}/voorbeeld`}
-          target="_blank"
-          rel="noopener"
-          className="shrink-0 rounded-full bg-foreground px-5 py-2 text-center text-sm text-background hover:opacity-90"
-        >
-          Voorbeeld-PDF bekijken ↗
-        </a>
-      </div>
+      <AdminKop
+        titel={type.titel}
+        beschrijving={
+          <>
+            Type {type.sleutel} · categorie {type.categorie} · {letterNaam(type.letter, letters)}
+          </>
+        }
+        acties={
+          <a href={`/admin/types/${type.sleutel}/voorbeeld`} target="_blank" rel="noopener" className={knop}>
+            Voorbeeld-PDF bekijken ↗
+          </a>
+        }
+      >
+        <p className={`text-xs ${tekstZacht}`}>
+          {perVeld.size} van {velden.length} velden ingevuld · {aantalBeelden} beelden · laatst bewerkt{" "}
+          {toonDatumTijd(type.bijgewerkt_op)}
+        </p>
+      </AdminKop>
 
       <div className="rounded-xl bg-accent-zacht px-4 py-3 text-sm leading-relaxed">
         <p>
@@ -273,7 +263,7 @@ export default async function TypeEditor({
       </div>
 
       {/* Algemene gegevens */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Gegevens</h2>
         <ActieFormulier
           actie={slaTypeOp}
@@ -287,7 +277,7 @@ export default async function TypeEditor({
               name="titel"
               required
               defaultValue={type.titel}
-              className={`${invoer} font-normal`}
+              className={`${invoerBreed} font-normal`}
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium">
@@ -295,7 +285,7 @@ export default async function TypeEditor({
             <input
               name="lengte_label"
               defaultValue={type.lengte_label ?? ""}
-              className={`${invoer} font-normal`}
+              className={`${invoerBreed} font-normal`}
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium">
@@ -303,17 +293,17 @@ export default async function TypeEditor({
             <input
               name="maat_label"
               defaultValue={type.maat_label ?? ""}
-              className={`${invoer} font-normal`}
+              className={`${invoerBreed} font-normal`}
             />
           </label>
           <div className="sm:col-span-2">
-            <button className={hoofdKnop}>Gegevens opslaan</button>
+            <button className={knop}>Gegevens opslaan</button>
           </div>
         </ActieFormulier>
       </section>
 
       {/* Inhoud */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Inhoud</h2>
         <ol className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
           {velden.map((v) => {
@@ -368,16 +358,16 @@ export default async function TypeEditor({
                     className="flex scroll-mt-6 flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-black/20 p-4 dark:border-white/25"
                   >
                     <div>
-                      <h3 className="font-serif text-lg text-black/60 dark:text-white/60">
+                      <h3 className="font-serif text-lg text-foreground/70">
                         {v.kop}
                       </h3>
-                      <p className="text-xs text-black/50 dark:text-white/50">
+                      <p className="text-xs text-foreground/70">
                         Nog leeg; komt niet in de PDF. {hulp}
                       </p>
                     </div>
                     <ActieFormulier actie={vulVeld}>
                       <Verborgen waarden={{ sleutel, veld: v.sleutel }} />
-                      <button className={kleineKnop}>+ Tekst toevoegen</button>
+                      <button className={knopKlein}>+ Tekst toevoegen</button>
                     </ActieFormulier>
                   </section>
                 );
@@ -391,13 +381,13 @@ export default async function TypeEditor({
                   <section
                     key={s.id}
                     id={`sectie-${s.id}`}
-                    className="flex scroll-mt-6 flex-col gap-4 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15"
+                    className={`${kaartVlak} flex scroll-mt-6 flex-col gap-4`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <h3 className="font-serif text-xl">{s.kop}</h3>
                         {hulp && (
-                          <p className="mt-0.5 text-xs text-black/55 dark:text-white/55">
+                          <p className="mt-0.5 text-xs text-foreground/70">
                             {hulp}
                           </p>
                         )}
@@ -410,7 +400,7 @@ export default async function TypeEditor({
                         >
                           <Verborgen waarden={{ sleutel, sectie_id: s.id }} />
                           <button
-                            className={`${kleineKnop} hover:!border-red-600 hover:!text-red-700`}
+                            className={`${knopKlein} hover:!border-red-600 hover:!text-red-700`}
                           >
                             Veld leegmaken
                           </button>
@@ -430,15 +420,15 @@ export default async function TypeEditor({
                           name="tekst"
                           defaultValue={s.tekst}
                           rows={6}
-                          className={`${invoer} resize-y font-normal leading-relaxed`}
+                          className={`${invoerBreed} resize-y font-normal leading-relaxed`}
                         />
                       </label>
-                      <p className="text-xs text-black/50 dark:text-white/50">
+                      <p className="text-xs text-foreground/70">
                         Lege regel = nieuwe alinea · regel beginnen met &ldquo;-
                         &rdquo; = opsommingsteken · **vet** · *cursief*
                       </p>
                       <div>
-                        <button className={hoofdKnop}>Opslaan</button>
+                        <button className={knop}>Opslaan</button>
                       </div>
                     </ActieFormulier>
 
@@ -446,7 +436,7 @@ export default async function TypeEditor({
                       <h3 className="text-sm font-medium">
                         Beelden bij dit veld ({s.beelden.length})
                       </h3>
-                      <p className="text-xs leading-relaxed text-black/50 dark:text-white/50">
+                      <p className="text-xs leading-relaxed text-foreground/70">
                         Beelden staan in de centrale beeldbank. Bewerk of
                         vervang je een beeld daar, dan verandert het in{" "}
                         <strong>elke hand-out</strong> die dat beeld gebruikt.
@@ -483,14 +473,14 @@ export default async function TypeEditor({
                               <p className="text-xs">
                                 <span className="font-medium">{b.code}</span>
                                 {b.naam && (
-                                  <span className="block break-all text-black/55 dark:text-white/55">
+                                  <span className="block break-all text-foreground/70">
                                     {b.naam}
                                   </span>
                                 )}
                               </p>
                               {b.bijschrift && (
                                 <p
-                                  className="line-clamp-2 text-xs italic text-black/55 dark:text-white/55"
+                                  className="line-clamp-2 text-xs italic text-foreground/70"
                                   title={b.bijschrift}
                                 >
                                   &ldquo;{b.bijschrift}&rdquo;
@@ -502,7 +492,7 @@ export default async function TypeEditor({
                                     waarden={{ ...waarden, richting: "links" }}
                                   />
                                   <button
-                                    className={kleineKnop}
+                                    className={knopKlein}
                                     disabled={j === 0}
                                     aria-label="Naar links"
                                     title="Naar links"
@@ -515,7 +505,7 @@ export default async function TypeEditor({
                                     waarden={{ ...waarden, richting: "rechts" }}
                                   />
                                   <button
-                                    className={kleineKnop}
+                                    className={knopKlein}
                                     disabled={j === s.beelden.length - 1}
                                     aria-label="Naar rechts"
                                     title="Naar rechts"
@@ -530,7 +520,7 @@ export default async function TypeEditor({
                                 >
                                   <Verborgen waarden={waarden} />
                                   <button
-                                    className={`${kleineKnop} hover:!border-red-600 hover:!text-red-700`}
+                                    className={`${knopKlein} hover:!border-red-600 hover:!text-red-700`}
                                   >
                                     Uit sectie halen
                                   </button>
@@ -580,13 +570,13 @@ export default async function TypeEditor({
               <section
                 key={s.id}
                 id={`sectie-${s.id}`}
-                className="flex scroll-mt-6 flex-col gap-4 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15"
+                className={`${kaartVlak} flex scroll-mt-6 flex-col gap-4`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h3 className="font-serif text-xl">{s.kop}</h3>
                     {hulp && (
-                      <p className="mt-0.5 text-xs text-black/55 dark:text-white/55">
+                      <p className="mt-0.5 text-xs text-foreground/70">
                         {hulp}
                       </p>
                     )}
@@ -599,7 +589,7 @@ export default async function TypeEditor({
                     >
                       <Verborgen waarden={{ sleutel, sectie_id: s.id }} />
                       <button
-                        className={`${kleineKnop} hover:!border-red-600 hover:!text-red-700`}
+                        className={`${knopKlein} hover:!border-red-600 hover:!text-red-700`}
                       >
                         Veld leegmaken
                       </button>
@@ -619,15 +609,15 @@ export default async function TypeEditor({
                       name="tekst"
                       defaultValue={s.tekst}
                       rows={6}
-                      className={`${invoer} resize-y font-normal leading-relaxed`}
+                      className={`${invoerBreed} resize-y font-normal leading-relaxed`}
                     />
                   </label>
-                  <p className="text-xs text-black/50 dark:text-white/50">
+                  <p className="text-xs text-foreground/70">
                     Lege regel = nieuwe alinea · regel beginnen met &ldquo;-
                     &rdquo; = opsommingsteken · **vet** · *cursief*
                   </p>
                   <div>
-                    <button className={hoofdKnop}>Opslaan</button>
+                    <button className={knop}>Opslaan</button>
                   </div>
                 </ActieFormulier>
 
@@ -635,7 +625,7 @@ export default async function TypeEditor({
                   <h3 className="text-sm font-medium">
                     Beelden bij dit veld ({s.beelden.length})
                   </h3>
-                  <p className="text-xs leading-relaxed text-black/50 dark:text-white/50">
+                  <p className="text-xs leading-relaxed text-foreground/70">
                     Beelden staan in de centrale beeldbank. Bewerk of vervang je
                     een beeld daar, dan verandert het in{" "}
                     <strong>elke hand-out</strong> die dat beeld gebruikt.
@@ -671,14 +661,14 @@ export default async function TypeEditor({
                           <p className="text-xs">
                             <span className="font-medium">{b.code}</span>
                             {b.naam && (
-                              <span className="block break-all text-black/55 dark:text-white/55">
+                              <span className="block break-all text-foreground/70">
                                 {b.naam}
                               </span>
                             )}
                           </p>
                           {b.bijschrift && (
                             <p
-                              className="line-clamp-2 text-xs italic text-black/55 dark:text-white/55"
+                              className="line-clamp-2 text-xs italic text-foreground/70"
                               title={b.bijschrift}
                             >
                               &ldquo;{b.bijschrift}&rdquo;
@@ -690,7 +680,7 @@ export default async function TypeEditor({
                                 waarden={{ ...waarden, richting: "links" }}
                               />
                               <button
-                                className={kleineKnop}
+                                className={knopKlein}
                                 disabled={j === 0}
                                 aria-label="Naar links"
                                 title="Naar links"
@@ -703,7 +693,7 @@ export default async function TypeEditor({
                                 waarden={{ ...waarden, richting: "rechts" }}
                               />
                               <button
-                                className={kleineKnop}
+                                className={knopKlein}
                                 disabled={j === s.beelden.length - 1}
                                 aria-label="Naar rechts"
                                 title="Naar rechts"
@@ -718,7 +708,7 @@ export default async function TypeEditor({
                             >
                               <Verborgen waarden={waarden} />
                               <button
-                                className={`${kleineKnop} hover:!border-red-600 hover:!text-red-700`}
+                                className={`${knopKlein} hover:!border-red-600 hover:!text-red-700`}
                               >
                                 Uit sectie halen
                               </button>

@@ -6,7 +6,8 @@ import { analyseerRelatieImport, MAX_IMPORT_BYTES, MAX_IMPORT_RIJEN, type Relati
 import { volledigeNaam } from "@/lib/relaties/regels";
 import { Melding } from "../../Melding";
 import { controleerRelatieImport, voerRelatieImportUit } from "../acties";
-import { heelZacht, hoofdknop, invoer, kaart, PAD, zacht } from "../ui";
+import { PAD } from "../ui";
+import { invoer, kaart, knop, tekstZacht } from "@/components/admin/stijl";
 
 /** Zoveel rijen per aanroep naar de server (houdt elk verzoek klein). */
 const DEEL = 1000;
@@ -53,7 +54,7 @@ function Getal({ getal, label, nadruk }: { getal: number; label: string; nadruk?
   return (
     <div className="flex flex-col rounded-lg border border-black/10 bg-kaart px-3 py-2 dark:border-white/15">
       <span className={`text-xl font-semibold tabular-nums ${kleur}`}>{getal}</span>
-      <span className={`text-xs ${zacht}`}>{label}</span>
+      <span className={`text-xs ${tekstZacht}`}>{label}</span>
     </div>
   );
 }
@@ -134,7 +135,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
           Import klaar: {resultaat.nieuw} nieuw, {resultaat.bijgewerkt} aangevuld, {resultaat.ongewijzigd} ongewijzigd.
         </Melding>
         <div className="flex flex-wrap items-center gap-3">
-          <Link href={PAD} className={hoofdknop}>
+          <Link href={PAD} className={knop}>
             Naar het adresboek
           </Link>
           <button
@@ -159,13 +160,13 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 
   return (
     <section className="flex flex-col gap-5">
-      <label className="flex flex-col gap-2 rounded-xl border border-dashed border-black/20 bg-kaart p-5 text-sm dark:border-white/20">
+      <label className="flex flex-col gap-2 rounded-xl border border-dashed border-black/20 bg-kaart p-5 text-sm dark:border-white/25">
         <span className="font-medium">CSV-bestand kiezen</span>
         <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={kies} className="min-w-0 text-sm" />
-        {bestand && <span className={heelZacht}>{bestand}</span>}
+        {bestand && <span className={tekstZacht}>{bestand}</span>}
       </label>
 
-      {bezig && <p className={`text-sm ${heelZacht}`}>{bezig}</p>}
+      {bezig && <p className={`text-sm ${tekstZacht}`}>{bezig}</p>}
       {fout && <Melding soort="fout">{fout}</Melding>}
 
       {analyse && !analyse.teVeel && !analyse.geenKoprij && analyse.rijen.length > 0 && (
@@ -179,7 +180,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className={`text-xs ${heelZacht}`}>
+            <p className={`text-xs ${tekstZacht}`}>
               Voorbeeld van de eerste {Math.min(10, analyse.rijen.length)} van {analyse.rijen.length} geldige rijen
             </p>
             <ul className="flex flex-col divide-y divide-black/5 rounded-lg border border-black/10 bg-kaart text-sm dark:divide-white/10 dark:border-white/15">
@@ -188,11 +189,11 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
                 return (
                   <li key={g.email} className="flex flex-col gap-0.5 px-3 py-2">
                     <span className="flex flex-wrap items-baseline gap-x-2">
-                      <span className={`text-xs tabular-nums ${heelZacht}`}>regel {r.regel}</span>
+                      <span className={`text-xs tabular-nums ${tekstZacht}`}>regel {r.regel}</span>
                       <span className="font-medium">{volledigeNaam({ voornaam: g.voornaam ?? null, achternaam: g.achternaam ?? null }) || "(geen naam)"}</span>
-                      <span className={`break-all ${zacht}`}>{g.email}</span>
+                      <span className={`break-all ${tekstZacht}`}>{g.email}</span>
                     </span>
-                    <span className={`text-xs ${heelZacht}`}>
+                    <span className={`text-xs ${tekstZacht}`}>
                       {[g.telefoon, g.bedrijf, g.straat, [g.postcode, g.plaats].filter(Boolean).join(" "), g.land, r.tags.length ? `tags: ${r.tags.join(", ")}` : ""]
                         .filter(Boolean)
                         .join(" · ") || "geen verdere gegevens"}
@@ -205,7 +206,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 
           {analyse.ongeldig.length > 0 && (
             <details className="text-sm">
-              <summary className={`cursor-pointer ${zacht}`}>Ongeldige rijen bekijken ({analyse.ongeldig.length})</summary>
+              <summary className={`cursor-pointer ${tekstZacht}`}>Ongeldige rijen bekijken ({analyse.ongeldig.length})</summary>
               <ul className="mt-2 flex flex-col gap-1 text-xs">
                 {analyse.ongeldig.slice(0, 100).map((o) => (
                   <li key={o.regel} className="break-all">
@@ -236,7 +237,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
               </datalist>
             </label>
             <div>
-              <button type="button" disabled={!klaarVoorImport} onClick={importeer} className={hoofdknop}>
+              <button type="button" disabled={!klaarVoorImport} onClick={importeer} className={knop}>
                 {bezig ? "Bezig…" : `Importeren (${analyse.rijen.length} rijen)`}
               </button>
             </div>

@@ -5,7 +5,7 @@ import { registreerEditorUpload } from "@/components/admin/mediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { BLOG_AFBEELDING_MAX_BYTES, BLOG_AFBEELDING_TYPES, BLOG_BUCKET, type UploadMap } from "@/lib/blog/beheer";
 import { maakEditorUpload, type EditorUploadSoort } from "./upload-actie";
-import { knopRand } from "../../nieuwsbrief/_editor/stijl";
+import { knopSecundair, tekstFout } from "@/components/admin/stijl";
 
 /**
  * Knop om een foto te kiezen in de blog- of pagina-editor; uploadt naar de bucket
@@ -64,10 +64,10 @@ export function FotoUpload({
           if (bestand) void upload(bestand);
         }}
       />
-      <button type="button" disabled={bezig || disabled} onClick={() => invoer.current?.click()} className={`${knopRand} w-fit`}>
+      <button type="button" disabled={bezig || disabled} onClick={() => invoer.current?.click()} className={`${knopSecundair} w-fit`}>
         {bezig ? "Bezig met uploaden…" : label}
       </button>
-      {fout && <p className="text-sm text-red-600 dark:text-red-400">{fout}</p>}
+      {fout && <p className={`text-sm ${tekstFout}`}>{fout}</p>}
     </div>
   );
 }

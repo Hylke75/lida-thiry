@@ -7,9 +7,10 @@ import { leestijdMinuten, zichtbaarheid, type BlogBericht } from "@/lib/blog/reg
 import { amsterdamNaarUtc, toonDatumTijd, utcNaarAmsterdamInvoer } from "@/lib/datum";
 import { Melding } from "../AdminNav";
 import { VerwijderKnop } from "../nieuwsbrief/_editor/VerwijderKnop";
-import { invoerKlasse, kaart, knopHoofd, knopKlein, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
 import { AiBadge, BlogKop, ZichtbaarheidBadge } from "./_editor/onderdelen";
 import { dupliceerBericht, nieuwBericht, verwijderBericht } from "./acties";
+import { invoerBreed, kaart, knop, knopKlein, knopSecundair, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -76,23 +77,23 @@ export default async function BlogOverzicht({
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <BlogKop actief="/admin/blog" pad={[{ label: "Berichten" }]} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Blog</h1>
-          <p className={`text-sm ${zacht}`}>Schrijf berichten voor je website, zelf of met hulp van AI.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/versies/prullenbak" className={knopRand}>
-            Prullenbak
-          </Link>
-          <Link href="/admin/blog/ai" className={knopRand}>
-            ✨ Schrijven met AI
-          </Link>
-          <form action={nieuwBericht}>
-            <button className={knopHoofd}>+ Nieuw bericht</button>
-          </form>
-        </div>
-      </div>
+      <AdminKop
+        titel="Blog"
+        beschrijving="Schrijf berichten voor je website, zelf of met hulp van AI."
+        acties={
+          <>
+            <Link href="/admin/versies/prullenbak" className={knopSecundair}>
+              Prullenbak
+            </Link>
+            <Link href="/admin/blog/ai" className={knopSecundair}>
+              ✨ Schrijven met AI
+            </Link>
+            <form action={nieuwBericht}>
+              <button className={knop}>+ Nieuw bericht</button>
+            </form>
+          </>
+        }
+      />
 
       {sp.fout && <Melding soort="fout">{FOUTEN[sp.fout] ?? "Er ging iets mis."}</Melding>}
       {sp.verwijderd && (
@@ -107,7 +108,7 @@ export default async function BlogOverzicht({
       {error && <Melding soort="fout">De berichten konden niet worden geladen ({error.message}).</Melding>}
 
       {gebruik && (ai || gebruik.aanroepen > 0) && (
-        <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-sm dark:bg-white/5 ${zacht}`}>
+        <p className={`rounded-lg bg-black/[0.03] px-4 py-3 text-sm dark:bg-white/5 ${tekstZacht}`}>
           <span className="font-medium text-foreground">AI-gebruik deze maand:</span> {gebruik.aanroepen} keer gebruikt, geschatte kosten {toonDollar(gebruik.dollarcent)}{" "}
           <span className="text-xs">(in dollars, op basis van het aantal verwerkte woorden; de echte rekening kan iets afwijken)</span>.
           {gebruik.laatsteUur > 0 && (
@@ -119,19 +120,19 @@ export default async function BlogOverzicht({
         </p>
       )}
 
-      <form method="get" className={`${kaart} gap-3 sm:flex-row sm:flex-wrap sm:items-end`}>
+      <form method="get" className={`${kaart} sm:flex-row sm:flex-wrap sm:items-end`}>
         <div className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-48">
           <label htmlFor="zoek" className="text-sm font-medium">
             Zoeken op titel
           </label>
-          <input id="zoek" name="zoek" type="search" defaultValue={sp.zoek ?? ""} className={invoerKlasse} placeholder="Bijv. jurken" />
+          <input id="zoek" name="zoek" type="search" defaultValue={sp.zoek ?? ""} className={invoerBreed} placeholder="Bijv. jurken" />
         </div>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor="status" className="text-sm font-medium">
               Status
             </label>
-            <select id="status" name="status" defaultValue={sp.status ?? ""} className={invoerKlasse}>
+            <select id="status" name="status" defaultValue={sp.status ?? ""} className={invoerBreed}>
               <option value="">Alle</option>
               <option value="concept">Concept</option>
               <option value="ingepland">Ingepland</option>
@@ -142,7 +143,7 @@ export default async function BlogOverzicht({
             <label htmlFor="categorie" className="text-sm font-medium">
               Categorie
             </label>
-            <select id="categorie" name="categorie" defaultValue={sp.categorie ?? ""} className={invoerKlasse}>
+            <select id="categorie" name="categorie" defaultValue={sp.categorie ?? ""} className={invoerBreed}>
               <option value="">Alle</option>
               {categorieen.map((c) => (
                 <option key={c} value={c}>
@@ -155,7 +156,7 @@ export default async function BlogOverzicht({
             <label htmlFor="tag" className="text-sm font-medium">
               Tag
             </label>
-            <select id="tag" name="tag" defaultValue={sp.tag ?? ""} className={invoerKlasse}>
+            <select id="tag" name="tag" defaultValue={sp.tag ?? ""} className={invoerBreed}>
               <option value="">Alle</option>
               {tags.map((t) => (
                 <option key={t} value={t}>
@@ -166,9 +167,9 @@ export default async function BlogOverzicht({
           </div>
         </div>
         <div className="flex gap-2">
-          <button className={knopRand}>Filteren</button>
+          <button className={knopSecundair}>Filteren</button>
           {gefilterd && (
-            <Link href="/admin/blog" className={`${knopRand} text-center`}>
+            <Link href="/admin/blog" className={`${knopSecundair} text-center`}>
               Wissen
             </Link>
           )}
@@ -176,26 +177,26 @@ export default async function BlogOverzicht({
       </form>
 
       {alle.length === 0 && !error && (
-        <p className={`rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm dark:border-white/20 ${zacht}`}>
+        <p className={`rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm dark:border-white/20 ${tekstZacht}`}>
           Nog geen berichten. Klik op <strong>Nieuw bericht</strong> om zelf te schrijven, of op <strong>Schrijven met AI</strong> om
           een eerste opzet te laten maken.
         </p>
       )}
       {alle.length > 0 && berichten.length === 0 && (
-        <p className={`text-sm ${zacht}`}>Geen berichten gevonden met deze filters.</p>
+        <p className={`text-sm ${tekstZacht}`}>Geen berichten gevonden met deze filters.</p>
       )}
 
       <ul className="flex flex-col gap-3">
         {berichten.map((b) => {
           const status = zichtbaarheid(b, nu);
           return (
-            <li key={b.id} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15">
+            <li key={b.id} className={kaart}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <Link href={`/admin/blog/${b.id}`} className="break-words font-medium hover:text-accent hover:underline">
                     {b.titel}
                   </Link>
-                  <p className={`break-all text-xs ${zacht}`}>/blog/{b.slug}</p>
+                  <p className={`break-all text-xs ${tekstZacht}`}>/blog/{b.slug}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {b.uitgelicht && (
@@ -207,19 +208,19 @@ export default async function BlogOverzicht({
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
                 <div>
-                  <dt className={`text-xs ${zacht}`}>{status === "concept" ? "Laatst bewerkt" : status === "ingepland" ? "Verschijnt op" : "Gepubliceerd"}</dt>
+                  <dt className={`text-xs ${tekstZacht}`}>{status === "concept" ? "Laatst bewerkt" : status === "ingepland" ? "Verschijnt op" : "Gepubliceerd"}</dt>
                   <dd>{toonDatumTijd(status === "concept" ? b.bijgewerkt_op : b.gepubliceerd_op)}</dd>
                 </div>
                 <div>
-                  <dt className={`text-xs ${zacht}`}>Categorie</dt>
+                  <dt className={`text-xs ${tekstZacht}`}>Categorie</dt>
                   <dd className="break-words">{b.categorie ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className={`text-xs ${zacht}`}>Leestijd</dt>
+                  <dt className={`text-xs ${tekstZacht}`}>Leestijd</dt>
                   <dd>{leestijdMinuten(b.inhoud)} min</dd>
                 </div>
                 <div>
-                  <dt className={`text-xs ${zacht}`}>Tags</dt>
+                  <dt className={`text-xs ${tekstZacht}`}>Tags</dt>
                   <dd className="break-words">{b.tags.length ? b.tags.join(", ") : "—"}</dd>
                 </div>
               </dl>
@@ -251,7 +252,7 @@ export default async function BlogOverzicht({
           );
         })}
       </ul>
-      {alle.length === MAX && <p className={`text-xs ${zacht}`}>Alleen de nieuwste {MAX} berichten worden getoond.</p>}
+      {alle.length === MAX && <p className={`text-xs ${tekstZacht}`}>Alleen de nieuwste {MAX} berichten worden getoond.</p>}
     </main>
   );
 }

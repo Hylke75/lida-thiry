@@ -39,7 +39,7 @@ export function Groeigrafiek({ reeks }: { reeks: readonly GroeiDag[] }) {
     <figure className="flex flex-col gap-2">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium">Aangemelde contacten, laatste {reeks.length} dagen</span>
-        <span className="text-black/60 dark:text-white/60">
+        <span className="text-foreground/70">
           {eerste.totaal} → {laatste.totaal} ({verschil >= 0 ? "+" : "−"}
           {Math.abs(verschil)})
         </span>
@@ -47,7 +47,7 @@ export function Groeigrafiek({ reeks }: { reeks: readonly GroeiDag[] }) {
       <div className="grid grid-cols-[auto_1fr] gap-2">
         <div
           aria-hidden="true"
-          className="flex flex-col justify-between pb-9 text-right text-xs tabular-nums text-black/50 dark:text-white/50"
+          className="flex flex-col justify-between pb-9 text-right text-xs tabular-nums text-foreground/70"
         >
           <span>{boven}</span>
           <span>{onder}</span>
@@ -119,7 +119,7 @@ export function Groeigrafiek({ reeks }: { reeks: readonly GroeiDag[] }) {
               );
             })}
           </svg>
-          <div aria-hidden="true" className="flex justify-between text-xs text-black/50 dark:text-white/50">
+          <div aria-hidden="true" className="flex justify-between text-xs text-foreground/70">
             <span>{kort(eerste.datum)}</span>
             <span>balkjes: nieuwe aanmeldingen per dag</span>
             <span>{kort(laatste.datum)}</span>
@@ -127,10 +127,10 @@ export function Groeigrafiek({ reeks }: { reeks: readonly GroeiDag[] }) {
         </div>
       </div>
       <details className="text-sm">
-        <summary className="cursor-pointer text-black/50 dark:text-white/50">Cijfers per dag als tabel</summary>
+        <summary className="cursor-pointer text-foreground/70">Cijfers per dag als tabel</summary>
         <div className="mt-2 max-h-64 overflow-auto">
           <table className="w-full text-left tabular-nums">
-            <thead className="text-xs text-black/50 dark:text-white/50">
+            <thead className="text-xs text-foreground/70">
               <tr>
                 <th className="py-1 font-normal">Datum</th>
                 <th className="py-1 text-right font-normal">Aangemeld</th>
@@ -151,7 +151,7 @@ export function Groeigrafiek({ reeks }: { reeks: readonly GroeiDag[] }) {
           </table>
         </div>
       </details>
-      <p className="text-xs text-black/50 dark:text-white/50">
+      <p className="text-xs text-foreground/70">
         Teruggerekend vanaf het huidige aantal; verwijderde contacten tellen niet mee. Vertrokken = afgemeld,
         onbestelbaar (bounce) of spamklacht.
       </p>

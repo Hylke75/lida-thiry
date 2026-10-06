@@ -9,6 +9,8 @@ import { adminClient } from "@/lib/supabase/admin";
 import { eindeVanDagNl } from "@/lib/cadeaubon/regels";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
 import { datum } from "@/lib/datum";
+import { invoer, kaart, knop } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -156,11 +158,6 @@ function status(c: CodeRij): { label: string; bruikbaar: boolean } {
   return { label: "Actief", bruikbaar: true };
 }
 
-const invoer =
-  "rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const knop =
-  "rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90";
-
 export default async function KortingscodesPage({
   searchParams,
 }: {
@@ -180,13 +177,15 @@ export default async function KortingscodesPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-8">
       <AdminNav actief="/admin/kortingscodes" />
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Kortingscodes &amp; cadeaubonnen</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Klanten vullen de code in bij het bestellen. Het gebruik telt pas mee zodra de
-          bestelling betaald is. Een code die de prijs volledig dekt, slaat de betaling over.
-        </p>
-      </header>
+      <AdminKop
+        titel={<>Kortingscodes &amp; cadeaubonnen</>}
+        beschrijving={
+          <>
+            Klanten vullen de code in bij het bestellen. Het gebruik telt pas mee zodra de
+            bestelling betaald is. Een code die de prijs volledig dekt, slaat de betaling over.
+          </>
+        }
+      />
 
       {ok && (
         <p className="rounded-lg bg-accent-zacht px-4 py-3 text-sm" role="status">
@@ -203,7 +202,7 @@ export default async function KortingscodesPage({
       )}
 
       {!magBeheren && (
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Je kunt de codes bekijken. Codes maken of (de)activeren kan alleen de eigenaar.
         </p>
       )}
@@ -211,7 +210,7 @@ export default async function KortingscodesPage({
         <>
       <section className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-kaart p-5">
         <h2 className="text-lg font-semibold">Cadeaubon maken</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Maakt een unieke code voor één gratis test (100% korting, eenmalig te gebruiken).
         </p>
         <form action={maakCadeaubon} className="flex flex-wrap items-end gap-3">
@@ -223,11 +222,11 @@ export default async function KortingscodesPage({
             <span className="text-black/70 dark:text-white/70">Geldig tot (optioneel)</span>
             <input name="geldig_tot" type="date" className={invoer} />
           </label>
-          <button className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">Cadeaubon maken</button>
+          <button className={knop}>Cadeaubon maken</button>
         </form>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+      <section className={kaart}>
         <h2 className="text-lg font-semibold">Nieuwe kortingscode</h2>
         <form action={maakCode} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
@@ -266,11 +265,11 @@ export default async function KortingscodesPage({
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/70">
           Alle codes ({codes.length})
         </h2>
         {codes.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">Nog geen kortingscodes.</p>
+          <p className="text-sm text-foreground/70">Nog geen kortingscodes.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {codes.map((c) => {
@@ -282,14 +281,14 @@ export default async function KortingscodesPage({
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="font-mono font-medium">{c.code}</span>
-                    <span className="text-black/50 dark:text-white/50">
+                    <span className="text-foreground/70">
                       {waardeLabel(c)} korting
                       {c.omschrijving ? ` · ${c.omschrijving}` : ""}
                       {c.geldig_tot ? ` · t/m ${datum(c.geldig_tot)}` : ""}
                     </span>
                   </span>
                   <span className="flex items-center gap-3">
-                    <span className="text-black/60 dark:text-white/60">
+                    <span className="text-foreground/70">
                       {c.aantal_gebruikt}
                       {c.max_gebruik !== null ? ` / ${c.max_gebruik}` : ""} gebruikt
                     </span>
@@ -304,7 +303,7 @@ export default async function KortingscodesPage({
                       <form action={zetActief}>
                         <input type="hidden" name="id" value={c.id} />
                         <input type="hidden" name="actief" value={c.actief ? "0" : "1"} />
-                        <button className="text-xs text-black/60 underline underline-offset-4 hover:text-black dark:text-white/60 dark:hover:text-white">
+                        <button className="text-xs text-foreground/70 underline underline-offset-4 hover:text-foreground">
                           {c.actief ? "Deactiveren" : "Activeren"}
                         </button>
                       </form>

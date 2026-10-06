@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { productieCheck } from "@/lib/productie-check";
 import type { LivegangItem } from "@/lib/livegang";
+import { tekstFout, tekstSucces } from "@/components/admin/stijl";
 
 function Teken({ item }: { item: LivegangItem }) {
   if (item.ok) {
     return (
-      <span aria-label="in orde" className="text-emerald-700 dark:text-emerald-400">
+      <span aria-label="in orde" className={tekstSucces}>
         ✓
       </span>
     );
   }
   return item.niveau === "verplicht" ? (
-    <span aria-label="nog niet in orde" className="text-red-700 dark:text-red-400">
+    <span aria-label="nog niet in orde" className={tekstFout}>
       ✗
     </span>
   ) : (
@@ -56,7 +57,7 @@ export async function Livegang() {
       </div>
 
       {allesKlaar ? (
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Alle {items.length} controles zijn in orde. De site kan live.
         </p>
       ) : (
@@ -70,10 +71,10 @@ export async function Livegang() {
                 <span className="font-medium">
                   {i.label}
                   {i.niveau === "aanbevolen" && (
-                    <span className="ml-2 text-xs font-normal text-black/50 dark:text-white/50">(aanbevolen)</span>
+                    <span className="ml-2 text-xs font-normal text-foreground/70">(aanbevolen)</span>
                   )}
                 </span>
-                {i.detail && <span className="break-words text-black/60 dark:text-white/60">{i.detail}</span>}
+                {i.detail && <span className="break-words text-foreground/70">{i.detail}</span>}
                 {i.links.length > 0 && (
                   <span className="flex flex-wrap gap-x-3 gap-y-1">
                     {i.links.map((l) => (
@@ -91,7 +92,7 @@ export async function Livegang() {
 
       {!allesKlaar && inOrde.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer text-black/50 dark:text-white/50">
+          <summary className="cursor-pointer text-foreground/70">
             {inOrde.length} {inOrde.length === 1 ? "controle is" : "controles zijn"} al in orde
           </summary>
           <ul className="mt-2 flex flex-col gap-1">

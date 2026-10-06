@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { MediaUploader } from "@/components/admin/MediaUploader";
 import { MAP_SUGGESTIES, normaliseerMap, STANDAARD_MAP } from "@/lib/media/regels";
 import { Melding } from "../Melding";
-import { invoerKlasse, kaart, knopRand, zacht } from "../nieuwsbrief/_editor/stijl";
 import { importeerBestaandeMedia } from "@/lib/media/acties";
+import { invoerBreed, kaart, knopSecundair, tekstZacht } from "@/components/admin/stijl";
 
 /** Uploadvak met een map-veld; ververst daarna het overzicht. */
 export function UploadPaneel({ mappen }: { mappen: string[] }) {
@@ -28,7 +28,7 @@ export function UploadPaneel({ mappen }: { mappen: string[] }) {
             value={map}
             onChange={(e) => setMap(e.target.value)}
             onBlur={() => setMap(geldig)}
-            className={invoerKlasse}
+            className={invoerBreed}
           />
           <datalist id={`${id}-mappen`}>
             {[...new Set([...MAP_SUGGESTIES, ...mappen])].map((m) => (
@@ -38,7 +38,7 @@ export function UploadPaneel({ mappen }: { mappen: string[] }) {
         </label>
       </div>
       <MediaUploader map={geldig} soort="alle" onKlaar={(items) => items.length && router.refresh()} />
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         Tip: geef elke afbeelding daarna een korte omschrijving (alt-tekst). Die wordt gebruikt voor slechtzienden en door Google.
       </p>
     </section>
@@ -75,7 +75,7 @@ export function ImporteerKnop() {
 
   return (
     <div className="flex max-w-sm flex-col items-start gap-2 sm:items-end">
-      <button type="button" onClick={importeer} disabled={bezig} className={knopRand} title="Zoekt afbeeldingen die eerder bij blog, pagina's en nieuwsbrief zijn geüpload">
+      <button type="button" onClick={importeer} disabled={bezig} className={knopSecundair} title="Zoekt afbeeldingen die eerder bij blog, pagina's en nieuwsbrief zijn geüpload">
         {bezig ? "Bezig met importeren…" : "Importeer bestaande afbeeldingen"}
       </button>
       {melding && <Melding soort={melding.soort}>{melding.tekst}</Melding>}

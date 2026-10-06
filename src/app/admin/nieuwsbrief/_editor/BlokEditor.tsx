@@ -3,7 +3,7 @@
 import { BLOK_SOORTEN, MAX_BLOKKEN, nieuwBlok, type Blok, type BlokSoort } from "@/lib/nieuwsbrief/blokken";
 import { MediaKiezer } from "@/components/admin/MediaKiezer";
 import { AfbeeldingUpload } from "./AfbeeldingUpload";
-import { invoerKlasse, knopKlein, zacht } from "./stijl";
+import { invoerBreed, knopKlein, tekstZacht } from "@/components/admin/stijl";
 
 const SOORT_LABEL = Object.fromEntries(BLOK_SOORTEN.map((s) => [s.soort, s.label])) as Record<BlokSoort, string>;
 
@@ -19,7 +19,7 @@ function Veld({ id, label, children, uitleg }: { id: string; label: string; chil
         {label}
       </label>
       {children}
-      {uitleg && <p className={`text-xs ${zacht}`}>{uitleg}</p>}
+      {uitleg && <p className={`text-xs ${tekstZacht}`}>{uitleg}</p>}
     </div>
   );
 }
@@ -30,7 +30,7 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
     case "kop":
       return (
         <Veld id={id} label="Koptekst">
-          <input id={id} value={blok.tekst} maxLength={200} onChange={(e) => onChange({ ...blok, tekst: e.target.value })} className={invoerKlasse} />
+          <input id={id} value={blok.tekst} maxLength={200} onChange={(e) => onChange({ ...blok, tekst: e.target.value })} className={invoerBreed} />
         </Veld>
       );
     case "tekst":
@@ -50,7 +50,7 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
             value={blok.tekst}
             rows={Math.min(14, Math.max(4, blok.tekst.split("\n").length + 1))}
             onChange={(e) => onChange({ ...blok, tekst: e.target.value })}
-            className={`${invoerKlasse} font-mono text-[13px] leading-relaxed`}
+            className={`${invoerBreed} font-mono text-[13px] leading-relaxed`}
           />
         </Veld>
       );
@@ -78,11 +78,11 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
               value={blok.url}
               placeholder="https://…"
               onChange={(e) => onChange({ ...blok, url: e.target.value })}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
           <Veld id={`${id}-alt`} label="Korte omschrijving (verplicht)" uitleg="Voor wie afbeeldingen niet ziet of een schermlezer gebruikt.">
-            <input id={`${id}-alt`} value={blok.alt} maxLength={300} onChange={(e) => onChange({ ...blok, alt: e.target.value })} className={invoerKlasse} />
+            <input id={`${id}-alt`} value={blok.alt} maxLength={300} onChange={(e) => onChange({ ...blok, alt: e.target.value })} className={invoerBreed} />
           </Veld>
           <Veld id={`${id}-link`} label="Link bij klikken (optioneel)">
             <input
@@ -92,7 +92,7 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
               value={blok.link}
               placeholder="https://…"
               onChange={(e) => onChange({ ...blok, link: e.target.value })}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
         </div>
@@ -101,7 +101,7 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
       return (
         <div className="grid gap-3 sm:grid-cols-2">
           <Veld id={`${id}-tekst`} label="Tekst op de knop">
-            <input id={`${id}-tekst`} value={blok.tekst} maxLength={80} onChange={(e) => onChange({ ...blok, tekst: e.target.value })} className={invoerKlasse} />
+            <input id={`${id}-tekst`} value={blok.tekst} maxLength={80} onChange={(e) => onChange({ ...blok, tekst: e.target.value })} className={invoerBreed} />
           </Veld>
           <Veld id={`${id}-url`} label="Link">
             <input
@@ -111,13 +111,13 @@ function BlokVelden({ blok, onChange }: { blok: Blok; onChange: (b: Blok) => voi
               value={blok.url}
               placeholder="https://…"
               onChange={(e) => onChange({ ...blok, url: e.target.value })}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
         </div>
       );
     default:
-      return <p className={`text-xs ${zacht}`}>{SOORT_UITLEG[blok.soort]}</p>;
+      return <p className={`text-xs ${tekstZacht}`}>{SOORT_UITLEG[blok.soort]}</p>;
   }
 }
 
@@ -144,14 +144,14 @@ export function BlokEditor({ blokken, onChange }: { blokken: Blok[]; onChange: (
   return (
     <div className="flex flex-col gap-3">
       {blokken.length === 0 && (
-        <p className={`rounded-lg border border-dashed border-black/15 px-4 py-3 text-sm dark:border-white/20 ${zacht}`}>
+        <p className={`rounded-lg border border-dashed border-black/15 px-4 py-3 text-sm dark:border-white/20 ${tekstZacht}`}>
           De mail is nog leeg. Begin bijvoorbeeld met een kop en een tekst.
         </p>
       )}
       {blokken.map((b, i) => (
         <fieldset key={b.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-black/10 p-3 sm:p-4 dark:border-white/15">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <legend className="text-xs font-medium uppercase tracking-wide text-black/50 dark:text-white/50">
+            <legend className="text-xs font-medium uppercase tracking-wide text-foreground/70">
               {i + 1}. {SOORT_LABEL[b.soort]}
             </legend>
             <div className="flex flex-wrap gap-1">
@@ -179,7 +179,7 @@ export function BlokEditor({ blokken, onChange }: { blokken: Blok[]; onChange: (
         </fieldset>
       ))}
       <div className="flex flex-col gap-2 rounded-xl bg-black/[0.03] p-3 dark:bg-white/5">
-        <span className={`text-xs ${zacht}`}>{vol ? `Je hebt het maximum van ${MAX_BLOKKEN} blokken bereikt.` : "Blok toevoegen:"}</span>
+        <span className={`text-xs ${tekstZacht}`}>{vol ? `Je hebt het maximum van ${MAX_BLOKKEN} blokken bereikt.` : "Blok toevoegen:"}</span>
         <div className="flex flex-wrap gap-1.5">
           {BLOK_SOORTEN.map((s) => (
             <button

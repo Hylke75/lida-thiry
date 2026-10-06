@@ -3,7 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { ontvangerVariabelen, renderNieuwsbrief, valideerBlokken, type Blok } from "@/lib/nieuwsbrief/blokken";
 import { vulIn } from "@/lib/inhoud/schema";
-import { zacht } from "./stijl";
+import { tekstZacht } from "@/components/admin/stijl";
 
 const VOORBEELD_ONTVANGER = { naam: "Anna de Vries", email: "anna@voorbeeld.nl" };
 
@@ -54,7 +54,7 @@ export function Voorbeeld({
               type="button"
               aria-pressed={breedte === b}
               onClick={() => setBreedte(b)}
-              className={`rounded-full px-3 py-1 ${breedte === b ? "bg-accent text-white" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+              className={`rounded-full px-3 py-1 ${breedte === b ? "bg-accent text-background" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
             >
               {b === "computer" ? "Computer" : "Telefoon"}
             </button>
@@ -62,8 +62,8 @@ export function Voorbeeld({
         </div>
       </div>
       <div className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-2 text-sm dark:border-white/15 dark:bg-white/5">
-        <p className="truncate font-medium">{mail.onderwerp || <span className={zacht}>(nog geen onderwerp)</span>}</p>
-        <p className={`truncate text-xs ${zacht}`}>{mail.preheader || "Geen voorvertoningstekst"}</p>
+        <p className="truncate font-medium">{mail.onderwerp || <span className={tekstZacht}>(nog geen onderwerp)</span>}</p>
+        <p className={`truncate text-xs ${tekstZacht}`}>{mail.preheader || "Geen voorvertoningstekst"}</p>
       </div>
       <div className="flex justify-center overflow-hidden rounded-xl border border-black/10 bg-[#f6f2ee] dark:border-white/15">
         <iframe
@@ -74,7 +74,7 @@ export function Voorbeeld({
           style={{ maxWidth: breedte === "telefoon" ? 375 : "100%" }}
         />
       </div>
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         Zo ziet {VOORBEELD_ONTVANGER.naam} de mail. Persoonlijke velden zoals <code>{"{voornaam}"}</code> worden per ontvanger ingevuld. De afmeldlink werkt alleen in de echte mail.
       </p>
     </div>

@@ -5,11 +5,7 @@ import { NAAM_PATROON, ONDERDELEN, naamSuggestie } from "@/lib/beeldbank-regels"
 import { STATUSSEN, STATUS_LABELS } from "@/lib/beeldbank-beheer";
 import type { Beeld } from "@/lib/beeldbank";
 import { slaGegevensOp, type FormulierStatus } from "../acties";
-
-const invoerKlasse =
-  "w-full rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const labelKlasse = "text-sm font-medium";
-const uitlegKlasse = "text-xs leading-relaxed text-black/50 dark:text-white/50";
+import { invoerBreed, knop, label, tekstSucces, tekstUitleg } from "@/components/admin/stijl";
 
 const BEGIN: FormulierStatus = { ok: false, fouten: [] };
 
@@ -38,7 +34,7 @@ export function GegevensFormulier({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="onderdeel" className={labelKlasse}>
+          <label htmlFor="onderdeel" className={label}>
             Onderdeel
           </label>
           <select
@@ -46,7 +42,7 @@ export function GegevensFormulier({
             name="onderdeel"
             value={onderdeel}
             onChange={(e) => setOnderdeel(e.target.value)}
-            className={invoerKlasse}
+            className={invoerBreed}
           >
             <option value="">— geen —</option>
             {!onderdeelBekend && <option value={onderdeel}>{onderdeel} (huidige waarde)</option>}
@@ -57,14 +53,14 @@ export function GegevensFormulier({
             ))}
           </select>
           {!onderdeelBekend && (
-            <p className={uitlegKlasse}>
+            <p className={tekstUitleg}>
               ‘{onderdeel}’ komt uit de oude bestanden. Kies liefst een onderdeel uit de lijst.
             </p>
           )}
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="omschrijving" className={labelKlasse}>
+          <label htmlFor="omschrijving" className={label}>
             Omschrijving
           </label>
           <input
@@ -73,16 +69,16 @@ export function GegevensFormulier({
             value={omschrijving}
             onChange={(e) => setOmschrijving(e.target.value)}
             placeholder="Bijvoorbeeld: v-hals"
-            className={invoerKlasse}
+            className={invoerBreed}
           />
-          <p className={uitlegKlasse}>Kort, wat er op de tekening staat.</p>
+          <p className={tekstUitleg}>Kort, wat er op de tekening staat.</p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="figuur" className={labelKlasse}>
+          <label htmlFor="figuur" className={label}>
             Figuur
           </label>
-          <select id="figuur" name="figuur" value={figuur} onChange={(e) => setFiguur(e.target.value)} className={invoerKlasse}>
+          <select id="figuur" name="figuur" value={figuur} onChange={(e) => setFiguur(e.target.value)} className={invoerBreed}>
             <option value="">Alle lichaamstypes</option>
             {figuren.map((f) => (
               <option key={f.code} value={f.code}>
@@ -93,10 +89,10 @@ export function GegevensFormulier({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="advies" className={labelKlasse}>
+          <label htmlFor="advies" className={label}>
             Advies
           </label>
-          <select id="advies" name="advies" value={advies} onChange={(e) => setAdvies(e.target.value)} className={invoerKlasse}>
+          <select id="advies" name="advies" value={advies} onChange={(e) => setAdvies(e.target.value)} className={invoerBreed}>
             <option value="">—</option>
             <option value="goed">Goed</option>
             <option value="vermijd">Vermijd</option>
@@ -105,7 +101,7 @@ export function GegevensFormulier({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="naam" className={labelKlasse}>
+        <label htmlFor="naam" className={label}>
           Naam
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -116,7 +112,7 @@ export function GegevensFormulier({
             onChange={(e) => setNaam(e.target.value)}
             placeholder="onderdeel-omschrijving-figuur-advies"
             aria-invalid={naamOngeldig}
-            className={`${invoerKlasse} font-mono ${naamOngeldig ? "border-red-500" : ""}`}
+            className={`${invoerBreed} font-mono ${naamOngeldig ? "border-red-500" : ""}`}
           />
           <button
             type="button"
@@ -127,7 +123,7 @@ export function GegevensFormulier({
             Naam voorstellen
           </button>
         </div>
-        <p className={naamOngeldig ? "text-xs text-red-600 dark:text-red-400" : uitlegKlasse}>
+        <p className={naamOngeldig ? "text-xs text-red-700 dark:text-red-300" : tekstUitleg}>
           {naamOngeldig
             ? "Alleen kleine letters, cijfers en losse streepjes (geen spaties of leestekens)."
             : voorstel
@@ -137,7 +133,7 @@ export function GegevensFormulier({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="bijschrift" className={labelKlasse}>
+        <label htmlFor="bijschrift" className={label}>
           Bijschrift
         </label>
         <textarea
@@ -145,25 +141,25 @@ export function GegevensFormulier({
           name="bijschrift"
           defaultValue={beeld.bijschrift ?? ""}
           rows={2}
-          className={invoerKlasse}
+          className={invoerBreed}
         />
-        <p className={uitlegKlasse}>
+        <p className={tekstUitleg}>
           Deze tekst komt in de PDF onder het beeld te staan. Laat leeg als er geen tekst onder hoeft.
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="status" className={labelKlasse}>
+        <label htmlFor="status" className={label}>
           Status
         </label>
-        <select id="status" name="status" defaultValue={beeld.status} className={`${invoerKlasse} sm:max-w-xs`}>
+        <select id="status" name="status" defaultValue={beeld.status} className={`${invoerBreed} sm:max-w-xs`}>
           {STATUSSEN.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
             </option>
           ))}
         </select>
-        <p className={uitlegKlasse}>
+        <p className={tekstUitleg}>
           Zet een beeld op ‘Goedgekeurd’ als je tevreden bent met de tekening; zo houd je bij wat nog moet.
         </p>
       </div>
@@ -179,7 +175,7 @@ export function GegevensFormulier({
         </div>
       )}
       {status.ok && status.melding && !bezig && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p role="status" className={`text-sm ${tekstSucces}`}>
           ✓ {status.melding}
         </p>
       )}
@@ -187,7 +183,7 @@ export function GegevensFormulier({
       <div>
         <button
           disabled={bezig}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className={knop}
         >
           {bezig ? "Bezig met opslaan…" : "Gegevens opslaan"}
         </button>

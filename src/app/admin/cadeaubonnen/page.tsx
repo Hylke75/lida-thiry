@@ -13,17 +13,19 @@ import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 import { datum } from "@/lib/datum";
 import { FACTUREN } from "@/lib/opslag";
+import { badge, tekstZacht, toon } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
 const PAD = "/admin/cadeaubonnen";
 
 const STATUS: Record<CadeaubonRij["status"], { label: string; klasse: string }> = {
-  aangemaakt: { label: "Wacht op betaling", klasse: "bg-black/5 dark:bg-white/10" },
-  betaald: { label: "Betaald, nog niet verstuurd", klasse: "bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200" },
-  verzonden: { label: "Verstuurd", klasse: "bg-accent-zacht text-accent" },
-  mislukt: { label: "Betaling mislukt", klasse: "bg-black/5 dark:bg-white/10" },
-  verlopen: { label: "Betaling verlopen", klasse: "bg-black/5 dark:bg-white/10" },
+  aangemaakt: { label: "Wacht op betaling", klasse: toon.grijs },
+  betaald: { label: "Betaald, nog niet verstuurd", klasse: toon.amber },
+  verzonden: { label: "Verstuurd", klasse: toon.accent },
+  mislukt: { label: "Betaling mislukt", klasse: toon.grijs },
+  verlopen: { label: "Betaling verlopen", klasse: toon.grijs },
 };
 
 function terug(melding: string, soort: "ok" | "fout" = "ok"): never {
@@ -115,35 +117,37 @@ export default async function CadeaubonnenPage({
     .filter((b) => b.status === "betaald" || b.status === "verzonden")
     .reduce((som, b) => som + b.bedrag_cent, 0);
 
-  const knopKlein =
-    "text-xs text-black/60 underline underline-offset-4 hover:text-black dark:text-white/60 dark:hover:text-white";
+  const linkKlein = `text-xs ${tekstZacht} underline underline-offset-4 hover:text-foreground`;
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 p-8">
       <AdminNav actief="/admin/cadeaubonnen" />
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Cadeaubonnen</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Cadeaubonnen die via <Link href="/cadeaubon" className="underline underline-offset-2">/cadeaubon</Link> zijn
-          gekocht. Na betaling krijgt elke bon een eigen eenmalige code (zie ook{" "}
-          <Link href="/admin/kortingscodes" className="underline underline-offset-2">Kortingscodes</Link>). Geplande bonnen
-          gaan op de gekozen dag mee met de nachtelijke controle.
-        </p>
+      <AdminKop
+        titel="Cadeaubonnen"
+        beschrijving={
+          <>
+            Cadeaubonnen die via <Link href="/cadeaubon" className="underline underline-offset-2">/cadeaubon</Link> zijn
+            gekocht. Na betaling krijgt elke bon een eigen eenmalige code (zie ook{" "}
+            <Link href="/admin/kortingscodes" className="underline underline-offset-2">Kortingscodes</Link>). Geplande bonnen
+            gaan op de gekozen dag mee met de nachtelijke controle.
+          </>
+        }
+      >
         <p className="text-sm">
           {alles ? (
             <Link href={PAD} className="underline underline-offset-4">Alleen betaalde bonnen tonen</Link>
           ) : (
             <Link href={`${PAD}?alles=1`} className="underline underline-offset-4">Ook onbetaalde pogingen tonen</Link>
           )}
-          <span className="ml-3 text-black/50 dark:text-white/50">Totaal betaald (in deze lijst): {formatteerBedrag(totaal)}</span>
+          <span className={`ml-3 ${tekstZacht}`}>Totaal betaald (in deze lijst): {formatteerBedrag(totaal)}</span>
         </p>
-      </header>
+      </AdminKop>
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {(fout || error) && <Melding soort="fout">{fout ?? `Cadeaubonnen laden mislukt: ${error?.message}`}</Melding>}
 
       {bonnen.length === 0 ? (
-        <p className="text-sm text-black/50 dark:text-white/50">Nog geen cadeaubonnen.</p>
+        <p className="text-sm text-foreground/70">Nog geen cadeaubonnen.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {bonnen.map((b) => {
@@ -161,14 +165,14 @@ export default async function CadeaubonnenPage({
                   <div className="flex min-w-0 flex-col">
                     <span className="font-medium">
                       {formatteerBedrag(b.bedrag_cent, b.valuta || "EUR")} · {b.koper_naam}{" "}
-                      <span className="font-normal text-black/50 dark:text-white/50">({b.koper_email})</span>
+                      <span className="font-normal text-foreground/70">({b.koper_email})</span>
                     </span>
-                    <span className="text-black/60 dark:text-white/60">
+                    <span className="text-foreground/70">
                       {b.bezorging === "ontvanger"
                         ? `Naar ontvanger: ${b.ontvanger_naam ?? "–"} (${b.ontvanger_email ?? "–"})${b.verzend_op ? ` · gepland op ${datum(b.verzend_op)}` : ""}`
                         : `Naar de koper${b.ontvanger_naam ? ` · voor ${b.ontvanger_naam}` : ""}`}
                     </span>
-                    <span className="text-black/50 dark:text-white/50">
+                    <span className="text-foreground/70">
                       Besteld {datum(b.aangemaakt_op)}
                       {b.betaald_op ? ` · betaald ${datum(b.betaald_op)}` : ""}
                       {b.verzonden_op ? ` · verstuurd ${datum(b.verzonden_op)}` : ""}
@@ -182,7 +186,7 @@ export default async function CadeaubonnenPage({
                       ) : null}
                     </span>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${st.klasse}`}>{st.label}</span>
+                  <span className={`${badge} ${st.klasse}`}>{st.label}</span>
                 </div>
 
                 {betaald && (
@@ -191,7 +195,7 @@ export default async function CadeaubonnenPage({
                       {code ? (
                         <>
                           <span className="font-mono font-medium">{code.code}</span>
-                          <span className="text-black/50 dark:text-white/50">
+                          <span className="text-foreground/70">
                             {code.aantal_gebruikt}
                             {code.max_gebruik !== null ? ` / ${code.max_gebruik}` : ""} gebruikt
                             {code.geldig_tot ? ` · geldig t/m ${datum(code.geldig_tot)}` : ""}
@@ -207,13 +211,13 @@ export default async function CadeaubonnenPage({
                           </span>
                         </>
                       ) : (
-                        <span className="text-black/50 dark:text-white/50">Nog geen code (wordt aangemaakt bij versturen).</span>
+                        <span className="text-foreground/70">Nog geen code (wordt aangemaakt bij versturen).</span>
                       )}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
                       <form action={verstuurOpnieuw}>
                         <input type="hidden" name="id" value={b.id} />
-                        <button className={knopKlein}>
+                        <button className={linkKlein}>
                           {b.status === "verzonden" ? "Bon opnieuw versturen" : "Bon nu versturen"}
                         </button>
                       </form>
@@ -221,14 +225,14 @@ export default async function CadeaubonnenPage({
                         <form action={verstuurOpnieuw}>
                           <input type="hidden" name="id" value={b.id} />
                           <input type="hidden" name="kopie" value="1" />
-                          <button className={knopKlein}>Kopie naar koper</button>
+                          <button className={linkKlein}>Kopie naar koper</button>
                         </form>
                       )}
                     </span>
                   </div>
                 )}
                 {b.boodschap && (
-                  <p className="border-t border-black/5 pt-3 whitespace-pre-line text-black/60 italic dark:border-white/10 dark:text-white/60">
+                  <p className="border-t border-black/5 pt-3 whitespace-pre-line text-foreground/70 italic dark:border-white/10">
                     “{b.boodschap}”
                   </p>
                 )}

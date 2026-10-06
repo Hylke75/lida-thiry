@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { normaliseerTags } from "@/lib/blog/regels";
-import { invoerKlasse, knopRand, zacht } from "../../nieuwsbrief/_editor/stijl";
+import { invoerBreed, knopSecundair, tekstZacht } from "@/components/admin/stijl";
 
 /** Tags als losse "chips", met suggesties uit eerdere berichten. */
 export function TagInvoer({
@@ -63,10 +63,10 @@ export function TagInvoer({
             }
           }}
           onBlur={() => nieuw.trim() && voegToe(nieuw)}
-          className={invoerKlasse}
+          className={invoerBreed}
           placeholder="Typ een tag en druk op Enter"
         />
-        <button type="button" onClick={() => voegToe(nieuw)} disabled={!nieuw.trim()} className={knopRand}>
+        <button type="button" onClick={() => voegToe(nieuw)} disabled={!nieuw.trim()} className={knopSecundair}>
           Toevoegen
         </button>
       </div>
@@ -75,7 +75,7 @@ export function TagInvoer({
           <option key={s} value={s} />
         ))}
       </datalist>
-      <p className={`text-xs ${zacht}`}>Maximaal 15 tags, in kleine letters. Bijvoorbeeld: jurken, zandloper, najaar.</p>
+      <p className={`text-xs ${tekstZacht}`}>Maximaal 15 tags, in kleine letters. Bijvoorbeeld: jurken, zandloper, najaar.</p>
     </div>
   );
 }

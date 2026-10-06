@@ -8,7 +8,7 @@ export function BlogKop({ pad, actief }: { pad: { href?: string; label: string }
   return (
     <>
       <AdminNav actief={actief} />
-      <nav aria-label="Kruimelpad" className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-black/55 dark:text-white/55">
+      <nav aria-label="Kruimelpad" className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-foreground/70">
         <Link href="/admin/blog" className="hover:text-accent hover:underline">
           Blog
         </Link>

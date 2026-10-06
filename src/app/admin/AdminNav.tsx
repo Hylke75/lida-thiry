@@ -125,14 +125,14 @@ function pil(actief: boolean): string {
   return `rounded-full px-3 py-1.5 ${
     actief
       ? "bg-accent-zacht font-medium text-accent"
-      : "text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5"
+      : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"
   }`;
 }
 
 function Uitloggen({ className }: { className?: string }) {
   return (
     <form action="/auth/uitloggen" method="post" className={className}>
-      <button className="px-2 py-1.5 text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50 dark:hover:text-white/80">
+      <button className="px-2 py-1.5 text-foreground/70 underline underline-offset-4 hover:text-black/80 dark:hover:text-white/80">
         Uitloggen
       </button>
     </form>
@@ -171,7 +171,7 @@ export async function AdminNav({ actief: pad }: { actief?: AdminPad }) {
           <span className="flex min-w-0 items-baseline gap-2">
             <span className="font-serif text-xl tracking-tight">Beheer</span>
             {huidigeLink && (
-              <span className="truncate text-sm text-black/50 dark:text-white/50">
+              <span className="truncate text-sm text-foreground/70">
                 {huidigeGroep && huidigeGroep.links.length > 1 ? `${huidigeGroep.label} · ` : ""}
                 {huidigeLink.label}
               </span>
@@ -252,7 +252,7 @@ export async function AdminNav({ actief: pad }: { actief?: AdminPad }) {
                 className={`rounded-full border px-3 py-1 ${
                   actief === l.href
                     ? "border-accent/40 font-medium text-accent"
-                    : "border-black/10 text-black/60 hover:bg-black/5 dark:border-white/15 dark:text-white/60 dark:hover:bg-white/5"
+                    : "border-black/10 text-foreground/70 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5"
                 }`}
               >
                 {l.label}

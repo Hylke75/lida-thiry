@@ -62,7 +62,7 @@ export function BackupControle() {
           className="text-sm file:mr-3 file:rounded-full file:border file:border-black/15 file:bg-transparent file:px-3 file:py-1 file:text-sm dark:file:border-white/20"
         />
       </label>
-      {bezig && <p className="text-sm text-black/60 dark:text-white/60">Bezig met controleren…</p>}
+      {bezig && <p className="text-sm text-foreground/70">Bezig met controleren…</p>}
       {fout && <Melding soort="fout">{fout}</Melding>}
       {c && !c.ok && (
         <Melding soort="fout">
@@ -126,7 +126,7 @@ export function BackupControle() {
             </table>
           </div>
           {c.opslag.length > 0 && (
-            <p className="text-xs text-black/50 dark:text-white/50">
+            <p className="text-xs text-foreground/70">
               Opslag op het moment van de back-up (bestanden zelf zitten er niet in):{" "}
               {c.opslag.map((b) => `${b.naam} ${b.bestanden} bestanden, ${leesbareGrootte(b.bytes)}${b.onvolledig ? " (onvolledig geteld)" : ""}`).join(" · ")}
             </p>

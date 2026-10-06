@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { TestUitkomst } from "@/lib/doorverwijzingen/regels";
 import { Melding } from "../Melding";
 import { testDoorverwijzing } from "./acties";
-import { invoer, kleineKnop } from "./stijl";
+import { invoer, knopKlein } from "@/components/admin/stijl";
 
 function Uitleg({ u }: { u: TestUitkomst }) {
   switch (u.soort) {
@@ -82,7 +82,7 @@ export function TestAdres() {
           aria-label="Adres om te testen"
           className={`${invoer} flex-1 font-mono`}
         />
-        <button disabled={bezig || !adres.trim()} className={kleineKnop}>
+        <button disabled={bezig || !adres.trim()} className={knopKlein}>
           {bezig ? "Bezig…" : "Test"}
         </button>
       </form>

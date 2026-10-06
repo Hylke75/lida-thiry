@@ -11,6 +11,7 @@ import {
 } from "@/lib/push/regels";
 import { Melding } from "../Melding";
 import { bewaarSoorten, meldApparaatAan, meldApparaatAf, stuurTest, verwijderApparaat, type ActieUitkomst } from "./acties";
+import { kaart, knop, knopSecundair } from "@/components/admin/stijl";
 
 export interface Apparaat {
   id: string;
@@ -22,12 +23,6 @@ export interface Apparaat {
 }
 
 type Toestand = "laden" | "niet-ondersteund" | "ios-installeren" | "geweigerd" | "uit" | "aan";
-
-const knop =
-  "rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50";
-const tweedeKnop =
-  "rounded-full border border-black/15 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/5";
-const kaart = "flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15";
 
 function isIos(): boolean {
   const ua = navigator.userAgent;
@@ -189,12 +184,12 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
         </h2>
 
         {!publiekeSleutel ? (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Pushmeldingen zijn nog niet ingesteld op de server. Zet VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY en VAPID_SUBJECT
             in Vercel (maak een sleutelpaar met <code>node scripts/vapid-sleutels.mjs</code>) en publiceer opnieuw.
           </p>
         ) : toestand === "laden" ? (
-          <p className="text-sm text-black/60 dark:text-white/60">Even kijken wat dit apparaat kan…</p>
+          <p className="text-sm text-foreground/70">Even kijken wat dit apparaat kan…</p>
         ) : toestand === "ios-installeren" ? (
           <div className="flex flex-col gap-2 text-sm text-black/70 dark:text-white/70">
             <p>
@@ -207,12 +202,12 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
             </ol>
           </div>
         ) : toestand === "niet-ondersteund" ? (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Deze browser ondersteunt geen pushmeldingen. Probeer Chrome, Edge, Firefox of Safari (op iPhone: eerst op het
             beginscherm zetten).
           </p>
         ) : toestand === "geweigerd" ? (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Meldingen zijn voor deze site geblokkeerd. Sta ze toe in de instellingen van je browser (bij het slotje naast
             het adres) en laad de pagina opnieuw.
           </p>
@@ -231,7 +226,7 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
                   <button type="button" onClick={test} disabled={bezig} className={knop}>
                     Testmelding sturen
                   </button>
-                  <button type="button" onClick={uitzetten} disabled={bezig} className={tweedeKnop}>
+                  <button type="button" onClick={uitzetten} disabled={bezig} className={knopSecundair}>
                     Uitzetten
                   </button>
                 </>
@@ -242,7 +237,7 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
               )}
             </div>
             {iosHint && (
-              <p className="text-xs text-black/50 dark:text-white/50">
+              <p className="text-xs text-foreground/70">
                 Op iPhone/iPad: zet het beheer eerst op je beginscherm (deelknop → ‘Zet op beginscherm’).
               </p>
             )}
@@ -254,7 +249,7 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
         <h2 id="welke-meldingen" className="text-lg">
           Welke meldingen
         </h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Geldt voor dit apparaat{toestand === "aan" && ditApparaat ? " en wordt direct opgeslagen" : "; wordt opgeslagen bij het aanzetten"}.
         </p>
         <fieldset className="flex flex-col gap-2" disabled={bezig}>
@@ -278,7 +273,7 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
           Mijn apparaten
         </h2>
         {apparaten.length === 0 ? (
-          <p className="text-sm text-black/60 dark:text-white/60">Nog geen apparaten aangemeld.</p>
+          <p className="text-sm text-foreground/70">Nog geen apparaten aangemeld.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/5 dark:divide-white/10">
             {apparaten.map((a) => (
@@ -292,16 +287,16 @@ export function PushBeheer({ publiekeSleutel, apparaten }: { publiekeSleutel: st
                       </span>
                     )}
                   </span>
-                  <span className="text-black/60 dark:text-white/60">
+                  <span className="text-foreground/70">
                     {a.meldingen.length
                       ? a.meldingen.map((m) => PUSH_SOORT_LABEL[m as PushSoort] ?? m).join(", ")
                       : "Geen meldingen gekozen"}
                   </span>
-                  <span className="text-xs text-black/50 dark:text-white/50">
+                  <span className="text-xs text-foreground/70">
                     Aangemeld {datum(a.aangemaakt_op)} · laatste melding {datum(a.laatst_gebruikt_op)}
                   </span>
                 </span>
-                <button type="button" onClick={() => verwijder(a.id)} disabled={bezig} className={tweedeKnop}>
+                <button type="button" onClick={() => verwijder(a.id)} disabled={bezig} className={knopSecundair}>
                   Verwijderen
                 </button>
               </li>

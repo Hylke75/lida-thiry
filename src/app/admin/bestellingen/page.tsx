@@ -13,6 +13,8 @@ import { gratisTestAan } from "@/lib/order-status";
 import { ORDER_RIJ_KOLOMMEN, OrderRij, type OrderRijGegevens } from "./OrderRij";
 import { veiligeZoekterm } from "@/lib/zoeken/regels";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
+import { invoer, knop, knopSecundair } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -108,19 +110,19 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/bestellingen" />
-      <h1 className="text-2xl font-semibold tracking-tight">Bestellingen</h1>
+      <AdminKop titel="Bestellingen" />
 
       {testmodus && (
         <section className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
           <span className="text-sm font-medium">Testmodus</span>
           <form action={nieuweTest}>
-            <button className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90">
+            <button className={knop}>
               Nieuwe test starten
             </button>
           </form>
           {heeftRecht(ik.rol, "bestellingen_verwijderen") && (
             <form action={verwijderAlle}>
-              <button className="rounded-full border border-black/15 px-5 py-2 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5">
+              <button className={knopSecundair}>
                 Alle testbestellingen verwijderen
               </button>
             </form>
@@ -135,13 +137,13 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
             defaultValue={q}
             placeholder="Zoek op naam, e-mail of type (bijv. 8X)"
             aria-label="Zoeken"
-            className="min-w-0 flex-1 rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20"
+            className={`${invoer} flex-1`}
           />
           <select
             name="status"
             defaultValue={status ?? ""}
             aria-label="Status"
-            className="rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20"
+            className={invoer}
           >
             <option value="">Alle statussen</option>
             {Object.entries(STATUS_LABEL).map(([k, v]) => (
@@ -150,12 +152,12 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
               </option>
             ))}
           </select>
-          <button className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90">
+          <button className={knop}>
             Zoeken
           </button>
         </form>
         {gefilterd && (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             {lijst.length} gevonden ·{" "}
             <Link href={lijstLink(huidig, { q: undefined, status: undefined })} className="underline underline-offset-4">
               filter wissen
@@ -163,7 +165,7 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
           </p>
         )}
         {lijst.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">
+          <p className="text-sm text-foreground/70">
             {gefilterd ? "Geen bestellingen gevonden." : "Nog geen bestellingen."}
           </p>
         ) : (

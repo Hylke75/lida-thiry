@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { LENGTES, TONEN, type Lengte, type Toon } from "@/lib/blog/ai-prompt";
-import { invoerKlasse, kaart, knopHoofd, knopKlein, zacht } from "../../nieuwsbrief/_editor/stijl";
 import { schrijfMetAi } from "./acties";
+import { invoerBreed, kaart, knop, knopKlein, tekstFout, tekstZacht } from "@/components/admin/stijl";
 
 const TOON_LABEL: Record<Toon, string> = {
   warm: "Warm en persoonlijk",
@@ -80,7 +80,7 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
           <h2 className="text-lg font-semibold">Waar gaat het over?</h2>
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor="steekwoord" className="text-sm font-medium">
-              Steekwoorden <span className="text-red-700 dark:text-red-400">*</span>
+              Steekwoorden <span className={tekstFout}>*</span>
             </label>
             {steekwoorden.length > 0 && (
               <ul className="flex flex-wrap gap-1.5">
@@ -112,41 +112,41 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
                   setSteekwoorden((oud) => oud.slice(0, -1));
                 }
               }}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="Bijv. wikkeljurk, zandloper, feestdagen — druk op Enter of typ een komma"
             />
-            <p className={`text-xs ${zacht}`}>Maximaal 12. Hoe concreter, hoe beter het resultaat.</p>
+            <p className={`text-xs ${tekstZacht}`}>Maximaal 12. Hoe concreter, hoe beter het resultaat.</p>
           </div>
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor="onderwerp" className="text-sm font-medium">
-              Onderwerp of werktitel <span className={`font-normal ${zacht}`}>(optioneel)</span>
+              Onderwerp of werktitel <span className={`font-normal ${tekstZacht}`}>(optioneel)</span>
             </label>
             <input
               id="onderwerp"
               value={onderwerp}
               maxLength={200}
               onChange={(e) => setOnderwerp(e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="Bijv. Wat trek je aan naar een kerstdiner?"
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor="doelgroep" className="text-sm font-medium">
-              Voor wie <span className={`font-normal ${zacht}`}>(optioneel)</span>
+              Voor wie <span className={`font-normal ${tekstZacht}`}>(optioneel)</span>
             </label>
             <input
               id="doelgroep"
               value={doelgroep}
               maxLength={120}
               onChange={(e) => setDoelgroep(e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="Bijv. vrouwen van 50+ die weer naar kantoor gaan"
             />
           </div>
           {figuurtypes.length > 0 && (
             <fieldset className="flex min-w-0 flex-col gap-1">
               <legend className="text-sm font-medium">
-                Figuurtypes <span className={`font-normal ${zacht}`}>(optioneel)</span>
+                Figuurtypes <span className={`font-normal ${tekstZacht}`}>(optioneel)</span>
               </legend>
               <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
                 {figuurtypes.map((t) => (
@@ -172,20 +172,20 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
               <label htmlFor="toon" className="text-sm font-medium">
                 Toon
               </label>
-              <select id="toon" value={toon} onChange={(e) => setToon(e.target.value as Toon)} className={invoerKlasse}>
+              <select id="toon" value={toon} onChange={(e) => setToon(e.target.value as Toon)} className={invoerBreed}>
                 {(Object.keys(TONEN) as Toon[]).map((t) => (
                   <option key={t} value={t}>
                     {TOON_LABEL[t] ?? t}
                   </option>
                 ))}
               </select>
-              <p className={`text-xs ${zacht}`}>{TONEN[toon]}.</p>
+              <p className={`text-xs ${tekstZacht}`}>{TONEN[toon]}.</p>
             </div>
             <div className="flex min-w-0 flex-col gap-1">
               <label htmlFor="lengte" className="text-sm font-medium">
                 Lengte
               </label>
-              <select id="lengte" value={lengte} onChange={(e) => setLengte(e.target.value as Lengte)} className={invoerKlasse}>
+              <select id="lengte" value={lengte} onChange={(e) => setLengte(e.target.value as Lengte)} className={invoerBreed}>
                 {(Object.keys(LENGTES) as Lengte[]).map((l) => (
                   <option key={l} value={l}>
                     {LENGTES[l].label}
@@ -196,7 +196,7 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
           </div>
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor="extra" className="text-sm font-medium">
-              Extra wensen <span className={`font-normal ${zacht}`}>(optioneel)</span>
+              Extra wensen <span className={`font-normal ${tekstZacht}`}>(optioneel)</span>
             </label>
             <textarea
               id="extra"
@@ -204,7 +204,7 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
               maxLength={1000}
               rows={3}
               onChange={(e) => setExtra(e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
               placeholder="Bijv. begin met een herkenbare situatie, en noem dat ik ook persoonlijke afspraken doe."
             />
           </div>
@@ -229,7 +229,7 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <button className={knopHoofd} disabled={!alleSteekwoorden.length}>
+          <button className={knop} disabled={!alleSteekwoorden.length}>
             ✨ Concept laten schrijven
           </button>
           {steekwoorden.length > 0 && (
@@ -239,7 +239,7 @@ export function SchrijfFormulier({ figuurtypes }: { figuurtypes: string[] }) {
           )}
         </div>
       )}
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         De AI verzint geen feiten, cijfers of klantverhalen, maar kan zich vergissen. Waar een foto past, zet hij een regel als [foto: …] in de tekst die
         jij later vervangt.
       </p>

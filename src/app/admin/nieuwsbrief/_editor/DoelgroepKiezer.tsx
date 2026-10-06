@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { BRONNEN, BRON_LABEL, beschrijfDoelgroep, type Bron, type Doelgroep } from "@/lib/nieuwsbrief/doelgroep";
 import { formulierKeuzes } from "../formulieren/acties";
 import type { TypeKeuze } from "./regels";
-import { zacht } from "./stijl";
+import { tekstZacht } from "@/components/admin/stijl";
 
 function wissel<T>(lijst: T[] | undefined, waarde: T): T[] {
   const l = lijst ?? [];
@@ -49,7 +49,7 @@ function Groep({ titel, uitleg, children }: { titel: string; uitleg?: string; ch
     <div className="flex min-w-0 flex-col gap-2">
       <div>
         <p className="text-sm font-medium">{titel}</p>
-        {uitleg && <p className={`text-xs ${zacht}`}>{uitleg}</p>}
+        {uitleg && <p className={`text-xs ${tekstZacht}`}>{uitleg}</p>}
       </div>
       {children}
     </div>
@@ -104,10 +104,10 @@ export function DoelgroepKiezer({
               ? "1 ontvanger"
               : `${aantal.toLocaleString("nl-NL")} ontvangers`}
         </p>
-        <p className={`text-xs ${zacht}`}>{beschrijfDoelgroep(doelgroep, typeNaam, formulierNaam)}</p>
+        <p className={`text-xs ${tekstZacht}`}>{beschrijfDoelgroep(doelgroep, typeNaam, formulierNaam)}</p>
       </div>
 
-      <p className={`text-xs ${zacht}`}>
+      <p className={`text-xs ${tekstZacht}`}>
         Alleen contacten die zich hebben aangemeld (en niet afgemeld) ontvangen de nieuwsbrief. Kies hieronder niets om
         iedereen te mailen, of beperk de groep.
       </p>
@@ -218,7 +218,7 @@ export function DoelgroepKiezer({
       )}
 
       {!leeg && (
-        <button type="button" onClick={() => onChange({})} className="w-fit text-xs text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50">
+        <button type="button" onClick={() => onChange({})} className="w-fit text-xs text-foreground/70 underline underline-offset-4 hover:text-black/80">
           Alle filters wissen (iedereen)
         </button>
       )}

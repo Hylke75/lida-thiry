@@ -13,9 +13,9 @@ import {
   type StandaardAanmeldTeksten,
 } from "@/lib/nieuwsbrief/formulierregels";
 import { TagInvoer } from "../contacten/Invoer";
-import { invoerKlasse, kaart, knopHoofd, zacht } from "../_editor/stijl";
 import { bewaarFormulier, type BewaarStaat } from "./acties";
 import { slugify } from "@/lib/slug";
+import { invoerBreed, kaart, knop, tekstFout, tekstZacht } from "@/components/admin/stijl";
 
 const OPMAAK_UITLEG = "Lege regel = nieuwe alinea. Gebruik **vet** of [linktekst](https://…) voor opmaak.";
 
@@ -36,7 +36,7 @@ function Veld({
         {label}
       </label>
       {children}
-      {uitleg && <p className={`text-xs ${zacht}`}>{uitleg}</p>}
+      {uitleg && <p className={`text-xs ${tekstZacht}`}>{uitleg}</p>}
     </div>
   );
 }
@@ -126,7 +126,7 @@ export function FormulierEditor({
                 setW((oud) => ({ ...oud, naam, ...(slugAangepast ? {} : { slug: slugify(naam, MAX.slug) }) }));
               }}
               placeholder="Bijv. Zomeractie 2026"
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
           <Veld
@@ -150,9 +150,9 @@ export function FormulierEditor({
                 zet("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
               }}
               aria-invalid={Boolean(slugProbleem)}
-              className={`${invoerKlasse} font-mono`}
+              className={`${invoerBreed} font-mono`}
             />
-            {slugProbleem && <p className="text-xs text-red-700 dark:text-red-300">{slugProbleem}</p>}
+            {slugProbleem && <p className={`text-xs ${tekstFout}`}>{slugProbleem}</p>}
             {slugGewijzigd && !slugProbleem && (
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 Let op: na het wijzigen van de slug werken de oude link (/nieuwsbrief/{begin.slug}) en de oude blokcode{" "}
@@ -162,11 +162,11 @@ export function FormulierEditor({
           </Veld>
           <div className="flex flex-col gap-2">
             <Vinkje name="actief" checked={w.actief} onChange={(v) => zet("actief", v)}>
-              Actief <span className={zacht}>— uit = het formulier verschijnt nergens en aanmelden ermee kan niet.</span>
+              Actief <span className={tekstZacht}>— uit = het formulier verschijnt nergens en aanmelden ermee kan niet.</span>
             </Vinkje>
             <Vinkje name="eigen_pagina" checked={w.eigen_pagina} onChange={(v) => zet("eigen_pagina", v)}>
               Eigen pagina op /nieuwsbrief/{w.slug || "…"}{" "}
-              <span className={zacht}>— handig om te delen via social media of een QR-code.</span>
+              <span className={tekstZacht}>— handig om te delen via social media of een QR-code.</span>
             </Vinkje>
           </div>
         </section>
@@ -180,7 +180,7 @@ export function FormulierEditor({
               maxLength={MAX.titel}
               value={w.titel}
               onChange={(e) => zet("titel", e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
           <Veld label="Tekst" htmlFor="tekst" uitleg={OPMAAK_UITLEG}>
@@ -191,7 +191,7 @@ export function FormulierEditor({
               maxLength={MAX.tekst}
               value={w.tekst}
               onChange={(e) => zet("tekst", e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
           <Veld label="Naamveld">
@@ -219,7 +219,7 @@ export function FormulierEditor({
               maxLength={MAX.knop}
               value={w.knop}
               onChange={(e) => zet("knop", e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
           <Veld label="Melding na aanmelden" htmlFor="succes_tekst">
@@ -231,7 +231,7 @@ export function FormulierEditor({
               maxLength={MAX.succes_tekst}
               value={w.succes_tekst}
               onChange={(e) => zet("succes_tekst", e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
             {w.dubbele_opt_in && !/mail|bevestig/i.test(w.succes_tekst) && (
               <p className="text-xs text-amber-800 dark:text-amber-300">
@@ -257,7 +257,7 @@ export function FormulierEditor({
               value={w.toestemming_tekst}
               placeholder={standaard.toestemming_tekst}
               onChange={(e) => zet("toestemming_tekst", e.target.value)}
-              className={invoerKlasse}
+              className={invoerBreed}
             />
           </Veld>
         </section>
@@ -274,7 +274,7 @@ export function FormulierEditor({
             <Vinkje name="dubbele_opt_in" checked={w.dubbele_opt_in} onChange={(v) => zet("dubbele_opt_in", v)}>
               Dubbele opt-in (aanbevolen)
             </Vinkje>
-            <p className={`text-xs ${zacht}`}>
+            <p className={`text-xs ${tekstZacht}`}>
               Met dubbele opt-in krijgt een nieuwe aanmelder eerst een mail met een bevestigingslink. Pas na die klik is
               iemand echt aangemeld. Zo weet je zeker dat het e-mailadres klopt en dat de eigenaar zelf toestemming gaf;
               dat is je bewijs voor de AVG en het houdt je lijst schoon (minder spamklachten en onbestelbare adressen).
@@ -291,18 +291,18 @@ export function FormulierEditor({
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button className={knopHoofd} disabled={bezig || Boolean(slugProbleem)}>
+          <button className={knop} disabled={bezig || Boolean(slugProbleem)}>
             {bezig ? "Bezig…" : id ? "Opslaan" : "Formulier aanmaken"}
           </button>
         </div>
       </form>
 
       <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:self-start">
-        <p className={`text-sm font-medium ${zacht}`}>Voorbeeld</p>
+        <p className={`text-sm font-medium ${tekstZacht}`}>Voorbeeld</p>
         <div className="rounded-2xl border border-black/10 bg-background px-4 py-8 dark:border-white/15">
           <AanmeldFormulier formulier={w} standaard={standaard} voorbeeld />
         </div>
-        <p className={`text-xs ${zacht}`}>
+        <p className={`text-xs ${tekstZacht}`}>
           Zo ziet het formulier eruit op de website. In dit voorbeeld wordt niets verstuurd.
           {!w.actief && " Het formulier staat uit en is nu nergens te zien."}
         </p>

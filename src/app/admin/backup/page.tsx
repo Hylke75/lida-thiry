@@ -6,8 +6,9 @@ import { leesbareGrootte } from "@/lib/backup/formaat";
 import { telOpslag, telTabellen } from "@/lib/backup/maken";
 import { BACKUP_TABELLEN, NIET_IN_BACKUP } from "@/lib/backup/tabellen";
 import { AdminNav, Melding } from "../AdminNav";
-import { hoofdknop } from "../berichten/stijl";
 import { BackupControle } from "./BackupControle";
+import { kaart, knop } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Back-up · Beheer" };
@@ -16,7 +17,7 @@ const HANDLEIDING = "https://github.com/Hylke75/lida-thiry/blob/main/docs/backup
 
 function Kaart({ titel, children }: { titel: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:p-5 dark:border-white/15">
+    <section className={kaart}>
       <h2 className="text-lg">{titel}</h2>
       {children}
     </section>
@@ -36,18 +37,20 @@ export default async function BackupPagina() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/backup" />
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Back-up</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Afhankelijk van het abonnement maakt Supabase zelf back-ups (Pro: dagelijks; gratis: geen). Hier download je
-          daarnaast een eigen kopie van alle gegevens, bijvoorbeeld wekelijks en vóór een grote wijziging. Hoe je een
-          back-up terugzet staat in de{" "}
-          <a href={HANDLEIDING} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-            handleiding back-up en herstel
-          </a>
-          .
-        </p>
-      </header>
+      <AdminKop
+        titel="Back-up"
+        beschrijving={
+          <>
+            Afhankelijk van het abonnement maakt Supabase zelf back-ups (Pro: dagelijks; gratis: geen). Hier download je
+            daarnaast een eigen kopie van alle gegevens, bijvoorbeeld wekelijks en vóór een grote wijziging. Hoe je een
+            back-up terugzet staat in de{" "}
+            <a href={HANDLEIDING} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+              handleiding back-up en herstel
+            </a>
+            .
+          </>
+        }
+      />
 
       <Kaart titel="Volledige back-up downloaden">
         <p className="text-sm text-black/70 dark:text-white/70">
@@ -63,12 +66,12 @@ export default async function BackupPagina() {
         )}
         <div>
           {/* Gewone link: de route streamt een bestand. */}
-          <a href="/admin/backup/download" className={`${hoofdknop} inline-block`} download>
+          <a href="/admin/backup/download" className={`${knop} inline-block`} download>
             Download volledige back-up
           </a>
         </div>
         <details className="text-sm">
-          <summary className="cursor-pointer text-black/60 dark:text-white/60">Wat zit er wel en niet in?</summary>
+          <summary className="cursor-pointer text-foreground/70">Wat zit er wel en niet in?</summary>
           <div className="mt-2 flex flex-col gap-2 text-black/70 dark:text-white/70">
             <p>
               Wel: {BACKUP_TABELLEN.map((t) => t.naam).join(", ")}.
@@ -100,7 +103,7 @@ export default async function BackupPagina() {
                   {b.naam}
                   {b.publiek && <span className="ml-2 font-sans text-black/40 dark:text-white/40">(openbaar)</span>}
                 </span>
-                <span className="tabular-nums text-black/60 dark:text-white/60">
+                <span className="tabular-nums text-foreground/70">
                   {b.bestanden.toLocaleString("nl-NL")} {b.bestanden === 1 ? "bestand" : "bestanden"},{" "}
                   {leesbareGrootte(b.bytes)}
                   {b.onvolledig && " (onvolledig geteld)"}

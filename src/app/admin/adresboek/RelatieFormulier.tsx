@@ -7,7 +7,8 @@ import { normaliseerPostcode } from "@/lib/relaties/regels";
 import { TagInvoer } from "../nieuwsbrief/contacten/Invoer";
 import { Melding } from "../Melding";
 import { bewaarRelatie, type FormulierStatus } from "./acties";
-import { hoofdknop, invoer, PAD } from "./ui";
+import { PAD } from "./ui";
+import { invoer, knop, tekstFout } from "@/components/admin/stijl";
 
 const TEKSTVELDEN = ["voornaam", "achternaam", "email", "telefoon", "bedrijf", "straat", "postcode", "plaats", "land", "geboortedatum", "notities"] as const;
 type Tekstveld = (typeof TEKSTVELDEN)[number];
@@ -34,7 +35,7 @@ export function RelatieFormulier({ relatie, tags }: { relatie: Relatie | null; t
         className={`${invoer} ${fout ? foutRand : ""}`}
         {...extra}
       />
-      {fout && <span className="text-xs text-red-700 dark:text-red-300">{fout}</span>}
+      {fout && <span className={`text-xs ${tekstFout}`}>{fout}</span>}
     </label>
   );
 
@@ -63,7 +64,7 @@ export function RelatieFormulier({ relatie, tags }: { relatie: Relatie | null; t
           )}
         </Melding>
       )}
-      {f.naam && <p className="text-sm text-red-700 dark:text-red-300">{f.naam}</p>}
+      {f.naam && <p className={`text-sm ${tekstFout}`}>{f.naam}</p>}
 
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="sr-only">Naam</legend>
@@ -94,13 +95,13 @@ export function RelatieFormulier({ relatie, tags }: { relatie: Relatie | null; t
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-black/70 dark:text-white/70">Notities</span>
         <textarea name="notities" value={w.notities} onChange={zet("notities")} rows={6} maxLength={50_000} className={`${invoer} font-normal`} />
-        <span className="text-xs text-black/50 dark:text-white/50">
+        <span className="text-xs text-foreground/70">
           Alleen zichtbaar voor beheerders. {relatie ? "Een nieuwe notitie met datum voeg je hieronder toe." : ""}
         </span>
       </label>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button className={hoofdknop} disabled={bezig}>
+        <button className={knop} disabled={bezig}>
           {bezig ? "Bezig…" : relatie ? "Opslaan" : "Toevoegen"}
         </button>
         {!relatie && (

@@ -12,6 +12,8 @@ import { zetTerug } from "../acties";
 import { GegevensFormulier } from "./GegevensFormulier";
 import { haalLichaamstypes } from "@/lib/lichaamstypes";
 import { VerwijderKnop } from "./VerwijderKnop";
+import { kaart, tekstFout, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 // Afmetingen bepalen en uploads verwerken (sharp) kan even duren.
@@ -24,8 +26,6 @@ const FOUTEN: Record<string, string> = {
   "in-gebruik": "Dit beeld wordt nog gebruikt en kan daarom niet worden verwijderd.",
   verwijderen: "Verwijderen is niet gelukt. Probeer het opnieuw.",
 };
-
-const kaart = "flex flex-col gap-4 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15";
 
 export default async function BeeldPagina({
   params,
@@ -56,19 +56,19 @@ export default async function BeeldPagina({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/beeldbank" />
 
-      <div className="flex flex-col gap-1">
-        <Link href="/admin/beeldbank" className="w-fit text-sm text-black/60 underline underline-offset-4 dark:text-white/60">
-          ← Terug naar de beeldbank
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-mono text-2xl font-semibold tracking-tight">{beeld.code}</h1>
-          <StatusBadge status={beeld.status} />
-          {isTeKlein(beeld) && <TeKleinBadge />}
-        </div>
-        <p className={`break-all text-sm ${beeld.naam ? "" : "italic text-black/50 dark:text-white/50"}`}>
-          {beeld.naam ?? "(nog geen naam)"}
-        </p>
-      </div>
+      <AdminKop
+        terug={{ href: "/admin/beeldbank", label: "Terug naar de beeldbank" }}
+        titel={beeld.code}
+        titelKlasse="font-mono"
+        naastTitel={
+          <>
+            <StatusBadge status={beeld.status} />
+            {isTeKlein(beeld) && <TeKleinBadge />}
+          </>
+        }
+      >
+        <p className={`break-all text-sm ${beeld.naam ? "" : `italic ${tekstZacht}`}`}>{beeld.naam ?? "(nog geen naam)"}</p>
+      </AdminKop>
 
       {nieuw && (
         <Melding soort="ok">
@@ -100,7 +100,7 @@ export default async function BeeldPagina({
             )}
           </div>
           {isTeKlein(beeld) && (
-            <p className="text-sm text-red-700 dark:text-red-400">
+            <p className={`text-sm ${tekstFout}`}>
               Dit beeld is kleiner dan het minimum en kan in de PDF onscherp worden. Vervang het door een grotere
               versie.
             </p>
@@ -125,7 +125,7 @@ export default async function BeeldPagina({
               <li>Tip: teken op een wit of transparant canvas, met wat ruimte rondom</li>
             </ul>
           </div>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             We controleren het beeld eerst. Is het te klein, dan zie je meteen waarom en blijft het huidige beeld staan.
           </p>
           <BeeldUpload beeldId={beeld.id} label="Kies een nieuw bestand" />
@@ -138,7 +138,7 @@ export default async function BeeldPagina({
                   // eslint-disable-next-line @next/next/no-img-element -- tijdelijke signed URL
                   <img src={urls[beeld.vorige_pad]} alt="Vorige versie" className="h-16 w-16 rounded bg-white object-contain" />
                 )}
-                <p className="text-sm text-black/60 dark:text-white/60">
+                <p className="text-sm text-foreground/70">
                   Niet tevreden met de nieuwe versie? Zet de vorige versie terug.
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default async function BeeldPagina({
       <section className={kaart}>
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold">Waar wordt dit beeld gebruikt?</h2>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             {gebruik.length === 0
               ? "Dit beeld wordt (nog) in geen enkel adviestype gebruikt."
               : `Dit beeld staat ${gebruikZin(gebruik.length, groepen.length)}. Vervang je het beeld, dan krijgen ze allemaal automatisch de nieuwe versie.`}
@@ -196,14 +196,14 @@ export default async function BeeldPagina({
         <h2 className="text-lg font-semibold">Beeld verwijderen</h2>
         {gebruik.length === 0 ? (
           <>
-            <p className="text-sm text-black/60 dark:text-white/60">
+            <p className="text-sm text-foreground/70">
               Dit beeld wordt nergens gebruikt en kan dus veilig worden verwijderd. Dit kan niet ongedaan worden
               gemaakt.
             </p>
             <VerwijderKnop id={beeld.id} code={beeld.code} />
           </>
         ) : (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Verwijderen kan alleen als een beeld nergens meer gebruikt wordt. Haal het eerst weg uit de adviestypes
             hierboven.
           </p>

@@ -7,7 +7,7 @@ import { STATUS_LABEL } from "@/lib/nieuwsbrief/doelgroep";
 import type { ImportResultaat, ImportVoorbeeld } from "@/lib/nieuwsbrief/beheer";
 import { controleerImport, voerImportUit } from "../acties";
 import { Melding } from "../../../Melding";
-import { hoofdknop, invoer } from "../stijl";
+import { invoer, kaart, knop } from "@/components/admin/stijl";
 
 /** Leest het bestand als UTF-8, of als Windows-1252 (zoals Excel een ‘CSV’ vaak opslaat). */
 async function leesTekst(bestand: File): Promise<string> {
@@ -29,7 +29,7 @@ function Telling({ getal, label, nadruk }: { getal: number; label: string; nadru
   return (
     <div className="flex flex-col rounded-lg border border-black/10 bg-kaart px-3 py-2 dark:border-white/15">
       <span className={`text-xl font-semibold tabular-nums ${kleur}`}>{getal}</span>
-      <span className="text-xs text-black/60 dark:text-white/60">{label}</span>
+      <span className="text-xs text-foreground/70">{label}</span>
     </div>
   );
 }
@@ -106,7 +106,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
         </Melding>
         {resultaat.overgeslagen.length > 0 && <Overgeslagen lijst={resultaat.overgeslagen} />}
         <div className="flex gap-3">
-          <Link href="/admin/nieuwsbrief/contacten" className={hoofdknop}>
+          <Link href="/admin/nieuwsbrief/contacten" className={knop}>
             Naar de contacten
           </Link>
           <button
@@ -131,13 +131,13 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 
   return (
     <section className="flex flex-col gap-5">
-      <label className="flex flex-col gap-2 rounded-xl border border-dashed border-black/20 bg-kaart p-5 text-sm dark:border-white/20">
+      <label className="flex flex-col gap-2 rounded-xl border border-dashed border-black/20 bg-kaart p-5 text-sm dark:border-white/25">
         <span className="font-medium">CSV-bestand kiezen</span>
         <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={kies} className="text-sm" />
-        {bestand && <span className="text-black/50 dark:text-white/50">{bestand}</span>}
+        {bestand && <span className="text-foreground/70">{bestand}</span>}
       </label>
 
-      {bezig && <p className="text-sm text-black/50 dark:text-white/50">Bezig…</p>}
+      {bezig && <p className="text-sm text-foreground/70">Bezig…</p>}
       {fout && <Melding soort="fout">{fout}</Melding>}
 
       {analyse && !analyse.teVeel && analyse.rijen.length > 0 && (
@@ -152,11 +152,11 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 
           <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/15">
             <table className="w-full text-left text-sm">
-              <caption className="px-3 py-2 text-left text-xs text-black/50 dark:text-white/50">
+              <caption className="px-3 py-2 text-left text-xs text-foreground/70">
                 Voorbeeld van de eerste {Math.min(10, analyse.rijen.length)} van {analyse.rijen.length} geldige rijen
                 {analyse.heeftKoprij ? " (koprij herkend)" : " (geen koprij: eerste kolom met @ is het e-mailadres)"}
               </caption>
-              <thead className="bg-black/5 text-xs uppercase tracking-wide text-black/50 dark:bg-white/5 dark:text-white/50">
+              <thead className="bg-black/5 text-xs uppercase tracking-wide text-foreground/70 dark:bg-white/10">
                 <tr>
                   <th className="px-3 py-2 font-medium">Regel</th>
                   <th className="px-3 py-2 font-medium">E-mail</th>
@@ -167,7 +167,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
               <tbody className="divide-y divide-black/5 dark:divide-white/10">
                 {analyse.rijen.slice(0, 10).map((r) => (
                   <tr key={r.email}>
-                    <td className="px-3 py-1.5 tabular-nums text-black/50 dark:text-white/50">{r.regel}</td>
+                    <td className="px-3 py-1.5 tabular-nums text-foreground/70">{r.regel}</td>
                     <td className="px-3 py-1.5">{r.email}</td>
                     <td className="px-3 py-1.5">{r.naam ?? ""}</td>
                     <td className="px-3 py-1.5">{r.tags.join(", ")}</td>
@@ -179,7 +179,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 
           {analyse.ongeldig.length > 0 && (
             <details className="text-sm">
-              <summary className="cursor-pointer text-black/60 dark:text-white/60">
+              <summary className="cursor-pointer text-foreground/70">
                 Ongeldige rijen bekijken ({analyse.ongeldig.length})
               </summary>
               <ul className="mt-2 flex flex-col gap-1 text-xs">
@@ -195,7 +195,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
           )}
           {voorbeeld && voorbeeld.geblokkeerd.length > 0 && <Overgeslagen lijst={voorbeeld.geblokkeerd} />}
 
-          <div className="flex flex-col gap-3 rounded-xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+          <div className={kaart}>
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-black/70 dark:text-white/70">Tag voor iedereen in dit bestand (optioneel)</span>
               <input
@@ -220,13 +220,13 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
               />
               <span>
                 Iedereen in dit bestand heeft toestemming gegeven om de nieuwsbrief te ontvangen.{" "}
-                <span className="text-black/50 dark:text-white/50">
+                <span className="text-foreground/70">
                   Dit wordt met je naam en de datum bij elk contact vastgelegd.
                 </span>
               </span>
             </label>
             <div>
-              <button type="button" disabled={!kanImporteren} onClick={importeer} className={hoofdknop}>
+              <button type="button" disabled={!kanImporteren} onClick={importeer} className={knop}>
                 {bezig ? "Bezig…" : `Importeren (${voorbeeld ? voorbeeld.nieuw + voorbeeld.bestaand : analyse.rijen.length} adressen)`}
               </button>
             </div>
@@ -240,7 +240,7 @@ export function ImportFormulier({ tags }: { tags: string[] }) {
 function Overgeslagen({ lijst }: { lijst: ImportVoorbeeld["geblokkeerd"] }) {
   return (
     <details className="text-sm">
-      <summary className="cursor-pointer text-black/60 dark:text-white/60">
+      <summary className="cursor-pointer text-foreground/70">
         Overgeslagen adressen bekijken ({lijst.length})
       </summary>
       <ul className="mt-2 flex flex-col gap-1 text-xs">

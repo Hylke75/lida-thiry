@@ -16,9 +16,11 @@ import {
 } from "@/lib/reviews/regels";
 import { AdminNav, Melding } from "../AdminNav";
 import { BevestigKnop, VerzendKnop } from "../berichten/Knoppen";
-import { datumTijd, gevaarKnop, hoofdknop, invoer, kleineKnop } from "../berichten/stijl";
 import { beoordeel, bewerk, nodigUit, stuurOpnieuw, verwijder } from "./acties";
 import { veiligeZoekterm } from "@/lib/zoeken/regels";
+import { invoer, knop, knopGevaarKlein, knopKlein, toon } from "@/components/admin/stijl";
+import { datumTijd } from "@/lib/datum";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -133,38 +135,40 @@ export default async function ReviewsPagina({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/reviews" />
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Reviews</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Klanten krijgen {naDagen} {naDagen === 1 ? "dag" : "dagen"} na hun advies automatisch een mail met de vraag om
-          een review (instelling ‘review_na_dagen’). Goedgekeurde reviews met toestemming staan op de homepage bij
-          ‘Ervaringen’. Teksten van de mail en het formulier:{" "}
-          <Link href="/admin/teksten/reviews" className="underline underline-offset-4">
-            Teksten → Reviews
-          </Link>
-          .
-        </p>
-      </header>
+      <AdminKop
+        titel="Reviews"
+        beschrijving={
+          <>
+            Klanten krijgen {naDagen} {naDagen === 1 ? "dag" : "dagen"} na hun advies automatisch een mail met de vraag om
+            een review (instelling ‘review_na_dagen’). Goedgekeurde reviews met toestemming staan op de homepage bij
+            ‘Ervaringen’. Teksten van de mail en het formulier:{" "}
+            <Link href="/admin/teksten/reviews" className="underline underline-offset-4">
+              Teksten → Reviews
+            </Link>
+            .
+          </>
+        }
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {(fout || lijst.error) && <Melding soort="fout">{fout ?? `Reviews laden mislukt: ${lijst.error?.message}`}</Melding>}
 
       <section className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
-          <p className="text-sm text-black/60 dark:text-white/60">Op de website</p>
+          <p className="text-sm text-foreground/70">Op de website</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {opSite.aantal ? `${cijfer(opSite.gemiddelde)} / 5` : "–"}
           </p>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             {opSite.aantal} goedgekeurde review{opSite.aantal === 1 ? "" : "s"} met toestemming
           </p>
         </div>
         <div className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
-          <p className="text-sm text-black/60 dark:text-white/60">Alle ingevulde reviews</p>
+          <p className="text-sm text-foreground/70">Alle ingevulde reviews</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {totaal.aantal ? `${cijfer(totaal.gemiddelde)} / 5` : "–"}
           </p>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             {totaal.aantal} ingevuld · {perStatus.get("uitgenodigd")?.length ?? 0} uitnodiging(en) nog open
           </p>
         </div>
@@ -190,7 +194,7 @@ export default async function ReviewsPagina({
                 className={`rounded-full px-1.5 text-xs tabular-nums ${
                   s === "ingevuld" && aantal > 0
                     ? "bg-accent font-semibold text-background"
-                    : "text-black/50 dark:text-white/50"
+                    : "text-foreground/70"
                 }`}
               >
                 {aantal}
@@ -203,22 +207,22 @@ export default async function ReviewsPagina({
       {tab === "uitgenodigd" ? (
         <>
           {getoond.length === 0 ? (
-            <p className="text-sm text-black/50 dark:text-white/50">Geen openstaande uitnodigingen.</p>
+            <p className="text-sm text-foreground/70">Geen openstaande uitnodigingen.</p>
           ) : (
             <ul className="flex flex-col divide-y divide-black/5 rounded-lg border border-black/10 bg-kaart dark:divide-white/10 dark:border-white/15">
               {getoond.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 px-3 py-3 text-sm">
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="font-medium">{r.naam || "Naam onbekend"}</span>
-                    <span className="truncate text-black/50 dark:text-white/50">{r.email}</span>
+                    <span className="truncate text-foreground/70">{r.email}</span>
                   </span>
-                  <span className="text-xs text-black/50 dark:text-white/50">
+                  <span className="text-xs text-foreground/70">
                     {r.uitgenodigd_op ? `Uitgenodigd ${datumTijd(r.uitgenodigd_op)}` : "Nog niet verstuurd"}
                   </span>
                   {magUitnodigen && (
                     <form action={stuurOpnieuw}>
                       <Verborgen tab={tab} id={r.id} />
-                      <VerzendKnop bezig="Versturen…" className={kleineKnop}>
+                      <VerzendKnop bezig="Versturen…" className={knopKlein}>
                         Opnieuw sturen
                       </VerzendKnop>
                     </form>
@@ -228,7 +232,7 @@ export default async function ReviewsPagina({
                       <Verborgen tab={tab} id={r.id} />
                       <BevestigKnop
                         bevestiging="Deze uitnodiging verwijderen? De link in de mail werkt dan niet meer en de klant wordt niet opnieuw automatisch uitgenodigd."
-                        className={gevaarKnop}
+                        className={knopGevaarKlein}
                       >
                         Verwijderen
                       </BevestigKnop>
@@ -242,7 +246,7 @@ export default async function ReviewsPagina({
           <section className="flex flex-col gap-3 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
             <div className="flex flex-col gap-1">
               <h2 className="font-semibold">Zelf uitnodigen</h2>
-              <p className="text-sm text-black/60 dark:text-white/60">
+              <p className="text-sm text-foreground/70">
                 Bestellingen met een verzonden advies die nog geen uitnodiging hebben (nieuwste eerst). Handig voor
                 klanten van vóór de automatische uitnodigingen.
               </p>
@@ -256,10 +260,10 @@ export default async function ReviewsPagina({
                 aria-label="Zoek een bestelling"
                 className={`${invoer} flex-1`}
               />
-              <button className={hoofdknop}>Zoeken</button>
+              <button className={knop}>Zoeken</button>
             </form>
             {kandidaten.length === 0 ? (
-              <p className="text-sm text-black/50 dark:text-white/50">
+              <p className="text-sm text-foreground/70">
                 {q ? "Geen bestellingen gevonden." : "Alle bestellingen met een verzonden advies zijn al uitgenodigd."}
               </p>
             ) : (
@@ -272,20 +276,20 @@ export default async function ReviewsPagina({
                           {o.klantnaam}
                         </Link>
                         {isTestbestelling(o) && (
-                          <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50 dark:bg-white/10 dark:text-white/50">
+                          <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs text-foreground/70 dark:bg-white/10">
                             test
                           </span>
                         )}
                       </span>
-                      <span className="truncate text-black/50 dark:text-white/50">{o.email}</span>
+                      <span className="truncate text-foreground/70">{o.email}</span>
                     </span>
-                    <span className="text-xs text-black/50 dark:text-white/50">
+                    <span className="text-xs text-foreground/70">
                       {o.afgerond_op ? `Advies ${datumTijd(o.afgerond_op)}` : ""}
                     </span>
                     {magUitnodigen && (
                       <form action={nodigUit}>
                         <Verborgen tab={tab} id={o.id} naam="order_id" />
-                        <VerzendKnop bezig="Versturen…" className={kleineKnop}>
+                        <VerzendKnop bezig="Versturen…" className={knopKlein}>
                           Nodig uit
                         </VerzendKnop>
                       </form>
@@ -297,7 +301,7 @@ export default async function ReviewsPagina({
           </section>
         </>
       ) : getoond.length === 0 ? (
-        <p className="text-sm text-black/50 dark:text-white/50">
+        <p className="text-sm text-foreground/70">
           {tab === "ingevuld" ? "Geen nieuwe reviews om te beoordelen." : "Geen reviews met deze status."}
         </p>
       ) : (
@@ -310,8 +314,8 @@ export default async function ReviewsPagina({
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 {r.sterren != null && <Sterren aantal={r.sterren} />}
                 <span className="font-medium">{r.naam || "Zonder naam"}</span>
-                <span className="truncate text-black/50 dark:text-white/50">{r.email}</span>
-                <span className="ml-auto text-xs text-black/50 dark:text-white/50">
+                <span className="truncate text-foreground/70">{r.email}</span>
+                <span className="ml-auto text-xs text-foreground/70">
                   {r.ingevuld_op ? `Ingevuld ${datumTijd(r.ingevuld_op)}` : ""}
                 </span>
               </div>
@@ -319,8 +323,8 @@ export default async function ReviewsPagina({
               <p
                 className={`w-fit rounded-full px-2.5 py-1 text-xs ${
                   r.toestemming_publicatie
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    : "bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60"
+                    ? toon.groen
+                    : "bg-black/5 text-foreground/70 dark:bg-white/10"
                 }`}
               >
                 {r.toestemming_publicatie
@@ -333,7 +337,7 @@ export default async function ReviewsPagina({
                   <form action={beoordeel}>
                     <Verborgen tab={tab} id={r.id} />
                     <input type="hidden" name="actie" value="goedkeuren" />
-                    <VerzendKnop bezig="Bezig…" className={hoofdknop}>
+                    <VerzendKnop bezig="Bezig…" className={knop}>
                       Goedkeuren
                     </VerzendKnop>
                   </form>
@@ -342,7 +346,7 @@ export default async function ReviewsPagina({
                   <form action={beoordeel}>
                     <Verborgen tab={tab} id={r.id} />
                     <input type="hidden" name="actie" value="afwijzen" />
-                    <VerzendKnop bezig="Bezig…" className={kleineKnop}>
+                    <VerzendKnop bezig="Bezig…" className={knopKlein}>
                       Afwijzen
                     </VerzendKnop>
                   </form>
@@ -351,7 +355,7 @@ export default async function ReviewsPagina({
                   <form action={beoordeel}>
                     <Verborgen tab={tab} id={r.id} />
                     <input type="hidden" name="actie" value="terugzetten" />
-                    <VerzendKnop bezig="Bezig…" className={kleineKnop}>
+                    <VerzendKnop bezig="Bezig…" className={knopKlein}>
                       Terug naar nieuw
                     </VerzendKnop>
                   </form>
@@ -361,7 +365,7 @@ export default async function ReviewsPagina({
                     <Verborgen tab={tab} id={r.id} />
                     <BevestigKnop
                       bevestiging="Deze review definitief verwijderen? Naam, e-mailadres en tekst worden gewist."
-                      className={gevaarKnop}
+                      className={knopGevaarKlein}
                     >
                       Verwijderen
                     </BevestigKnop>
@@ -373,7 +377,7 @@ export default async function ReviewsPagina({
                 <summary className="cursor-pointer text-black/70 dark:text-white/70">Naam of tekst corrigeren</summary>
                 <form action={bewerk} className="mt-3 flex flex-col gap-3">
                   <Verborgen tab={tab} id={r.id} />
-                  <p className="text-xs text-black/60 dark:text-white/60">
+                  <p className="text-xs text-foreground/70">
                     Alleen kleine correcties, zoals typefouten. Het blijft de reactie van de klant: de betekenis moet
                     hetzelfde blijven.
                   </p>
@@ -393,7 +397,7 @@ export default async function ReviewsPagina({
                     />
                   </label>
                   <div>
-                    <VerzendKnop bezig="Opslaan…" className={hoofdknop}>
+                    <VerzendKnop bezig="Opslaan…" className={knop}>
                       Opslaan
                     </VerzendKnop>
                   </div>

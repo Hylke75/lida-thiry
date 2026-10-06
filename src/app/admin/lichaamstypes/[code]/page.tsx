@@ -9,10 +9,10 @@ import { AdminNav, Melding } from "../../AdminNav";
 import { LichaamstypeFormulier } from "../LichaamstypeFormulier";
 import { VerwijderFormulier } from "../Formulieren";
 import type { FotoKeuze } from "../acties";
+import { kaart } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
-
-const kaart = "rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15";
 
 export default async function LichaamstypeBewerken({
   params,
@@ -53,13 +53,11 @@ export default async function LichaamstypeBewerken({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/lichaamstypes" />
-      <Link href="/admin/lichaamstypes" className="text-sm text-black/60 underline-offset-4 hover:underline dark:text-white/60">
-        ← Alle lichaamstypes
-      </Link>
-      <div>
-        <p className="text-sm text-black/50 dark:text-white/50">Lichaamstype {type.code}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{type.naam}</h1>
-      </div>
+      <AdminKop
+        terug={{ href: "/admin/lichaamstypes", label: "Alle lichaamstypes" }}
+        titel={type.naam}
+        beschrijving={`Lichaamstype ${type.code}`}
+      />
 
       {nieuw && (
         <Melding soort="ok">
@@ -71,9 +69,9 @@ export default async function LichaamstypeBewerken({
 
       <LichaamstypeFormulier type={type} foto={foto} />
 
-      <section className={`${kaart} flex flex-col gap-3`}>
+      <section className={`${kaart}`}>
         <h2 className="text-lg font-semibold">Hand-outs van dit type</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Per categorie lengte/gewicht één hand-out. Klik om de velden, teksten en beelden te bewerken.
         </p>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
@@ -82,11 +80,11 @@ export default async function LichaamstypeBewerken({
               <Link href={`/admin/types/${encodeURIComponent(a.sleutel)}`} className="text-accent underline-offset-4 hover:underline">
                 {a.sleutel}
               </Link>{" "}
-              <span className="text-black/60 dark:text-white/60">· {a.titel}</span>
+              <span className="text-foreground/70">· {a.titel}</span>
             </li>
           ))}
         </ul>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Uitkomsten van de berekening die bij dit type horen:{" "}
           <strong>{uitkomsten.length ? uitkomsten.join(", ") : "nog geen"}</strong>.{" "}
           <Link href="/admin/lichaamstypes#koppeling" className="text-accent underline underline-offset-2">
@@ -95,22 +93,22 @@ export default async function LichaamstypeBewerken({
         </p>
       </section>
 
-      <section className={`${kaart} flex flex-col gap-3 border-red-200 dark:border-red-900`}>
+      <section className={`${kaart} border-red-200 dark:border-red-900`}>
         <h2 className="text-lg font-semibold">Archiveren of verwijderen</h2>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-foreground/70">
           Wil je dit type niet meer gebruiken, zet het dan hierboven op <strong>niet actief</strong>: het verdwijnt uit de
           test en van de website, maar bestaande uitslagen en PDF&rsquo;s blijven werken.
         </p>
         {kanVerwijderen ? (
           <>
-            <p className="text-sm text-black/60 dark:text-white/60">
+            <p className="text-sm text-foreground/70">
               Verwijderen haalt het type en zijn 12 hand-outs (teksten en beeldkoppelingen) definitief weg. De beelden zelf
               blijven in de beeldbank.
             </p>
             <VerwijderFormulier code={type.code} naam={type.naam} />
           </>
         ) : (
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             Verwijderen kan niet:{" "}
             {orders ? `er ${orders === 1 ? "hoort 1 bestelling" : `horen ${orders} bestellingen`} bij dit type` : ""}
             {orders && uitkomsten.length ? " en " : ""}

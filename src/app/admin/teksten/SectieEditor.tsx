@@ -6,14 +6,10 @@ import { bevatPlaceholder, nieuweId, type EnkelVeld, type LijstVeld, type Sectie
 import { Geschiedenis } from "../versies/Geschiedenis";
 import { zetTekstVersieTerug } from "../versies/acties";
 import { slaSectieOp, zetSectieTerug } from "./acties";
+import { invoerBreed, kaartVlak, knop, knopKlein, toon } from "@/components/admin/stijl";
 
 type Item = Record<string, string>;
 type Waarden = Record<string, string | Item[]>;
-
-const invoerKlasse =
-  "w-full rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const knopKlein =
-  "rounded-full border border-black/15 px-2.5 py-1 text-xs hover:bg-black/5 disabled:opacity-30 dark:border-white/20 dark:hover:bg-white/5";
 
 function EnkelInvoer({
   id,
@@ -28,7 +24,7 @@ function EnkelInvoer({
 }) {
   const [voorbeeld, setVoorbeeld] = useState(false);
   if (veld.soort === "tekst") {
-    return <input id={id} value={waarde} onChange={(e) => onChange(e.target.value)} className={invoerKlasse} />;
+    return <input id={id} value={waarde} onChange={(e) => onChange(e.target.value)} className={invoerBreed} />;
   }
   const vak = (
     <textarea
@@ -36,7 +32,7 @@ function EnkelInvoer({
       value={waarde}
       onChange={(e) => onChange(e.target.value)}
       rows={veld.regels ?? (veld.soort === "opmaak" ? 8 : 3)}
-      className={`${invoerKlasse} leading-relaxed ${veld.soort === "opmaak" ? "font-mono text-[13px]" : ""}`}
+      className={`${invoerBreed} leading-relaxed ${veld.soort === "opmaak" ? "font-mono text-[13px]" : ""}`}
     />
   );
   if (veld.soort === "tekstvak") return vak;
@@ -49,7 +45,7 @@ function EnkelInvoer({
       ) : (
         vak
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-black/50 dark:text-white/50">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-foreground/70">
         <span>
           Opmaak: <code>## Kop</code> · <code>- opsomming</code> · <code>**vet**</code> ·{" "}
           <code>[tekst](https://…)</code> · lege regel = nieuwe alinea
@@ -91,7 +87,7 @@ function LijstInvoer({
   return (
     <div className="flex flex-col gap-3">
       {items.length === 0 && (
-        <p className="rounded-lg border border-dashed border-black/15 px-4 py-3 text-sm text-black/50 dark:border-white/20 dark:text-white/50">
+        <p className="rounded-lg border border-dashed border-black/15 px-4 py-3 text-sm text-foreground/70 dark:border-white/20">
           Nog geen {veld.itemNaam}. Zolang de lijst leeg is, wordt dit onderdeel niet getoond.
         </p>
       )}
@@ -101,7 +97,7 @@ function LijstInvoer({
           className="flex flex-col gap-3 rounded-xl border border-black/10 p-4 dark:border-white/15"
         >
           <div className="flex items-center justify-between gap-2">
-            <legend className="text-xs font-medium uppercase tracking-wide text-black/50 dark:text-white/50">
+            <legend className="text-xs font-medium uppercase tracking-wide text-foreground/70">
               {naam} {i + 1}
             </legend>
             <div className="flex gap-1">
@@ -135,7 +131,7 @@ function LijstInvoer({
                   {def.label}
                 </label>
                 <EnkelInvoer id={veldId} veld={def} waarde={item[sleutel] ?? ""} onChange={(w) => wijzig(i, sleutel, w)} />
-                {def.uitleg && <p className="text-xs text-black/50 dark:text-white/50">{def.uitleg}</p>}
+                {def.uitleg && <p className="text-xs text-foreground/70">{def.uitleg}</p>}
               </div>
             );
           })}
@@ -208,7 +204,7 @@ export function SectieEditor({
   };
 
   return (
-    <section id={anker} className="scroll-mt-6 rounded-2xl border border-black/10 bg-kaart p-5 dark:border-white/15">
+    <section id={anker} className={`${kaartVlak} scroll-mt-6`}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -219,7 +215,7 @@ export function SectieEditor({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">{sectie.titel}</h2>
-            {sectie.uitleg && <p className="text-sm text-black/60 dark:text-white/60">{sectie.uitleg}</p>}
+            {sectie.uitleg && <p className="text-sm text-foreground/70">{sectie.uitleg}</p>}
           </div>
           <div className="flex flex-wrap gap-1.5 text-xs">
             {bevatPlaceholder(waarden) && (
@@ -231,7 +227,7 @@ export function SectieEditor({
               className={`rounded-full px-2.5 py-1 ${
                 aangepast
                   ? "bg-accent-zacht text-accent"
-                  : "bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60"
+                  : "bg-black/5 text-foreground/70 dark:bg-white/10"
               }`}
             >
               {aangepast ? "Eigen tekst" : "Standaardtekst"}
@@ -240,7 +236,7 @@ export function SectieEditor({
         </div>
 
         {sectie.variabelen && (
-          <div className="rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed text-black/60 dark:bg-white/5 dark:text-white/60">
+          <div className="rounded-lg bg-black/[0.03] px-4 py-3 text-xs leading-relaxed text-foreground/70 dark:bg-white/5">
             <p className="font-medium">Invulwaarden die je in deze teksten kunt gebruiken:</p>
             <ul className="mt-1">
               {Object.entries(sectie.variabelen).map(([naam, uitleg]) => (
@@ -259,7 +255,7 @@ export function SectieEditor({
               <label htmlFor={veld.soort === "lijst" ? undefined : id} className="text-sm font-medium">
                 {veld.label}
               </label>
-              {veld.uitleg && <p className="text-xs text-black/50 dark:text-white/50">{veld.uitleg}</p>}
+              {veld.uitleg && <p className="text-xs text-foreground/70">{veld.uitleg}</p>}
               {veld.soort === "lijst" ? (
                 <LijstInvoer
                   id={id}
@@ -284,8 +280,8 @@ export function SectieEditor({
             role={melding.soort === "fout" ? "alert" : "status"}
             className={`rounded-lg px-4 py-3 text-sm ${
               melding.soort === "ok"
-                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+                ? toon.groen
+                : toon.rood
             }`}
           >
             {melding.tekst.map((t) => (
@@ -297,24 +293,24 @@ export function SectieEditor({
         <div className="flex flex-wrap items-center gap-3">
           <button
             disabled={bezig || !gewijzigd}
-            className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+            className={knop}
           >
             {bezig ? "Bezig…" : "Opslaan"}
           </button>
-          {gewijzigd && <span className="text-xs text-black/50 dark:text-white/50">Niet opgeslagen wijzigingen</span>}
+          {gewijzigd && <span className="text-xs text-foreground/70">Niet opgeslagen wijzigingen</span>}
           <Geschiedenis
             soort="tekst"
             refId={sectie.sleutel}
             onTerugzetten={versieTerugzetten}
             gewijzigd={gewijzigd}
-            knopKlasse="text-xs text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
+            knopKlasse="text-xs text-foreground/70 underline underline-offset-4 hover:text-black/80"
           />
           {aangepast && (
             <button
               type="button"
               onClick={terugzetten}
               disabled={bezig}
-              className="ml-auto text-xs text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
+              className="ml-auto text-xs text-foreground/70 underline underline-offset-4 hover:text-black/80"
             >
               Standaardtekst terugzetten
             </button>

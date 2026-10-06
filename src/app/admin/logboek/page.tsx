@@ -15,13 +15,10 @@ import { AdminNav } from "../AdminNav";
 import { Melding } from "../Melding";
 import { toonDatumTijd } from "@/lib/datum";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoerBreed, kaartVlak, knop, knopSecundair } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
-
-const invoer =
-  "w-full min-w-0 rounded-lg border border-black/15 bg-kaart px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/20";
-const knopKlein =
-  "rounded-full border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5";
 
 function Regel({ r }: { r: LogRij }) {
   const link = onderwerpLink(r.onderwerp_soort, r.onderwerp_id);
@@ -30,9 +27,9 @@ function Regel({ r }: { r: LogRij }) {
     <li className="flex flex-col gap-1 py-3 text-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="font-medium">{r.omschrijving || r.actie}</span>
-        <span className="text-xs text-black/50 dark:text-white/50">{toonDatumTijd(r.op)}</span>
+        <span className="text-xs text-foreground/70">{toonDatumTijd(r.op)}</span>
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-black/55 dark:text-white/55">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/70">
         <span>{r.email ?? "onbekend"}</span>
         <span className="font-mono">{r.actie}</span>
         {r.onderwerp_soort && (
@@ -55,7 +52,7 @@ function Regel({ r }: { r: LogRij }) {
       </div>
       {heeftDetails && (
         <details className="text-xs">
-          <summary className="cursor-pointer text-black/50 dark:text-white/50">Details</summary>
+          <summary className="cursor-pointer text-foreground/70">Details</summary>
           <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-black/5 p-2 dark:bg-white/10">
             {JSON.stringify(r.details, null, 2)}
           </pre>
@@ -91,23 +88,25 @@ export default async function LogboekPagina({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/logboek" />
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Logboek</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Wie heeft wat gedaan in het beheer: bestellingen, instellingen, beheerders, publicaties, verzonden nieuwsbrieven,
-          exports en meer. Regels ouder dan {BEWAAR_JAREN} jaar worden automatisch verwijderd. Wachtwoorden en andere
-          geheimen komen nooit in het logboek.
-        </p>
-      </div>
+      <AdminKop
+        titel="Logboek"
+        beschrijving={
+          <>
+            Wie heeft wat gedaan in het beheer: bestellingen, instellingen, beheerders, publicaties, verzonden nieuwsbrieven,
+            exports en meer. Regels ouder dan {BEWAAR_JAREN} jaar worden automatisch verwijderd. Wachtwoorden en andere
+            geheimen komen nooit in het logboek.
+          </>
+        }
+      />
 
-      <form method="get" action="/admin/logboek" className="grid grid-cols-1 gap-3 rounded-2xl border border-black/10 bg-kaart p-4 sm:grid-cols-2 dark:border-white/15">
+      <form method="get" action="/admin/logboek" className={`${kaartVlak} grid grid-cols-1 gap-3 sm:grid-cols-2`}>
         <label className="flex flex-col gap-1 text-sm sm:col-span-2">
           <span className="text-black/70 dark:text-white/70">Zoeken</span>
-          <input name="q" defaultValue={filter.q ?? ""} placeholder="Omschrijving, e-mailadres, actie of id" className={invoer} />
+          <input name="q" defaultValue={filter.q ?? ""} placeholder="Omschrijving, e-mailadres, actie of id" className={invoerBreed} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/70 dark:text-white/70">Persoon</span>
-          <select name="gebruiker" defaultValue={filter.gebruiker ?? ""} className={invoer}>
+          <select name="gebruiker" defaultValue={filter.gebruiker ?? ""} className={invoerBreed}>
             <option value="">Iedereen</option>
             {personen.map((p) => (
               <option key={p.id} value={p.id}>
@@ -118,7 +117,7 @@ export default async function LogboekPagina({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/70 dark:text-white/70">Soort actie</span>
-          <select name="categorie" defaultValue={filter.categorie ?? ""} className={invoer}>
+          <select name="categorie" defaultValue={filter.categorie ?? ""} className={invoerBreed}>
             <option value="">Alle acties</option>
             {Object.entries(CATEGORIE_LABEL).map(([k, v]) => (
               <option key={k} value={k}>
@@ -129,7 +128,7 @@ export default async function LogboekPagina({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/70 dark:text-white/70">Onderwerp</span>
-          <select name="soort" defaultValue={filter.soort ?? ""} className={invoer}>
+          <select name="soort" defaultValue={filter.soort ?? ""} className={invoerBreed}>
             <option value="">Alle onderwerpen</option>
             {Object.entries(ONDERWERP_LABEL).map(([k, v]) => (
               <option key={k} value={k}>
@@ -141,21 +140,21 @@ export default async function LogboekPagina({
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-black/70 dark:text-white/70">Van</span>
-            <input type="date" name="van" defaultValue={filter.van ?? ""} className={invoer} />
+            <input type="date" name="van" defaultValue={filter.van ?? ""} className={invoerBreed} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-black/70 dark:text-white/70">Tot en met</span>
-            <input type="date" name="tot" defaultValue={filter.tot ?? ""} className={invoer} />
+            <input type="date" name="tot" defaultValue={filter.tot ?? ""} className={invoerBreed} />
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <button className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90">Filteren</button>
+          <button className={knop}>Filteren</button>
           {gefilterd && (
-            <Link href="/admin/logboek" className={knopKlein}>
+            <Link href="/admin/logboek" className={knopSecundair}>
               Filter wissen
             </Link>
           )}
-          <a href={`/admin/logboek/export${exportParams ? `?${exportParams}` : ""}`} className={`${knopKlein} ml-auto`} download>
+          <a href={`/admin/logboek/export${exportParams ? `?${exportParams}` : ""}`} className={`${knopSecundair} ml-auto`} download>
             Exporteren (CSV)
           </a>
         </div>
@@ -164,12 +163,12 @@ export default async function LogboekPagina({
       {!uitkomst.ok ? (
         <Melding soort="fout">Het logboek kon niet worden geladen: {uitkomst.fout}</Melding>
       ) : uitkomst.rijen.length === 0 ? (
-        <p className="text-sm text-black/50 dark:text-white/50">
+        <p className="text-sm text-foreground/70">
           {gefilterd ? "Niets gevonden met dit filter." : "Nog geen acties vastgelegd."}
         </p>
       ) : (
         <section className="flex flex-col gap-2">
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-foreground/70">
             {totaal.toLocaleString("nl-NL")} {totaal === 1 ? "regel" : "regels"}
             {paginas > 1 ? ` · pagina ${filter.pagina} van ${paginas}` : ""}
           </p>
@@ -182,7 +181,7 @@ export default async function LogboekPagina({
             pagina={filter.pagina}
             paginas={paginas}
             href={(p) => link({ pagina: p })}
-            linkKlasse={knopKlein}
+            linkKlasse={knopSecundair}
             navKlasse="flex items-center justify-between gap-2 text-sm"
             tekst={null}
             vorige="← Nieuwer"
@@ -190,7 +189,7 @@ export default async function LogboekPagina({
           />
         </section>
       )}
-      <p className="text-xs text-black/50 dark:text-white/50">
+      <p className="text-xs text-foreground/70">
         Acties die direct in de database of het Supabase-dashboard gebeuren, staan hier niet in. Een verwijderd onderwerp
         heeft geen link meer.
       </p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WEEKDAGEN } from "@/lib/afspraken/regels";
+import { invoer, knop, knopKlein } from "@/components/admin/stijl";
 
 interface Blok {
   sleutel: number;
@@ -9,11 +10,6 @@ interface Blok {
   van: string;
   tot: string;
 }
-
-const invoer =
-  "rounded-lg border border-black/15 bg-transparent px-2 py-1.5 text-sm tabular-nums outline-none focus:border-accent dark:border-white/20";
-const klein =
-  "rounded-full border border-black/15 px-3 py-1 text-xs hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5";
 
 let teller = 0;
 const nieuweSleutel = () => ++teller;
@@ -75,7 +71,7 @@ export function BeschikbaarheidEditor({
             <li key={naam} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-4">
               <span className="w-28 shrink-0 pt-1.5 text-sm font-medium capitalize">{naam}</span>
               <div className="flex flex-1 flex-col gap-2">
-                {vandaag.length === 0 && <span className="pt-1.5 text-sm text-black/50 dark:text-white/50">Niet beschikbaar</span>}
+                {vandaag.length === 0 && <span className="pt-1.5 text-sm text-foreground/70">Niet beschikbaar</span>}
                 {vandaag.map((b) => (
                   <div key={b.sleutel} className="flex flex-wrap items-center gap-2">
                     <input
@@ -95,17 +91,17 @@ export function BeschikbaarheidEditor({
                       aria-label={`${naam}: eindtijd`}
                       className={invoer}
                     />
-                    <button type="button" onClick={() => verwijder(b.sleutel)} className={klein} aria-label={`${naam}: blok verwijderen`}>
+                    <button type="button" onClick={() => verwijder(b.sleutel)} className={knopKlein} aria-label={`${naam}: blok verwijderen`}>
                       Verwijderen
                     </button>
                   </div>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => voegToe(weekdag)} className={klein}>
+                  <button type="button" onClick={() => voegToe(weekdag)} className={knopKlein}>
                     + Tijdblok
                   </button>
                   {weekdag <= 5 && vandaag.length > 0 && (
-                    <button type="button" onClick={() => kopieerNaarWerkdagen(weekdag)} className={klein}>
+                    <button type="button" onClick={() => kopieerNaarWerkdagen(weekdag)} className={knopKlein}>
                       Kopieer naar alle werkdagen
                     </button>
                   )}
@@ -115,7 +111,7 @@ export function BeschikbaarheidEditor({
           );
         })}
       </ul>
-      <button className="w-fit rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90">
+      <button className={`${knop} w-fit`}>
         Beschikbaarheid opslaan
       </button>
     </form>

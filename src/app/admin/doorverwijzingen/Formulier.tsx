@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Melding } from "../Melding";
 import { bewaarDoorverwijzing, type BewaarStaat } from "./acties";
-import { hoofdknop, invoer } from "./stijl";
+import { invoer, knop } from "@/components/admin/stijl";
 
 export interface FormulierWaarden {
   id: string;
@@ -34,7 +34,7 @@ export function DoorverwijzingFormulier({ waarden }: { waarden?: FormulierWaarde
         </Melding>
       ) : null}
       {waarden?.automatisch && (
-        <p className="text-xs text-black/60 dark:text-white/60">
+        <p className="text-xs text-foreground/70">
           Deze doorverwijzing is automatisch gemaakt toen een webadres veranderde. Pas je hem aan, dan telt hij voortaan als handmatig.
         </p>
       )}
@@ -42,7 +42,7 @@ export function DoorverwijzingFormulier({ waarden }: { waarden?: FormulierWaarde
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/70 dark:text-white/70">Oud adres *</span>
           <input name="van" required defaultValue={waarden?.van} placeholder="/oude-pagina" className={`${invoer} font-mono`} autoComplete="off" />
-          <span className="text-xs text-black/50 dark:text-white/50">Alleen het pad, beginnend met /.</span>
+          <span className="text-xs text-foreground/70">Alleen het pad, beginnend met /.</span>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/70 dark:text-white/70">Nieuw adres *</span>
@@ -54,7 +54,7 @@ export function DoorverwijzingFormulier({ waarden }: { waarden?: FormulierWaarde
             className={`${invoer} font-mono`}
             autoComplete="off"
           />
-          <span className="text-xs text-black/50 dark:text-white/50">Een pad op deze site of een https://-adres.</span>
+          <span className="text-xs text-foreground/70">Een pad op deze site of een https://-adres.</span>
         </label>
       </div>
       <fieldset className="flex flex-wrap gap-4 text-sm">
@@ -62,18 +62,18 @@ export function DoorverwijzingFormulier({ waarden }: { waarden?: FormulierWaarde
         <label className="flex items-center gap-2">
           <input type="radio" name="permanent" value="ja" defaultChecked={waarden ? waarden.permanent : true} />
           <span>
-            Permanent <span className="text-black/50 dark:text-white/50">(301; zoekmachines nemen het nieuwe adres over)</span>
+            Permanent <span className="text-foreground/70">(301; zoekmachines nemen het nieuwe adres over)</span>
           </span>
         </label>
         <label className="flex items-center gap-2">
           <input type="radio" name="permanent" value="nee" defaultChecked={waarden ? !waarden.permanent : false} />
           <span>
-            Tijdelijk <span className="text-black/50 dark:text-white/50">(302; bijv. een actie)</span>
+            Tijdelijk <span className="text-foreground/70">(302; bijv. een actie)</span>
           </span>
         </label>
       </fieldset>
       <div className="flex flex-wrap items-center gap-3">
-        <button disabled={bezig} className={hoofdknop}>
+        <button disabled={bezig} className={knop}>
           {bezig ? "Bezig…" : waarden ? "Opslaan" : "Toevoegen"}
         </button>
         {waarden && (

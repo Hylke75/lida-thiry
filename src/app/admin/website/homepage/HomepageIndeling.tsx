@@ -12,6 +12,7 @@ import {
   zetZichtbaar,
   type IndelingItem,
 } from "@/lib/website/homepage";
+import { knop, knopSecundair } from "@/components/admin/stijl";
 
 const KNOP =
   "flex h-9 w-9 items-center justify-center rounded-full border border-black/15 text-base hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/20";
@@ -60,7 +61,7 @@ export function HomepageIndeling({ begin }: { begin: IndelingItem[] }) {
                 </span>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-medium">{info.naam}</span>
-                  {info.uitleg && <span className="text-xs text-black/50 dark:text-white/50">{info.uitleg}</span>}
+                  {info.uitleg && <span className="text-xs text-foreground/70">{info.uitleg}</span>}
                   <Link href={info.tekstenHref} className="w-fit text-xs text-accent underline underline-offset-4">
                     Teksten bewerken
                   </Link>
@@ -124,7 +125,7 @@ export function HomepageIndeling({ begin }: { begin: IndelingItem[] }) {
           type="button"
           onClick={opslaan}
           disabled={bezig || !gewijzigd}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+          className={knop}
         >
           {bezig ? "Bezig met opslaan…" : "Opslaan"}
         </button>
@@ -132,14 +133,14 @@ export function HomepageIndeling({ begin }: { begin: IndelingItem[] }) {
           type="button"
           onClick={() => wijzig(standaardIndeling())}
           disabled={bezig || isStandaardIndeling(indeling)}
-          className="rounded-full border border-black/15 px-5 py-2.5 text-sm hover:border-accent/40 disabled:opacity-40 dark:border-white/20"
+          className={knopSecundair}
         >
           Standaardvolgorde
         </button>
         <a href="/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent underline underline-offset-4">
           Bekijk de homepage ↗
         </a>
-        {gewijzigd && !bezig && <span className="text-xs text-black/50 dark:text-white/50">Niet-opgeslagen wijzigingen</span>}
+        {gewijzigd && !bezig && <span className="text-xs text-foreground/70">Niet-opgeslagen wijzigingen</span>}
       </div>
     </div>
   );

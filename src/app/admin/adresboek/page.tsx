@@ -22,8 +22,10 @@ import { AdminNav, Melding } from "../AdminNav";
 import { BevestigKnop, SelecteerAlles } from "../nieuwsbrief/contacten/Invoer";
 import { bulkActie } from "./acties";
 import { ExporteerSelectie } from "./Knoppen";
-import { Badges, gevaarKnop, heelZacht, hoofdknop, invoer, kleineKnop, PAD, zacht } from "./ui";
+import { Badges, PAD } from "./ui";
 import { Paginering } from "@/components/admin/Paginering";
+import { invoer, knop, knopGevaarKlein, knopKlein, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -83,26 +85,26 @@ export default async function AdresboekPagina({
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <AdminNav actief="/admin/adresboek" />
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Adresboek</h1>
-          <p className={`text-sm ${zacht}`}>Iedereen die besteld heeft, op de nieuwsbrief staat of contact opnam, op één plek.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`${PAD}/nieuw`} className={hoofdknop}>
-            Nieuwe relatie
-          </Link>
-          <Link href={`${PAD}/dubbel`} className={kleineKnop}>
-            Dubbelen zoeken
-          </Link>
-          <Link href={`${PAD}/import`} className={kleineKnop}>
-            CSV importeren
-          </Link>
-          <a href={`${PAD}/export${exportQuery ? `?${exportQuery}` : ""}`} className={kleineKnop}>
-            CSV exporteren{gefilterd ? " (huidig filter)" : ""}
-          </a>
-        </div>
-      </header>
+      <AdminKop
+        titel="Adresboek"
+        beschrijving="Iedereen die besteld heeft, op de nieuwsbrief staat of contact opnam, op één plek."
+        acties={
+          <>
+            <Link href={`${PAD}/nieuw`} className={knop}>
+              Nieuwe relatie
+            </Link>
+            <Link href={`${PAD}/dubbel`} className={knopKlein}>
+              Dubbelen zoeken
+            </Link>
+            <Link href={`${PAD}/import`} className={knopKlein}>
+              CSV importeren
+            </Link>
+            <a href={`${PAD}/export${exportQuery ? `?${exportQuery}` : ""}`} className={knopKlein}>
+              CSV exporteren{gefilterd ? " (huidig filter)" : ""}
+            </a>
+          </>
+        }
+      />
 
       {ok && <Melding soort="ok">{ok}</Melding>}
       {(fout || laadFout) && <Melding soort="fout">{fout ?? laadFout}</Melding>}
@@ -118,7 +120,7 @@ export default async function AdresboekPagina({
             }`}
           >
             <span className="text-xl font-semibold tabular-nums">{t.getal}</span>
-            <span className={zacht}>{t.label}</span>
+            <span className={tekstZacht}>{t.label}</span>
           </Link>
         ))}
       </nav>
@@ -161,9 +163,9 @@ export default async function AdresboekPagina({
             </option>
           ))}
         </select>
-        <button className={`${hoofdknop} col-span-2 lg:col-span-1`}>Zoeken</button>
+        <button className={`${knop} col-span-2 lg:col-span-1`}>Zoeken</button>
       </form>
-      <p className={`-mt-3 text-sm ${zacht}`}>
+      <p className={`-mt-3 text-sm ${tekstZacht}`}>
         {totaal} relatie{totaal === 1 ? "" : "s"}
         {gefilterd && (
           <>
@@ -183,26 +185,26 @@ export default async function AdresboekPagina({
               <SelecteerAlles />
               <span>Alles op deze pagina</span>
             </label>
-            <span className={heelZacht}>·</span>
-            <span className={zacht}>Met selectie:</span>
+            <span className={tekstZacht}>·</span>
+            <span className={tekstZacht}>Met selectie:</span>
             <input name="tag" list="adresboek-tags" placeholder="tag" aria-label="Tag voor de selectie" className={`${invoer} w-28 py-1`} />
             <datalist id="adresboek-tags">
               {tags.map((t) => (
                 <option key={t} value={t} />
               ))}
             </datalist>
-            <button name="actie" value="tag_toevoegen" className={kleineKnop}>
+            <button name="actie" value="tag_toevoegen" className={knopKlein}>
               Tag toevoegen
             </button>
-            <button name="actie" value="tag_verwijderen" className={kleineKnop}>
+            <button name="actie" value="tag_verwijderen" className={knopKlein}>
               Tag weghalen
             </button>
-            <ExporteerSelectie className={kleineKnop} />
+            <ExporteerSelectie className={knopKlein} />
             <BevestigKnop
               name="actie"
               value="verwijderen"
               bevestiging="De geselecteerde relaties uit het adresboek verwijderen? Bestellingen, nieuwsbriefcontacten en berichten blijven bestaan. Dit kan niet ongedaan worden gemaakt."
-              className={`${kleineKnop} ${gevaarKnop}`}
+              className={knopGevaarKlein}
             >
               Verwijderen
             </BevestigKnop>
@@ -210,14 +212,14 @@ export default async function AdresboekPagina({
         )}
 
         {zichtbaar.length === 0 ? (
-          <p className={`text-sm ${heelZacht}`}>
+          <p className={`text-sm ${tekstZacht}`}>
             {gefilterd ? "Geen relaties gevonden." : "Het adresboek is nog leeg. Voeg een relatie toe of importeer een CSV-bestand."}
           </p>
         ) : (
           <div className="rounded-lg border border-black/10 bg-kaart dark:border-white/15">
             <div
               aria-hidden
-              className={`hidden gap-3 border-b border-black/10 px-3 py-2 text-xs uppercase tracking-wide md:grid md:grid-cols-[1rem_minmax(0,1.3fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] dark:border-white/15 ${heelZacht}`}
+              className={`hidden gap-3 border-b border-black/10 px-3 py-2 text-xs uppercase tracking-wide md:grid md:grid-cols-[1rem_minmax(0,1.3fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] dark:border-white/15 ${tekstZacht}`}
             >
               <span />
               <span>Naam</span>
@@ -237,14 +239,14 @@ export default async function AdresboekPagina({
                     <Link href={`${PAD}/${r.id}`} className="break-words font-medium hover:text-accent hover:underline">
                       {weergaveNaam(r)}
                     </Link>
-                    {r.bedrijf && weergaveNaam(r) !== r.bedrijf && <span className={`text-xs ${heelZacht}`}>{r.bedrijf}</span>}
+                    {r.bedrijf && weergaveNaam(r) !== r.bedrijf && <span className={`text-xs ${tekstZacht}`}>{r.bedrijf}</span>}
                     <Badges k={kenmerken(r, koppelingen)} />
                   </span>
-                  <span className={`col-start-2 min-w-0 break-all md:col-start-auto ${zacht}`}>{r.email ?? "—"}</span>
-                  <span className={`col-start-2 min-w-0 md:col-start-auto ${zacht}`}>
+                  <span className={`col-start-2 min-w-0 break-all md:col-start-auto ${tekstZacht}`}>{r.email ?? "—"}</span>
+                  <span className={`col-start-2 min-w-0 md:col-start-auto ${tekstZacht}`}>
                     {r.telefoon ?? <span className="hidden md:inline">—</span>}
                   </span>
-                  <span className={`col-start-2 min-w-0 md:col-start-auto ${zacht}`}>
+                  <span className={`col-start-2 min-w-0 md:col-start-auto ${tekstZacht}`}>
                     {r.plaats ?? <span className="hidden md:inline">—</span>}
                   </span>
                   <span className="col-start-2 flex min-w-0 flex-wrap gap-1 md:col-start-auto">
@@ -265,8 +267,8 @@ export default async function AdresboekPagina({
         pagina={pagina}
         paginas={paginas}
         href={(p) => link({ pagina: p })}
-        linkKlasse={kleineKnop}
-        tekstKlasse={zacht}
+        linkKlasse={knopKlein}
+        tekstKlasse={tekstZacht}
       />
     </main>
   );

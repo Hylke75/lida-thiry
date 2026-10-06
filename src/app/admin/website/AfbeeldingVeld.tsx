@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { MediaKiezer } from "@/components/admin/MediaKiezer";
+import { invoerBreed, tekstFout } from "@/components/admin/stijl";
 
 /**
  * Invoerveld voor een afbeelding: kiezen uit de mediabibliotheek (of uploaden),
@@ -49,7 +50,7 @@ export function AfbeeldingVeld({
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={fout ? true : undefined}
           aria-describedby={`${id}-uitleg`}
-          className="w-full rounded-lg border border-black/15 bg-kaart px-3 py-2 outline-none focus:border-accent aria-[invalid=true]:border-red-400 dark:border-white/20"
+          className={invoerBreed}
         />
         <MediaKiezer
           onKies={({ url: gekozen }) => onChange(gekozen)}
@@ -69,9 +70,9 @@ export function AfbeeldingVeld({
           </button>
         )}
       </div>
-      <div id={`${id}-uitleg`} className="flex flex-col gap-1 text-xs leading-relaxed text-black/50 dark:text-white/50">
+      <div id={`${id}-uitleg`} className="flex flex-col gap-1 text-xs leading-relaxed text-foreground/70">
         {uitleg}
-        {fout && <span className="text-red-700 dark:text-red-300">{fout}</span>}
+        {fout && <span className={tekstFout}>{fout}</span>}
       </div>
       {toonVoorbeeld && (
         <div className="mt-1 flex w-fit items-center justify-center rounded-lg border border-dashed border-black/15 bg-[repeating-conic-gradient(#0000000a_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] p-2 dark:border-white/20">

@@ -12,8 +12,10 @@ import {
   verwijderSoort,
   voegBlokkadeToe,
 } from "../acties";
-import { invoer, kaart, knop, knopLicht, Meldingen, NAV_AFSPRAKEN_INSTELLINGEN, zacht } from "../stijl";
+import { Meldingen, NAV_AFSPRAKEN_INSTELLINGEN } from "../onderdelen";
 import { BeschikbaarheidEditor } from "./BeschikbaarheidEditor";
+import { invoer, kaart, knop, knopSecundair, tekstZacht } from "@/components/admin/stijl";
+import { AdminKop } from "@/components/admin/AdminKop";
 
 export const dynamic = "force-dynamic";
 
@@ -22,27 +24,27 @@ function SoortVelden({ s }: { s?: AfspraakSoort }) {
     <>
       {s && <input type="hidden" name="id" value={s.id} />}
       <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-        <span className={zacht}>Naam *</span>
+        <span className={tekstZacht}>Naam *</span>
         <input name="naam" required maxLength={120} defaultValue={s?.naam} placeholder="Bijv. Kleuradvies" className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-        <span className={zacht}>Omschrijving (zichtbaar bij het boeken)</span>
+        <span className={tekstZacht}>Omschrijving (zichtbaar bij het boeken)</span>
         <textarea name="omschrijving" rows={2} maxLength={2000} defaultValue={s?.omschrijving} className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Duur (minuten) *</span>
+        <span className={tekstZacht}>Duur (minuten) *</span>
         <input name="duur_minuten" type="number" required min={10} max={480} step={5} defaultValue={s?.duur_minuten ?? 60} className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Buffer erna (minuten)</span>
+        <span className={tekstZacht}>Buffer erna (minuten)</span>
         <input name="buffer_minuten" type="number" min={0} max={240} step={5} defaultValue={s?.buffer_minuten ?? 15} className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Prijs (€, 0 = gratis/niet tonen)</span>
+        <span className={tekstZacht}>Prijs (€, 0 = gratis/niet tonen)</span>
         <input name="prijs" inputMode="decimal" defaultValue={s ? centNaarEuroInvoer(s.prijs_cent) : ""} placeholder="0,00" className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Aanbetaling (€, 0 = geen)</span>
+        <span className={tekstZacht}>Aanbetaling (€, 0 = geen)</span>
         <input
           name="aanbetaling"
           inputMode="decimal"
@@ -52,11 +54,11 @@ function SoortVelden({ s }: { s?: AfspraakSoort }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Locatie</span>
+        <span className={tekstZacht}>Locatie</span>
         <input name="locatie" maxLength={300} defaultValue={s?.locatie} placeholder="Adres, of ‘Online (videobellen)’" className={invoer} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className={zacht}>Volgorde</span>
+        <span className={tekstZacht}>Volgorde</span>
         <input name="volgorde" type="number" defaultValue={s?.volgorde ?? 0} className={invoer} />
       </label>
       <label className="flex items-center gap-2 text-sm">
@@ -85,25 +87,25 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-4 sm:p-8">
       <AdminNav actief={NAV_AFSPRAKEN_INSTELLINGEN} />
-      <Link href="/admin/afspraken" className={`text-sm ${zacht} underline-offset-4 hover:underline`}>
-        ← Afspraken
-      </Link>
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Instellingen voor afspraken</h1>
-        <p className={`text-sm ${zacht}`}>
-          De teksten van het formulier en de mails pas je aan in{" "}
-          <Link href="/admin/teksten/afspraken" className="underline underline-offset-4">
-            Teksten → Afspraken
-          </Link>
-          . Alle tijden zijn Nederlandse tijd.
-        </p>
-      </header>
+      <AdminKop
+        terug={{ href: "/admin/afspraken", label: "Afspraken" }}
+        titel="Instellingen voor afspraken"
+        beschrijving={
+          <>
+            De teksten van het formulier en de mails pas je aan in{" "}
+            <Link href="/admin/teksten/afspraken" className="underline underline-offset-4">
+              Teksten → Afspraken
+            </Link>
+            . Alle tijden zijn Nederlandse tijd.
+          </>
+        }
+      />
 
       <Meldingen ok={ok} fout={fout} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Soorten afspraken</h2>
-        {soorten.length === 0 && <p className={`text-sm ${zacht}`}>Nog geen soorten. Voeg er hieronder een toe.</p>}
+        {soorten.length === 0 && <p className={`text-sm ${tekstZacht}`}>Nog geen soorten. Voeg er hieronder een toe.</p>}
         <ul className="flex flex-col gap-2">
           {soorten.map((s) => (
             <li key={s.id}>
@@ -111,9 +113,9 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
                 <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                   <span className="font-medium">
                     {s.naam}
-                    {!s.actief && <span className={`ml-2 text-xs ${zacht}`}>(inactief)</span>}
+                    {!s.actief && <span className={`ml-2 text-xs ${tekstZacht}`}>(inactief)</span>}
                   </span>
-                  <span className={zacht}>
+                  <span className={tekstZacht}>
                     {duurLabel(s.duur_minuten)}
                     {s.prijs_cent ? ` · ${bedragLabel(s.prijs_cent)}` : ""}
                     {s.aanbetaling_cent ? ` · aanbetaling ${bedragLabel(s.aanbetaling_cent)}` : ""}
@@ -148,7 +150,7 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Vaste beschikbaarheid</h2>
-        <p className={`text-sm ${zacht}`}>
+        <p className={`text-sm ${tekstZacht}`}>
           Per weekdag een of meer tijdblokken. Een afspraak moet helemaal binnen één blok passen; begintijden liggen op hele kwartieren.
         </p>
         <BeschikbaarheidEditor begin={beschikbaarheid} actie={bewaarBeschikbaarheid} />
@@ -156,14 +158,14 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
 
       <section className={kaart}>
         <h2 className="text-lg font-semibold">Vrije dagen en blokkades</h2>
-        <p className={`text-sm ${zacht}`}>Op deze momenten kan er niet geboekt worden (vakantie, cursus, …). Zonder tijden geldt de hele dag.</p>
+        <p className={`text-sm ${tekstZacht}`}>Op deze momenten kan er niet geboekt worden (vakantie, cursus, …). Zonder tijden geldt de hele dag.</p>
         {blokkades.length > 0 && (
           <ul className="flex flex-col gap-2">
             {blokkades.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/15">
                 <span>
                   <span className="first-letter:uppercase">{datumLabel(b.van)}</span> {tijdLabel(b.van)} – {datumLabel(b.tot)} {tijdLabel(b.tot)}
-                  {b.reden && <span className={zacht}> · {b.reden}</span>}
+                  {b.reden && <span className={tekstZacht}> · {b.reden}</span>}
                 </span>
                 <form action={verwijderBlokkade}>
                   <input type="hidden" name="id" value={b.id} />
@@ -175,27 +177,27 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
         )}
         <form action={voegBlokkadeToe} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Van datum *</span>
+            <span className={tekstZacht}>Van datum *</span>
             <input type="date" name="van_datum" required min={vandaagAmsterdam(nu)} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Vanaf tijd</span>
+            <span className={tekstZacht}>Vanaf tijd</span>
             <input type="time" name="van_tijd" className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Tot en met datum</span>
+            <span className={tekstZacht}>Tot en met datum</span>
             <input type="date" name="tot_datum" min={vandaagAmsterdam(nu)} className={invoer} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Tot tijd</span>
+            <span className={tekstZacht}>Tot tijd</span>
             <input type="time" name="tot_tijd" className={invoer} />
           </label>
           <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-3">
-            <span className={zacht}>Reden (alleen voor jezelf)</span>
+            <span className={tekstZacht}>Reden (alleen voor jezelf)</span>
             <input name="reden" maxLength={200} placeholder="Bijv. vakantie" className={invoer} />
           </label>
           <div className="col-span-2 flex items-end sm:col-span-1">
-            <button className={knopLicht}>Toevoegen</button>
+            <button className={knopSecundair}>Toevoegen</button>
           </div>
         </form>
       </section>
@@ -204,19 +206,19 @@ export default async function AfspraakInstellingen({ searchParams }: { searchPar
         <h2 className="text-lg font-semibold">Boekingsregels</h2>
         <form action={bewaarAlgemeen} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Minimaal vooraf boeken (uren)</span>
+            <span className={tekstZacht}>Minimaal vooraf boeken (uren)</span>
             <input type="number" name="min_vooraf_uren" min={0} max={1440} required defaultValue={inst.minVoorafUren} className={invoer} />
-            <span className={`text-xs ${zacht}`}>Geldt ook voor zelf annuleren door de klant.</span>
+            <span className={`text-xs ${tekstZacht}`}>Geldt ook voor zelf annuleren door de klant.</span>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className={zacht}>Maximaal vooruit boeken (dagen)</span>
+            <span className={tekstZacht}>Maximaal vooruit boeken (dagen)</span>
             <input type="number" name="max_vooruit_dagen" min={1} max={730} required defaultValue={inst.maxVooruitDagen} className={invoer} />
           </label>
           <label className="flex items-start gap-2 text-sm sm:col-span-2">
             <input type="checkbox" name="handmatig" defaultChecked={inst.handmatigBevestigen} className="mt-1 accent-accent" />
             <span>
               Afspraken zonder aanbetaling handmatig bevestigen
-              <span className={`block text-xs ${zacht}`}>
+              <span className={`block text-xs ${tekstZacht}`}>
                 De klant krijgt dan eerst een ontvangstbevestiging; jij bevestigt de afspraak in het beheer. Met aanbetaling is een afspraak na betaling altijd bevestigd.
               </span>
             </span>
