@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#a4634d"/>
-  <text x="32" y="42" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="600" fill="#faf8f5" letter-spacing="1">LT</text>
+  <clipPath id="r"><rect width="64" height="64" rx="14"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="64" height="64" fill="#FFF9F3"/>
+    <rect y="56" width="12.8" height="8" fill="#FF8877"/>
+    <rect x="12.8" y="56" width="12.8" height="8" fill="#F6D879"/>
+    <rect x="25.6" y="56" width="12.8" height="8" fill="#B8D3AE"/>
+    <rect x="38.4" y="56" width="12.8" height="8" fill="#B9D9EF"/>
+    <rect x="51.2" y="56" width="12.8" height="8" fill="#D8A7C6"/>
+  </g>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="13.5" fill="none" stroke="#EADFD6"/>
+  <path fill="#6F2D59" transform="translate(9.58 41.00) scale(0.04242 -0.04242)" d="M22 0L22 10L43 18Q64 26 69.5 37.5Q75 49 75 69L75 591Q75 611 69 623Q63 635 43 642L22 650L22 660L277 660L277 650L259 642Q240 635 233 622.5Q226 610 226 590L226 20L380 20Q417 20 434.5 38Q452 56 468 90L507 174L517 174L508 0Z M586 0L586 10L627 20Q668 29 668 70L668 640L583 640Q546 640 530 620.5Q514 601 496 567L460 497L450 497L455 660L1032 660L1036 497L1026 497L990 567Q973 601 957 620.5Q941 640 904 640L819 640L819 70Q819 29 860 20L901 10L901 0Z"/>
 </svg>
