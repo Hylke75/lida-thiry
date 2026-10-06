@@ -21,10 +21,10 @@ test.describe("publieke pagina's", () => {
     expect(res?.status()).toBe(200);
     await controleerGeraamte(page);
     await expect(page).toHaveTitle(/Lida Thiry/);
-    // De knop rechtsboven (standaard naar de test) staat altijd in de kop.
-    await expect(page.getByRole("banner").getByRole("link", { name: /Vraag advies aan/ }).first()).toHaveAttribute(
+    // De knop rechtsboven (standaard naar de pagina over de figuurtest) staat altijd in de kop.
+    await expect(page.getByRole("banner").getByRole("link", { name: /Start de figuurtest/ }).first()).toHaveAttribute(
       "href",
-      "/bestellen",
+      "/figuurtest",
     );
     // De blokken uit het ontwerp, in volgorde: hero, adviesroutes, herkenning, stappen, Over Lida.
     const koppen = await page.getByRole("main").getByRole("heading", { level: 2 }).allTextContents();
@@ -32,11 +32,17 @@ test.describe("publieke pagina's", () => {
     const plekken = verwacht.map((k) => koppen.findIndex((t) => t.includes(k)));
     expect(plekken.every((p) => p >= 0), koppen.join(" | ")).toBe(true);
     expect([...plekken].sort((a, b) => a - b)).toEqual(plekken);
-    // De hero-knop springt naar de adviesroutes; die verwijzen naar bestaande routes.
-    await expect(page.getByRole("main").getByRole("link", { name: /Bekijk mijn adviesmogelijkheden/ })).toHaveAttribute("href", "#advies");
+    // De hero-knop en de eerste adviesroute gaan naar de figuurtest; de routes verwijzen naar bestaande routes.
+    await expect(page.locator("#top").getByRole("link", { name: /Start de figuurtest/ })).toHaveAttribute("href", "/figuurtest");
     const routes = page.locator("#advies article a");
     await expect(routes).toHaveCount(3);
-    expect(await routes.evaluateAll((a) => a.map((x) => x.getAttribute("href")))).toEqual(["/bestellen", "/afspraak", "/cadeaubon"]);
+    // Persoonlijk advies: naar /afspraak als er iets te boeken is (dan staat Afspraak ook in het menu), anders naar contact.
+    const boekbaar = (await page.getByRole("navigation", { name: "Hoofdmenu" }).first().locator('a[href="/afspraak"]').count()) > 0;
+    expect(await routes.evaluateAll((a) => a.map((x) => x.getAttribute("href")))).toEqual([
+      "/figuurtest",
+      boekbaar ? "/afspraak" : "/contact",
+      "/cadeaubon",
+    ]);
   });
 
   test("ga naar inhoud en het mobiele menu", async ({ page }) => {
@@ -63,7 +69,7 @@ test.describe("publieke pagina's", () => {
     const res = await page.goto("/bestellen");
     expect(res?.status()).toBe(200);
     await controleerGeraamte(page);
-    await expect(page.getByRole("link", { name: "← Terug" })).toHaveAttribute("href", "/");
+    await expect(page.getByRole("link", { name: "← Terug" })).toHaveAttribute("href", "/figuurtest");
   });
 
   test("blogoverzicht", async ({ page }) => {
@@ -99,7 +105,7 @@ test.describe("publieke pagina's", () => {
     await expect(page).toHaveTitle(/Pagina niet gevonden/);
     await expect(page.locator("html")).toHaveAttribute("lang", "nl");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("link", { name: /Doe de test/ })).toHaveAttribute("href", "/bestellen");
+    await expect(page.getByRole("main").getByRole("link", { name: /Doe de test/ })).toHaveAttribute("href", "/figuurtest");
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", /noindex/);
   });
 
@@ -108,6 +114,16 @@ test.describe("publieke pagina's", () => {
     const voet = page.getByRole("contentinfo");
     await expect(voet.locator('a[href="/privacy"]').first()).toBeVisible();
     await expect(voet.locator('a[href="/voorwaarden"]').first()).toBeVisible();
+    // De beheerlink staat standaard uit (Beheer → Website → Instellingen).
+    await expect(voet.locator('a[href^="/admin"]')).toHaveCount(0);
+  });
+
+  test("ervaringen: zonder reviews een rustige plaatshouder, geen verzonnen citaten", async ({ page }) => {
+    await page.goto("/");
+    const blok = page.getByRole("region", { name: /Meer rust in je kast/ });
+    await expect(blok).toBeVisible();
+    await expect(blok.getByText("[Ervaringen van klanten volgen]")).toBeVisible();
+    await expect(blok.locator("blockquote")).toHaveCount(0);
   });
 });
 
@@ -127,7 +143,7 @@ test.describe("machineleesbare bestanden", () => {
     expect(res.headers()["content-type"]).toContain("xml");
     const xml = await res.text();
     expect(xml).toContain("<urlset");
-    for (const pad of ["/bestellen", "/blog", "/privacy", "/voorwaarden"]) {
+    for (const pad of ["/figuurtest", "/bestellen", "/blog", "/privacy", "/voorwaarden"]) {
       expect(xml).toMatch(new RegExp(`<loc>https?://[^<]+${pad}</loc>`));
     }
     expect(xml).not.toContain("/admin");

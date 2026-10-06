@@ -56,7 +56,7 @@ export function StapSilhouet({
                 figuurKlasse="h-36 tablet:h-40"
               />
               <strong className="font-serif text-[22px] leading-[1.1] font-normal">{s.naam}</strong>
-              <span className="text-[13px] leading-[1.5] text-ink-soft">{s.omschrijving}</span>
+              <span className="text-[15px] leading-[1.5] text-ink-soft">{s.omschrijving}</span>
             </label>
           );
         })}

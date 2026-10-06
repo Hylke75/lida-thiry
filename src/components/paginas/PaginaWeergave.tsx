@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Afbeelding } from "@/components/Afbeelding";
 import { Opmaak } from "@/components/Opmaak";
-import { KleurLint, KopTekst } from "@/components/site/Basis";
+import { KopTekst } from "@/components/site/Basis";
 import { InhoudBlok, InhoudProza } from "@/components/site/InhoudProza";
 import { H1_INHOUD, INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
 import { CONTAINER } from "@/components/site/stijl";
@@ -47,16 +47,15 @@ export function PaginaWeergave({
   return (
     <article className="flex min-w-0 flex-col pb-[68px] tablet:pb-[92px]">
       {/* In het beheer (donkere modus) zonder de warme band, zodat de tekst leesbaar blijft. */}
-      <header className={`${KOP_ACHTERGROND} dark:bg-none`}>
+      <header className={`${KOP_ACHTERGROND} border-b border-line dark:border-white/10 dark:bg-transparent`}>
         <div className={`${LEESKOLOM} flex flex-col gap-5 pt-12 pb-12 tablet:pt-[72px] tablet:pb-14`}>
           <Kop className={H1_INHOUD}>{titel ? <KopTekst tekst={titel} /> : "(nog geen titel)"}</Kop>
           {intro && <p className={`${INTRO} whitespace-pre-line dark:text-foreground/75`}>{intro}</p>}
         </div>
-        <KleurLint />
       </header>
       {omslag && (
         <div className={`${CONTAINER} mt-10 max-w-[980px] tablet:mt-14`}>
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-ontwerp-md tablet:rounded-ontwerp-lg">
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[8px] bg-sand-deep">
             <Afbeelding vullen src={omslag} alt={omslagAlt} prioriteit sizes="(min-width: 1020px) 980px, 100vw" className="object-cover" />
           </div>
         </div>

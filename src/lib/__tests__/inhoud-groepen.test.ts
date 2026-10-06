@@ -3,6 +3,7 @@ import { GROEPEN } from "../inhoud/register";
 import { parseerOpmaak, type Blok, type Inline } from "../inhoud/opmaak";
 import type { Sectie } from "../inhoud/schema";
 import { JURIDISCH_PRIVACY, JURIDISCH_VOORWAARDEN } from "../inhoud/groepen/juridisch";
+import { FIGUURTEST } from "../inhoud/groepen/figuurtest";
 
 /** Alle standaardteksten van een sectie, met het soort veld erbij. */
 function standaardTeksten(s: Sectie): { veld: string; soort: string; tekst: string }[] {
@@ -81,5 +82,16 @@ describe("inhoud: juridische teksten", () => {
 
   it("voorwaarden linken naar de privacyverklaring", () => {
     expect(JURIDISCH_VOORWAARDEN.velden.tekst.standaard).toContain("[privacyverklaring](/privacy)");
+  });
+});
+
+describe("inhoud: figuurtest (openbare productpagina)", () => {
+  // De figuurtypes zijn alleen voor klanten (achter de testlink): nooit typenamen op /figuurtest.
+  const TYPENAMEN = /zandloper|peer|driehoek|rechthoek|\bde 8\b|\bacht\b|silhouet/i;
+
+  it.each(FIGUURTEST.secties.map((s) => [s.sleutel, s] as const))("%s noemt geen figuurtypes", (_, s) => {
+    for (const { veld, tekst } of standaardTeksten(s)) {
+      expect(tekst, `${s.sleutel}.${veld}`).not.toMatch(TYPENAMEN);
+    }
   });
 });

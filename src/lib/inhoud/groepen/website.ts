@@ -18,19 +18,19 @@ export const WEBSITE_KOP = sectie({
       max: 60,
       standaard: "Kleur- en stijladvies",
     },
-    knop: { soort: "tekst", label: "Knop rechtsboven: tekst", max: 40, standaard: "Vraag advies aan" },
+    knop: { soort: "tekst", label: "Knop rechtsboven: tekst", max: 40, standaard: "Start de figuurtest" },
     knopLink: {
       soort: "tekst",
       label: "Knop rechtsboven: link",
-      uitleg: "Een pad op de site, zoals /bestellen of /afspraak.",
+      uitleg: "Een pad op de site, zoals /figuurtest (de pagina over de test) of /bestellen.",
       max: 200,
-      standaard: "/bestellen",
+      standaard: "/figuurtest",
     },
     menu: {
       soort: "lijst",
       label: "Standaardmenu",
       uitleg:
-        "Wordt gebruikt zolang er geen pagina's ‘in menu’ staan. Links naar een pagina die (nog) niet gepubliceerd is, worden overgeslagen. Ook de voettekst toont deze links.",
+        "Wordt gebruikt zolang er geen pagina's ‘in menu’ staan. Links naar een pagina die (nog) niet gepubliceerd is, worden overgeslagen, net als /afspraak zolang er geen actieve afspraaksoort is (Beheer → Afspraken). Ook de voettekst toont deze links.",
       itemNaam: "link",
       max: 8,
       velden: {
@@ -38,7 +38,7 @@ export const WEBSITE_KOP = sectie({
         link: { soort: "tekst", label: "Link (bijv. /blog)", max: 200, standaard: "" },
       },
       standaard: [
-        { label: "Figuurtest", link: "/bestellen" },
+        { label: "Figuurtest", link: "/figuurtest" },
         { label: "Afspraak", link: "/afspraak" },
         { label: "Blog", link: "/blog" },
         { label: "Cadeaubon", link: "/cadeaubon" },
@@ -50,7 +50,7 @@ export const WEBSITE_KOP = sectie({
       soort: "lijst",
       label: "Voettekst: vaste links",
       uitleg:
-        "Staan altijd in de voettekst, na het menu en de pagina's met ‘in footer’. Dubbele links worden één keer getoond; links naar een pagina die niet bestaat, worden overgeslagen.",
+        "Staan altijd in de voettekst, na het menu en de pagina's met ‘in footer’. Dubbele links worden één keer getoond; links naar een pagina die niet bestaat (en /afspraak zonder actieve afspraaksoort), worden overgeslagen.",
       itemNaam: "link",
       max: 8,
       velden: {
@@ -58,6 +58,7 @@ export const WEBSITE_KOP = sectie({
         link: { soort: "tekst", label: "Link (bijv. /blog)", max: 200, standaard: "" },
       },
       standaard: [
+        { label: "Figuurtest", link: "/figuurtest" },
         { label: "Blog", link: "/blog" },
         { label: "Cadeaubon", link: "/cadeaubon" },
         { label: "Mijn advies", link: "/mijn-advies" },
@@ -108,13 +109,13 @@ export const WEBSITE_HERO = sectie({
       standaard:
         "Met de online figuurtest ontdek je op basis van je lengte, maten en een paar vragen welk figuurtype je hebt. Je persoonlijke kledingadvies helpt je gerichter kiezen, makkelijker combineren en je meer jezelf voelen in wat je draagt.",
     },
-    knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Bekijk mijn adviesmogelijkheden" },
+    knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Start de figuurtest" },
     knopLink: {
       soort: "tekst",
       label: "Knop: link",
-      uitleg: "Standaard naar de adviesroutes verderop (#advies); kan ook een pad zijn, zoals /bestellen.",
+      uitleg: "Standaard naar de pagina over de figuurtest (/figuurtest); kan ook een anker zijn, zoals #advies voor de adviesroutes verderop.",
       max: 200,
-      standaard: "#advies",
+      standaard: "/figuurtest",
     },
     tweedeLink: { soort: "tekst", label: "Tweede link: tekst (leeg = geen link)", max: 60, standaard: "Eerst kennismaken met Lida" },
     tweedeLinkAdres: { soort: "tekst", label: "Tweede link: adres", max: 200, standaard: "#over" },
@@ -142,7 +143,8 @@ export const WEBSITE_HERO = sectie({
 export const WEBSITE_DIENSTEN = sectie({
   sleutel: "website.diensten",
   titel: "Adviesroutes",
-  uitleg: "Kaarten met de manieren waarop bezoekers kunnen beginnen. Een lege prijs wordt niet getoond.",
+  uitleg:
+    "Kaarten met de manieren waarop bezoekers kunnen beginnen. Een lege prijs wordt niet getoond. Een kaart met de link /afspraak verwijst automatisch naar contact zolang er geen actieve afspraaksoort is (zie de twee velden onderaan).",
   variabelen: {
     prijs: "de prijs van de online test (uit de instellingen)",
     afspraak_vanaf: "‘vanaf’ + de laagste prijs van de afspraaksoorten (leeg als die er niet zijn)",
@@ -186,7 +188,7 @@ export const WEBSITE_DIENSTEN = sectie({
           tekst: "Meet jezelf op, beantwoord een paar vragen en ontvang direct je persoonlijke kledingadvies als PDF.",
           prijs: "{prijs}",
           linkTekst: "Start de figuurtest",
-          link: "/bestellen",
+          link: "/figuurtest",
           kleur: "coral",
         },
         {
@@ -208,6 +210,21 @@ export const WEBSITE_DIENSTEN = sectie({
           kleur: "butter",
         },
       ],
+    },
+    zonderAfspraakLinkTekst: {
+      soort: "tekst",
+      label: "Zonder afspraaksoorten: linktekst in plaats van ‘Plan een afspraak’",
+      uitleg:
+        "Zolang er in Beheer → Afspraken geen actieve afspraaksoort is, krijgt een kaart met de link /afspraak deze tekst en de link hieronder. Leeg = geen link.",
+      max: 60,
+      standaard: "Stel je vraag",
+    },
+    zonderAfspraakLink: {
+      soort: "tekst",
+      label: "Zonder afspraaksoorten: link",
+      uitleg: "Bijv. /contact. Bestaat die pagina (nog) niet, dan staat er geen link op de kaart.",
+      max: 200,
+      standaard: "/contact",
     },
   },
 });
@@ -310,7 +327,7 @@ export const WEBSITE_FIGUURTYPES = sectie({
       ],
     },
     knop: { soort: "tekst", label: "Knoptekst (leeg = geen knop)", max: 60, standaard: "Ontdek jouw figuurtype" },
-    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/bestellen" },
+    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/figuurtest" },
   },
 });
 
@@ -406,7 +423,7 @@ export const WEBSITE_ERVARINGEN = sectie({
   sleutel: "website.ervaringen",
   titel: "Ervaringen van klanten",
   uitleg:
-    "Goedgekeurde reviews met toestemming (Beheer → Reviews) staan automatisch vooraan; de ervaringen hieronder komen daarna. Er staan er maximaal drie, ingekort tot ongeveer 35 woorden en met alleen de voornaam. Gebruik alleen echte reacties, met toestemming van de klant. Zonder reviews en ervaringen wordt dit blok niet getoond.",
+    "Goedgekeurde reviews met toestemming (Beheer → Reviews) staan automatisch vooraan; de ervaringen hieronder komen daarna. Er staan er maximaal drie, ingekort tot ongeveer 35 woorden en met alleen de voornaam. Gebruik alleen echte reacties, met toestemming van de klant. Zonder reviews en ervaringen staat er de tekst bij 'Tekst zolang er nog geen ervaringen zijn' (leeg = het blok niet tonen).",
   velden: {
     bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Wat klanten ervaren" },
     titel: {
@@ -414,6 +431,13 @@ export const WEBSITE_ERVARINGEN = sectie({
       label: "Titel",
       uitleg: ACCENT_UITLEG,
       standaard: "Meer rust in je kast. Meer vertrouwen voor de spiegel.",
+    },
+    leegTekst: {
+      soort: "tekst",
+      label: "Tekst zolang er nog geen ervaringen zijn",
+      uitleg: "Staat onder de titel zolang er geen goedgekeurde reviews of ingevulde ervaringen zijn. Leeg = het blok dan niet tonen.",
+      max: 200,
+      standaard: "[Ervaringen van klanten volgen]",
     },
     ervaringen: {
       soort: "lijst",
@@ -492,7 +516,7 @@ export const WEBSITE_AFSLUITING = sectie({
       max: 60,
       standaard: "Start de test",
     },
-    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/bestellen" },
+    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/figuurtest" },
   },
 });
 
@@ -552,11 +576,11 @@ export const WEBSITE_FOUT = sectie({
       velden: {
         label: { soort: "tekst", label: "Linktekst", max: 60, standaard: "" },
         uitleg: { soort: "tekst", label: "Korte uitleg", max: 160, standaard: "" },
-        link: { soort: "tekst", label: "Link (bijv. /bestellen)", max: 200, standaard: "" },
+        link: { soort: "tekst", label: "Link (bijv. /figuurtest)", max: 200, standaard: "" },
       },
       standaard: [
         { label: "", uitleg: "Lees wat de kledingadviestest je oplevert.", link: "/" },
-        { label: "Doe de test", uitleg: "Ontdek je figuurtype en ontvang je persoonlijke advies.", link: "/bestellen" },
+        { label: "Doe de test", uitleg: "Ontdek je figuurtype en ontvang je persoonlijke advies.", link: "/figuurtest" },
         { label: "Blog", uitleg: "Tips en inspiratie over kleding en figuur.", link: "/blog" },
         { label: "", uitleg: "Stel je vraag rechtstreeks aan Lida.", link: "/contact" },
       ],

@@ -469,14 +469,14 @@ export function WebsiteFormulier({ begin, siteUrl }: { begin: Waarden; siteUrl: 
         <label className="flex items-start gap-3 text-sm font-medium">
           <input
             type="checkbox"
-            checked={w.footer_beheerlink !== "verbergen"}
-            onChange={(e) => zet("footer_beheerlink", e.target.checked ? "" : "verbergen")}
+            checked={w.footer_beheerlink === "tonen"}
+            onChange={(e) => zet("footer_beheerlink", e.target.checked ? "tonen" : "")}
             className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
           />
           <span>Link &lsquo;Beheer&rsquo; tonen in de voettekst</span>
         </label>
         <p className={tekstUitleg}>
-          Uit: inloggen kan dan nog steeds via {host}/admin. De vaste links, de teksten van de links naar privacy, voorwaarden en
+          Standaard uit: bezoekers zien dan geen beheerlink. Inloggen kan altijd via {host}/admin. De vaste links, de teksten van de links naar privacy, voorwaarden en
           contact, een korte zin en een regel met adres of contact stel je in bij{" "}
           <Link href="/admin/teksten/website#website-kop" className="text-accent underline underline-offset-4">
             Teksten → Kop en voettekst

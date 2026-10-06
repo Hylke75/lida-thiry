@@ -243,7 +243,8 @@ export function valideerWebsiteInvoer(
   waarden.bedrijf_type = type && isBedrijfType(type) && type !== BEDRIJF_TYPES[0].waarde ? type : null;
 
   waarden.niet_indexeren = schoon(invoer.niet_indexeren) === "ja" ? "ja" : null;
-  waarden.footer_beheerlink = schoon(invoer.footer_beheerlink) === "verbergen" ? "verbergen" : null;
+  // Standaard verborgen (herziening oktober 2026): alleen "tonen" zet de link aan.
+  waarden.footer_beheerlink = schoon(invoer.footer_beheerlink) === "tonen" ? "tonen" : null;
 
   return fouten.length ? { ok: false, fouten } : { ok: true, waarden };
 }
@@ -306,7 +307,8 @@ export function websiteInstellingen(
     bedrijfType: isBedrijfType(type) ? type : BEDRIJF_TYPES[0].waarde,
     eigenaarNaam: eigenaar ?? STANDAARD_SITE.eigenaarNaam,
     standaardAuteur: schoon(m.standaard_auteur)?.slice(0, MAX_NAAM) ?? eigenaar ?? STANDAARD_SITE.eigenaarNaam,
-    beheerlinkInFooter: schoon(m.footer_beheerlink) !== "verbergen",
+    // Standaard verborgen; een oude waarde "verbergen" blijft verborgen.
+    beheerlinkInFooter: schoon(m.footer_beheerlink) === "tonen",
     seoPaginas: schoon(m.seo_paginas),
   };
 }

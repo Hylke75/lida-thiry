@@ -10,9 +10,6 @@ import { InhoudKop } from "@/components/site/InhoudKop";
 import { H3, SECTIE } from "@/components/site/stijl";
 import { veiligeLink } from "@/lib/website/weergave";
 
-/** Gekleurde rand bovenaan de suggesties (zoals de stappen op de homepage). */
-const RANDEN = ["border-t-coral", "border-t-sage", "border-t-butter", "border-t-sky"] as const;
-
 export const metadata: Metadata = {
   title: "Pagina niet gevonden",
   robots: { index: false },
@@ -58,16 +55,16 @@ export default async function NietGevonden() {
         <Container>
           <SectieKop id="suggesties" variant="midden" titel={t.suggestiesTitel} />
           <ul className="m-0 grid list-none grid-cols-1 gap-[18px] p-0 tablet:grid-cols-2 desktop:grid-cols-4">
-            {suggesties.map((s, i) => (
+            {suggesties.map((s) => (
               <li key={s.id}>
                 <Link
                   href={s.href}
-                  className={`group flex h-full flex-col gap-2 border-t-[5px] bg-white px-6 py-7 shadow-[0_14px_40px_rgba(58,40,52,.06)] transition-transform motion-safe:hover:-translate-y-0.5 ${RANDEN[i % RANDEN.length]}`}
+                  className="group flex h-full flex-col gap-2 rounded-[8px] border border-line bg-white px-6 py-7 transition-colors hover:border-berry"
                 >
                   <span className={`${H3} text-[23px] group-hover:text-berry`}>
                     {s.label}&nbsp;<Pijl />
                   </span>
-                  <span className="text-[15px] text-ink-soft">{s.uitleg}</span>
+                  <span className="text-[17px] text-ink-soft">{s.uitleg}</span>
                 </Link>
               </li>
             ))}
@@ -76,7 +73,7 @@ export default async function NietGevonden() {
       </section>
 
       {berichten.length > 0 && (
-        <section aria-labelledby="nieuw-op-blog" className={`${SECTIE} bg-[#fffaf4]`}>
+        <section aria-labelledby="nieuw-op-blog" className={`${SECTIE} bg-cream`}>
           <Container>
             <SectieKop
               id="nieuw-op-blog"

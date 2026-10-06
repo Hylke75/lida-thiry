@@ -98,7 +98,7 @@ export function SiteHeaderWeergave({
             aria-label="Hoofdmenu"
             className={`${open ? "block" : "hidden"} absolute top-[76px] right-5 left-5 rounded-2xl bg-white p-5 shadow-ontwerp desktop:static desktop:block desktop:rounded-none desktop:bg-transparent desktop:p-0 desktop:shadow-none`}
           >
-            <ul className="flex flex-col items-start gap-x-7 gap-y-1 text-[14px] font-semibold desktop:flex-row desktop:flex-wrap desktop:items-center desktop:justify-center">
+            <ul className="flex flex-col items-start gap-x-7 gap-y-1 text-[15px] font-semibold desktop:flex-row desktop:flex-wrap desktop:items-center desktop:justify-center">
               {items.map((i) => (
                 <li key={i.href}>
                   <Link href={i.href} aria-current={huidig(i.href)} className="group inline-flex min-h-11 items-center rounded-sm">

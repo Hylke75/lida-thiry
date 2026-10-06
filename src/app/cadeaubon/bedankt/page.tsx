@@ -77,7 +77,7 @@ export default async function CadeaubonBedanktPage({
             {bon?.status === "aangemaakt" && <AutoVernieuwen />}
           </>
         )}
-        <TekstLink href="/" className="text-[14px] text-ink-soft">
+        <TekstLink href="/" className="text-[16px] text-ink-soft">
           {t.terugLink}
         </TekstLink>
       </KlantKaart>
