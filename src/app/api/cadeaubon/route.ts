@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
-import { leesInstelling, leesPrijsCent } from "@/lib/instellingen";
+import { leesInstellingen, leesPrijsCent } from "@/lib/instellingen";
 import { annuleerBetaling, startBetaling } from "@/lib/mollie";
 import { siteUrl } from "@/lib/site";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
-import { valideerCadeaubon } from "@/lib/cadeaubon/regels";
+import { leesCadeaubonInstellingen, valideerCadeaubon } from "@/lib/cadeaubon/regels";
+import { betaalOmschrijving } from "@/lib/verkoop/regels";
 
 export const runtime = "nodejs";
 
@@ -32,11 +33,12 @@ export async function POST(request: Request) {
   } catch {
     prijsCent = null;
   }
-  const invoer = valideerCadeaubon(body, { prijsCent });
+  const inst = await leesInstellingen();
+  const invoer = valideerCadeaubon(body, { prijsCent, inst: leesCadeaubonInstellingen(inst) });
   if (!invoer.ok) return NextResponse.json({ fout: invoer.fout }, { status: 400 });
   const v = invoer.waarde;
 
-  const valuta = (await leesInstelling("valuta")) || "EUR";
+  const valuta = inst.valuta || "EUR";
   const supabase = adminClient();
   const { data: bon, error } = await supabase
     .from("cadeaubon_bestellingen")
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
     const betaling = await startBetaling({
       bedragCent: v.bedragCent,
       valuta,
-      omschrijving: "Cadeaubon kledingadviestest – Lida Thiry",
+      omschrijving: betaalOmschrijving(inst.betaling_omschrijving, "cadeaubon"),
       redirectPad: `/cadeaubon/bedankt?bon=${bon.id}`,
       metadata: { cadeaubonId: bon.id },
     });

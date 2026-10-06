@@ -6,6 +6,8 @@ import { magDoor } from "@/lib/rate-limit";
 import { beoordeelHervatten } from "@/lib/hervatten";
 import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
 import { OPEN_STATUSSEN } from "@/lib/order-status";
+import { leesInstelling } from "@/lib/instellingen";
+import { betaalOmschrijving } from "@/lib/verkoop/regels";
 
 export const runtime = "nodejs";
 
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
     const betaling = await startBetaling({
       bedragCent: order.bedrag_cent,
       valuta: order.valuta,
-      omschrijving: "Kledingadviestest – Lida Thiry",
+      omschrijving: betaalOmschrijving(await leesInstelling("betaling_omschrijving")),
       redirectPad: bedankt,
       metadata: { orderId: order.id },
     });

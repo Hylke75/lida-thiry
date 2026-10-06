@@ -29,12 +29,26 @@ export function gratisTestAan(waarde: string | undefined = process.env.GRATIS_TE
   return waarde === "1";
 }
 
-/** Zo lang na betalen toont de bedankpagina de startknop (met testlink). */
-const TESTLINK_ZICHTBAAR_UREN = 2;
+/**
+ * Volledig terugbetaald en de toegang tot de test ingetrokken. Hoort bewust in
+ * géén van de lijsten hierboven: geen toegang tot de test of het advies, telt
+ * niet mee voor de omzet en wordt niet opnieuw afgehandeld.
+ */
+export const TERUGBETAALD_STATUS = "terugbetaald";
 
-/** Is de bestelling zo recent betaald dat de bedankpagina de testlink nog toont? */
-export function testlinkNogTonen(betaaldOp: string | null, nu: Date = new Date()): boolean {
+/** Standaard: zo lang na betalen toont de bedankpagina de startknop (met testlink). */
+export const TESTLINK_ZICHTBAAR_UREN = 2;
+
+/**
+ * Is de bestelling zo recent betaald dat de bedankpagina de testlink nog toont?
+ * `uren` komt uit de instelling testlink_zichtbaar_uren.
+ */
+export function testlinkNogTonen(
+  betaaldOp: string | null,
+  nu: Date = new Date(),
+  uren: number = TESTLINK_ZICHTBAAR_UREN,
+): boolean {
   if (!betaaldOp) return false;
   const t = new Date(betaaldOp).getTime();
-  return Number.isFinite(t) && nu.getTime() - t < TESTLINK_ZICHTBAAR_UREN * 60 * 60 * 1000;
+  return Number.isFinite(t) && nu.getTime() - t < uren * 60 * 60 * 1000;
 }

@@ -164,7 +164,7 @@ async function structuur(o: {
       type: o.site.bedrijfType,
     }),
     testProductJsonLd({
-      naam: "Online kledingadviestest",
+      naam: echt(inst.product_naam) ?? "Online kledingadviestest",
       omschrijving: o.site.omschrijving,
       url: basis,
       prijsCent: o.prijsCent,

@@ -15,6 +15,7 @@ import {
 import { geefKortingsclaimVrij, naBetaling, nieuwsbriefNaBetaling } from "@/lib/bestelling-betaald";
 import { gratisTestAan } from "@/lib/order-status";
 import { geldigEmail } from "@/lib/email";
+import { betaalOmschrijving } from "@/lib/verkoop/regels";
 
 export const runtime = "nodejs";
 
@@ -215,7 +216,7 @@ export async function POST(request: Request) {
     const betaling = await startBetaling({
       bedragCent: teBetalenCent,
       valuta,
-      omschrijving: "Kledingadviestest – Lida Thiry",
+      omschrijving: betaalOmschrijving(await leesInstelling("betaling_omschrijving")),
       redirectPad: `/bestellen/bedankt?order=${order.id}`,
       metadata: { orderId: order.id },
     });

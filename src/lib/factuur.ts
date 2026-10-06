@@ -6,9 +6,27 @@ import { jaarInNederland } from "./prijs";
 import { datumLang } from "./datum";
 import { FACTUREN } from "./opslag";
 import { BEDRIJFSNAAM_STANDAARD } from "./site";
+import { leesBtwProcent, leesProductNaam } from "./verkoop/regels";
 
 const BUCKET = FACTUREN;
-const BTW_PROCENT = 21;
+
+/** Verkopergegevens op facturen en creditnota's. */
+function verkoper(inst: Record<string, string | null>) {
+  return {
+    naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
+    adres: inst.bedrijf_adres?.trim() || null,
+    kvk: inst.kvk_nummer?.trim() || null,
+    btw: inst.btw_nummer?.trim() || null,
+    email: inst.contact_email?.trim() || null,
+  };
+}
+
+/** Tekst in het 'voldaan'-vak per betaalwijze (standaard: via Mollie). */
+function voldaanTekst(betaalwijze: string | null, betaaldOp: string): string | undefined {
+  return betaalwijze === "overboeking"
+    ? `Voldaan: betaald per bankoverschrijving op ${betaaldOp}. Je hoeft niets meer te betalen.`
+    : undefined;
+}
 
 export interface Factuur {
   factuurnummer: string;
@@ -55,7 +73,7 @@ export async function maakFactuur(orderId: string): Promise<Factuur | null> {
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, klantnaam, email, factuurgegevens, bedrag_cent, korting_cent, kortingscode, valuta, betaald_op, factuurnummer",
+      "id, klantnaam, email, factuurgegevens, bedrag_cent, korting_cent, kortingscode, valuta, betaald_op, factuurnummer, betaalwijze, btw_procent",
     )
     .eq("id", orderId)
     .single();
@@ -68,29 +86,27 @@ export async function maakFactuur(orderId: string): Promise<Factuur | null> {
 
   const inst = await leesInstellingen();
   const korting = order.korting_cent ?? 0;
+  // Het tarief van een eerder gemaakte factuur blijft gelijk (opnieuw maken = zelfde factuur).
+  // Facturen van vóór de btw-instelling hadden 21%.
+  const btwProcent: number = order.btw_procent ?? (order.factuurnummer ? 21 : leesBtwProcent(inst.btw_procent));
   const pdf = await maakFactuurPdf({
     factuurnummer,
     factuurdatum: datumLang(betaaldOp),
     betaaldOp: datumLang(betaaldOp),
-    verkoper: {
-      naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
-      adres: inst.bedrijf_adres?.trim() || null,
-      kvk: inst.kvk_nummer?.trim() || null,
-      btw: inst.btw_nummer?.trim() || null,
-      email: inst.contact_email?.trim() || null,
-    },
+    verkoper: verkoper(inst),
     koper: {
       naam: order.klantnaam,
       email: order.email,
       adresregels: adresregels(order.factuurgegevens),
     },
-    omschrijving: "Persoonlijke kledingadviestest (online)",
+    omschrijving: leesProductNaam(inst.product_naam),
     prijsCent: order.bedrag_cent + korting,
     kortingCent: korting,
     kortingscode: order.kortingscode,
     totaalCent: order.bedrag_cent,
     valuta: order.valuta || "EUR",
-    btwProcent: BTW_PROCENT,
+    btwProcent,
+    voldaanTekst: voldaanTekst(order.betaalwijze, datumLang(betaaldOp)),
   });
 
   const pad = `${factuurnummer}.pdf`;
@@ -98,7 +114,7 @@ export async function maakFactuur(orderId: string): Promise<Factuur | null> {
     .from(BUCKET)
     .upload(pad, pdf, { contentType: "application/pdf", upsert: true });
   if (e3) throw new Error(`Factuur uploaden mislukt: ${e3.message}`);
-  const { error: e4 } = await supabase.from("orders").update({ factuur_pad: pad }).eq("id", orderId);
+  const { error: e4 } = await supabase.from("orders").update({ factuur_pad: pad, btw_procent: btwProcent }).eq("id", orderId);
   if (e4) throw new Error(`Factuurpad opslaan mislukt: ${e4.message}`);
 
   return { factuurnummer, bestandsnaam: `factuur-${factuurnummer}.pdf`, pdf };
@@ -114,7 +130,7 @@ export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
   const supabase = adminClient();
   const { data: bon, error } = await supabase
     .from("cadeaubon_bestellingen")
-    .select("id, koper_naam, koper_email, ontvanger_naam, bedrag_cent, valuta, betaald_op, factuurnummer")
+    .select("id, koper_naam, koper_email, ontvanger_naam, bedrag_cent, valuta, betaald_op, factuurnummer, btw_procent")
     .eq("id", bonId)
     .single();
   if (error || !bon) throw new Error(`Cadeaubon ${bonId} niet gevonden: ${error?.message ?? ""}`);
@@ -123,17 +139,12 @@ export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
   const factuurnummer: string = bon.factuurnummer ?? (await kenFactuurnummerToe("cadeaubon", bonId, betaaldOp));
 
   const inst = await leesInstellingen();
+  const btwProcent: number = bon.btw_procent ?? (bon.factuurnummer ? 21 : leesBtwProcent(inst.btw_procent));
   const pdf = await maakFactuurPdf({
     factuurnummer,
     factuurdatum: datumLang(betaaldOp),
     betaaldOp: datumLang(betaaldOp),
-    verkoper: {
-      naam: inst.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
-      adres: inst.bedrijf_adres?.trim() || null,
-      kvk: inst.kvk_nummer?.trim() || null,
-      btw: inst.btw_nummer?.trim() || null,
-      email: inst.contact_email?.trim() || null,
-    },
+    verkoper: verkoper(inst),
     koper: { naam: bon.koper_naam, email: bon.koper_email, adresregels: [] },
     omschrijving: bon.ontvanger_naam
       ? `Cadeaubon kledingadviestest (voor ${bon.ontvanger_naam})`
@@ -143,7 +154,7 @@ export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
     kortingscode: null,
     totaalCent: bon.bedrag_cent,
     valuta: bon.valuta || "EUR",
-    btwProcent: BTW_PROCENT,
+    btwProcent,
   });
 
   const pad = `${factuurnummer}.pdf`;
@@ -151,10 +162,108 @@ export async function maakCadeaubonFactuur(bonId: string): Promise<Factuur> {
     .from(BUCKET)
     .upload(pad, pdf, { contentType: "application/pdf", upsert: true });
   if (e2) throw new Error(`Factuur uploaden mislukt: ${e2.message}`);
-  const { error: e3 } = await supabase.from("cadeaubon_bestellingen").update({ factuur_pad: pad }).eq("id", bonId);
+  const { error: e3 } = await supabase
+    .from("cadeaubon_bestellingen")
+    .update({ factuur_pad: pad, btw_procent: btwProcent })
+    .eq("id", bonId);
   if (e3) throw new Error(`Factuurpad opslaan mislukt: ${e3.message}`);
 
   return { factuurnummer, bestandsnaam: `factuur-${factuurnummer}.pdf`, pdf };
+}
+
+export interface Creditnota extends Factuur {
+  id: string;
+}
+
+/**
+ * Maakt een creditnota (negatieve factuur) voor een terugbetaling: een nummer uit
+ * dezelfde doorlopende reeks als de facturen (zie de migratie verkoop_beheer), met
+ * een verwijzing naar de oorspronkelijke factuur, het tarief van die factuur en de
+ * PDF in de bucket 'facturen'. Gooit bij fouten.
+ */
+export async function maakCreditnota(opts: {
+  soort: "order" | "cadeaubon";
+  bronId: string;
+  bedragCent: number;
+  reden: string | null;
+  door: string | null;
+}): Promise<Creditnota> {
+  const supabase = adminClient();
+  const inst = await leesInstellingen();
+  let koper: { naam: string; email: string; adresregels: string[] };
+  let omschrijving: string;
+  let btwProcent: number;
+  let valuta: string;
+  if (opts.soort === "order") {
+    const { data: o, error } = await supabase
+      .from("orders")
+      .select("klantnaam, email, factuurgegevens, valuta, btw_procent, factuurnummer")
+      .eq("id", opts.bronId)
+      .single();
+    if (error || !o) throw new Error(`Bestelling niet gevonden: ${error?.message ?? ""}`);
+    koper = { naam: o.klantnaam, email: o.email, adresregels: adresregels(o.factuurgegevens) };
+    omschrijving = leesProductNaam(inst.product_naam);
+    btwProcent = o.btw_procent ?? (o.factuurnummer ? 21 : leesBtwProcent(inst.btw_procent));
+    valuta = o.valuta || "EUR";
+  } else {
+    const { data: b, error } = await supabase
+      .from("cadeaubon_bestellingen")
+      .select("koper_naam, koper_email, ontvanger_naam, valuta, btw_procent, factuurnummer")
+      .eq("id", opts.bronId)
+      .single();
+    if (error || !b) throw new Error(`Cadeaubon niet gevonden: ${error?.message ?? ""}`);
+    koper = { naam: b.koper_naam, email: b.koper_email, adresregels: [] };
+    omschrijving = b.ontvanger_naam ? `Cadeaubon kledingadviestest (voor ${b.ontvanger_naam})` : "Cadeaubon kledingadviestest";
+    btwProcent = b.btw_procent ?? (b.factuurnummer ? 21 : leesBtwProcent(inst.btw_procent));
+    valuta = b.valuta || "EUR";
+  }
+
+  const nu = new Date();
+  const { data, error } = await supabase.rpc("maak_creditnota", {
+    p_soort: opts.soort,
+    p_bron_id: opts.bronId,
+    p_jaar: jaarInNederland(nu),
+    p_bedrag_cent: opts.bedragCent,
+    p_btw_procent: btwProcent,
+    p_valuta: valuta,
+    p_reden: opts.reden,
+    p_door: opts.door,
+  });
+  const rij = (Array.isArray(data) ? data[0] : data) as { id?: string; nummer?: string } | null;
+  if (error || !rij?.id || !rij.nummer) {
+    throw new Error(`Creditnota aanmaken mislukt: ${error?.message ?? "geen nummer"}`);
+  }
+  const { data: cn } = await supabase.from("creditnotas").select("origineel_nummer").eq("id", rij.id).single();
+  const origineel = (cn?.origineel_nummer as string | null | undefined) ?? null;
+
+  const regel = [`Creditering ${omschrijving.charAt(0).toLowerCase()}${omschrijving.slice(1)}`, opts.reden?.trim()]
+    .filter(Boolean)
+    .join(" – ");
+  const pdf = await maakFactuurPdf({
+    factuurnummer: rij.nummer,
+    factuurdatum: datumLang(nu),
+    betaaldOp: datumLang(nu),
+    verkoper: verkoper(inst),
+    koper,
+    omschrijving: regel,
+    prijsCent: opts.bedragCent,
+    kortingCent: 0,
+    kortingscode: null,
+    totaalCent: opts.bedragCent,
+    valuta,
+    btwProcent,
+    creditnota: { origineelNummer: origineel },
+    voldaanTekst: `Dit bedrag wordt teruggestort op de rekening waarmee je hebt betaald${origineel ? ` (factuur ${origineel})` : ""}.`,
+  });
+
+  const pad = `${rij.nummer}.pdf`;
+  const { error: e2 } = await supabase.storage
+    .from(BUCKET)
+    .upload(pad, pdf, { contentType: "application/pdf", upsert: true });
+  if (e2) throw new Error(`Creditnota uploaden mislukt: ${e2.message}`);
+  const { error: e3 } = await supabase.from("creditnotas").update({ pad }).eq("id", rij.id);
+  if (e3) throw new Error(`Pad creditnota opslaan mislukt: ${e3.message}`);
+  return { id: rij.id, factuurnummer: rij.nummer, bestandsnaam: `creditnota-${rij.nummer}.pdf`, pdf };
 }
 
 /** Tijdelijke signed URL voor een factuur (bijv. voor het beheer). */

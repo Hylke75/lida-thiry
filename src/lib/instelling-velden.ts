@@ -4,6 +4,8 @@
 
 import { INSTELLING_SLEUTELS as AFSPRAAK_SLEUTELS } from "./afspraken/regels";
 import { geldigEmail } from "@/lib/email";
+import { VERKOOP_STANDAARD } from "./verkoop/regels";
+import { CADEAUBON_SLEUTELS } from "./cadeaubon/regels";
 
 type VeldSoort = "euro" | "geheel_getal" | "email" | "tekst" | "tekstvak" | "keuze";
 
@@ -18,6 +20,8 @@ export interface InstellingVeld {
   opties?: { waarde: string; label: string }[];
   /** Leeg laten mag niet. */
   verplicht?: boolean;
+  /** Waarde zolang de sleutel nog niet in de database staat (dan wordt hij bij opslaan aangemaakt). */
+  standaard?: string;
 }
 
 export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
@@ -52,7 +56,7 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
   review_na_dagen: {
     label: "Om een review vragen na (dagen)",
     uitleg:
-      "Zoveel dagen nadat het advies is verzonden, krijgt de klant automatisch één mail met de vraag om een review. Klanten van wie het advies langer dan 60 dagen geleden is verzonden, krijgen geen automatische mail; die kun je zelf uitnodigen in Beheer → Reviews.",
+      "Zoveel dagen nadat het advies is verzonden, krijgt de klant automatisch één mail met de vraag om een review. Klanten van wie het advies langer geleden is verzonden dan ‘Reviewuitnodiging: niet meer na’ (standaard 60 dagen), krijgen geen automatische mail; die kun je zelf uitnodigen in Beheer → Reviews.",
     soort: "geheel_getal",
     min: 1,
     max: 45,
@@ -135,6 +139,71 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
     ],
     verplicht: true,
   },
+  // Verkoop: btw, namen en termijnen (standaardwaarden: src/lib/verkoop/regels.ts).
+  btw_procent: {
+    label: "Btw-tarief (%)",
+    uitleg:
+      "Het btw-percentage op facturen, creditnota's en in de exports. Prijzen zijn inclusief btw; de factuur rekent het btw-deel terug. Standaard 21. Gebruik 0 alleen als je bent vrijgesteld (bijv. de kleineondernemersregeling).",
+    soort: "geheel_getal",
+    min: 0,
+    max: 99,
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.btw_procent,
+  },
+  product_naam: {
+    label: "Productnaam",
+    uitleg:
+      "Hoe de test heet in de bevestigingsmail, op de factuur en in de gegevens voor zoekmachines. Standaard: ‘Persoonlijke kledingadviestest’.",
+    soort: "tekst",
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.product_naam,
+  },
+  betaling_omschrijving: {
+    label: "Omschrijving van de betaling",
+    uitleg:
+      "Wat de klant bij Mollie en op het bankafschrift ziet. Bij een cadeaubon komt er ‘Cadeaubon’ voor. Standaard: ‘Kledingadviestest – Lida Thiry’.",
+    soort: "tekst",
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.betaling_omschrijving,
+  },
+  betaalherinnering_max_dagen: {
+    label: "Betaalherinnering: niet meer na (dagen)",
+    uitleg: "Bestellingen die langer geleden zijn begonnen, krijgen geen betaalherinnering meer. Standaard 7.",
+    soort: "geheel_getal",
+    min: 2,
+    max: 60,
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.betaalherinnering_max_dagen,
+  },
+  betaalherinnering_link_dagen: {
+    label: "Betaalherinnering: link geldig (dagen)",
+    uitleg: "Zo lang kan de klant met de link uit de betaalherinnering de betaling nog afronden. Standaard 7.",
+    soort: "geheel_getal",
+    min: 1,
+    max: 60,
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.betaalherinnering_link_dagen,
+  },
+  review_max_dagen: {
+    label: "Reviewuitnodiging: niet meer na (dagen)",
+    uitleg:
+      "Klanten van wie het advies langer geleden is verzonden, krijgen geen automatische reviewmail meer (die kun je zelf uitnodigen in Beheer → Reviews). Standaard 60.",
+    soort: "geheel_getal",
+    min: 14,
+    max: 365,
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.review_max_dagen,
+  },
+  testlink_zichtbaar_uren: {
+    label: "Testlink op de bedankpagina (uren)",
+    uitleg:
+      "Zo lang na het betalen toont de bedankpagina de knop naar de test. Daarna staat de link alleen nog in de e-mail (de bedankpagina kan in de browsergeschiedenis blijven staan). Standaard 2.",
+    soort: "geheel_getal",
+    min: 0,
+    max: 72,
+    verplicht: true,
+    standaard: VERKOOP_STANDAARD.testlink_zichtbaar_uren,
+  },
 };
 
 /** Instellingen die niet meer gebruikt worden en daarom niet getoond worden. */
@@ -173,6 +242,12 @@ export const WEBSITE_INSTELLINGEN = new Set([
  * niet als vrije tekst op de algemene pagina.
  */
 export const AFSPRAAK_INSTELLINGEN: ReadonlySet<string> = new Set(Object.values(AFSPRAAK_SLEUTELS));
+
+/**
+ * Instellingen met een eigen, gevalideerd beheerscherm (Cadeaubonnen → Instellingen);
+ * niet als vrije tekst op de algemene pagina.
+ */
+export const CADEAUBON_INSTELLINGEN: ReadonlySet<string> = new Set(Object.values(CADEAUBON_SLEUTELS));
 
 /** Veld voor een sleutel; onbekende sleutels worden een gewoon tekstveld. */
 export function veldVoor(sleutel: string, omschrijving?: string | null): InstellingVeld {

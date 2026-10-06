@@ -18,8 +18,15 @@ import { BETAALDE_STATUSSEN, statusLabel } from "@/lib/admin/status";
 import { isOpen, OPEN_STATUSSEN } from "@/lib/order-status";
 import { geefKortingsclaimVrij } from "@/lib/bestelling-betaald";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
-import { invoer, knop, knopGevaar, knopSecundair } from "@/components/admin/stijl";
+import { invoer, invoerBreed, knop, knopGevaar, knopSecundair, tekstUitleg } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { FACTUREN } from "@/lib/opslag";
+import { formatteerBedrag } from "@/lib/prijs";
+import { datum, vandaagAmsterdam } from "@/lib/datum";
+import { TERUGBETAALD_STATUS } from "@/lib/order-status";
+import { betaalwijzeLabel } from "@/lib/verkoop/export";
+import { ActieFormulier } from "../../types/ActieFormulier";
+import { betaalTerug, herstelToegang, wijzigOrder } from "./acties";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +46,10 @@ const MELDINGEN: Record<string, { soort: "ok" | "fout"; tekst: string }> = {
   type_onbekend: {
     soort: "fout",
     tekst: "Dit type bestaat (nog) niet in de adviezen. Controleer of de adviesteksten voor dit type zijn geïmporteerd.",
+  },
+  aangemaakt: {
+    soort: "ok",
+    tekst: "De bestelling is aangemaakt. De klant krijgt de bevestigingsmail met de testlink (en de factuur, als er betaald is).",
   },
   advies_ok: { soort: "ok", tekst: "Het advies is opnieuw verstuurd." },
   advies_mislukt: { soort: "fout", tekst: "Het advies kon niet verstuurd worden. Probeer het later opnieuw." },
@@ -225,6 +236,37 @@ export default async function OrderDetail({
   );
   const m = melding ? MELDINGEN[melding] : undefined;
   const betaald = BETAALDE_STATUSSEN.includes(order.status);
+  const terugbetaaldStatus = order.status === TERUGBETAALD_STATUS;
+  const magTerugbetalen = heeftRecht(ik.rol, "terugbetalen");
+  const valuta: string = order.valuta || "EUR";
+  const betaaldCent: number = order.bedrag_cent ?? 0;
+  const alTerug: number = order.terugbetaald_cent ?? 0;
+  const restCent = Math.max(0, betaaldCent - alTerug);
+
+  // Creditnota's bij deze bestelling, met tijdelijke downloadlinks.
+  const { data: cnData } = await supabase
+    .from("creditnotas")
+    .select("id, nummer, bedrag_cent, reden, pad, aangemaakt_op, gemaild_op, mollie_refund_id")
+    .eq("order_id", id)
+    .order("aangemaakt_op", { ascending: true });
+  const creditnotas = (cnData ?? []) as {
+    id: string;
+    nummer: string;
+    bedrag_cent: number;
+    reden: string | null;
+    pad: string | null;
+    aangemaakt_op: string;
+    gemaild_op: string | null;
+    mollie_refund_id: string | null;
+  }[];
+  const cnPaden = creditnotas.map((c) => c.pad).filter((p): p is string => Boolean(p));
+  const cnUrls = new Map<string, string>();
+  if (cnPaden.length) {
+    const { data: urls } = await supabase.storage.from(FACTUREN).createSignedUrls(cnPaden, 3600);
+    for (const u of urls ?? []) if (u.path && u.signedUrl) cnUrls.set(u.path, u.signedUrl);
+  }
+  const fg = (order.factuurgegevens ?? {}) as Record<string, string | undefined>;
+  const tokenDatum = order.token_verloopt_op ? vandaagAmsterdam(new Date(order.token_verloopt_op)) : "";
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-6 sm:p-8">
@@ -260,7 +302,139 @@ export default async function OrderDetail({
           label="Testlink geldig tot"
           waarde={order.token_verloopt_op ? new Date(order.token_verloopt_op).toLocaleDateString("nl-NL") : "–"}
         />
+        {(betaald || terugbetaaldStatus) && <Regel label="Betaalwijze" waarde={betaalwijzeLabel(order) || "–"} />}
+        {alTerug > 0 && <Regel label="Terugbetaald" waarde={formatteerBedrag(alTerug, valuta)} />}
+        {creditnotas.map((c) => (
+          <Regel
+            key={c.id}
+            label={`Creditnota ${datum(c.aangemaakt_op)}`}
+            waarde={
+              <>
+                {c.pad && cnUrls.get(c.pad) ? (
+                  <a href={cnUrls.get(c.pad)} className="text-accent underline underline-offset-2">
+                    {c.nummer}
+                  </a>
+                ) : (
+                  c.nummer
+                )}{" "}
+                (− {formatteerBedrag(c.bedrag_cent, valuta)}){c.gemaild_op ? " · gemaild" : ""}
+                {c.reden ? ` · ${c.reden}` : ""}
+              </>
+            }
+          />
+        ))}
+        {order.beheer_notitie && <Regel label="Notitie" waarde={order.beheer_notitie} />}
       </section>
+
+      <details className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
+        <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-foreground/70">
+          Gegevens wijzigen
+        </summary>
+        <ActieFormulier actie={wijzigOrder} bewaakWijzigingen className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input type="hidden" name="id" value={order.id} />
+          <label className="flex flex-col gap-1 text-sm">
+            <span>Naam</span>
+            <input name="klantnaam" required defaultValue={order.klantnaam} className={invoerBreed} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>E-mail</span>
+            <input name="email" type="email" required defaultValue={order.email} className={invoerBreed} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span>Adres (factuur)</span>
+            <input name="adres" defaultValue={fg.adres ?? ""} className={invoerBreed} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>Postcode</span>
+            <input name="postcode" defaultValue={fg.postcode ?? ""} className={invoerBreed} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>Plaats</span>
+            <input name="plaats" defaultValue={fg.plaats ?? ""} className={invoerBreed} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>Land</span>
+            <input name="land" defaultValue={fg.land ?? ""} className={invoerBreed} />
+          </label>
+          {order.testtoken && (
+            <label className="flex flex-col gap-1 text-sm">
+              <span>Testlink geldig tot en met</span>
+              <input name="token_geldig_tot" type="date" defaultValue={tokenDatum} className={invoerBreed} />
+              <span className={tekstUitleg}>Verlengen kan altijd; de klant krijgt hier geen mail over.</span>
+            </label>
+          )}
+          <p className={`${tekstUitleg} sm:col-span-2`}>
+            Een al gemaakte factuur verandert niet mee; bij een fout op de factuur maak je een creditnota (terugbetalen) en
+            een nieuwe bestelling.
+          </p>
+          <div className="sm:col-span-2">
+            <button className={knop}>Opslaan</button>
+          </div>
+        </ActieFormulier>
+      </details>
+
+      {magTerugbetalen && (betaald || terugbetaaldStatus) && restCent > 0 && (
+        <details className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">
+          <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-foreground/70">
+            Terugbetalen
+          </summary>
+          <ActieFormulier
+            actie={betaalTerug}
+            bevestig="Weet je zeker dat je wilt terugbetalen? Dit kan niet ongedaan worden gemaakt."
+            className="mt-4 flex flex-col gap-3 text-sm"
+          >
+            <input type="hidden" name="id" value={order.id} />
+            <p className={tekstUitleg}>
+              Betaald {formatteerBedrag(betaaldCent, valuta)}
+              {alTerug > 0 ? `, al terugbetaald ${formatteerBedrag(alTerug, valuta)}` : ""}; nog terug te betalen:{" "}
+              {formatteerBedrag(restCent, valuta)}.{" "}
+              {order.mollie_payment_id && order.betaalwijze !== "overboeking"
+                ? "Het bedrag gaat via Mollie terug naar de klant."
+                : "Er is niet via Mollie betaald: maak het bedrag zelf over; hier leg je het vast en maak je de creditnota."}
+            </p>
+            <fieldset className="flex flex-col gap-2">
+              <legend className="sr-only">Hoeveel</legend>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="omvang" value="volledig" defaultChecked />
+                Alles ({formatteerBedrag(restCent, valuta)})
+              </label>
+              <label className="flex flex-wrap items-center gap-2">
+                <input type="radio" name="omvang" value="deel" />
+                Een deel: €
+                <input name="bedrag" inputMode="decimal" placeholder="10,00" aria-label="Bedrag in euro" className={`${invoer} w-28`} />
+              </label>
+            </fieldset>
+            <label className="flex flex-col gap-1">
+              <span>Reden (komt op de creditnota en bij Mollie)</span>
+              <input name="reden" maxLength={200} className={invoerBreed} />
+            </label>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" name="toegang_behouden" value="1" className="mt-1" />
+              <span>
+                Toegang tot de test en het advies behouden
+                <span className={`block ${tekstUitleg}`}>
+                  Alleen van belang bij een volledige terugbetaling: zonder vinkje werkt de testlink daarna niet meer.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="mailen" value="1" defaultChecked />
+              Creditnota naar {order.email} mailen
+            </label>
+            <div>
+              <button className={knopGevaar}>Terugbetalen</button>
+            </div>
+          </ActieFormulier>
+        </details>
+      )}
+
+      {magTerugbetalen && terugbetaaldStatus && (
+        <ActieFormulier actie={herstelToegang} className="flex flex-wrap items-center gap-3 text-sm">
+          <input type="hidden" name="id" value={order.id} />
+          <span className="text-foreground/70">De toegang tot de test is ingetrokken na de terugbetaling.</span>
+          <button className={knopSecundair}>Toegang herstellen</button>
+        </ActieFormulier>
+      )}
 
       {r ? (
         <section className="rounded-lg border border-black/10 bg-kaart p-4 dark:border-white/15">

@@ -36,6 +36,13 @@ export interface FactuurGegevens {
   totaalCent: number;
   valuta: string;
   btwProcent: number;
+  /**
+   * Creditnota (negatieve factuur): eigen titel, verwijzing naar de oorspronkelijke
+   * factuur en negatieve bedragen. Bedragen blijven positief meegegeven.
+   */
+  creditnota?: { origineelNummer: string | null };
+  /** Tekst in het vak onderaan (standaard: voldaan via Mollie). */
+  voldaanTekst?: string;
 }
 
 const kleur = { tekst: KLEUR.ink, grijs: KLEUR.inkZacht, lijn: KLEUR.lijn, accent: KLEUR.berry };
@@ -103,7 +110,9 @@ const s = StyleSheet.create({
 });
 
 function FactuurPdf({ f, merk, t }: { f: FactuurGegevens; merk: Merk; t: FactuurTeksten }) {
-  const b = (cent: number) => formatteerBedrag(cent, f.valuta);
+  const teken = f.creditnota ? -1 : 1;
+  const b = (cent: number) => formatteerBedrag(teken * cent, f.valuta);
+  const soortNaam = f.creditnota ? "Creditnota" : t.titel;
   const split = btwSplitsing(f.totaalCent, f.btwProcent);
   const verkoperRegels = [
     ...(f.verkoper.adres ? f.verkoper.adres.split(/\r?\n/).filter(Boolean) : []),
@@ -113,13 +122,13 @@ function FactuurPdf({ f, merk, t }: { f: FactuurGegevens; merk: Merk; t: Factuur
   ].filter((r): r is string => Boolean(r));
 
   return (
-    <Document title={`Factuur ${f.factuurnummer}`} author={f.verkoper.naam}>
+    <Document title={`${soortNaam} ${f.factuurnummer}`} author={f.verkoper.naam}>
       <Page size="A4" style={s.page}>
         <Kleurstrook hoogte={6} style={s.strookBoven} fixed />
         <View style={s.kop}>
           <View>
             <Woordmerk merk={merk} grootte={13} />
-            <Text style={s.titel}>{t.titel}</Text>
+            <Text style={s.titel}>{soortNaam}</Text>
           </View>
           <View style={s.verkoper}>
             <Text style={s.verkoperNaam}>{f.verkoper.naam}</Text>
@@ -140,11 +149,17 @@ function FactuurPdf({ f, merk, t }: { f: FactuurGegevens; merk: Merk; t: Factuur
           </View>
           <View>
             <View style={s.metaRij}>
-              <Text style={s.metaLabel}>{t.nummerLabel}</Text>
+              <Text style={s.metaLabel}>{f.creditnota ? "Creditnotanummer" : t.nummerLabel}</Text>
               <Text>{f.factuurnummer}</Text>
             </View>
+            {f.creditnota?.origineelNummer && (
+              <View style={s.metaRij}>
+                <Text style={s.metaLabel}>Betreft factuur</Text>
+                <Text>{f.creditnota.origineelNummer}</Text>
+              </View>
+            )}
             <View style={s.metaRij}>
-              <Text style={s.metaLabel}>{t.datumLabel}</Text>
+              <Text style={s.metaLabel}>{f.creditnota ? "Datum" : t.datumLabel}</Text>
               <Text>{f.factuurdatum}</Text>
             </View>
           </View>
@@ -183,7 +198,7 @@ function FactuurPdf({ f, merk, t }: { f: FactuurGegevens; merk: Merk; t: Factuur
         </View>
 
         <View style={s.betaald}>
-          <Text>{vulIn(t.voldaan, { datum: f.betaaldOp })}</Text>
+          <Text>{f.voldaanTekst ?? vulIn(t.voldaan, { datum: f.betaaldOp })}</Text>
         </View>
 
         <Text style={s.voettekst} fixed>

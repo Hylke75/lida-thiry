@@ -15,6 +15,7 @@ import { veiligeZoekterm } from "@/lib/zoeken/regels";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
 import { invoer, knop, knopSecundair } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { ExportFormulier } from "./ExportFormulier";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +111,16 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <AdminNav actief="/admin/bestellingen" />
-      <AdminKop titel="Bestellingen" />
+      <AdminKop
+        titel="Bestellingen"
+        acties={
+          heeftRecht(ik.rol, "bestellingen_aanmaken") ? (
+            <Link href="/admin/bestellingen/nieuw" className={knop}>
+              Nieuwe bestelling
+            </Link>
+          ) : undefined
+        }
+      />
 
       {testmodus && (
         <section className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
@@ -181,6 +191,8 @@ export default async function BestellingenPagina({ searchParams }: { searchParam
           </p>
         )}
       </section>
+
+      <ExportFormulier soorten={["bestellingen", "creditnotas", "cadeaubonnen"]} />
     </main>
   );
 }

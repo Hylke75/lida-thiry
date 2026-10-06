@@ -6,11 +6,14 @@ import { logActie } from "@/lib/beheer-log";
 import { heeftRecht } from "@/lib/rollen";
 import { AdminNav } from "../AdminNav";
 import { adminClient } from "@/lib/supabase/admin";
-import { eindeVanDagNl } from "@/lib/cadeaubon/regels";
+import { datumInNederland, eindeVanDagNl } from "@/lib/cadeaubon/regels";
 import { cadeauboncode, formatteerBedrag, normaliseerCode, type KortingSoort } from "@/lib/prijs";
 import { datum } from "@/lib/datum";
-import { invoer, kaart, knop } from "@/components/admin/stijl";
+import { invoer, kaart, knop, knopGevaarKlein, knopKlein, tekstUitleg } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { ActieFormulier } from "../types/ActieFormulier";
+import type { Uitkomst } from "../types/uitkomst";
+import { controleerCodeWijziging } from "@/lib/verkoop/regels";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +146,124 @@ async function zetActief(formData: FormData) {
   });
   revalidatePath(PAD);
   terug(actief ? "Code weer geactiveerd." : "Code gedeactiveerd.");
+}
+
+const uitkomst = (ok: boolean, melding: string): Uitkomst => ({ ok, melding, tijd: Date.now() });
+
+/** Hoort de code bij een gekochte cadeaubon? (Dan blijft de waarde vast.) */
+async function hoortBijCadeaubon(id: string): Promise<boolean> {
+  const { count } = await adminClient()
+    .from("cadeaubon_bestellingen")
+    .select("id", { count: "exact", head: true })
+    .eq("kortingscode_id", id);
+  return (count ?? 0) > 0;
+}
+
+/** Omschrijving, waarde, maximaal gebruik en geldigheid van een code wijzigen. */
+async function wijzigCode(_vorige: Uitkomst | null, formData: FormData): Promise<Uitkomst> {
+  "use server";
+  const ik = await vereisBeheerder("kortingscodes_beheren");
+  const id = String(formData.get("id") ?? "");
+  const supabase = adminClient();
+  const { data: oud, error } = await supabase
+    .from("kortingscodes")
+    .select("code, omschrijving, soort, waarde, max_gebruik, geldig_tot, aantal_gebruikt")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !oud) return uitkomst(false, "Code niet gevonden.");
+  const v = controleerCodeWijziging(
+    {
+      omschrijving: formData.get("omschrijving"),
+      waarde: formData.get("waarde"),
+      max_gebruik: formData.get("max_gebruik"),
+      geldig_tot: formData.get("geldig_tot"),
+    },
+    { soort: oud.soort, aantalGebruikt: oud.aantal_gebruikt },
+  );
+  if (!v.ok) return uitkomst(false, v.fout);
+  const cadeaubon = await hoortBijCadeaubon(id);
+  if (cadeaubon && v.waarde.waarde !== oud.waarde) {
+    return uitkomst(false, "Dit is de code van een gekochte cadeaubon: de waarde ligt vast (die is betaald).");
+  }
+  const nieuw = {
+    omschrijving: v.waarde.omschrijving,
+    waarde: v.waarde.waarde,
+    max_gebruik: v.waarde.maxGebruik,
+    geldig_tot: v.waarde.geldigTot ? eindeVanDagNl(v.waarde.geldigTot) : null,
+  };
+  const velden = (Object.keys(nieuw) as (keyof typeof nieuw)[]).filter((k) =>
+    k === "geldig_tot"
+      ? (oud.geldig_tot ? datumInNederland(new Date(oud.geldig_tot)) : null) !== v.waarde.geldigTot
+      : (oud[k] ?? null) !== nieuw[k],
+  );
+  if (!velden.length) return uitkomst(true, "Er was niets gewijzigd.");
+  const { error: e2 } = await supabase
+    .from("kortingscodes")
+    .update(Object.fromEntries(velden.map((k) => [k, nieuw[k]])))
+    .eq("id", id);
+  if (e2) return uitkomst(false, `Opslaan mislukt: ${e2.message}`);
+  await logActie({
+    actie: "kortingscode.wijzigen",
+    onderwerpSoort: "kortingscode",
+    onderwerpId: id,
+    omschrijving: `Kortingscode ${cadeaubon ? `…${String(oud.code).slice(-4)}` : oud.code} gewijzigd: ${velden.join(", ")}`,
+    details: Object.fromEntries(velden.map((k) => [k, { van: oud[k] ?? null, naar: nieuw[k] }])),
+    gebruiker: ik,
+  });
+  revalidatePath(PAD);
+  return uitkomst(true, "Opgeslagen.");
+}
+
+/**
+ * Verwijdert een code die nooit is gebruikt (ook niet door een openstaande
+ * bestelling) en niet bij een gekochte cadeaubon hoort. Anders: deactiveren.
+ */
+async function verwijderCode(_vorige: Uitkomst | null, formData: FormData): Promise<Uitkomst> {
+  "use server";
+  const ik = await vereisBeheerder("kortingscodes_beheren");
+  const id = String(formData.get("id") ?? "");
+  const supabase = adminClient();
+  const { data: rij } = await supabase.from("kortingscodes").select("code, aantal_gebruikt, actief").eq("id", id).maybeSingle();
+  if (!rij) return uitkomst(false, "Code niet gevonden.");
+  const { count: inBestellingen } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("kortingscode", rij.code);
+  const gebruikt = rij.aantal_gebruikt > 0 || (inBestellingen ?? 0) > 0 || (await hoortBijCadeaubon(id));
+  if (gebruikt) {
+    if (rij.actief) {
+      const { error } = await supabase.from("kortingscodes").update({ actief: false }).eq("id", id);
+      if (error) return uitkomst(false, `Deactiveren mislukt: ${error.message}`);
+      await logActie({
+        actie: "kortingscode.deactiveren",
+        onderwerpSoort: "kortingscode",
+        onderwerpId: id,
+        omschrijving: `Kortingscode ${rij.code} gedeactiveerd (verwijderen kon niet: al gebruikt)`,
+        gebruiker: ik,
+      });
+      revalidatePath(PAD);
+    }
+    return uitkomst(
+      false,
+      "Deze code is al gebruikt (of hoort bij een cadeaubon) en blijft daarom bewaard voor de administratie. Hij is gedeactiveerd.",
+    );
+  }
+  const { data: weg, error } = await supabase
+    .from("kortingscodes")
+    .delete()
+    .eq("id", id)
+    .eq("aantal_gebruikt", 0)
+    .select("id");
+  if (error || !weg?.length) return uitkomst(false, `Verwijderen mislukt${error ? `: ${error.message}` : "."}`);
+  await logActie({
+    actie: "kortingscode.verwijderen",
+    onderwerpSoort: "kortingscode",
+    onderwerpId: id,
+    omschrijving: `Kortingscode ${rij.code} verwijderd (nooit gebruikt)`,
+    gebruiker: ik,
+  });
+  revalidatePath(PAD);
+  return uitkomst(true, `Kortingscode ${rij.code} verwijderd.`);
 }
 
 function waardeLabel(c: CodeRij): string {
@@ -300,6 +421,16 @@ export default async function KortingscodesPage({
                       {st.label}
                     </span>
                     {magBeheren && (
+                      <ActieFormulier
+                        actie={verwijderCode}
+                        bevestig={`Kortingscode ${c.code} verwijderen? Is hij al gebruikt, dan wordt hij alleen gedeactiveerd.`}
+                        stil
+                      >
+                        <input type="hidden" name="id" value={c.id} />
+                        <button className={knopGevaarKlein}>Verwijderen</button>
+                      </ActieFormulier>
+                    )}
+                    {magBeheren && (
                       <form action={zetActief}>
                         <input type="hidden" name="id" value={c.id} />
                         <input type="hidden" name="actief" value={c.actief ? "0" : "1"} />
@@ -309,6 +440,55 @@ export default async function KortingscodesPage({
                       </form>
                     )}
                   </span>
+                  {magBeheren && (
+                    <details className="basis-full">
+                      <summary className={`w-fit cursor-pointer ${knopKlein}`}>Wijzigen</summary>
+                      <ActieFormulier actie={wijzigCode} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <input type="hidden" name="id" value={c.id} />
+                        <label className="flex flex-col gap-1 text-sm">
+                          <span className="text-black/70 dark:text-white/70">Omschrijving</span>
+                          <input name="omschrijving" defaultValue={c.omschrijving ?? ""} maxLength={200} className={invoer} />
+                        </label>
+                        <label className="flex flex-col gap-1 text-sm">
+                          <span className="text-black/70 dark:text-white/70">
+                            Waarde ({c.soort === "percentage" ? "procent" : "euro"})
+                          </span>
+                          <input
+                            name="waarde"
+                            inputMode="decimal"
+                            required
+                            defaultValue={c.soort === "percentage" ? String(c.waarde) : (c.waarde / 100).toFixed(2).replace(".", ",")}
+                            className={invoer}
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1 text-sm">
+                          <span className="text-black/70 dark:text-white/70">Maximaal aantal keer (leeg = onbeperkt)</span>
+                          <input
+                            name="max_gebruik"
+                            type="number"
+                            min={Math.max(1, c.aantal_gebruikt)}
+                            defaultValue={c.max_gebruik ?? ""}
+                            className={invoer}
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1 text-sm">
+                          <span className="text-black/70 dark:text-white/70">Geldig tot en met (leeg = altijd)</span>
+                          <input
+                            name="geldig_tot"
+                            type="date"
+                            defaultValue={c.geldig_tot ? datumInNederland(new Date(c.geldig_tot)) : ""}
+                            className={invoer}
+                          />
+                        </label>
+                        <p className={`${tekstUitleg} sm:col-span-2`}>
+                          De soort (procent of bedrag) en de code zelf liggen vast. Al gedane bestellingen veranderen niet mee.
+                        </p>
+                        <div className="sm:col-span-2">
+                          <button className={knop}>Opslaan</button>
+                        </div>
+                      </ActieFormulier>
+                    </details>
+                  )}
                 </li>
               );
             })}

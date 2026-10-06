@@ -12,6 +12,8 @@ export const STATUS_LABEL: Record<string, string> = {
   // Oude status: handmatige beoordeling bestaat niet meer, maar oude bestellingen
   // kunnen deze status nog hebben.
   handmatige_beoordeling: "Handmatige beoordeling (oud)",
+  // Volledig terugbetaald en de toegang ingetrokken (zie order-status.ts).
+  terugbetaald: "Terugbetaald (geen toegang meer)",
 };
 
 /** Statussen waarbij er betaald is. */

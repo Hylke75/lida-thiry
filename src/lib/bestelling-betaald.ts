@@ -10,6 +10,7 @@ import { koppelRelatie } from "./relaties/koppel";
 import { stuurPushMelding } from "./push/versturen";
 import { leesInstelling } from "./instellingen";
 import { BETAALDE_STATUSSEN, OPEN_STATUSSEN } from "./order-status";
+import { leesProductNaam } from "./verkoop/regels";
 
 /**
  * Meldt de klant aan voor de nieuwsbrief als bij de bestelling het vinkje aan
@@ -162,6 +163,7 @@ export async function naBetaling(opts: { orderId: string; geldigDagen?: number }
             totaalCent: order.bedrag_cent ?? 0,
             valuta: order.valuta || "EUR",
             factuurnummer: factuur?.factuurnummer ?? null,
+            productNaam: leesProductNaam(await leesInstelling("product_naam")),
           },
           factuur: factuur ? { bestandsnaam: factuur.bestandsnaam, pdf: factuur.pdf } : undefined,
         });

@@ -19,6 +19,7 @@ export const PUBLIEKE_INSTELLINGEN: readonly string[] = [
   "contact_email",
   "kvk_nummer",
   "btw_nummer",
+  "product_naam",
 ];
 
 const TOEGESTAAN = new Set(PUBLIEKE_INSTELLINGEN);

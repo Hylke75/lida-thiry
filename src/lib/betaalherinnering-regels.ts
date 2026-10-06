@@ -7,9 +7,9 @@ import { BETAALDE_STATUSSEN, OPEN_STATUSSEN } from "./order-status";
 export { OPEN_STATUSSEN };
 /** Statussen die betekenen dat er betaald is (zie order-status.ts). */
 export const BETAALD_STATUSSEN = BETAALDE_STATUSSEN;
-/** Ouder dan dit krijgt geen herinnering meer. */
+/** Standaard: ouder dan dit krijgt geen herinnering meer (instelling betaalherinnering_max_dagen). */
 export const MAX_LEEFTIJD_DAGEN = 7;
-/** Zo lang blijft de link in de herinnering geldig. */
+/** Standaard: zo lang blijft de link in de herinnering geldig (instelling betaalherinnering_link_dagen). */
 export const LINK_GELDIG_DAGEN = 7;
 
 export interface OpenBestelling {
@@ -26,11 +26,14 @@ export interface BetaaldeBestelling {
   aangemaakt_op: string;
 }
 
-/** Leest het aantal uur uit de instelling; standaard 24, minimaal 1, maximaal 6 dagen. */
-export function herinneringNaUren(waarde: string | null | undefined): number {
+/**
+ * Leest het aantal uur uit de instelling; standaard 24, minimaal 1, maximaal een
+ * dag minder dan de maximale leeftijd (standaard 6 dagen).
+ */
+export function herinneringNaUren(waarde: string | null | undefined, maxLeeftijdDagen: number = MAX_LEEFTIJD_DAGEN): number {
   const n = Number(waarde);
   if (!waarde || !Number.isFinite(n) || n <= 0) return 24;
-  return Math.min(Math.max(Math.round(n), 1), (MAX_LEEFTIJD_DAGEN - 1) * 24);
+  return Math.min(Math.max(Math.round(n), 1), (maxLeeftijdDagen - 1) * 24);
 }
 
 /**
@@ -46,9 +49,10 @@ export function selecteerBetaalherinneringen(
   betaald: readonly BetaaldeBestelling[],
   nu: Date,
   naUren: number,
+  maxLeeftijdDagen: number = MAX_LEEFTIJD_DAGEN,
 ): { versturen: OpenBestelling[]; overslaan: OpenBestelling[] } {
   const bovengrens = nu.getTime() - naUren * 60 * 60 * 1000;
-  const ondergrens = nu.getTime() - MAX_LEEFTIJD_DAGEN * 24 * 60 * 60 * 1000;
+  const ondergrens = nu.getTime() - maxLeeftijdDagen * 24 * 60 * 60 * 1000;
   const laatstBetaald = new Map<string, number>();
   for (const b of betaald) {
     const email = b.email.toLowerCase();
