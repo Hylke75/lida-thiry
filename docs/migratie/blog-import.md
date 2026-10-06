@@ -21,23 +21,18 @@ Alle blogberichten van de oude WordPress-site zijn met foto's overgezet naar de 
 
 ## Nog te doen
 
-### 1. Doorverwijzingen voor de oude pagina's
+### 1. Doorverwijzingen voor de oude pagina's — gedaan (6 oktober 2026)
 
-De berichten linken nog naar pagina's van de oude site die geen blogbericht zijn. Zolang www.lidathiry.nl naar de oude site wijst, geven die links op de nieuwe site een 404. Voeg in **Beheer → Website → Doorverwijzingen** een doorverwijzing toe voor de belangrijkste, bijvoorbeeld:
+Voor alle 117 oude adressen waar de berichten nog naar linken, staat nu een doorverwijzing (Beheer → Website → Doorverwijzingen):
 
-| Oud adres | Aantal links | Mogelijke bestemming |
+| Oude adressen | Naar | Soort |
 |---|---|---|
-| `/kleuradvies-op-afstand` | 153 | aanbodpagina kleuradvies |
-| `/advies/contact` | 103 | `/contact` of `/afspraak` |
-| `/contact` | 56 | contactpagina |
-| `/advies/stijladvies-op-afstand` | 55 | aanbodpagina stijladvies |
-| `/het-a-silhouet`, `/het-v-silhouet`, `/het-h-silhouet`, `/het-x-silhouet`, `/het-8-silhouet`, `/het-i-silhouet-2`, `/het-o-silhouet` | 16 – 35 per stuk | uitleg over de figuurtypes / de zelftest |
-| `/zeven-bodytypes` en `/zeven-bodytypes/…` | 31 + ± 90 | idem |
-| `/advies/kleuradvies`, `/stijladvies-2`, `/advies/stijladvies-2` | 14 – 23 | aanbodpagina's |
-| `/analyseer-zelf-je-kleurtype` | 15 | kleurtype-uitleg |
-| `/advies__trashed/…`, `/advies/contact/policy` | 9 – 17 | `/contact`, `/privacy` |
+| silhouet-, bodytype- en figuurpagina's (`/het-a-silhouet`, `/zeven-bodytypes/…`, `/bodytypes/…`, `/lichaamsvormen-2/…`, `/figuurproblemen`) — 43 | `/bestellen` (de figuurtest; de figuurtypes staan achter de betaalmuur) | tijdelijk |
+| aanbod kleur-/stijladvies (`/kleuradvies-op-afstand`, `/advies/kleuradvies`, `/stijladvies-2` …) en contact (`/contact`, `/advies/contact`) — 16 | `/afspraak` | tijdelijk |
+| `/advies/contact/policy` | `/privacy` | tijdelijk |
+| oude berichten die niet meer bestaan — 57 | `/blog` | tijdelijk |
 
-Daarnaast staan er enkele tientallen links naar oude berichten dat niet meer bestaat (bijv. `/de-regel-van-derden`, `/trommelbuikje-camoufleren`, `/zes-redenen-om-schoudervullingen-te-dragen`). Dat waren op de oude site ook al dode links. Het overzicht **Doorverwijzingen** in het beheer laat na livegang zien welke adressen echt worden bezocht.
+"Tijdelijk" (302) betekent dat browsers en Google de doorverwijzing niet onthouden: zodra er een echte pagina komt (bijv. `/contact` of een aanbodpagina), kun je de doorverwijzing aanpassen. Publiceer je een pagina op precies zo'n adres, dan verdwijnt de doorverwijzing vanzelf.
 
 ### 2. Vier pdf-downloads staan nog op de oude site
 
