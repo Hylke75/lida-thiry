@@ -11,8 +11,9 @@
   display: flow-root;
   min-width: 0;
   color: var(--foreground);
-  font-size: 16px;
-  line-height: 1.65;
+  /* Herziening oktober 2026: lopende tekst 17–18 px. */
+  font-size: 17px;
+  line-height: 1.7;
   overflow-wrap: anywhere;
 }
 
@@ -25,15 +26,21 @@
   margin-top: 20px;
 }
 
-/* De eerste alinea als intro (18–19 px), alleen als de tekst ermee begint. */
+@media (min-width: 641px) {
+  .proza {
+    font-size: 18px;
+  }
+}
+
+/* De eerste alinea als intro (19–20 px), alleen als de tekst ermee begint. */
 .intro > p:first-child {
-  font-size: 18px;
+  font-size: 19px;
   line-height: 1.6;
 }
 
 @media (min-width: 641px) {
   .intro > p:first-child {
-    font-size: 19px;
+    font-size: 20px;
   }
 }
 
@@ -90,7 +97,7 @@
   font-weight: 800;
 }
 
-/* Lijsten: ronde koraalkleurige vinkjes, zoals .check-list in het ontwerp. */
+/* Lijsten: dunne koraalkleurige vinkjes (zoals op de homepage). */
 .proza > ul {
   display: grid;
   gap: 12px;
@@ -100,20 +107,18 @@
 
 .proza > ul > li {
   position: relative;
-  padding-left: 36px;
+  padding-left: 32px;
 }
 
 .proza > ul > li::before {
   content: "";
   position: absolute;
-  top: 1px;
+  top: 0.25em;
   left: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--coral)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E")
-    center / 14px no-repeat;
+  width: 19px;
+  height: 19px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23dc5a48' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5 6.5 12 13 4.5'/%3E%3C/svg%3E")
+    center / 19px no-repeat;
 }
 
 /* Juridische teksten: gewone opsommingstekens (koraal) in plaats van vinkjes. */
@@ -128,8 +133,9 @@
 .juridisch > ul > li::before {
   top: 0.62em;
   left: 4px;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background: var(--coral);
 }
 
@@ -153,7 +159,7 @@
   height: auto;
   margin-top: 32px;
   margin-bottom: 12px;
-  border-radius: 20px;
+  border-radius: 8px;
 }
 
 /* Een blok tussen de tekst ({contactformulier}, …): wat meer lucht, geen tekstopmaak. */

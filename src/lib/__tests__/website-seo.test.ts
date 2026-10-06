@@ -151,7 +151,7 @@ describe("website-instellingen: titels, zoekmachines, bedrijf, namen", () => {
       bedrijfType: "ProfessionalService",
       eigenaarNaam: "Lida Thiry",
       standaardAuteur: "Lida Thiry",
-      beheerlinkInFooter: true,
+      beheerlinkInFooter: false,
       seoPaginas: null,
     });
   });
@@ -163,7 +163,7 @@ describe("website-instellingen: titels, zoekmachines, bedrijf, namen", () => {
       telefoon: "06 1234 5678",
       bedrijf_type: "LocalBusiness",
       eigenaar_naam: "Lida T.",
-      footer_beheerlink: "verbergen",
+      footer_beheerlink: "tonen",
     });
     expect(s).toMatchObject({
       homeTitel: "Kledingadvies online",
@@ -171,8 +171,10 @@ describe("website-instellingen: titels, zoekmachines, bedrijf, namen", () => {
       telefoon: "06 1234 5678",
       bedrijfType: "LocalBusiness",
       standaardAuteur: "Lida T.",
-      beheerlinkInFooter: false,
+      beheerlinkInFooter: true,
     });
+    // Een oude opgeslagen waarde "verbergen" blijft verborgen.
+    expect(websiteInstellingen({ footer_beheerlink: "verbergen" }).beheerlinkInFooter).toBe(false);
     expect(websiteInstellingen({ bedrijf_type: "Spaceship", telefoon: "bel me" })).toMatchObject({
       bedrijfType: "ProfessionalService",
       telefoon: null,

@@ -15,13 +15,13 @@ export const INVOER_FOUT =
 export const invoer = (fout: boolean) => (fout ? INVOER_FOUT : INVOER);
 
 /** Label boven een veld. */
-export const LABEL = "text-[14px] font-bold text-ink";
+export const LABEL = "text-[15px] font-bold text-ink";
 
 /** Het sterretje achter een verplicht label. */
 export const VERPLICHT = "text-berry";
 
-/** Kleine uitleg bij een veld (ink-soft: 7,4:1 op wit). */
-export const HULPTEKST = "text-[13px] leading-[1.5] text-ink-soft";
+/** Uitleg bij een veld (ink-soft: 9,7:1 op wit). */
+export const HULPTEKST = "text-[15px] leading-[1.5] text-ink-soft";
 
 /** Foutmelding onder een veld (#b42318: 6,5:1 op wit). */
 export const VELDFOUT = "text-[14px] font-semibold text-[#b42318]";
@@ -33,15 +33,15 @@ export const LEGENDA = "mb-3 text-[14px] font-extrabold tracking-[0.1em] text-in
 export const VINKJE = "mt-[3px] h-5 w-5 shrink-0 cursor-pointer accent-berry";
 
 /** Label om een vinkje heen: tekst naast het vakje, ruim aan te tikken. */
-export const VINKJE_LABEL = "flex min-h-11 cursor-pointer items-start gap-3 text-[15px] leading-[1.55] text-ink";
+export const VINKJE_LABEL = "flex min-h-11 cursor-pointer items-start gap-3 text-[16px] leading-[1.55] text-ink";
 
 /**
  * Keuzetegel (radio verborgen met sr-only, het label is de tegel): rand in inkt,
- * gekozen = berry-rand met zachte koraal achtergrond. Focus via has-[:focus-visible].
+ * gekozen = berry-rand met een zandkleurige achtergrond. Focus via has-[:focus-visible].
  */
 export const keuzeTegel = (gekozen: boolean) =>
   `cursor-pointer border-2 text-ink transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-[3px] has-[:focus-visible]:outline-berry ${
-    gekozen ? "border-berry bg-[#fff1ed]" : "border-[rgba(47,36,65,.24)] bg-white hover:border-[rgba(111,45,89,.5)]"
+    gekozen ? "border-berry bg-sand" : "border-[rgba(47,36,65,.24)] bg-white hover:border-[rgba(111,45,89,.5)]"
   }`;
 
 /** Links in lopende tekst binnen een formulier of melding. */

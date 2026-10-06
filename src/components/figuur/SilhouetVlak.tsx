@@ -1,18 +1,22 @@
 import { Lichaam } from "@/components/Lichaam";
 import type { Lichaamsvorm } from "@/lib/test-config";
 
-// Het silhouet van een figuurtype in een organisch gevormd kleurvlak (zoals de
-// foto bij "Herken je dit?" in docs/ontwerp: .problem-image). Gebruikt in de
+// Het silhouet van een figuurtype in een rustig kader (herziening oktober 2026:
+// geen organische vormen meer, warme neutrale tinten). Gebruikt in de
 // silhouetkeuze, de uitslag en op "Jouw figuurtype" (alleen achter de testlink).
 
-/** Zachte tinten van de accentkleuren, voor het vlak achter de figuur. */
+/**
+ * Vlak achter de figuur. Koraal (zacht) is het ene accent: het eigen of gekozen
+ * type. De andere namen blijven voor bestaande aanroepen, maar zijn allemaal
+ * effen zand (geen pastelregenboog).
+ */
 export const VLAK_KLEUREN = {
   coral: "bg-coral-soft",
-  sage: "bg-[#e3efdd]",
-  butter: "bg-[#fcefc2]",
-  sky: "bg-[#e1eef8]",
-  lilac: "bg-[#f3e1ec]",
-  mint: "bg-[#e0f1ee]",
+  sage: "bg-sand",
+  butter: "bg-sand",
+  sky: "bg-sand",
+  lilac: "bg-sand",
+  mint: "bg-sand",
 } as const;
 
 export type VlakKleur = keyof typeof VLAK_KLEUREN;
@@ -24,11 +28,8 @@ export function vlakKleur(i: number): VlakKleur {
   return VOLGORDE[((i % VOLGORDE.length) + VOLGORDE.length) % VOLGORDE.length];
 }
 
-/** Organische vorm (handboek: .problem-image), in twee spiegelvarianten. */
-const VORMEN = [
-  "rounded-[46%_54%_46%_54%/52%_42%_58%_48%]",
-  "rounded-[54%_46%_52%_48%/44%_56%_44%_56%]",
-] as const;
+/** Rustig kader met een kleine radius; de twee varianten blijven voor bestaande aanroepen. */
+const VORMEN = ["rounded-[8px]", "rounded-[8px]"] as const;
 
 export function SilhouetVlak({
   silhouet,
@@ -56,7 +57,7 @@ export function SilhouetVlak({
   return (
     <div
       className={`flex items-center justify-center [--lichaam-vulling:var(--white)] ${VLAK_KLEUREN[kleur]} ${VORMEN[variant]} ${
-        schaduw ? "shadow-ontwerp" : ""
+        schaduw ? "shadow-[0_12px_32px_rgba(47,36,65,.06)]" : ""
       } ${onthul ? "onthul-vlak" : ""} ${className}`}
     >
       {silhouet.beeldUrl ? (

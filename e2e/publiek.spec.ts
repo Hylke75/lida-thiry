@@ -114,6 +114,16 @@ test.describe("publieke pagina's", () => {
     const voet = page.getByRole("contentinfo");
     await expect(voet.locator('a[href="/privacy"]').first()).toBeVisible();
     await expect(voet.locator('a[href="/voorwaarden"]').first()).toBeVisible();
+    // De beheerlink staat standaard uit (Beheer → Website → Instellingen).
+    await expect(voet.locator('a[href^="/admin"]')).toHaveCount(0);
+  });
+
+  test("ervaringen: zonder reviews een rustige plaatshouder, geen verzonnen citaten", async ({ page }) => {
+    await page.goto("/");
+    const blok = page.getByRole("region", { name: /Meer rust in je kast/ });
+    await expect(blok).toBeVisible();
+    await expect(blok.getByText("[Ervaringen van klanten volgen]")).toBeVisible();
+    await expect(blok.locator("blockquote")).toHaveCount(0);
   });
 });
 

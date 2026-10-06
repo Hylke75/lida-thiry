@@ -10,14 +10,14 @@ import { leesSiteNavigatie } from "./navigatie";
 import { CONTAINER } from "./stijl";
 import { Woordmerk } from "./Woordmerk";
 
-const META_LINK = "inline-flex min-h-11 items-center underline-offset-4 hover:text-ink hover:underline";
+const META_LINK = "inline-flex min-h-11 items-center underline-offset-4 hover:text-berry hover:underline";
 
 /**
  * Voettekst van de publieke site (docs/ontwerp: .site-footer): woordmerk, de
  * menulinks plus pagina's met "in footer" en de vaste voettekstlinks (Beheer →
  * Teksten → Kop en voettekst), een optionele korte zin en contactregel, en een
- * regel met ©, privacy, voorwaarden, contact en een discrete beheerlink (uit te
- * zetten in Beheer → Website → Instellingen); plus de social-media-links en het
+ * regel met ©, privacy, voorwaarden en contact (een beheerlink alleen als die in
+ * Beheer → Website → Instellingen aan staat; standaard uit); plus de social-media-links en het
  * telefoonnummer uit Beheer → Website → Instellingen. Niet in het beheer zelf.
  */
 export async function SiteFooter() {
@@ -31,16 +31,16 @@ export async function SiteFooter() {
   const { telefoon } = nav.site;
   return (
     <AlleenPubliek>
-      <footer className="mt-16 border-t border-line bg-white py-[42px]">
+      <footer className="mt-16 border-t border-line bg-cream py-[48px]">
         <div
           className={`${CONTAINER} grid grid-cols-1 items-center justify-items-center gap-8 text-center desktop:grid-cols-[auto_1fr_auto] desktop:justify-items-stretch desktop:text-left`}
         >
           <div className="flex flex-col items-center gap-2 desktop:items-start">
             <Woordmerk naam={nav.site.korteNaam} subregel={nav.subregel} logo={nav.logo} />
-            {tagline && <p className="m-0 max-w-[32ch] text-[13px] text-ink-soft">{tagline}</p>}
+            {tagline && <p className="m-0 max-w-[34ch] text-[17px] text-ink-soft">{tagline}</p>}
           </div>
           <nav aria-label="Voettekst">
-            <ul className="flex flex-wrap justify-center gap-x-5 text-[13px] font-bold">
+            <ul className="flex flex-wrap justify-center gap-x-6 text-[15px] font-semibold text-ink">
               {links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="inline-flex min-h-11 items-center underline-offset-4 hover:text-berry hover:underline">
@@ -50,7 +50,7 @@ export async function SiteFooter() {
               ))}
             </ul>
           </nav>
-          <div className="flex flex-col items-center gap-1 text-[12px] text-ink-soft desktop:items-end">
+          <div className="flex flex-col items-center gap-1 text-[15px] text-ink-soft desktop:items-end">
             <SocialIconen links={nav.site.social} siteNaam={nav.site.korteNaam} />
             {(contactregel || telefoon) && (
               <p className="m-0 flex flex-wrap items-center justify-center gap-x-1.5">

@@ -11,7 +11,12 @@
 :root {
   /* Ontwerptokens (namen gelijk aan de demo). */
   --ink: #2f2441;
-  --ink-soft: #5d536a;
+  /*
+   * Zachte inkt voor lopende tekst (herziening oktober 2026): donkerder dan de
+   * demo (#5d536a), zodat ook kleine tekst ruim leesbaar is: 9,3:1 op cream,
+   * 9,7:1 op wit en ≥ 8:1 op zand.
+   */
+  --ink-soft: #4a4058;
   --cream: #fff9f3;
   --paper: #fffdf9;
   --white: #ffffff;
@@ -25,6 +30,14 @@
   --sky: #b9d9ef;
   --lilac: #d8a7c6;
   --line: #eadfd6;
+  /*
+   * Warme neutrale tinten (herziening oktober 2026). Zand: rustige achtergrond
+   * van een sectie of paneel. Zand-diep: de vulling van een lege fotoplek.
+   * De pastels hierboven (peach … lilac) alleen nog spaarzaam als accent: hooguit
+   * één subtiel gebruik per pagina, op de homepage geen.
+   */
+  --sand: #f6efe7;
+  --sand-deep: #ebe1d5;
   --shadow: 0 22px 55px rgba(64, 39, 55, 0.1);
   --radius-lg: 28px;
   --radius-md: 20px;
@@ -76,6 +89,8 @@
   --color-sky: var(--sky);
   --color-lilac: var(--lilac);
   --color-line: var(--line);
+  --color-sand: var(--sand);
+  --color-sand-deep: var(--sand-deep);
 
   --font-sans: var(--sans);
   --font-serif: var(--serif);
@@ -179,6 +194,8 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--sans);
+    /* Manrope is variabel: 450 leest steviger dan 400, nooit dunner (herziening oktober 2026). */
+    font-weight: 450;
     line-height: 1.65;
   }
 
@@ -200,11 +217,6 @@
     outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
-}
-
-/* Fijn stippenpatroon voor lege fotoplekken (inkt, 8% dekking; zie components/site/BeeldPlek.tsx). */
-.stippen {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%232f2441' fill-opacity='.08'/%3E%3C/svg%3E");
 }
 
 /* Geen bewegende hover-effecten voor wie minder beweging wil. */

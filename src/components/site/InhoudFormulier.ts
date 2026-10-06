@@ -19,7 +19,7 @@ export function tekstvakKlassen(fout = false): string {
 }
 
 /** Zichtbaar label boven een veld. */
-export const LABEL = "text-[14px] font-bold text-ink dark:text-foreground";
+export const LABEL = "text-[15px] font-bold text-ink dark:text-foreground";
 
 /** Het sterretje van een verplicht veld. */
 export const VERPLICHT = "text-berry dark:text-accent";
@@ -33,8 +33,8 @@ export const MELDING_FOUT =
 
 /** Bevestiging na versturen. */
 export const MELDING_GOED =
-  "m-0 rounded-ontwerp-sm border border-line bg-[#f1f7ee] px-5 py-4 text-ink dark:border-white/15 dark:bg-kaart dark:text-foreground";
+  "m-0 rounded-ontwerp-sm border border-line border-l-2 border-l-berry bg-white px-5 py-4 text-ink dark:border-white/15 dark:bg-kaart dark:text-foreground";
 
 /** Kleine lettertjes onder een formulier (toestemming, privacy). */
 export const KLEINE_LETTERS =
-  "text-[12px] leading-[1.55] text-ink-soft dark:text-foreground/75 [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_a]:underline-offset-[3px] dark:[&_a]:text-accent [&_p]:m-0";
+  "text-[15px] leading-[1.55] text-ink-soft dark:text-foreground/75 [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_a]:underline-offset-[3px] dark:[&_a]:text-accent [&_p]:m-0";

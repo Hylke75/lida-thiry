@@ -29,32 +29,53 @@ export const BOVENSCHRIFT = "mt-0 mb-[14px] text-[12px] leading-[1.65] font-extr
 
 /** Kleine, vette link met pijl (kaarten): ruim genoeg om aan te tikken. */
 export const KLEINE_LINK =
-  "inline-flex min-h-11 items-center gap-1 text-[13px] font-extrabold underline-offset-4 hover:underline focus-visible:underline";
+  "inline-flex min-h-11 items-center gap-1 text-[15px] font-bold underline-offset-4 hover:underline focus-visible:underline";
 
-/** Zachte achtergrond per accentkleur (dienstenkaarten). */
+/**
+ * Fotokader (herziening oktober 2026): rustige rechthoek met een kleine radius,
+ * zonder rand. Zonder foto een effen warm-neutraal vlak (geen monogram, geen
+ * patroon). De verhouding (staand 4:5 of 3:4) geeft de aanroeper mee, zodat er
+ * niets verspringt.
+ */
+export const FOTOKADER = "rounded-[6px] bg-sand-deep";
+
+/** Lopende tekst op de publieke site: 17 px op de telefoon, 18 px daarboven, zachte inkt (≥ 8:1). */
+export const TEKST = "text-[17px] leading-[1.65] text-ink-soft tablet:text-[18px]";
+
+/**
+ * Typografisch citaat: DM Serif Display, groot, aubergine, recht, met een dunne
+ * koraallijn ervoor. Geen kader.
+ */
+export const CITAAT =
+  "m-0 border-l-2 border-coral pl-5 font-serif text-[26px] leading-[1.22] font-normal text-berry tablet:pl-6 tablet:text-[30px]";
+
+// De kaartkleuren hieronder blijven bestaan voor bestaande aanroepen, maar zijn
+// sinds de herziening (oktober 2026) neutraal: geen gekleurde vlakken meer.
+
+/** Achtergrond van een kaart (neutraal, voor alle accentkleuren gelijk). */
 export const KAART_ACHTERGROND = {
-  coral: "bg-[#fff1ed]",
-  sage: "bg-[#f1f7ee]",
-  butter: "bg-[#fff8dd]",
+  coral: "bg-white",
+  sage: "bg-white",
+  butter: "bg-white",
 } as const;
 
-/** Rand bovenaan per accentkleur (stappen). */
+/** Rand bovenaan (stappen): één dunne koraallijn. */
 export const KAART_RAND = {
   coral: "border-t-coral",
-  sage: "border-t-sage",
-  butter: "border-t-butter",
+  sage: "border-t-coral",
+  butter: "border-t-coral",
 } as const;
 
-/** Tekstkleur van de grote stapnummers (≥ 3:1 op wit, zie globals.css). */
+/** Tekstkleur van de grote stapnummers (koraal, donkere tint: ≥ 3:1, alleen als grote tekst). */
 export const KAART_NUMMER = {
   coral: "text-coral-tekst",
-  sage: "text-sage-tekst",
-  butter: "text-butter-tekst",
+  sage: "text-coral-tekst",
+  butter: "text-coral-tekst",
 } as const;
 
-/** Kleurvlak voor een lege fotoplek. */
+/** Vlak van een lege fotoplek: effen warm-neutraal. */
 export const KAART_VLAK = {
-  coral: "bg-coral-soft",
-  sage: "bg-sage",
-  butter: "bg-butter",
+  coral: "bg-sand-deep",
+  sage: "bg-sand-deep",
+  butter: "bg-sand-deep",
 } as const;

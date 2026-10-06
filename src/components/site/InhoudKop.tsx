@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Bovenschrift, KleurLint, KopTekst } from "./Basis";
+import { Bovenschrift, KopTekst } from "./Basis";
 import { CONTAINER } from "./stijl";
 
 /**
@@ -9,15 +9,15 @@ import { CONTAINER } from "./stijl";
 export const H1_INHOUD =
   "mt-0 mb-0 font-serif text-[42px] leading-[1.04] font-normal tracking-[-0.022em] text-balance break-words hyphens-auto tablet:text-[clamp(44px,5.4vw,68px)]";
 
-/** De intro onder de h1 (handboek: 18–19 px, zachte inkt). */
-export const INTRO = "mt-0 mb-0 max-w-[690px] text-[18px] leading-[1.6] text-ink-soft tablet:text-[19px]";
+/** De intro onder de h1 (handboek: 19–20 px, zachte inkt). */
+export const INTRO = "mt-0 mb-0 max-w-[690px] text-[19px] leading-[1.6] text-ink-soft tablet:text-[20px]";
 
-/** De warme achtergrond van de hero, voor de kop van inhoudspagina's. */
-export const KOP_ACHTERGROND = "bg-[linear-gradient(108deg,#fff7ef_0%,#fffaf5_48%,#fdf2eb_100%)]";
+/** De achtergrond van de hero, voor de kop van inhoudspagina's: effen cream (geen verloop). */
+export const KOP_ACHTERGROND = "bg-cream";
 
 /**
- * Kop van een inhoudspagina: warme band met (bovenschrift,) h1 en intro, met het
- * kleurlint eronder (zoals onder de hero). `boven` staat boven het bovenschrift
+ * Kop van een inhoudspagina: warme band met (bovenschrift,) h1 en intro, met een
+ * dunne warm-neutrale lijn eronder (zoals onder de hero). `boven` staat boven het bovenschrift
  * (bijv. een kruimelpad), `onder` onder de intro (bijv. knoppen of metadata).
  * Accentwoorden met *sterretjes* in de titel worden cursief koraal.
  */
@@ -41,12 +41,12 @@ export function InhoudKop({
   midden?: boolean;
   /** Smalle kolom (max. 860 px), gelijk aan de leeskolom eronder. */
   smal?: boolean;
-  /** Kleurlint onder de kop. */
+  /** Dunne lijn onder de kop. */
   lint?: boolean;
   id?: string;
 }) {
   return (
-    <header className={KOP_ACHTERGROND}>
+    <header className={`${KOP_ACHTERGROND} ${lint ? "border-b border-line" : ""}`}>
       <div
         className={`${CONTAINER} flex flex-col gap-5 pt-12 pb-12 tablet:pt-[72px] tablet:pb-16 ${
           midden ? "items-center text-center" : "items-start"
@@ -64,7 +64,6 @@ export function InhoudKop({
         </div>
         {onder}
       </div>
-      {lint && <KleurLint />}
     </header>
   );
 }

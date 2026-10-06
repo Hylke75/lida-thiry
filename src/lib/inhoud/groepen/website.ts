@@ -423,7 +423,7 @@ export const WEBSITE_ERVARINGEN = sectie({
   sleutel: "website.ervaringen",
   titel: "Ervaringen van klanten",
   uitleg:
-    "Goedgekeurde reviews met toestemming (Beheer → Reviews) staan automatisch vooraan; de ervaringen hieronder komen daarna. Er staan er maximaal drie, ingekort tot ongeveer 35 woorden en met alleen de voornaam. Gebruik alleen echte reacties, met toestemming van de klant. Zonder reviews en ervaringen wordt dit blok niet getoond.",
+    "Goedgekeurde reviews met toestemming (Beheer → Reviews) staan automatisch vooraan; de ervaringen hieronder komen daarna. Er staan er maximaal drie, ingekort tot ongeveer 35 woorden en met alleen de voornaam. Gebruik alleen echte reacties, met toestemming van de klant. Zonder reviews en ervaringen staat er de tekst bij 'Tekst zolang er nog geen ervaringen zijn' (leeg = het blok niet tonen).",
   velden: {
     bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Wat klanten ervaren" },
     titel: {
@@ -431,6 +431,13 @@ export const WEBSITE_ERVARINGEN = sectie({
       label: "Titel",
       uitleg: ACCENT_UITLEG,
       standaard: "Meer rust in je kast. Meer vertrouwen voor de spiegel.",
+    },
+    leegTekst: {
+      soort: "tekst",
+      label: "Tekst zolang er nog geen ervaringen zijn",
+      uitleg: "Staat onder de titel zolang er geen goedgekeurde reviews of ingevulde ervaringen zijn. Leeg = het blok dan niet tonen.",
+      max: 200,
+      standaard: "[Ervaringen van klanten volgen]",
     },
     ervaringen: {
       soort: "lijst",

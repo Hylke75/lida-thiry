@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KleurLint, Knop, knopKlassen, KopTekst } from "@/components/site/Basis";
+import { Knop, knopKlassen, KopTekst } from "@/components/site/Basis";
 import { H1_INHOUD, INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
 import { CONTAINER } from "@/components/site/stijl";
 import { meldBrowserFout } from "@/lib/fouten/browser";
@@ -70,7 +70,6 @@ export default function Fout({ error, retry }: { error: Error & { digest?: strin
             </Knop>
           </div>
         </div>
-        <KleurLint />
       </section>
     </main>
   );
