@@ -13,6 +13,7 @@ import { BLOG_OVERZICHT } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { deelMetadata } from "@/lib/seo/delen";
 import { leesWebsite } from "@/lib/website/lees";
+import { blogOverzichtSeo, leesSeoPaginas, paginaSeo, rssTitel } from "@/lib/website/seo";
 
 // Per request gerenderd: de pagina hangt af van ?categorie, ?tag en ?pagina. De
 // gegevens zelf komen wel uit de datacache (tag "blog", levensduur 120 s), dus
@@ -21,20 +22,22 @@ export const dynamic = "force-dynamic";
 
 type Zoek = Promise<Record<string, string | string[] | undefined>>;
 
-const RSS = { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Blog · Lida Thiry" }] };
-
+/** Titel en omschrijving: Beheer → Website → SEO (leeg = uit Teksten → Blog). */
 export async function generateMetadata({ searchParams }: { searchParams: Zoek }): Promise<Metadata> {
   const [zoek, t, site] = await Promise.all([searchParams, leesSectie(BLOG_OVERZICHT), leesWebsite()]);
   const categorie = leesFilter(zoek.categorie);
   const tag = leesFilter(zoek.tag, 40);
   const pagina = leesPagina(zoek.pagina);
   const extra = [categorie, tag && `#${tag}`, pagina > 1 && `pagina ${pagina}`].filter(Boolean).join(" · ");
-  const titel = extra ? `${t.titel} · ${extra}` : t.titel;
+  const seo = paginaSeo("blog", leesSeoPaginas(site.seoPaginas));
+  const { titel, deelTitel, omschrijving } = blogOverzichtSeo(seo, t, extra);
+  const rss = { "application/rss+xml": [{ url: "/blog/rss.xml", title: rssTitel("Blog", site.korteNaam) }] };
   return {
-    title: `Blog: ${titel}`,
-    description: t.intro,
-    alternates: { canonical: blogHref({ categorie, tag, pagina }), types: RSS },
-    ...deelMetadata(site, { titel, omschrijving: t.intro, url: "/blog" }),
+    title: titel,
+    description: omschrijving,
+    alternates: { canonical: blogHref({ categorie, tag, pagina }), types: rss },
+    ...(seo.nietIndexeren ? { robots: { index: false, follow: true } } : {}),
+    ...deelMetadata(site, { titel: deelTitel, omschrijving, url: "/blog" }),
   };
 }
 

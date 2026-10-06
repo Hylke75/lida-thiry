@@ -1,6 +1,6 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
-import { afzender, leesMailAlgemeen, resend } from "../resend";
+import { klantAfzender, leesMailAlgemeen, resend } from "../resend";
 import { hashIp, magDoorOpSleutel } from "../rate-limit";
 import { leesInstellingen } from "../instellingen";
 import { leesSectie } from "../inhoud/lees";
@@ -93,7 +93,7 @@ export function berichtenQuery(f: BerichtFilter) {
 
 async function verstuur(opts: { aan: string; mail: ContactMail; replyTo?: string | null }): Promise<string | null> {
   const { data, error } = await resend().emails.send({
-    from: afzender(),
+    from: (await klantAfzender()).from,
     to: opts.aan,
     subject: opts.mail.onderwerp,
     html: opts.mail.html,

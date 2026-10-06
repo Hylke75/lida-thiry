@@ -159,6 +159,9 @@ async function structuur(o: {
       email: echt(inst.contact_email),
       adres: echt(inst.bedrijf_adres),
       sameAs: o.site.social.map((s) => s.url),
+      telefoon: o.site.telefoon,
+      werkgebied: o.site.werkgebied,
+      type: o.site.bedrijfType,
     }),
     testProductJsonLd({
       naam: "Online kledingadviestest",

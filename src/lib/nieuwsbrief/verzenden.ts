@@ -1,7 +1,8 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { adminClient } from "../supabase/admin";
-import { afzender, resend } from "../resend";
+import { resend } from "../resend";
+import { afzenderMetNaam } from "../mail-afzender";
 import { leesInstellingen } from "../instellingen";
 import { leesMerk } from "../merk";
 import type { Merk } from "../huisstijl";
@@ -61,6 +62,8 @@ const CAMPAGNE_VELDEN =
 interface Huisstijl {
   afzender: { naam: string; adres: string | null };
   merk: Merk;
+  /** From-kop: naam uit Website → Instellingen, adres uit RESEND_VAN. */
+  van: string;
   replyTo?: string;
   meten: boolean;
   maxPerDag: number;
@@ -75,6 +78,7 @@ async function huisstijl(): Promise<Huisstijl> {
       adres: i.bedrijf_adres?.trim() || null,
     },
     merk,
+    van: afzenderMetNaam(process.env.RESEND_VAN, i.afzender_naam),
     replyTo: i.contact_email?.trim() || undefined,
     meten: (i.nb_meten ?? "ja") !== "nee",
     maxPerDag: Number.isFinite(max) && max > 0 ? Math.floor(max) : 100,
@@ -498,7 +502,7 @@ export async function verwerkWachtrij(opties: { max?: number } = {}): Promise<Wa
         pixelUrl: stijl.meten ? pixelUrl(rij.id) : undefined,
       });
       return {
-        from: afzender(),
+        from: stijl.van,
         to: contact.email,
         subject: r.onderwerp,
         html: r.html,
@@ -654,7 +658,7 @@ export async function stuurTestmail(
     merk: stijl.merk,
   });
   const { error } = await resend().emails.send({
-    from: afzender(),
+    from: stijl.van,
     to: naar,
     subject: r.onderwerp,
     html: r.html,

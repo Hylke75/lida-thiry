@@ -76,7 +76,8 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
   },
   bedrijfsnaam: {
     label: "Bedrijfsnaam",
-    uitleg: "Zoals die op de website, in e-mails en op facturen staat.",
+    uitleg:
+      "De officiële naam van je onderneming (zoals bij de KvK): op facturen, PDF's, in de voorwaarden en in de gegevens voor zoekmachines. De naam bovenaan de website stel je apart in bij Website → Instellingen; daar staan ook je telefoonnummer, werkgebied en de afzendernaam van e-mails.",
     soort: "tekst",
   },
   bedrijf_adres: {
@@ -119,7 +120,8 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
   },
   contact_email: {
     label: "Contact-e-mailadres",
-    uitleg: "Het adres dat klanten op de website zien om contact op te nemen.",
+    uitleg:
+      "Het adres dat klanten op de website zien om contact op te nemen. Als een klant op een e-mail van de site antwoordt (bevestiging, advies, cadeaubon, nieuwsbrief), komt het antwoord hier binnen.",
     soort: "email",
   },
   mfa_verplicht: {
@@ -152,6 +154,18 @@ export const WEBSITE_INSTELLINGEN = new Set([
   "social_youtube",
   "social_tiktok",
   "homepage_indeling",
+  // Beheer → Website → Instellingen en → SEO (zie lib/website/instellingen.ts en seo.ts).
+  "home_titel",
+  "deel_titel",
+  "niet_indexeren",
+  "bedrijf_type",
+  "telefoon",
+  "werkgebied",
+  "eigenaar_naam",
+  "standaard_auteur",
+  "afzender_naam",
+  "footer_beheerlink",
+  "seo_paginas",
 ]);
 
 /**

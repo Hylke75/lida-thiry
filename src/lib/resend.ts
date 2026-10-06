@@ -30,6 +30,8 @@ import {
   type MijnAdviesMailLinks, reviewUitnodigingMail } from "./email-html";
 import { KLEIN, KLEUR, kopHtml, knopHtml, mailDocument } from "./mail-opmaak";
 import { leesMerk } from "./merk";
+import { leesInstellingen } from "./instellingen";
+import { afzenderGegevens, STANDAARD_AFZENDER } from "./mail-afzender";
 
 export type { BestelOverzicht } from "./email-html";
 
@@ -49,10 +51,25 @@ export async function leesMailAlgemeen() {
   return { ...algemeen, merk };
 }
 
-/** Afzender van alle mails. */
+/** Afzender uit RESEND_VAN zoals die is (zonder de ingestelde naam). Liever: klantAfzender(). */
 export function afzender(): string {
   // Geverifieerd afzenderadres (Resend-domein). OPEN tot het domein geverifieerd is.
-  return process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>";
+  return process.env.RESEND_VAN || STANDAARD_AFZENDER;
+}
+
+/**
+ * Afzender van alle mails: de naam uit Beheer → Website → Instellingen
+ * (afzender_naam) met het adres uit RESEND_VAN, en als antwoordadres het
+ * contact-e-mailadres (Beheer → Instellingen). Vers gelezen; faalt zacht
+ * (dan RESEND_VAN zoals die is, zonder antwoordadres).
+ */
+export async function klantAfzender(): Promise<{ from: string; replyTo?: string }> {
+  try {
+    return afzenderGegevens(process.env.RESEND_VAN, await leesInstellingen());
+  } catch (e) {
+    console.error("Afzender-instellingen niet geladen; RESEND_VAN gebruikt.", e);
+    return { from: afzender() };
+  }
 }
 
 /**
@@ -77,7 +94,7 @@ export async function stuurTestlinkMail(opts: {
   });
 
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -107,7 +124,7 @@ export async function stuurHerinneringMail(opts: {
   });
 
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -123,7 +140,7 @@ export async function stuurNieuwsbriefBevestiging(opts: { email: string; naam?: 
   const [teksten, algemeen] = await Promise.all([leesSectie(NIEUWSBRIEF_BEVESTIGMAIL), leesMailAlgemeen()]);
   const { onderwerp, html } = nieuwsbriefBevestigingMail(teksten, algemeen, { naam: opts.naam, link: opts.link });
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -145,7 +162,7 @@ export async function stuurBeheerMail(opts: { aan: string; onderwerp: string; de
     standaardWaarden(EMAILS_ALGEMEEN).voettekst,
   );
   const { error } = await resend().emails.send({
-    from: afzender(),
+    from: (await klantAfzender()).from,
     to: opts.aan,
     subject: `[Beheer] ${opts.onderwerp}`,
     html,
@@ -170,7 +187,7 @@ export async function stuurAdviesMail(opts: {
   });
 
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -195,7 +212,7 @@ export async function stuurBeheerderMail(opts: { aan: string; link: string | nul
        <p>Je kunt nu inloggen in het beheer van de website van Lida Thiry Imago &amp; Kledingadvies met je bestaande e-mailadres en wachtwoord.</p>
        ${knop(`${siteUrl()}/admin/inloggen`, "Naar het beheer")}`;
   const { error } = await resend().emails.send({
-    from: afzender(),
+    from: (await klantAfzender()).from,
     to: opts.aan,
     subject: opts.link && opts.nieuw ? "Uitnodiging voor het beheer" : "Toegang tot het beheer",
     html: mailDocument({ inhoud, onder: "" }),
@@ -237,7 +254,7 @@ export async function stuurCadeaubonMail(opts: {
     factuurnummer: opts.aan === "koper" ? opts.factuur?.factuurnummer : null,
   });
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -267,7 +284,7 @@ export async function stuurCadeaubonKoperMail(opts: {
     factuurnummer: opts.factuur?.factuurnummer,
   });
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
     subject: onderwerp,
     html,
@@ -286,7 +303,7 @@ export async function stuurBetaalherinneringMail(opts: {
 }) {
   const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BETAALHERINNERING), leesMailAlgemeen()]);
   const { onderwerp, html } = betaalherinneringMail(teksten, algemeen, { ...opts, basisUrl: siteUrl() });
-  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
   if (error) throw new Error(`Resend betaalherinnering: ${error.message}`);
 }
 
@@ -299,7 +316,7 @@ export async function stuurMijnAdviesMail(opts: { email: string; naam: string | 
     tests: opts.tests,
     basisUrl: siteUrl(),
   });
-  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
   if (error) throw new Error(`Resend mijn advies: ${error.message}`);
 }
 
@@ -310,7 +327,7 @@ export async function stuurReviewUitnodiging(opts: { email: string; naam: string
     naam: opts.naam,
     link: `${siteUrl()}/review/${opts.token}`,
   });
-  const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
   if (error) throw new Error(`Resend review-uitnodiging: ${error.message}`);
 }
 
@@ -328,7 +345,7 @@ export async function stuurAfspraakMail(opts: {
   ics?: { bestandsnaam: string; inhoud: string; geannuleerd?: boolean } | null;
 }) {
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.aan,
     subject: opts.onderwerp,
     html: opts.html,

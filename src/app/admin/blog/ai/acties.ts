@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { adminClient } from "@/lib/supabase/admin";
+import { leesStandaardAuteur } from "@/lib/website/lees";
 import { aiBeschikbaar, schrijfConcept, type Concept } from "@/lib/blog/ai";
 import { normaliseerOpdracht, type SchrijfOpdracht } from "@/lib/blog/ai-prompt";
 import { aiFoutmelding, aiLimietFout, BLOG_PAD, isDubbel, vrijeSlug } from "@/lib/blog/editor";
@@ -18,6 +19,7 @@ async function bewaarConcept(concept: Concept, opdracht: SchrijfOpdracht, model:
     tags: concept.tags,
     seo_titel: concept.seo_titel,
     seo_omschrijving: concept.seo_omschrijving,
+    auteur: await leesStandaardAuteur(),
     ai_gegenereerd: true,
     ai_opdracht: {
       ...opdracht,

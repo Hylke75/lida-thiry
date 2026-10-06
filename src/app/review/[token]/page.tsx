@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { notFound } from "next/navigation";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { REVIEWS_FORMULIER } from "@/lib/inhoud/groepen/reviews";
@@ -9,11 +10,11 @@ import { ReviewFormulier } from "./ReviewFormulier";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Deel je ervaring",
-  robots: { index: false, follow: false },
-  referrer: "no-referrer",
-};
+/** Titel: Beheer → Website → SEO. Nooit in zoekmachines (persoonlijke link). */
+export async function generateMetadata(): Promise<Metadata> {
+  const { title, description } = await vastePaginaMetadataVoor("review");
+  return { title, description, robots: { index: false, follow: false }, referrer: "no-referrer" };
+}
 
 /** Reviewformulier via de persoonlijke link uit de uitnodiging. Onbekende link: 404. */
 export default async function ReviewPagina({ params }: { params: Promise<{ token: string }> }) {

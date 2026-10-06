@@ -59,3 +59,15 @@ export function deelMetadata(site: Site, o: DeelInvoer): Pick<Metadata, "openGra
     twitter: { card: "summary_large_image", title: o.titel, description: o.omschrijving, images: [beeld] },
   };
 }
+
+/**
+ * De kop op de standaard-deelafbeelding (app/opengraph-image.tsx): de titel bij
+ * delen (Website → Instellingen), met het laatste woord als cursief accent zoals
+ * in de huisstijl, en een lettergrootte die bij de lengte past.
+ */
+export function deelbeeldKop(titel: string): { voor: string; accent: string; grootte: number } {
+  const t = titel.replace(/\s+/g, " ").trim();
+  const i = t.lastIndexOf(" ");
+  const grootte = t.length <= 24 ? 104 : t.length <= 40 ? 80 : 62;
+  return i === -1 ? { voor: "", accent: t, grootte } : { voor: t.slice(0, i), accent: t.slice(i + 1), grootte };
+}

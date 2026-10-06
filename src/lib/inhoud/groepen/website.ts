@@ -46,6 +46,46 @@ export const WEBSITE_KOP = sectie({
         { label: "Contact", link: "/contact" },
       ],
     },
+    voetLinks: {
+      soort: "lijst",
+      label: "Voettekst: vaste links",
+      uitleg:
+        "Staan altijd in de voettekst, na het menu en de pagina's met ‘in footer’. Dubbele links worden één keer getoond; links naar een pagina die niet bestaat, worden overgeslagen.",
+      itemNaam: "link",
+      max: 8,
+      velden: {
+        label: { soort: "tekst", label: "Tekst", max: 40, standaard: "" },
+        link: { soort: "tekst", label: "Link (bijv. /blog)", max: 200, standaard: "" },
+      },
+      standaard: [
+        { label: "Blog", link: "/blog" },
+        { label: "Cadeaubon", link: "/cadeaubon" },
+        { label: "Mijn advies", link: "/mijn-advies" },
+      ],
+    },
+    voetTagline: {
+      soort: "tekst",
+      label: "Voettekst: korte zin (leeg = geen)",
+      uitleg: "Bijvoorbeeld wat je doet of voor wie, in één zin.",
+      max: 160,
+      standaard: "",
+    },
+    voetContactregel: {
+      soort: "tekst",
+      label: "Voettekst: regel met adres of contact (leeg = geen)",
+      uitleg: "Bijvoorbeeld ‘Utrecht · info@lidathiry.nl’. Je telefoonnummer (Website → Instellingen) staat er al automatisch bij.",
+      max: 160,
+      standaard: "",
+    },
+    voetPrivacy: { soort: "tekst", label: "Voettekst: tekst van de link naar de privacyverklaring", max: 40, standaard: "Privacy" },
+    voetVoorwaarden: { soort: "tekst", label: "Voettekst: tekst van de link naar de voorwaarden", max: 40, standaard: "Voorwaarden" },
+    voetContact: {
+      soort: "tekst",
+      label: "Voettekst: tekst van de link naar contact",
+      uitleg: "Alleen zichtbaar als er een gepubliceerde pagina /contact is.",
+      max: 40,
+      standaard: "Contact",
+    },
   },
 });
 

@@ -4,6 +4,8 @@ import { bouwRss } from "@/lib/blog/rss";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_OVERZICHT } from "@/lib/inhoud/groepen/blog";
 import { siteUrl } from "@/lib/site";
+import { leesWebsite } from "@/lib/website/lees";
+import { rssTitel } from "@/lib/website/seo";
 
 // Gecachet en elke 5 minuten ververst (ingeplande berichten verschijnen vanzelf);
 // opslaan in het beheer ververst /blog-paden ook direct.
@@ -11,9 +13,9 @@ export const revalidate = 300;
 
 export async function GET() {
   const basis = siteUrl();
-  const [berichten, t] = await Promise.all([haalLaatste(20), leesSectie(BLOG_OVERZICHT)]);
+  const [berichten, t, site] = await Promise.all([haalLaatste(20), leesSectie(BLOG_OVERZICHT), leesWebsite()]);
   const xml = bouwRss({
-    titel: `${t.titel} · Lida Thiry`,
+    titel: rssTitel(t.titel, site.korteNaam),
     link: `${basis}/blog`,
     feedUrl: `${basis}/blog/rss.xml`,
     omschrijving: t.intro,
@@ -22,7 +24,7 @@ export async function GET() {
       url: `${basis}/blog/${b.slug}`,
       datum: b.gepubliceerd_op ?? b.aangemaakt_op,
       omschrijving: b.samenvatting.trim() || metaOmschrijving(b),
-      auteur: b.auteur,
+      auteur: b.auteur || site.standaardAuteur,
       categorieen: [...(b.categorie ? [b.categorie] : []), ...b.tags],
     })),
   });

@@ -216,7 +216,7 @@ export interface BonGegevens {
 }
 
 /** De bon als kader in de mail: bedrag, code, geldigheid en de boodschap. */
-export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
+export function bonHtml(b: BonGegevens, boodschapLabel: string, merkNaam: string = MERK_STANDAARD.naam): string {
   const voorVan = [
     b.ontvangerNaam ? `Voor ${escapeHtml(b.ontvangerNaam)}` : "",
     b.koperNaam ? `van ${escapeHtml(b.koperNaam)}` : "",
@@ -233,7 +233,7 @@ export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;margin:24px 0;background:${KLEUR.cream};border:2px dashed ${KLEUR.berry};border-radius:20px">
         <tr><td style="padding:28px 28px 20px;text-align:center">
           <p style="margin:0;font-family:${LETTER_SERIF};font-size:30px;line-height:1.1;color:${KLEUR.ink}">Cadeaubon</p>
-          <p style="margin:6px 0 0;font-size:13px;color:${KLEUR.inkZacht}">Persoonlijk kledingadvies · Lida Thiry</p>
+          <p style="margin:6px 0 0;font-size:13px;color:${KLEUR.inkZacht}">Persoonlijk kledingadvies · ${escapeHtml(merkNaam)}</p>
           <p style="margin:16px 0 0;font-family:${LETTER_SERIF};font-size:40px;line-height:1.1;color:${KLEUR.berry}">${formatteerBedrag(b.bedragCent, b.valuta)}</p>
           ${voorVan ? `<p style="margin:6px 0 0;font-size:14px;color:${KLEUR.inkZacht}">${voorVan}</p>` : ""}
           <p style="margin:20px 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${KLEUR.berry}">Code</p>
@@ -268,7 +268,7 @@ export function cadeaubonMail(
     `
       ${kop(naarKoper ? t.kopKoper : t.kopOntvanger, w)}
       ${alineas(absoluteLinks(naarKoper ? t.tekstKoper : t.tekstOntvanger, opts.basisUrl), w)}
-      ${bonHtml(opts.bon, t.boodschapLabel)}
+      ${bonHtml(opts.bon, t.boodschapLabel, algemeen.merk?.naam)}
       ${alineas(absoluteLinks(t.gebruik, opts.basisUrl), w)}
       ${knop(opts.bestelUrl, t.knop, "primair", "28px 0")}
       ${factuur}`,
@@ -305,7 +305,7 @@ export function cadeaubonKoperMail(
     `
       ${kop(t.kop, w)}
       ${alineas(absoluteLinks(opts.verzendOp ? t.tekstGepland : t.tekstVerzonden, opts.basisUrl), w)}
-      ${bonHtml(opts.bon, bon.boodschapLabel)}
+      ${bonHtml(opts.bon, bon.boodschapLabel, algemeen.merk?.naam)}
       ${alineas(absoluteLinks(t.naBon, opts.basisUrl), w)}
       ${factuur}`,
     algemeen.voettekst,

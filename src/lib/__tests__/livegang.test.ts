@@ -413,3 +413,12 @@ describe("livegang: koppeling, tweestap en geheimen", () => {
     expect(vind(g, "link-geheim")).toMatchObject({ ok: false, niveau: "aanbevolen" });
   });
 });
+
+describe("evalueerLivegang: niet indexeren", () => {
+  it("waarschuwt zolang de site uit zoekmachines wordt gehouden", () => {
+    const g = compleet();
+    expect(vind(g, "zoekmachines")).toMatchObject({ ok: true });
+    g.instellingen = { ...g.instellingen, niet_indexeren: "ja" };
+    expect(vind(g, "zoekmachines")).toMatchObject({ ok: false, niveau: "verplicht", links: [{ href: "/admin/website" }] });
+  });
+});

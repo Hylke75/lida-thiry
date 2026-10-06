@@ -5,6 +5,7 @@ import { InhoudProza } from "@/components/site/InhoudProza";
 import { CONTAINER } from "@/components/site/stijl";
 import { leesPubliekeInstellingen } from "@/lib/instellingen";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
+import { leesWebsite } from "@/lib/website/lees";
 
 /** Gemeenschappelijke opmaak voor de voorwaarden en de privacyverklaring. */
 export function JuridischePagina({
@@ -55,16 +56,20 @@ export async function contactEmail(): Promise<string> {
 }
 
 export async function Identiteit() {
-  const inst = await leesPubliekeInstellingen().catch(() => ({}) as Record<string, string | null>);
+  const [inst, site] = await Promise.all([
+    leesPubliekeInstellingen().catch(() => ({}) as Record<string, string | null>),
+    leesWebsite(),
+  ]);
   const waarde = (sleutel: string, placeholder: string) => inst[sleutel]?.trim() || placeholder;
   return (
     <div className="rounded-ontwerp-sm border border-line bg-cream px-5 py-5 text-[15px] leading-[1.6] text-ink [&_p]:m-0">
       <p className="mb-1! font-serif text-[22px] leading-[1.2]">
         {waarde("bedrijfsnaam", BEDRIJFSNAAM_STANDAARD)}
       </p>
-      <p>Eigenaar: Lida Thiry</p>
+      <p>Eigenaar: {site.eigenaarNaam}</p>
       <p className="whitespace-pre-line">Adres: {waarde("bedrijf_adres", "[adres], [postcode] [plaats]")}</p>
       <p>E-mail: {waarde("contact_email", "[e-mailadres]")}</p>
+      {site.telefoon && <p>Telefoon: {site.telefoon}</p>}
       <p>KvK-nummer: {waarde("kvk_nummer", "[KvK-nummer]")}</p>
       <p>Btw-identificatienummer: {waarde("btw_nummer", "[btw-id]")}</p>
     </div>

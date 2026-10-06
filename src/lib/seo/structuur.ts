@@ -81,15 +81,32 @@ export interface OrganisatieInvoer {
   adres?: string | null;
   /** Links naar social media. */
   sameAs?: readonly string[];
+  /** Telefoonnummer zoals ingesteld. */
+  telefoon?: string | null;
+  /** Werkgebied: plaatsen of regio's, gescheiden door komma's; leeg = Nederland. */
+  werkgebied?: string | null;
+  /** schema.org-type (Website → Instellingen); standaard ProfessionalService. */
+  type?: string | null;
+}
+
+/** Het werkgebied als areaServed: leeg → Nederland; één plaats → tekst; meer → lijst. */
+export function werkgebiedJsonLd(werkgebied: string | null | undefined): unknown {
+  const delen = (werkgebied ?? "")
+    .split(/[,;\n]+/)
+    .map((d) => d.trim())
+    .filter(Boolean);
+  if (!delen.length) return { "@type": "Country", name: "Nederland" };
+  return delen.length === 1 ? delen[0] : delen;
 }
 
 export function organisatieJsonLd(o: OrganisatieInvoer): Record<string, unknown> {
   const basis = zonderSlash(o.url);
   const adres = adresUitTekst(o.adres);
   const email = o.email?.trim();
+  const telefoon = o.telefoon?.trim();
   return {
     "@context": CONTEXT,
-    "@type": "ProfessionalService",
+    "@type": o.type?.trim() || "ProfessionalService",
     "@id": organisatieId(basis),
     name: o.naam,
     url: `${basis}/`,
@@ -97,9 +114,10 @@ export function organisatieJsonLd(o: OrganisatieInvoer): Record<string, unknown>
     image: absoluteUrl(o.logo, basis) ?? `${basis}/opengraph-image`,
     ...(o.omschrijving?.trim() ? { description: o.omschrijving.trim() } : {}),
     ...(email ? { email } : {}),
+    ...(telefoon ? { telephone: telefoon } : {}),
     ...(adres ? { address: adres } : {}),
     ...(o.sameAs?.length ? { sameAs: [...o.sameAs] } : {}),
-    areaServed: { "@type": "Country", name: "Nederland" },
+    areaServed: werkgebiedJsonLd(o.werkgebied),
   };
 }
 

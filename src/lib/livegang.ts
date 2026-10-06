@@ -480,6 +480,18 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
   });
 
   // Website ----------------------------------------------------------------------
+  const nietIndexeren = g.instellingen.niet_indexeren?.trim() === "ja";
+  items.push({
+    id: "zoekmachines",
+    label: "Website zichtbaar voor zoekmachines",
+    ok: !nietIndexeren,
+    niveau: "verplicht",
+    detail: nietIndexeren
+      ? "‘Niet indexeren’ staat aan: Google en andere zoekmachines slaan de hele site over (robots.txt blokkeert alles en elke pagina zegt ‘noindex’). Zet dit uit zodra de site live gaat."
+      : undefined,
+    links: [WEBSITE_INSTELLINGEN],
+  });
+
   const logo = gevuld(g.instellingen.logo_url);
   items.push({
     id: "logo",

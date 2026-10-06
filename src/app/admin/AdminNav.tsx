@@ -66,6 +66,7 @@ const GROEPEN = [
     links: [
       { href: "/admin/paginas", label: "Pagina's" },
       { href: "/admin/website/homepage", label: "Homepage" },
+      { href: "/admin/website/seo", label: "SEO" },
       { href: "/admin/blog", label: "Blog" },
       { href: "/admin/blog/ai", label: "Schrijven met AI" },
       { href: "/admin/teksten", label: "Teksten" },

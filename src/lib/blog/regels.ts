@@ -92,7 +92,11 @@ export interface BerichtInvoer {
 const tekst = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\r\n?/g, "\n").trim().slice(0, max) : "");
 
 /** Controleert invoer uit het beheer; geeft schone waarden of foutmeldingen. */
-export function valideerBericht(ruw: unknown): { ok: true; waarde: BerichtInvoer } | { ok: false; fouten: string[] } {
+export function valideerBericht(
+  ruw: unknown,
+  /** Auteur als het veld leeg is (Beheer → Website → Instellingen). */
+  standaardAuteur = "Lida Thiry",
+): { ok: true; waarde: BerichtInvoer } | { ok: false; fouten: string[] } {
   const o = ruw && typeof ruw === "object" ? (ruw as Record<string, unknown>) : {};
   const fouten: string[] = [];
   const titel = tekst(o.titel, 200);
@@ -113,7 +117,7 @@ export function valideerBericht(ruw: unknown): { ok: true; waarde: BerichtInvoer
     tags: normaliseerTags(o.tags),
     seo_titel: tekst(o.seo_titel, 70),
     seo_omschrijving: tekst(o.seo_omschrijving, 170),
-    auteur: tekst(o.auteur, 80) || "Lida Thiry",
+    auteur: tekst(o.auteur, 80) || standaardAuteur,
     uitgelicht: o.uitgelicht === true,
   };
   if (omslag && !waarde.omslag_alt) fouten.push("Geef de omslagfoto een korte omschrijving (voor slechtzienden en Google).");

@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { contactEmail, Identiteit, JuridischePagina } from "@/components/JuridischePagina";
 import { Opmaak } from "@/components/Opmaak";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { bevatPlaceholder } from "@/lib/inhoud/schema";
 import { JURIDISCH_VOORWAARDEN } from "@/lib/inhoud/groepen/juridisch";
 
-export const metadata: Metadata = {
-  title: "Algemene voorwaarden",
-  description:
-    "De algemene voorwaarden voor de online kledingadviestest van Lida Thiry Imago & Kledingadvies.",
-  alternates: { canonical: "/voorwaarden" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("voorwaarden");
+}
 
 // Statisch met ISR: de inhoud hangt alleen af van teksten en instellingen uit de
 // database (geen cookies of zoekparameters). Die staan in de datacache onder de

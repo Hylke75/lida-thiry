@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { MIJN_ADVIES_PAGINA } from "@/lib/inhoud/groepen/mijn-advies";
 import { Opmaak } from "@/components/Opmaak";
@@ -9,11 +10,10 @@ import { MijnAdviesFormulier } from "./MijnAdviesFormulier";
 // /api/mijn-advies. Opslaan in Beheer → Teksten vernieuwt de pagina direct.
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Mijn advies opnieuw ontvangen",
-  description: "Vraag de link naar je persoonlijke kledingadvies of je test opnieuw aan per e-mail.",
-  alternates: { canonical: "/mijn-advies" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("mijn-advies");
+}
 
 export default async function MijnAdviesPage() {
   const t = await leesSectie(MIJN_ADVIES_PAGINA);

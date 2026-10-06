@@ -98,6 +98,7 @@ function icsVoor(a: MailbareAfspraak, m: MailAfspraak, instellingen: Record<stri
   const bedrijf = gevuld(instellingen.bedrijfsnaam) ?? BEDRIJFSNAAM_STANDAARD;
   return maakIcs({
     uid: `afspraak-${a.id}@${host}`,
+    bedrijf,
     start: new Date(a.start_op),
     eind: new Date(a.eind_op),
     titel: `${m.soort} – ${bedrijf}`,

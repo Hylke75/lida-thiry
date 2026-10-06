@@ -17,7 +17,22 @@ export const STANDAARD_SITE = {
   homeTitel: "Online kledingadviestest",
   /** Titel bij delen van de homepage. */
   deelTitel: "Ontdek je figuurtype",
+  /** Naam van de eigenaar (voorwaarden, privacy) en standaardauteur van blogberichten. */
+  eigenaarNaam: "Lida Thiry",
 } as const;
+
+/** Soorten bedrijf voor de gestructureerde gegevens (schema.org @type). De eerste is de standaard. */
+export const BEDRIJF_TYPES = [
+  { waarde: "ProfessionalService", label: "Zakelijke dienstverlening (standaard)" },
+  { waarde: "LocalBusiness", label: "Lokaal bedrijf met een vestiging" },
+  { waarde: "HealthAndBeautyBusiness", label: "Schoonheid en verzorging" },
+  { waarde: "Organization", label: "Organisatie (zonder vestiging)" },
+] as const;
+export type BedrijfType = (typeof BEDRIJF_TYPES)[number]["waarde"];
+
+export function isBedrijfType(w: unknown): w is BedrijfType {
+  return BEDRIJF_TYPES.some((t) => t.waarde === w);
+}
 
 export type SocialNetwerk = "instagram" | "facebook" | "linkedin" | "pinterest" | "youtube" | "tiktok";
 
@@ -59,6 +74,23 @@ export interface WebsiteInstellingen {
   social: SocialLink[];
   /** Ruwe opgeslagen indeling van de homepage (zie website/homepage.ts). */
   homepageIndeling: string | null;
+  /** Titel van de homepage (zonder sitenaam) en de titel bij delen. */
+  homeTitel: string;
+  deelTitel: string;
+  /** Hele site uit zoekmachines houden (vóór de livegang). */
+  nietIndexeren: boolean;
+  /** Bedrijfsgegevens voor zoekmachines (JSON-LD) en de voettekst. */
+  telefoon: string | null;
+  werkgebied: string | null;
+  bedrijfType: BedrijfType;
+  /** Eigenaar (voorwaarden, privacy). */
+  eigenaarNaam: string;
+  /** Auteur van blogberichten zonder eigen auteur (en in de RSS-feed). */
+  standaardAuteur: string;
+  /** Of de discrete link "Beheer" in de voettekst staat. */
+  beheerlinkInFooter: boolean;
+  /** Ruwe opgeslagen SEO van de vaste pagina's (zie website/seo.ts). */
+  seoPaginas: string | null;
 }
 
 /** Sleutels die het beheerscherm opslaat (de homepage-indeling heeft een eigen scherm). */
@@ -69,11 +101,24 @@ export const WEBSITE_SLEUTELS = [
   "favicon_url",
   "deel_afbeelding_url",
   ...SOCIAL_NETWERKEN.map((s) => s.sleutel),
+  "home_titel",
+  "deel_titel",
+  "niet_indexeren",
+  "bedrijf_type",
+  "telefoon",
+  "werkgebied",
+  "eigenaar_naam",
+  "standaard_auteur",
+  "afzender_naam",
+  "footer_beheerlink",
 ] as const;
 export type WebsiteSleutel = (typeof WEBSITE_SLEUTELS)[number];
 
 export const MAX_NAAM = 80;
 export const MAX_OMSCHRIJVING = 300;
+/** Titels: zoekmachines tonen er ongeveer 60 tekens van. */
+export const MAX_TITEL = 70;
+export const MAX_WERKGEBIED = 200;
 /** Zoekmachines tonen ongeveer zoveel tekens van de omschrijving. */
 export const ADVIES_OMSCHRIJVING = { min: 50, max: 160 } as const;
 
@@ -173,7 +218,53 @@ export function valideerWebsiteInvoer(
     else fouten.push(u.fout);
   }
 
+  const kort = (sleutel: WebsiteSleutel, label: string, max: number) => {
+    const w = schoon(invoer[sleutel])?.replace(/\s+/g, " ") ?? null;
+    if (w && w.length > max) fouten.push(`${label}: maximaal ${max} tekens.`);
+    waarden[sleutel] = w;
+  };
+  kort("home_titel", "Titel van de homepage", MAX_TITEL);
+  kort("deel_titel", "Titel bij delen", MAX_TITEL);
+  kort("werkgebied", "Werkgebied", MAX_WERKGEBIED);
+  kort("eigenaar_naam", "Naam van de eigenaar", MAX_NAAM);
+  kort("standaard_auteur", "Standaardauteur", MAX_NAAM);
+  kort("afzender_naam", "Naam van de afzender", MAX_NAAM);
+  if (waarden.afzender_naam && /[<>"@\\]/.test(waarden.afzender_naam)) {
+    fouten.push('Naam van de afzender: alleen een naam, zonder e-mailadres of tekens als < > " @.');
+  }
+
+  const tel = valideerTelefoon(invoer.telefoon);
+  if (tel.ok) waarden.telefoon = tel.waarde;
+  else fouten.push(tel.fout);
+
+  const type = schoon(invoer.bedrijf_type);
+  if (type && !isBedrijfType(type)) fouten.push("Soort bedrijf: kies een van de opties.");
+  // De standaard bewaren we als leeg.
+  waarden.bedrijf_type = type && isBedrijfType(type) && type !== BEDRIJF_TYPES[0].waarde ? type : null;
+
+  waarden.niet_indexeren = schoon(invoer.niet_indexeren) === "ja" ? "ja" : null;
+  waarden.footer_beheerlink = schoon(invoer.footer_beheerlink) === "verbergen" ? "verbergen" : null;
+
   return fouten.length ? { ok: false, fouten } : { ok: true, waarden };
+}
+
+/**
+ * Een telefoonnummer: cijfers, spaties, +, -, punten en haakjes, met 8 tot 15
+ * cijfers. Leeg = geen telefoonnummer.
+ */
+export function valideerTelefoon(invoer: string | null | undefined): Uitkomst {
+  const v = schoon(invoer)?.replace(/\s+/g, " ") ?? null;
+  if (!v) return { ok: true, waarde: null };
+  const cijfers = v.replace(/\D/g, "");
+  if (v.length > 30 || !/^\+?[\d\s().-]+$/.test(v) || cijfers.length < 8 || cijfers.length > 15) {
+    return { ok: false, fout: "Telefoonnummer: alleen cijfers, spaties en eventueel + (bijv. 06 12345678 of +31 6 12345678)." };
+  }
+  return { ok: true, waarde: v };
+}
+
+/** Het telefoonnummer als tel:-link ("06 1234 5678" → "tel:0612345678"). */
+export function telefoonLink(telefoon: string): string {
+  return `tel:${telefoon.trim().startsWith("+") ? "+" : ""}${telefoon.replace(/\D/g, "")}`;
 }
 
 /**
@@ -194,6 +285,9 @@ export function websiteInstellingen(
     const u = valideerSocialUrl(s.netwerk, m[s.sleutel]);
     if (u.ok && u.waarde) social.push({ netwerk: s.netwerk, label: s.label, url: u.waarde });
   }
+  const telefoon = valideerTelefoon(m.telefoon);
+  const type = schoon(m.bedrijf_type);
+  const eigenaar = schoon(m.eigenaar_naam)?.slice(0, MAX_NAAM) ?? null;
   return {
     eigenNaam,
     korteNaam: eigenNaam ?? STANDAARD_SITE.korteNaam,
@@ -204,6 +298,16 @@ export function websiteInstellingen(
     deelAfbeeldingUrl: beeld("deel_afbeelding_url"),
     social,
     homepageIndeling: schoon(m.homepage_indeling),
+    homeTitel: schoon(m.home_titel)?.slice(0, MAX_TITEL) ?? STANDAARD_SITE.homeTitel,
+    deelTitel: schoon(m.deel_titel)?.slice(0, MAX_TITEL) ?? STANDAARD_SITE.deelTitel,
+    nietIndexeren: schoon(m.niet_indexeren) === "ja",
+    telefoon: telefoon.ok ? telefoon.waarde : null,
+    werkgebied: schoon(m.werkgebied)?.slice(0, MAX_WERKGEBIED) ?? null,
+    bedrijfType: isBedrijfType(type) ? type : BEDRIJF_TYPES[0].waarde,
+    eigenaarNaam: eigenaar ?? STANDAARD_SITE.eigenaarNaam,
+    standaardAuteur: schoon(m.standaard_auteur)?.slice(0, MAX_NAAM) ?? eigenaar ?? STANDAARD_SITE.eigenaarNaam,
+    beheerlinkInFooter: schoon(m.footer_beheerlink) !== "verbergen",
+    seoPaginas: schoon(m.seo_paginas),
   };
 }
 

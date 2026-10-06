@@ -231,12 +231,12 @@ function MatenRij({ label, waarde }: { label: string; waarde: string }) {
 }
 
 /** Kleurstrook boven en voettekst onder elke pagina. */
-function Rand({ sleutel }: { sleutel: string }) {
+function Rand({ sleutel, bedrijfsnaam }: { sleutel: string; bedrijfsnaam: string }) {
   return (
     <>
       <Kleurstrook hoogte={6} style={styles.strookBoven} fixed />
       <View style={styles.voettekst} fixed>
-        <Text>© {BEDRIJFSNAAM_STANDAARD} · Type {sleutel}</Text>
+        <Text>© {bedrijfsnaam} · Type {sleutel}</Text>
         <Text style={styles.paginanummer} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </View>
     </>
@@ -262,6 +262,7 @@ export function AdviesPdf({
   silhouet,
   merk = MERK_STANDAARD,
 }: AdviesPdfProps) {
+  const bedrijfsnaam = merk.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD;
   const cm = (v: number | null) => (v == null ? "–" : `${v} cm`);
   const matenRijen: { label: string; waarde: string }[] = [
     { label: "Lengte", waarde: cm(maten.lengte_cm) },
@@ -277,10 +278,10 @@ export function AdviesPdf({
   const toonMaten = matenRijen.some((r) => r.waarde !== "–");
 
   return (
-    <Document title={`Kledingadvies ${sleutel}`} author={BEDRIJFSNAAM_STANDAARD}>
+    <Document title={`Kledingadvies ${sleutel}`} author={bedrijfsnaam}>
       {/* Voorpagina */}
       <Page size="A4" style={[styles.page, styles.cover]}>
-        <Rand sleutel={sleutel} />
+        <Rand sleutel={sleutel} bedrijfsnaam={bedrijfsnaam} />
         <Woordmerk merk={merk} grootte={15} />
 
         <Text style={styles.coverTitel}>
@@ -335,7 +336,7 @@ export function AdviesPdf({
 
       {/* Advies */}
       <Page size="A4" style={styles.page}>
-        <Rand sleutel={sleutel} />
+        <Rand sleutel={sleutel} bedrijfsnaam={bedrijfsnaam} />
         {secties.length > 1 && (
           <View style={styles.inhoud}>
             <Text style={styles.kicker}>In dit advies</Text>

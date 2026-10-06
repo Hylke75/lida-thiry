@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { Fragment, type ReactNode } from "react";
 import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
@@ -15,12 +16,10 @@ import { formatteerBedrag } from "@/lib/prijs";
 // GRATIS_TEST (alleen aan met de waarde "1") is een omgevingsvariabele en verandert alleen met een nieuwe deploy.
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Bestellen",
-  description:
-    "Bestel de online kledingadviestest van Lida Thiry en ontvang direct je persoonlijke kledingadvies als PDF.",
-  alternates: { canonical: "/bestellen" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("bestellen");
+}
 
 /** Zet {prijs} in een tekst om in het meegegeven element. */
 function metPrijs(tekst: string, prijs: ReactNode): ReactNode {

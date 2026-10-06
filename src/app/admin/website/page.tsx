@@ -21,7 +21,12 @@ export default async function WebsiteInstellingenPagina() {
         titel="Instellingen website"
         beschrijving={
           <>
-            Naam, logo, pictogram, deelafbeelding en social media van de website. Lege velden gebruiken de standaard. De volgorde
+            Naam, titels, zoekmachines, logo, pictogram, deelafbeelding, social media, bedrijfsgegevens voor Google, namen in blog
+            en e-mail en de voettekst. Lege velden gebruiken de standaard. SEO van de vaste pagina&apos;s staat bij{" "}
+            <Link href="/admin/website/seo" className="text-accent underline underline-offset-4">
+              SEO
+            </Link>
+            . De volgorde
             van de homepage stel je in bij{" "}
             <Link href="/admin/website/homepage" className="text-accent underline underline-offset-4">
               Homepage

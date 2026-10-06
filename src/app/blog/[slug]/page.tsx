@@ -18,7 +18,8 @@ import { deelLinks } from "@/lib/blog/delen";
 import { blogPostingJsonLd } from "@/lib/blog/structuur";
 import { deelMetadata } from "@/lib/seo/delen";
 import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
-import { leesWebsite } from "@/lib/website/lees";
+import { leesBedrijfsnaam, leesWebsite } from "@/lib/website/lees";
+import { rssTitel } from "@/lib/website/seo";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
@@ -50,11 +51,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: titel,
     description: omschrijving,
-    authors: [{ name: b.auteur || "Lida Thiry" }],
+    authors: [{ name: b.auteur || site.standaardAuteur }],
     keywords: b.tags.length ? b.tags : undefined,
     alternates: {
       canonical: `/blog/${b.slug}`,
-      types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Blog · Lida Thiry" }] },
+      types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: rssTitel("Blog", site.korteNaam) }] },
     },
     ...deelMetadata(site, {
       titel,
@@ -64,7 +65,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       artikel: {
         publishedTime: b.gepubliceerd_op ?? undefined,
         modifiedTime: b.bijgewerkt_op,
-        authors: [b.auteur || "Lida Thiry"],
+        authors: [b.auteur || site.standaardAuteur],
         section: b.categorie ?? undefined,
         tags: b.tags,
       },
@@ -90,12 +91,15 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
   const b = await haalBericht(slug);
   if (!b) notFound();
 
-  const [t, nieuwsbrief, gerelateerd, afmetingen] = await Promise.all([
+  const [t, nieuwsbrief, gerelateerd, afmetingen, site, uitgever] = await Promise.all([
     leesSectie(BLOG_ARTIKEL),
     leesSectie(NIEUWSBRIEF_AANMELDEN),
     haalGerelateerd(b, 3),
     afmetingenVoorTekst(b.inhoud),
+    leesWebsite(),
+    leesBedrijfsnaam(),
   ]);
+  const auteur = b.auteur || site.standaardAuteur;
 
   const basis = siteUrl();
   const url = `${basis}/blog/${b.slug}`;
@@ -107,7 +111,8 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
     afbeelding: beeld?.url,
     gepubliceerdOp: b.gepubliceerd_op ?? b.aangemaakt_op,
     bijgewerktOp: b.bijgewerkt_op,
-    auteur: b.auteur,
+    auteur,
+    uitgever,
     tags: b.tags,
     categorie: b.categorie,
     siteUrl: basis,
@@ -162,13 +167,13 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-coral-soft font-serif text-[16px] text-berry"
                   aria-hidden="true"
                 >
-                  {(b.auteur || "Lida Thiry")
+                  {auteur
                     .split(/\s+/)
                     .map((w) => w.charAt(0))
                     .slice(0, 2)
                     .join("")}
                 </span>
-                <span className="font-bold text-ink">{b.auteur || "Lida Thiry"}</span>
+                <span className="font-bold text-ink">{auteur}</span>
               </span>
               <span aria-hidden="true">·</span>
               {b.gepubliceerd_op && <time dateTime={b.gepubliceerd_op}>{formatteerDatum(b.gepubliceerd_op)}</time>}

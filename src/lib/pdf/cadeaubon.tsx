@@ -74,7 +74,7 @@ function CadeaubonPdf({ b, bestelUrl, merk }: { b: BonGegevens; bestelUrl: strin
     .filter(Boolean)
     .join(" · ");
   return (
-    <Document title={`Cadeaubon ${b.code}`} author={BEDRIJFSNAAM_STANDAARD}>
+    <Document title={`Cadeaubon ${b.code}`} author={merk.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD}>
       <Page size="A4" orientation="landscape" style={s.page}>
         <Kleurstrook hoogte={10} style={s.strookBoven} />
         <Kleurstrook hoogte={10} style={s.strookOnder} />

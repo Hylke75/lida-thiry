@@ -4,6 +4,8 @@ import { ImageResponse } from "next/og";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 import { KLEUR, STROOK } from "@/lib/huisstijl";
 import { leesMerk } from "@/lib/merk";
+import { deelbeeldKop } from "@/lib/seo/delen";
+import { leesWebsite } from "@/lib/website/lees";
 
 export const alt = `${BEDRIJFSNAAM_STANDAARD} — ontdek je figuurtype`;
 export const size = { width: 1200, height: 630 };
@@ -18,13 +20,16 @@ export const revalidate = 3600;
 const MAP = join(process.cwd(), "src", "lib", "pdf", "fonts");
 
 export default async function OpengraphImage() {
-  const [serif, serifCursief, sans, sansVet, merk] = await Promise.all([
+  const [serif, serifCursief, sans, sansVet, merk, site] = await Promise.all([
     readFile(join(MAP, "DMSerifDisplay-Regular.ttf")),
     readFile(join(MAP, "DMSerifDisplay-Italic.ttf")),
     readFile(join(MAP, "Manrope-Regular.ttf")),
     readFile(join(MAP, "Manrope-Bold.ttf")),
     leesMerk(),
+    leesWebsite(),
   ]);
+  // De titel bij delen (Beheer → Website → Instellingen), het laatste woord als accent.
+  const kop = deelbeeldKop(site.deelTitel);
   const stappen: [string, string][] = [
     ["Meten", KLEUR.sage],
     ["vragen beantwoorden", KLEUR.butter],
@@ -90,9 +95,9 @@ export default async function OpengraphImage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontFamily: "DM Serif Display", fontSize: 104, lineHeight: 1.04 }}>
-              Ontdek je&nbsp;
-              <span style={{ fontStyle: "italic", color: KLEUR.coralTekst }}>figuurtype</span>
+            <div style={{ display: "flex", flexWrap: "wrap", fontFamily: "DM Serif Display", fontSize: kop.grootte, lineHeight: 1.04 }}>
+              {kop.voor ? `${kop.voor} ` : null}
+              <span style={{ fontStyle: "italic", color: KLEUR.coralTekst }}>{kop.accent}</span>
             </div>
             <div style={{ display: "flex", marginTop: 22, fontSize: 34, lineHeight: 1.35, color: KLEUR.inkZacht }}>
               Online kledingadviestest — direct je persoonlijke advies als PDF
