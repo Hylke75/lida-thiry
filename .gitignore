@@ -48,4 +48,14 @@ figuurtypes-advies*/
 
 # Supabase CLI lokaal
 supabase/.temp/
+# Gegenereerd door scripts/migraties-bundelen.mjs (zie docs/testomgeving.md)
+supabase/alle-migraties.sql
+# Back-ups bevatten persoonsgegevens
+lida-thiry-backup-*.json*
 .branches/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

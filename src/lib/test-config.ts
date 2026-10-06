@@ -1,8 +1,8 @@
-// Configuratie voor de test-UI. Teksten en beeldverwijzingen zijn placeholders
-// (OPEN-punt #7: definitieve afbeeldingen, meetinstructie-video's en pasvormvragen
-// volgen). Alles staat hier zodat het zonder codewijziging aangepast kan worden.
+// Configuratie voor de test-UI: de vaste opbouw (welke maten, verplicht,
+// controlemeting, indeling in stappen) en de standaardteksten. De teksten zelf
+// (labels, instructies, meettip, pasvormvragen) zijn aan te passen in
+// Beheer → Teksten → Test; zie src/lib/inhoud/groepen/test.ts.
 
-import type { Figuurletter } from "@/rekenkern/config/ffit-naar-letter";
 
 export interface MaatVeld {
   sleutel: "borst" | "taille" | "hoge_heup" | "heup" | "binnenbeen" | "schouder";
@@ -63,25 +63,29 @@ export const MAAT_VELDEN: MaatVeld[] = [
   },
 ];
 
+export type MaatSleutel = MaatVeld["sleutel"];
+
+/** Indeling van de maten over de tabbladen van de test (van boven naar beneden). */
+export const MAAT_GROEPEN = [
+  { sleutel: "bovenlichaam", titel: "Bovenlichaam", velden: ["schouder", "borst"] },
+  { sleutel: "taille", titel: "Taille", velden: ["taille", "hoge_heup"] },
+  { sleutel: "heupen_benen", titel: "Heupen en benen", velden: ["heup", "binnenbeen"] },
+] as const satisfies readonly { sleutel: string; titel: string; velden: readonly MaatSleutel[] }[];
+
+export type MaatGroepSleutel = (typeof MAAT_GROEPEN)[number]["sleutel"];
+
+/** Halve breedtes (px in de illustratie) van een lichaamsvorm. */
+export interface Lichaamsvorm {
+  schouder: number;
+  borst: number;
+  taille: number;
+  hogeHeup: number;
+  heup: number;
+}
+
 // Algemene meettip (getoond bij stap 2). Uit "Tips voor Stijladvies op afstand".
 export const MEET_TIP =
   "Neem een meetlint en vraag een huisgenoot of vriend(in) om je te helpen — zelf nauwkeurig meten is lastig. Hoe nauwkeuriger je meet, hoe beter we je figuurtype kunnen bepalen.";
-
-export interface SilhouetOptie {
-  letter: Figuurletter;
-  naam: string;
-  omschrijving: string;
-  /** Placeholder-afbeelding; definitieve silhouetten volgen. */
-  afbeelding: string | null;
-}
-
-export const SILHOUETTEN: SilhouetOptie[] = [
-  { letter: "X", naam: "Zandloper", omschrijving: "Schouders en heupen in balans, duidelijke taille.", afbeelding: null },
-  { letter: "A", naam: "Peer / driehoek", omschrijving: "Heupen breder dan schouders.", afbeelding: null },
-  { letter: "V", naam: "Omgekeerde driehoek", omschrijving: "Schouders breder dan heupen.", afbeelding: null },
-  { letter: "H", naam: "Rechthoek", omschrijving: "Weinig verschil tussen borst, taille en heup.", afbeelding: null },
-  { letter: "8", naam: "De 8", omschrijving: "Voller silhouet met balans boven en onder.", afbeelding: null },
-];
 
 export interface Pasvormvraag {
   sleutel: string;
@@ -89,7 +93,8 @@ export interface Pasvormvraag {
   opties: string[];
 }
 
-// Configureerbare pasvormvragen (placeholders).
+// Standaard-pasvormvragen. De sleutel is ook de vaste id van de vraag in
+// Beheer → Teksten en daarmee de sleutel waaronder het antwoord wordt opgeslagen.
 export const PASVORMVRAGEN: Pasvormvraag[] = [
   {
     sleutel: "gewicht_erbij",

@@ -1,27 +1,52 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesInstelling } from "@/lib/instellingen";
-import { beoordeelToken } from "@/lib/test-order";
+import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { verwerkTest, type TestInvoer } from "@/lib/test-verwerking";
 import { leverAdvies } from "@/lib/advies-leveren";
-import { stuurTwijfelKlantMail, stuurTwijfelAdviseurMail } from "@/lib/resend";
-import { siteUrl } from "@/lib/site";
-import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
+import { stuurBeheerMelding, foutTekst } from "@/lib/beheermelding";
+import {
+  STANDAARD_ZANDLOPER_VARIANT,
+  type ZandloperVariant,
+} from "@/rekenkern/config/ffit-regels";
+import { haalFfitToewijzing, haalSilhouetten } from "@/lib/lichaamstypes";
+import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
+import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
+import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { TEST_VRAGEN, pasvormVragen, schoonPasvormAntwoorden } from "@/lib/inhoud/groepen/test";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/** Hele centimeters/kilo's (de database slaat gehele getallen op). */
 function getal(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === "") return undefined;
   const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isFinite(n) ? Math.round(n) : undefined;
+}
+
+/**
+ * Antwoord met het definitieve type: sleutel (bijv. "6A") en de titel uit
+ * adviestypes (null als die ontbreekt).
+ */
+async function typeAntwoord(sleutel: string, extra: { pdfKlaar?: boolean } = {}) {
+  const titel = await haalTypeTitel(sleutel).catch(() => null);
+  return NextResponse.json({ soort: "type", sleutel, titel, ...extra });
 }
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  if (!(await magDoor(request, "test", 30, 600))) return teVeelVerzoeken();
   const { token } = await params;
   const beoordeling = await beoordeelToken(token);
+  // Al afgerond (bijv. opnieuw verstuurd na een weggevallen verbinding): geef het
+  // eerdere resultaat terug in plaats van een foutmelding.
+  if (beoordeling.toestand === "al_afgerond" && beoordeling.order.toegekend_type) {
+    return typeAntwoord(beoordeling.order.toegekend_type);
+  }
   if (beoordeling.toestand !== "geldig") {
     return NextResponse.json({ fout: "Deze testlink is niet (meer) bruikbaar." }, { status: 403 });
   }
@@ -41,6 +66,26 @@ export async function POST(
   if ([lengte, gewicht, borst, taille, hogeHeup, heup].some((v) => v === undefined)) {
     return NextResponse.json({ fout: "Vul lengte, gewicht en alle verplichte maten in." }, { status: 400 });
   }
+  if (lengte! < 120 || lengte! > 220 || gewicht! < 30 || gewicht! > 250) {
+    return NextResponse.json(
+      { fout: "Controleer je lengte (in cm) en gewicht (in kg)." },
+      { status: 400 },
+    );
+  }
+  // Schouder is een omvang (optioneel): zelfde grenzen als de andere omtrekken.
+  const schouder = getal(m.schouder);
+  if (schouder !== undefined && (schouder < MAAT_GRENZEN.omtrekMin || schouder > MAAT_GRENZEN.omtrekMax)) {
+    return NextResponse.json(
+      {
+        fout: `De schouderomvang (${schouder} cm) valt buiten het bereik ${MAAT_GRENZEN.omtrekMin}–${MAAT_GRENZEN.omtrekMax} cm. Controleer de meting.`,
+      },
+      { status: 400 },
+    );
+  }
+  const silhouetten = await haalSilhouetten();
+  if (!silhouetten.some((s) => s.letter === body.gekozen_silhouet)) {
+    return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
+  }
 
   const invoer: TestInvoer = {
     lengte_cm: lengte!,
@@ -51,7 +96,7 @@ export async function POST(
       hogeHeup: hogeHeup!,
       heup: heup!,
       binnenbeen: getal(m.binnenbeen),
-      schouder: getal(m.schouder),
+      schouder,
     },
     controlemetingen: {
       borst: getal((body.controlemetingen as Record<string, unknown>)?.borst),
@@ -60,30 +105,70 @@ export async function POST(
       heup: getal((body.controlemetingen as Record<string, unknown>)?.heup),
     },
     gekozen_silhouet: body.gekozen_silhouet as TestInvoer["gekozen_silhouet"],
-    pasvormantwoorden: (body.pasvormantwoorden ?? {}) as Record<string, string>,
+    // Telt niet mee in de berekening; wordt vlak voor het opslaan opgeschoond.
+    pasvormantwoorden: {},
     hermeting: body.hermeting === true,
   };
 
-  const variant = ((await leesInstelling("zandloper_variant")) || "ffit") as ZandloperVariant;
-  const uitkomst = verwerkTest(invoer, variant);
+  const variant = ((await leesInstelling("zandloper_variant")) ||
+    STANDAARD_ZANDLOPER_VARIANT) as ZandloperVariant;
+  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing());
 
   // Tussenstappen: niets opslaan.
   if (uitkomst.soort === "opnieuw_meten") {
     return NextResponse.json({ soort: "opnieuw_meten", bevindingen: uitkomst.bevindingen });
   }
   if (uitkomst.soort === "silhouet_verschil") {
-    return NextResponse.json({ soort: "silhouet_verschil" });
+    return NextResponse.json({
+      soort: "silhouet_verschil",
+      gekozenLetter: invoer.gekozen_silhouet,
+      berekendeLetter: uitkomst.berekendeLetter,
+      reden: silhouetVerschilReden(
+        invoer.maten,
+        invoer.gekozen_silhouet,
+        uitkomst.berekendeLetter,
+        Object.fromEntries(silhouetten.map((s) => [s.letter, s.naam])),
+      ),
+    });
   }
+
+  // Dezelfde (beheerbare) pasvormvragen als in de test: alleen antwoorden op
+  // bestaande vragen met een bestaande antwoordmogelijkheid worden bewaard.
+  const pasvormantwoorden = schoonPasvormAntwoorden(
+    body.pasvormantwoorden,
+    pasvormVragen(await leesSectie(TEST_VRAGEN)),
+  );
 
   const supabase = adminClient();
   const categorie = uitkomst.categorie;
 
+  // Definitief type. Eerst de overgang betaald -> test_afgerond: alleen het
+  // verzoek dat die wint, slaat het resultaat op en levert het advies, zodat een
+  // dubbele verzending niets overschrijft en niet twee keer mailt.
+  const afgerondOp = new Date().toISOString();
+  const { data: bijgewerkt, error: orderFout } = await supabase
+    .from("orders")
+    .update({
+      status: "test_afgerond",
+      toegekend_type: uitkomst.sleutel,
+      afgerond_op: afgerondOp,
+    })
+    .eq("id", order.id)
+    .eq("status", "betaald")
+    .select("id");
+  if (orderFout) {
+    return NextResponse.json({ fout: "Afronden mislukte. Probeer het opnieuw." }, { status: 500 });
+  }
+  if (!bijgewerkt?.length) {
+    return typeAntwoord(uitkomst.sleutel);
+  }
+
   // Testresultaat opslaan (één per order dankzij de unieke order_id).
-  await supabase.from("testresultaten").upsert(
+  const { error: opslagFout } = await supabase.from("testresultaten").upsert(
     {
       order_id: order.id,
-      lengte_cm: Math.round(invoer.lengte_cm),
-      gewicht_kg: Math.round(invoer.gewicht_kg),
+      lengte_cm: invoer.lengte_cm,
+      gewicht_kg: invoer.gewicht_kg,
       categorie,
       borst: invoer.maten.borst,
       taille: invoer.maten.taille,
@@ -93,58 +178,38 @@ export async function POST(
       schouder: invoer.maten.schouder ?? null,
       controlemetingen: invoer.controlemetingen,
       gekozen_silhouet: invoer.gekozen_silhouet,
-      pasvormantwoorden: invoer.pasvormantwoorden,
+      pasvormantwoorden,
       ffit_type: uitkomst.ffit_type,
-      letter: uitkomst.soort === "type" ? uitkomst.letter : null,
+      letter: uitkomst.letter,
     },
     { onConflict: "order_id" },
   );
-
-  if (uitkomst.soort === "twijfelgeval") {
+  if (opslagFout) {
+    // Terug naar 'betaald', zodat de klant het opnieuw kan proberen.
     await supabase
       .from("orders")
-      .update({ status: "handmatige_beoordeling", afgerond_op: new Date().toISOString() })
+      .update({ status: "betaald", toegekend_type: null, afgerond_op: null })
       .eq("id", order.id)
-      .eq("status", "betaald");
-
-    const werkdagen = await leesInstelling("doorlooptijd_werkdagen");
-    try {
-      await stuurTwijfelKlantMail({ naam: order.klantnaam, email: order.email, werkdagen });
-    } catch {}
-    const adviseurEmail = await leesInstelling("adviseur_email");
-    if (adviseurEmail) {
-      try {
-        await stuurTwijfelAdviseurMail({
-          adviseurEmail,
-          klantnaam: order.klantnaam,
-          orderId: order.id,
-          ffitType: uitkomst.ffit_type,
-          beheerUrl: `${siteUrl()}/admin/order/${order.id}`,
-        });
-      } catch {}
-    }
-    return NextResponse.json({ soort: "twijfelgeval" });
+      .eq("status", "test_afgerond")
+      .eq("afgerond_op", afgerondOp);
+    return NextResponse.json(
+      { fout: "Opslaan van je antwoorden mislukte. Probeer het opnieuw." },
+      { status: 500 },
+    );
   }
 
-  // Definitief type.
-  await supabase
-    .from("orders")
-    .update({
-      status: "test_afgerond",
-      toegekend_type: uitkomst.sleutel,
-      afgerond_op: new Date().toISOString(),
-    })
-    .eq("id", order.id)
-    .eq("status", "betaald");
-
-  // PDF genereren, mailen en op 'advies_verzonden' zetten. Faalt stil als het
-  // adviesdocument nog niet geïmporteerd is (dan blijft de order 'test_afgerond').
+  // PDF genereren, mailen en op 'advies_verzonden' zetten. Mislukt dat, dan blijft
+  // de order 'test_afgerond' en probeert de nachtelijke cron het opnieuw.
   let pdfKlaar = false;
   try {
     pdfKlaar = await leverAdvies(order.id);
-  } catch {
-    // PDF of mail mislukt: order blijft test_afgerond, kan later opnieuw.
+  } catch (e) {
+    console.error("Advies leveren mislukt", order.id, e);
+    await stuurBeheerMelding(
+      "Advies leveren mislukt",
+      `Order ${order.id} (${order.klantnaam}, ${order.email}) heeft de test afgerond (type ${uitkomst.sleutel}), maar het advies kon niet worden gemaakt of gemaild. De nachtelijke taak probeert het opnieuw.\n\n${foutTekst(e)}`,
+    );
   }
 
-  return NextResponse.json({ soort: "type", sleutel: uitkomst.sleutel, pdfKlaar });
+  return typeAntwoord(uitkomst.sleutel, { pdfKlaar });
 }

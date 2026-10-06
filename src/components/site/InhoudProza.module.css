@@ -1,0 +1,171 @@
+/*
+ * Redactionele typografie voor beheerbare tekst (<Opmaak>): blog, pagina's en
+ * de juridische pagina's. Alleen kind-selectors (> h2, > p, …): blokken die
+ * tussen de tekst staan (formulieren, kaarten) krijgen zo geen tekstopmaak.
+ *
+ * Kleuren via --foreground/--accent (en niet --ink/--berry), zodat het live
+ * voorbeeld in het beheer ook in de donkere modus leesbaar blijft. Op de
+ * publieke site zijn die gelijk aan inkt en berry.
+ */
+.proza {
+  display: flow-root;
+  min-width: 0;
+  color: var(--foreground);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.proza > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.proza > * + * {
+  margin-top: 20px;
+}
+
+/* De eerste alinea als intro (18–19 px), alleen als de tekst ermee begint. */
+.intro > p:first-child {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+@media (min-width: 641px) {
+  .intro > p:first-child {
+    font-size: 19px;
+  }
+}
+
+.proza > h2 {
+  margin-top: 48px;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  font-synthesis-weight: none;
+}
+
+@media (min-width: 641px) {
+  .proza > h2 {
+    font-size: 38px;
+  }
+}
+
+.proza > h3 {
+  margin-top: 32px;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.15;
+  font-synthesis-weight: none;
+}
+
+.proza > h2 + *,
+.proza > h3 + * {
+  margin-top: 12px;
+}
+
+.proza > :first-child {
+  margin-top: 0;
+}
+
+.proza > p a,
+.proza > ul a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.proza > p a:hover,
+.proza > ul a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.proza > p strong,
+.proza > ul strong {
+  font-weight: 800;
+}
+
+/* Lijsten: ronde koraalkleurige vinkjes, zoals .check-list in het ontwerp. */
+.proza > ul {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.proza > ul > li {
+  position: relative;
+  padding-left: 36px;
+}
+
+.proza > ul > li::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--coral)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E")
+    center / 14px no-repeat;
+}
+
+/* Juridische teksten: gewone opsommingstekens (koraal) in plaats van vinkjes. */
+.juridisch > ul {
+  gap: 8px;
+}
+
+.juridisch > ul > li {
+  padding-left: 22px;
+}
+
+.juridisch > ul > li::before {
+  top: 0.62em;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  background: var(--coral);
+}
+
+.juridisch > h2 {
+  font-size: 28px;
+}
+
+@media (min-width: 641px) {
+  .juridisch > h2 {
+    font-size: 32px;
+  }
+}
+
+.juridisch > h3 {
+  font-size: 22px;
+}
+
+.proza > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+}
+
+/* Een blok tussen de tekst ({contactformulier}, …): wat meer lucht, geen tekstopmaak. */
+.proza > .blok {
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.proza > .blok:first-child {
+  margin-top: 8px;
+}
+
+.proza > .blok:last-child {
+  margin-bottom: 0;
+}

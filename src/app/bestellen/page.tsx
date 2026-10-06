@@ -1,52 +1,73 @@
-import Link from "next/link";
-import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
+import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
+import { Fragment, type ReactNode } from "react";
+import { leesPubliekePrijs } from "@/lib/instellingen";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
+import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { gratisTestAan } from "@/lib/order-status";
+import { KlantKaart, KlantKop, KlantMelding, KlantPagina } from "@/components/site/KlantPagina";
 import { BestelFormulier } from "./BestelFormulier";
+import { formatteerBedrag } from "@/lib/prijs";
 
-export const dynamic = "force-dynamic";
+// Statisch met ISR: teksten (tag "inhoud") en de prijs (tag "instellingen") komen
+// uit de datacache; opslaan in het beheer vernieuwt de pagina direct. Het bedrag
+// dat de klant betaalt, bepaalt /api/bestellen altijd vers uit de database.
+// GRATIS_TEST (alleen aan met de waarde "1") is een omgevingsvariabele en verandert alleen met een nieuwe deploy.
+export const revalidate = 3600;
+
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("bestellen");
+}
+
+/** Zet {prijs} in een tekst om in het meegegeven element. */
+function metPrijs(tekst: string, prijs: ReactNode): ReactNode {
+  return tekst.split("{prijs}").map((deel, i) => (
+    <Fragment key={i}>
+      {i > 0 && prijs}
+      {deel}
+    </Fragment>
+  ));
+}
 
 export default async function BestellenPage() {
-  const gratisTest = Boolean(process.env.GRATIS_TEST);
+  const [pagina, formulier, nieuwsbrief] = await Promise.all([
+    leesSectie(BESTELLEN_PAGINA),
+    leesSectie(BESTELLEN_FORMULIER),
+    leesSectie(NIEUWSBRIEF_BESTELLING),
+  ]);
+  const gratisTest = gratisTestAan();
   let prijsLabel: string | null = null;
   let prijsBekend = false;
   try {
-    const cent = await leesPrijsCent();
-    const valuta = (await leesInstelling("valuta")) || "EUR";
+    const { prijsCent: cent, valuta } = await leesPubliekePrijs();
     if (cent) {
       prijsBekend = true;
-      prijsLabel = new Intl.NumberFormat("nl-NL", {
-        style: "currency",
-        currency: valuta,
-      }).format(cent / 100);
+      prijsLabel = formatteerBedrag(cent, valuta);
     }
   } catch {
     prijsBekend = false;
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-8">
-      <div>
-        <Link
-          href="/"
-          className="text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50"
-        >
-          ← Terug
-        </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Bestellen</h1>
+    <KlantPagina>
+      <KlantKop bovenschrift={pagina.bovenschrift} titel={pagina.titel} terug={{ href: "/", tekst: pagina.terug }}>
         {prijsLabel && (
-          <p className="mt-1 text-black/60 dark:text-white/60">
-            Kledingadviestest — <strong>{prijsLabel}</strong>
+          <p>
+            {metPrijs(pagina.prijsregel, <strong className="font-extrabold text-ink">{prijsLabel}</strong>)}{" "}
+            <span className="text-[14px]">{pagina.btw}</span>
           </p>
         )}
-      </div>
+      </KlantKop>
 
       {prijsBekend || gratisTest ? (
-        <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} />
+        <KlantKaart>
+          <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} teksten={formulier} nieuwsbriefVinkje={nieuwsbrief.vinkje} />
+        </KlantKaart>
       ) : (
-        <p className="rounded-lg border border-black/10 px-4 py-3 text-sm text-black/60 dark:border-white/15 dark:text-white/60">
-          De prijs is nog niet ingesteld, dus bestellen is nu niet mogelijk. Kom
-          binnenkort terug.
-        </p>
+        <KlantMelding soort="letop">{pagina.geenPrijs}</KlantMelding>
       )}
-    </main>
+    </KlantPagina>
   );
 }

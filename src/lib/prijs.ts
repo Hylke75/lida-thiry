@@ -1,0 +1,141 @@
+// Pure prijslogica: kortingen, btw-splitsing, factuurnummers en cadeauboncodes.
+// Geen server-only imports, zodat dit los te testen is.
+
+import { TIJDZONE } from "./datum";
+
+export type KortingSoort = "percentage" | "bedrag";
+
+export interface Kortingscode {
+  code: string;
+  soort: KortingSoort;
+  /** percentage: hele procenten (1-100); bedrag: centen. */
+  waarde: number;
+  geldig_tot: string | null;
+  max_gebruik: number | null;
+  aantal_gebruikt: number;
+  actief: boolean;
+}
+
+/** Normaliseert een ingevoerde code: hoofdletters, zonder spaties. */
+export function normaliseerCode(invoer: string): string {
+  return invoer.replace(/\s+/g, "").toUpperCase();
+}
+
+/**
+ * Controleert of een code (nog) bruikbaar is. Geeft een Nederlandstalige
+ * foutmelding terug, of null als de code geldig is.
+ */
+export function controleerKortingscode(code: Kortingscode | null, nu: Date = new Date()): string | null {
+  if (!code || !code.actief) return "Deze kortingscode is niet geldig.";
+  if (code.geldig_tot && new Date(code.geldig_tot) <= nu) return "Deze kortingscode is verlopen.";
+  if (code.max_gebruik !== null && code.aantal_gebruikt >= code.max_gebruik) {
+    return "Deze kortingscode is al gebruikt.";
+  }
+  return null;
+}
+
+/** Berekent korting en eindbedrag (in centen). Korting is nooit hoger dan de prijs. */
+export function berekenKorting(
+  prijsCent: number,
+  code: Pick<Kortingscode, "soort" | "waarde"> | null,
+): { kortingCent: number; eindbedragCent: number } {
+  const prijs = Math.max(0, Math.round(prijsCent));
+  if (!code || code.waarde <= 0) return { kortingCent: 0, eindbedragCent: prijs };
+  let korting =
+    code.soort === "percentage"
+      ? Math.round((prijs * Math.min(code.waarde, 100)) / 100)
+      : Math.round(code.waarde);
+  korting = Math.min(Math.max(korting, 0), prijs);
+  return { kortingCent: korting, eindbedragCent: prijs - korting };
+}
+
+/** Splitst een bedrag inclusief btw in een bedrag exclusief btw en het btw-deel. */
+export function btwSplitsing(
+  inclCent: number,
+  tariefProcent = 21,
+): { exclCent: number; btwCent: number; inclCent: number } {
+  const incl = Math.round(inclCent);
+  const excl = Math.round((incl * 100) / (100 + tariefProcent));
+  return { exclCent: excl, btwCent: incl - excl, inclCent: incl };
+}
+
+/** Factuurnummer in het formaat LT-2026-0001. */
+export function formatteerFactuurnummer(jaar: number, volgnummer: number): string {
+  return `LT-${jaar}-${String(volgnummer).padStart(4, "0")}`;
+}
+
+/** Kalenderjaar van een moment in Nederlandse tijd. */
+export function jaarInNederland(moment: Date): number {
+  return Number(
+    new Intl.DateTimeFormat("nl-NL", { year: "numeric", timeZone: TIJDZONE }).format(moment),
+  );
+}
+
+/** Formatteert centen als bedrag, bijv. "€ 24,95". */
+export function formatteerBedrag(cent: number, valuta = "EUR"): string {
+  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(cent / 100);
+}
+
+/**
+ * Ingevoerd bedrag in euro's naar centen: "29,95", "29.95", "€ 25" en "1.250,00"
+ * (punt als duizendtalscheiding bij een komma) worden herkend. Leeg → 0; ongeldig → null.
+ */
+export function euroNaarCent(w: string): number | null {
+  const s = w.trim().replace(/\s|€/g, "");
+  if (!s) return 0;
+  const norm = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  if (!/^\d+(\.\d{1,2})?$/.test(norm)) return null;
+  return Math.round(Number(norm) * 100);
+}
+
+// Zonder verwarrende tekens (0/O, 1/I/L).
+const CODE_ALFABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+/** Maakt een cadeauboncode als CADEAU-XXXX-XXXX uit (minstens 8) willekeurige bytes. */
+export function cadeauboncode(bytes: Uint8Array): string {
+  if (bytes.length < 8) throw new Error("Minstens 8 bytes nodig.");
+  const tekens = Array.from(bytes.slice(0, 8), (b) => CODE_ALFABET[b % CODE_ALFABET.length]);
+  return `CADEAU-${tekens.slice(0, 4).join("")}-${tekens.slice(4).join("")}`;
+}
+
+/** Mollie-bedrag ("24.95") naar centen; ontbrekend of ongeldig = 0. */
+function bedragNaarCenten(bedrag: { value?: string } | null | undefined): number {
+  const n = Number(bedrag?.value ?? 0);
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+/** Totaal terugbetaald + teruggeboekt (chargeback) van een Mollie-betaling, in centen. */
+export function terugbetaaldCent(betaling: {
+  amountRefunded?: { value?: string } | null;
+  amountChargedBack?: { value?: string } | null;
+}): number {
+  return bedragNaarCenten(betaling.amountRefunded) + bedragNaarCenten(betaling.amountChargedBack);
+}
+
+/**
+ * De code zoals die er zonder de claim van deze bestelling zelf uitziet: een
+ * bestelling die de (eenmalige) code al heeft geclaimd, mag hem bij hervatten
+ * gewoon blijven gebruiken.
+ */
+export function zonderEigenClaim<T extends Pick<Kortingscode, "aantal_gebruikt">>(code: T, geclaimd: boolean): T {
+  return geclaimd ? { ...code, aantal_gebruikt: Math.max(code.aantal_gebruikt - 1, 0) } : code;
+}
+
+/** Maximale lengte per veld van de factuurgegevens. */
+export const FACTUURVELDEN = { adres: 200, postcode: 20, plaats: 100, land: 100 } as const;
+
+/**
+ * Houdt van de (door de klant ingestuurde) factuurgegevens alleen adres,
+ * postcode, plaats en land over, als getrimde tekst met een maximale lengte.
+ */
+export function schoonFactuurgegevens(invoer: unknown): Partial<Record<keyof typeof FACTUURVELDEN, string>> {
+  const bron = invoer && typeof invoer === "object" && !Array.isArray(invoer) ? (invoer as Record<string, unknown>) : {};
+  const uit: Partial<Record<keyof typeof FACTUURVELDEN, string>> = {};
+  for (const [veld, max] of Object.entries(FACTUURVELDEN) as [keyof typeof FACTUURVELDEN, number][]) {
+    const waarde = bron[veld];
+    if (typeof waarde !== "string") continue;
+    const tekst = waarde.trim().slice(0, max);
+    if (tekst) uit[veld] = tekst;
+  }
+  return uit;
+}

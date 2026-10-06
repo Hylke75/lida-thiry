@@ -1,13 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { meet } from "@/lib/analytics/meet";
+import { GEBEURTENISSEN } from "@/lib/analytics/regels";
+import { Fragment, useRef, useState } from "react";
+import { parseerOpmaak, type Inline } from "@/lib/inhoud/opmaak";
+import type { SectieWaarden } from "@/lib/inhoud/schema";
+import type { BESTELLEN_FORMULIER } from "@/lib/inhoud/groepen/bestellen";
+import { knopKlassen } from "@/components/site/Basis";
+import { INVOER, LABEL, TEKST_LINK, VERPLICHT, VINKJE, VINKJE_LABEL } from "@/components/site/FormulierStijl";
+import { klantMeldingKlassen } from "@/components/site/KlantPagina";
+
+export type BestelFormulierTeksten = SectieWaarden<typeof BESTELLEN_FORMULIER>;
 
 export function BestelFormulier({
   prijsBekend,
   gratisTest,
+  teksten,
+  nieuwsbriefVinkje,
 }: {
   prijsBekend: boolean;
   gratisTest: boolean;
+  teksten: BestelFormulierTeksten;
+  /** Tekst bij het (optionele) vinkje voor de nieuwsbrief (Beheer → Teksten → Nieuwsbrief). */
+  nieuwsbriefVinkje: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [bezig, setBezig] = useState(false);
@@ -32,6 +47,9 @@ export function BestelFormulier({
       voorwaarden_akkoord: f.get("voorwaarden_akkoord") === "on",
       directe_levering_akkoord: f.get("directe_levering_akkoord") === "on",
       gratis,
+      website: String(f.get("website") || ""),
+      kortingscode: String(f.get("kortingscode") || "").trim(),
+      nieuwsbrief: f.get("nieuwsbrief") === "on",
     };
     try {
       const res = await fetch("/api/bestellen", {
@@ -41,53 +59,71 @@ export function BestelFormulier({
       });
       const data = await res.json();
       if (!res.ok) {
-        setFout(data.fout || "Er ging iets mis.");
+        setFout(data.fout || teksten.foutAlgemeen);
         setBezig(false);
         return;
       }
+      meet(GEBEURTENISSEN.bestellingGestart, { gratis: Boolean(gratis) });
       window.location.href = data.testUrl || data.checkoutUrl;
     } catch {
-      setFout("Kon niet doorgaan. Probeer het opnieuw.");
+      setFout(teksten.foutVerbinding);
       setBezig(false);
     }
   }
 
   return (
-    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4">
-      <Veld naam="klantnaam" label="Naam" autoComplete="name" verplicht />
-      <Veld naam="email" label="E-mailadres" type="email" autoComplete="email" verplicht />
-      <Veld naam="adres" label="Adres" autoComplete="street-address" />
-      <div className="grid grid-cols-2 gap-4">
-        <Veld naam="postcode" label="Postcode" autoComplete="postal-code" />
-        <Veld naam="plaats" label="Plaats" autoComplete="address-level2" />
+    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-5">
+      {/* Honeypot tegen spambots: onzichtbaar voor mensen en schermlezers. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
+      />
+      <Veld naam="klantnaam" label={teksten.naamLabel} autoComplete="name" verplicht />
+      <Veld naam="email" label={teksten.emailLabel} type="email" autoComplete="email" verplicht />
+      <Veld naam="adres" label={teksten.adresLabel} autoComplete="street-address" />
+      <div className="grid grid-cols-1 gap-5 tablet:grid-cols-[.8fr_1.2fr]">
+        <Veld naam="postcode" label={teksten.postcodeLabel} autoComplete="postal-code" />
+        <Veld naam="plaats" label={teksten.plaatsLabel} autoComplete="address-level2" />
       </div>
+      <Veld naam="kortingscode" label={teksten.kortingscodeLabel} autoComplete="off" />
 
-      <label className="flex items-start gap-3 text-sm text-black/70 dark:text-white/70">
-        <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1" />
-        <span>Ik ga akkoord met de voorwaarden en de privacyverklaring.</span>
-      </label>
-      <label className="flex items-start gap-3 text-sm text-black/70 dark:text-white/70">
-        <input type="checkbox" name="directe_levering_akkoord" required className="mt-1" />
+      <div className="mt-1 flex flex-col gap-2 border-t border-line pt-5">
+      <label className={VINKJE_LABEL}>
+        <input type="checkbox" name="voorwaarden_akkoord" required className={VINKJE} />
         <span>
-          Ik ga ermee akkoord dat de digitale inhoud direct wordt geleverd en dat
-          ik daarmee mijn herroepingsrecht verlies.
+          <VinkjeTekst tekst={teksten.akkoordVoorwaarden} />
         </span>
       </label>
-
-      {fout && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-          {fout}
-        </p>
+      <label className={VINKJE_LABEL}>
+        <input type="checkbox" name="directe_levering_akkoord" required className={VINKJE} />
+        <span>
+          <VinkjeTekst tekst={teksten.akkoordLevering} />
+        </span>
+      </label>
+      {nieuwsbriefVinkje.trim() && (
+        <label className={VINKJE_LABEL}>
+          <input type="checkbox" name="nieuwsbrief" className={VINKJE} />
+          <span>
+            <VinkjeTekst tekst={nieuwsbriefVinkje} />
+          </span>
+        </label>
       )}
+      </div>
+
+      {fout && <p className={klantMeldingKlassen("fout")}>{fout}</p>}
 
       {prijsBekend && (
         <button
           type="button"
           onClick={() => start(false)}
           disabled={bezig}
-          className="mt-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+          className={`${knopKlassen()} mt-1 w-full tablet:w-auto tablet:self-start`}
         >
-          {bezig ? "Bezig…" : "Naar betaling"}
+          {bezig ? teksten.knopBezig : teksten.knop}
         </button>
       )}
       {gratisTest && (
@@ -95,12 +131,69 @@ export function BestelFormulier({
           type="button"
           onClick={() => start(true)}
           disabled={bezig}
-          className="rounded-full border border-black/20 px-6 py-3 text-sm font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/25 dark:hover:bg-white/10"
+          className={`${knopKlassen({ variant: "outline" })} w-full tablet:w-auto tablet:self-start`}
         >
-          {bezig ? "Bezig…" : "Gratis testen (zonder betalen)"}
+          {bezig ? teksten.knopBezig : "Gratis testen (zonder betalen)"}
         </button>
       )}
     </form>
+  );
+}
+
+/**
+ * Tekst bij een vinkje, met **vet** en [links](url). Alle links openen in een
+ * nieuw tabblad, zodat het half ingevulde formulier niet verloren gaat. Alinea's,
+ * koppen en opsommingen worden als losse regels getoond (binnen een label past
+ * geen blokopmaak).
+ */
+export function VinkjeTekst({ tekst }: { tekst: string }) {
+  const regels = parseerOpmaak(tekst).flatMap((b) =>
+    b.soort === "lijst" ? b.items : b.soort === "blok" || b.soort === "afbeelding" ? [] : [b.inhoud],
+  );
+  return (
+    <>
+      {regels.map((inhoud, i) => (
+        <Fragment key={i}>
+          {i > 0 && <br />}
+          <InlineTekst delen={inhoud} />
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function InlineTekst({ delen }: { delen: Inline[] }) {
+  return (
+    <>
+      {delen.map((d, i) => {
+        switch (d.soort) {
+          case "tekst":
+            return <Fragment key={i}>{d.tekst}</Fragment>;
+          case "regel":
+            return <br key={i} />;
+          case "vet":
+            return (
+              <strong key={i}>
+                <InlineTekst delen={d.kinderen} />
+              </strong>
+            );
+          case "link":
+            return (
+              <a
+                key={i}
+                href={d.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={TEKST_LINK}
+              >
+                <InlineTekst delen={d.kinderen} />
+              </a>
+            );
+          case "variabele":
+            return <Fragment key={i}>{`{${d.naam}}`}</Fragment>;
+        }
+      })}
+    </>
   );
 }
 
@@ -118,18 +211,12 @@ function Veld({
   verplicht?: boolean;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-black/70 dark:text-white/70">
+    <label className="flex flex-col gap-2">
+      <span className={LABEL}>
         {label}
-        {verplicht && <span className="text-red-500"> *</span>}
+        {verplicht && <span className={VERPLICHT}> *</span>}
       </span>
-      <input
-        name={naam}
-        type={type}
-        autoComplete={autoComplete}
-        required={verplicht}
-        className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
-      />
+      <input name={naam} type={type} autoComplete={autoComplete} required={verplicht} className={INVOER} />
     </label>
   );
 }

@@ -2,7 +2,7 @@
 // Letterlijk overgenomen uit het aangeleverde schema. Alle grenswaarden staan hier,
 // niet in de logica. Nummering = nummering van de adviesdocumenten.
 //
-// OPEN-punten (zie open-punten.ts): randgedrag onder/boven de grenzen, lang-plus bij
+// Aannames: randgedrag onder/boven de grenzen, lang-plus bij
 // 178-179 cm (aangenomen 100-113), en de brontypfout "175-1789" gelezen als 175-179.
 
 import type { CategorieDefinitie } from "../types";

@@ -1,62 +1,179 @@
 import "server-only";
 import { Resend } from "resend";
 import { siteUrl } from "./site";
+import { leesSectie } from "./inhoud/lees";
+import { standaardWaarden } from "./inhoud/schema";
+import { escapeHtml } from "./inhoud/opmaak";
+import {
+  EMAILS_ADVIES,
+  EMAILS_ALGEMEEN,
+  EMAILS_BETAALHERINNERING,
+  EMAILS_BEVESTIGING,
+  EMAILS_HERINNERING,
+  EMAILS_MIJN_ADVIES,
+} from "./inhoud/groepen/emails";
+import { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
+import { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
+import { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
+import { BESTELLEN_FACTUUR } from "./inhoud/groepen/bestellen";
+import {
+  adviesMail,
+  betaalherinneringMail,
+  bevestigingMail,
+  cadeaubonKoperMail,
+  cadeaubonMail,
+  herinneringMail,
+  mijnAdviesMail,
+  nieuwsbriefBevestigingMail,
+  omhulsel,
+  type BestelOverzicht,
+  type BonGegevens,
+  type MijnAdviesMailLinks, reviewUitnodigingMail } from "./email-html";
+import { KLEIN, KLEUR, kopHtml, knopHtml, mailDocument } from "./mail-opmaak";
+import { leesMerk } from "./merk";
+import { leesInstellingen } from "./instellingen";
+import { afzenderGegevens, STANDAARD_AFZENDER } from "./mail-afzender";
 
-function resend() {
+export type { BestelOverzicht } from "./email-html";
+
+/** Resend-client (alleen server-side). Gedeeld door alle mails: bestellingen, nieuwsbrief en contact. */
+export function resend(): Resend {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY ontbreekt (server).");
   return new Resend(key);
 }
 
-function afzender(): string {
-  // Geverifieerd afzenderadres (Resend-domein). OPEN tot het domein geverifieerd is.
-  return process.env.RESEND_VAN || "Lida Thiry <onboarding@resend.dev>";
+/**
+ * De algemene mailteksten (voettekst) plus het woordmerk zoals op de site, voor
+ * de kop van elke klantmail. Faalt zacht (standaardteksten en -woordmerk).
+ */
+export async function leesMailAlgemeen() {
+  const [algemeen, merk] = await Promise.all([leesSectie(EMAILS_ALGEMEEN), leesMerk()]);
+  return { ...algemeen, merk };
 }
 
-const voettekst =
-  "© Lida Thiry Imago & Kledingadvies";
+/** Afzender uit RESEND_VAN zoals die is (zonder de ingestelde naam). Liever: klantAfzender(). */
+export function afzender(): string {
+  // Geverifieerd afzenderadres (Resend-domein). OPEN tot het domein geverifieerd is.
+  return process.env.RESEND_VAN || STANDAARD_AFZENDER;
+}
 
-/** Stuurt de testlink-mail na een geslaagde betaling. */
+/**
+ * Afzender van alle mails: de naam uit Beheer → Website → Instellingen
+ * (afzender_naam) met het adres uit RESEND_VAN, en als antwoordadres het
+ * contact-e-mailadres (Beheer → Instellingen). Vers gelezen; faalt zacht
+ * (dan RESEND_VAN zoals die is, zonder antwoordadres).
+ */
+export async function klantAfzender(): Promise<{ from: string; replyTo?: string }> {
+  try {
+    return afzenderGegevens(process.env.RESEND_VAN, await leesInstellingen());
+  } catch (e) {
+    console.error("Afzender-instellingen niet geladen; RESEND_VAN gebruikt.", e);
+    return { from: afzender() };
+  }
+}
+
+/**
+ * Bevestigingsmail na een geslaagde (of volledig met korting betaalde) bestelling:
+ * "Bedankt voor je bestelling" met besteloverzicht, startknop en optioneel de
+ * factuur als PDF-bijlage. Teksten: Beheer → Teksten → E-mails.
+ */
 export async function stuurTestlinkMail(opts: {
   naam: string;
   email: string;
   token: string;
   geldigDagen: number;
+  overzicht?: BestelOverzicht;
+  factuur?: { bestandsnaam: string; pdf: Buffer };
 }) {
-  const link = `${siteUrl()}/test/${opts.token}`;
-  const html = `
-    <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">
-      <h1 style="font-size:20px">Je persoonlijke kledingadviestest staat klaar</h1>
-      <p>Beste ${escapeHtml(opts.naam)},</p>
-      <p>Bedankt voor je bestelling. Via onderstaande knop start je de test. Je kunt
-      later verdergaan met dezelfde link; die is ${opts.geldigDagen} dagen geldig.</p>
-      <p style="margin:28px 0">
-        <a href="${link}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9999px;font-weight:600">Start de test</a>
-      </p>
-      <p style="font-size:13px;color:#555">Werkt de knop niet? Kopieer deze link:<br>${link}</p>
-      <hr style="border:none;border-top:1px solid #e5e5e5;margin:28px 0">
-      <p style="font-size:12px;color:#888">${voettekst}</p>
-    </div>`;
+  const [teksten, algemeen, factuur] = await Promise.all([
+    leesSectie(EMAILS_BEVESTIGING),
+    leesMailAlgemeen(),
+    leesSectie(BESTELLEN_FACTUUR),
+  ]);
+  const { onderwerp, html } = bevestigingMail(teksten, algemeen, {
+    naam: opts.naam,
+    link: `${siteUrl()}/test/${opts.token}`,
+    geldigDagen: opts.geldigDagen,
+    overzicht: opts.overzicht,
+    factuurRegel: factuur.mailRegel,
+  });
 
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
-    subject: "Je kledingadviestest staat klaar",
+    subject: onderwerp,
     html,
+    ...(opts.factuur
+      ? {
+          attachments: [
+            { filename: opts.factuur.bestandsnaam, content: opts.factuur.pdf.toString("base64") },
+          ],
+        }
+      : {}),
   });
   if (error) throw new Error(`Resend: ${error.message}`);
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+/** Vriendelijke herinnering wanneer de test een paar dagen na betaling nog niet is gedaan. */
+export async function stuurHerinneringMail(opts: {
+  naam: string;
+  email: string;
+  token: string;
+  verlooptOp: string | null;
+}) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_HERINNERING), leesMailAlgemeen()]);
+  const { onderwerp, html } = herinneringMail(teksten, algemeen, {
+    naam: opts.naam,
+    link: `${siteUrl()}/test/${opts.token}`,
+    verlooptOp: opts.verlooptOp,
+  });
+
+  const { error } = await resend().emails.send({
+    ...(await klantAfzender()),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+  });
+  if (error) throw new Error(`Resend herinnering: ${error.message}`);
 }
 
-function omhulsel(inhoud: string): string {
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">${inhoud}<hr style="border:none;border-top:1px solid #e5e5e5;margin:28px 0"><p style="font-size:12px;color:#888">${voettekst}</p></div>`;
+/**
+ * Bevestigingsmail voor de nieuwsbrief (dubbele opt-in) met de persoonlijke
+ * bevestigingslink. Teksten: Beheer → Teksten → Nieuwsbrief.
+ */
+export async function stuurNieuwsbriefBevestiging(opts: { email: string; naam?: string | null; link: string }) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(NIEUWSBRIEF_BEVESTIGMAIL), leesMailAlgemeen()]);
+  const { onderwerp, html } = nieuwsbriefBevestigingMail(teksten, algemeen, { naam: opts.naam, link: opts.link });
+  const { error } = await resend().emails.send({
+    ...(await klantAfzender()),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+  });
+  if (error) throw new Error(`Resend nieuwsbrief-bevestiging: ${error.message}`);
+}
+
+/**
+ * Interne foutmelding aan de beheerder (platte details, geen klantcommunicatie).
+ * Gebruikt bewust de standaardvoettekst: deze mail moet ook werken als de
+ * database niet bereikbaar is.
+ */
+export async function stuurBeheerMail(opts: { aan: string; onderwerp: string; details: string }) {
+  const html = omhulsel(
+    `
+      ${kopHtml(opts.onderwerp)}
+      <pre style="white-space:pre-wrap;font-family:Menlo,Consolas,monospace;font-size:12px;background:${KLEUR.cream};padding:14px;border-radius:14px">${escapeHtml(opts.details)}</pre>
+      <p style="${KLEIN}">Bekijk de bestellingen in <a href="${siteUrl()}/admin" style="color:${KLEUR.berry}">het beheer</a>.</p>`,
+    standaardWaarden(EMAILS_ALGEMEEN).voettekst,
+  );
+  const { error } = await resend().emails.send({
+    from: (await klantAfzender()).from,
+    to: opts.aan,
+    subject: `[Beheer] ${opts.onderwerp}`,
+    html,
+  });
+  if (error) throw new Error(`Resend beheer: ${error.message}`);
 }
 
 /** Levert het persoonlijke advies met de PDF als bijlage en een downloadlink. */
@@ -67,66 +184,195 @@ export async function stuurAdviesMail(opts: {
   downloadUrl: string;
   pdf: Buffer;
 }) {
-  const html = omhulsel(`
-    <h1 style="font-size:20px">Je persoonlijke kledingadvies</h1>
-    <p>Beste ${escapeHtml(opts.naam)},</p>
-    <p>Je advies is klaar! Op basis van je antwoorden is jouw type <strong>${escapeHtml(opts.sleutel)}</strong>.
-    Je vindt je persoonlijke advies in de bijgevoegde PDF.</p>
-    <p style="margin:24px 0"><a href="${opts.downloadUrl}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9999px;font-weight:600">Bekijk je advies (PDF)</a></p>`);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_ADVIES), leesMailAlgemeen()]);
+  const { onderwerp, html } = adviesMail(teksten, algemeen, {
+    naam: opts.naam,
+    sleutel: opts.sleutel,
+    downloadUrl: opts.downloadUrl,
+    basisUrl: siteUrl(),
+  });
 
   const { error } = await resend().emails.send({
-    from: afzender(),
+    ...(await klantAfzender()),
     to: opts.email,
-    subject: "Je persoonlijke kledingadvies staat klaar",
+    subject: onderwerp,
     html,
     attachments: [{ filename: `kledingadvies-${opts.sleutel}.pdf`, content: opts.pdf.toString("base64") }],
   });
   if (error) throw new Error(`Resend advies: ${error.message}`);
 }
 
-/** Bericht aan de klant bij een twijfelgeval (handmatige beoordeling). */
-export async function stuurTwijfelKlantMail(opts: {
-  naam: string;
-  email: string;
-  werkdagen: string | null;
-}) {
-  const termijn = opts.werkdagen ? `binnen ${opts.werkdagen} werkdagen` : "zo spoedig mogelijk";
-  const html = omhulsel(`
-    <h1 style="font-size:20px">We bekijken jouw advies persoonlijk</h1>
-    <p>Beste ${escapeHtml(opts.naam)},</p>
-    <p>Bedankt voor het invullen van de test. Om je het beste advies te geven,
-    beoordeelt onze adviseur jouw antwoorden persoonlijk. Je ontvangt je advies ${termijn} per e-mail.</p>`);
+/**
+ * Stuurt de uitnodiging of inloglink. Gooit een fout als dat niet lukt (bijv.
+ * geen RESEND_API_KEY, of het testadres van Resend dat alleen naar de eigenaar
+ * van het Resend-account mag sturen).
+ */
+export async function stuurBeheerderMail(opts: { aan: string; link: string | null; nieuw: boolean }) {
+  const knop = (href: string, tekst: string) => knopHtml(href, tekst, "donker", "24px 0");
+  const inhoud = opts.link
+    ? `${kopHtml(opts.nieuw ? "Je bent uitgenodigd voor het beheer" : "Inloggen in het beheer")}
+       <p>${opts.nieuw ? "Je hebt toegang gekregen tot het beheer van de website van Lida Thiry Imago &amp; Kledingadvies." : "Hier is een link om in te loggen in het beheer."} Klik op de knop en kies daarna een eigen wachtwoord.</p>
+       ${knop(opts.link, opts.nieuw ? "Uitnodiging accepteren" : "Inloggen en wachtwoord instellen")}
+       <p style="${KLEIN}">De link werkt één keer en is beperkt geldig (standaard 1 uur). Werkt hij niet meer, vraag dan om een nieuwe.</p>`
+    : `${kopHtml("Je hebt toegang tot het beheer")}
+       <p>Je kunt nu inloggen in het beheer van de website van Lida Thiry Imago &amp; Kledingadvies met je bestaande e-mailadres en wachtwoord.</p>
+       ${knop(`${siteUrl()}/admin/inloggen`, "Naar het beheer")}`;
   const { error } = await resend().emails.send({
-    from: afzender(),
-    to: opts.email,
-    subject: "Je kledingadvies wordt persoonlijk beoordeeld",
-    html,
+    from: (await klantAfzender()).from,
+    to: opts.aan,
+    subject: opts.link && opts.nieuw ? "Uitnodiging voor het beheer" : "Toegang tot het beheer",
+    html: mailDocument({ inhoud, onder: "" }),
   });
-  if (error) throw new Error(`Resend twijfel-klant: ${error.message}`);
+  if (error) throw new Error(error.message);
 }
 
-/** Melding aan de adviseur dat een order handmatig beoordeeld moet worden. */
-export async function stuurTwijfelAdviseurMail(opts: {
-  adviseurEmail: string;
-  klantnaam: string;
-  orderId: string;
-  ffitType: string;
-  beheerUrl: string;
+interface Bijlage {
+  bestandsnaam: string;
+  pdf: Buffer;
+}
+
+function bijlagen(lijst: readonly (Bijlage | null | undefined)[]) {
+  const echt = lijst.filter((b): b is Bijlage => Boolean(b));
+  return echt.length
+    ? { attachments: echt.map((b) => ({ filename: b.bestandsnaam, content: b.pdf.toString("base64") })) }
+    : {};
+}
+
+/**
+ * De mail met de cadeaubon (en de bon als PDF), aan de koper of de ontvanger.
+ * Aan de koper gaat ook de factuur mee, als die er is.
+ * Teksten: Beheer → Teksten → Cadeaubon.
+ */
+export async function stuurCadeaubonMail(opts: {
+  aan: "koper" | "ontvanger";
+  email: string;
+  bon: BonGegevens;
+  bonPdf: Bijlage | null;
+  factuur?: (Bijlage & { factuurnummer: string }) | null;
 }) {
-  const html = omhulsel(`
-    <h1 style="font-size:20px">Handmatige beoordeling nodig</h1>
-    <p>Een test kon niet automatisch worden ingedeeld.</p>
-    <ul>
-      <li>Klant: ${escapeHtml(opts.klantnaam)}</li>
-      <li>Order: ${escapeHtml(opts.orderId)}</li>
-      <li>FFIT-uitkomst: ${escapeHtml(opts.ffitType)}</li>
-    </ul>
-    <p style="margin:24px 0"><a href="${opts.beheerUrl}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9999px;font-weight:600">Open in beheer</a></p>`);
-  const { error } = await resend().emails.send({
-    from: afzender(),
-    to: opts.adviseurEmail,
-    subject: "Kledingadviestest: handmatige beoordeling nodig",
-    html,
+  const [teksten, algemeen, factuurTeksten] = await Promise.all([
+    leesSectie(CADEAUBON_MAIL),
+    leesMailAlgemeen(),
+    leesSectie(BESTELLEN_FACTUUR),
+  ]);
+  const basisUrl = siteUrl();
+  const { onderwerp, html } = cadeaubonMail(teksten, algemeen, {
+    aan: opts.aan,
+    bon: opts.bon,
+    bestelUrl: `${basisUrl}/bestellen`,
+    basisUrl,
+    factuurnummer: opts.aan === "koper" ? opts.factuur?.factuurnummer : null,
+    factuurRegel: factuurTeksten.mailRegel,
   });
-  if (error) throw new Error(`Resend twijfel-adviseur: ${error.message}`);
+  const { error } = await resend().emails.send({
+    ...(await klantAfzender()),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+    ...bijlagen([opts.bonPdf, opts.aan === "koper" ? opts.factuur : null]),
+  });
+  if (error) throw new Error(`Resend cadeaubon: ${error.message}`);
+}
+
+/** Bevestiging aan de koper als de bon naar de ontvanger gaat (met de factuur). */
+export async function stuurCadeaubonKoperMail(opts: {
+  email: string;
+  bon: BonGegevens;
+  ontvangerEmail: string;
+  verzendOp: string | null;
+  factuur?: (Bijlage & { factuurnummer: string }) | null;
+}) {
+  const [teksten, bonTeksten, algemeen] = await Promise.all([
+    leesSectie(CADEAUBON_KOPERMAIL),
+    leesSectie(CADEAUBON_MAIL),
+    leesMailAlgemeen(),
+  ]);
+  const { onderwerp, html } = cadeaubonKoperMail(teksten, bonTeksten, algemeen, {
+    bon: opts.bon,
+    ontvangerEmail: opts.ontvangerEmail,
+    verzendOp: opts.verzendOp,
+    basisUrl: siteUrl(),
+    factuurnummer: opts.factuur?.factuurnummer,
+  });
+  const { error } = await resend().emails.send({
+    ...(await klantAfzender()),
+    to: opts.email,
+    subject: onderwerp,
+    html,
+    ...bijlagen([opts.factuur]),
+  });
+  if (error) throw new Error(`Resend cadeaubon-bevestiging: ${error.message}`);
+}
+
+/** Eenmalige herinnering om een niet-afgeronde betaling alsnog af te ronden. */
+export async function stuurBetaalherinneringMail(opts: {
+  naam: string;
+  email: string;
+  bedragCent: number;
+  valuta: string;
+  link: string;
+}) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BETAALHERINNERING), leesMailAlgemeen()]);
+  const { onderwerp, html } = betaalherinneringMail(teksten, algemeen, { ...opts, basisUrl: siteUrl() });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend betaalherinnering: ${error.message}`);
+}
+
+/** Nieuwe links naar het advies en/of de nog niet afgeronde test (pagina Mijn advies). */
+export async function stuurMijnAdviesMail(opts: { email: string; naam: string | null } & MijnAdviesMailLinks) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_MIJN_ADVIES), leesMailAlgemeen()]);
+  const { onderwerp, html } = mijnAdviesMail(teksten, algemeen, {
+    naam: opts.naam,
+    adviezen: opts.adviezen,
+    tests: opts.tests,
+    basisUrl: siteUrl(),
+  });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend mijn advies: ${error.message}`);
+}
+
+/** Vraagt een klant om een review (link naar /review/<token>). Teksten: Beheer → Teksten → Reviews. */
+export async function stuurReviewUitnodiging(opts: { email: string; naam: string; token: string }) {
+  const [teksten, algemeen] = await Promise.all([leesSectie(REVIEWS_UITNODIGING), leesMailAlgemeen()]);
+  const { onderwerp, html } = reviewUitnodigingMail(teksten, algemeen, {
+    naam: opts.naam,
+    link: `${siteUrl()}/review/${opts.token}`,
+  });
+  const { error } = await resend().emails.send({ ...(await klantAfzender()), to: opts.email, subject: onderwerp, html });
+  if (error) throw new Error(`Resend review-uitnodiging: ${error.message}`);
+}
+
+/**
+ * Mail rond een afspraak (bevestiging, herinnering, annulering of melding aan de
+ * beheerder). De inhoud komt uit de pure bouwers in afspraken/mail-html.ts; een
+ * agendabestand (.ics) gaat optioneel als bijlage mee. Gooit bij een fout.
+ */
+export async function stuurAfspraakMail(opts: {
+  aan: string;
+  onderwerp: string;
+  html: string;
+  tekst: string;
+  replyTo?: string | null;
+  ics?: { bestandsnaam: string; inhoud: string; geannuleerd?: boolean } | null;
+}) {
+  const { error } = await resend().emails.send({
+    ...(await klantAfzender()),
+    to: opts.aan,
+    subject: opts.onderwerp,
+    html: opts.html,
+    text: opts.tekst,
+    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    ...(opts.ics
+      ? {
+          attachments: [
+            {
+              filename: opts.ics.bestandsnaam,
+              content: Buffer.from(opts.ics.inhoud, "utf8").toString("base64"),
+              contentType: `text/calendar; charset=utf-8; method=${opts.ics.geannuleerd ? "CANCEL" : "PUBLISH"}`,
+            },
+          ],
+        }
+      : {}),
+  });
+  if (error) throw new Error(`Resend afspraak: ${error.message}`);
 }

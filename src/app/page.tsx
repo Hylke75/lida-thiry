@@ -1,73 +1,179 @@
-import Link from "next/link";
-import { leesPrijsCent, leesInstelling } from "@/lib/instellingen";
+import { haalGoedgekeurdeReviews, haalReviewSamenvatting } from "@/lib/reviews/publiek";
+import { Fragment } from "react";
+import { leesPubliekeInstellingen, leesPubliekePrijs } from "@/lib/instellingen";
+import { leesSectie } from "@/lib/inhoud/lees";
+import {
+  WEBSITE_ADVIES,
+  WEBSITE_AFSLUITING,
+  WEBSITE_BLOG,
+  WEBSITE_DIENSTEN,
+  WEBSITE_ERVARINGEN,
+  WEBSITE_FIGUURTYPES,
+  WEBSITE_HERO,
+  WEBSITE_OVER,
+  WEBSITE_PROBLEEM,
+  WEBSITE_STAPPEN,
+  WEBSITE_VRAGEN,
+} from "@/lib/inhoud/groepen/website";
+import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
+import { haalLaatste } from "@/lib/blog/publiek";
+import { leesWebsite } from "@/lib/website/lees";
+import { normaliseerIndeling } from "@/lib/website/homepage";
+import { siteUrl } from "@/lib/site";
+import { faqJsonLd, organisatieJsonLd, testProductJsonLd, veiligeJson, type ReviewSamenvatting } from "@/lib/seo/structuur";
+import { HOMEPAGE_WEERGAVE, MAX_ERVARINGEN, type HomepageGegevens } from "@/components/homepage/Blokken";
+import { formatteerBedrag } from "@/lib/prijs";
+import { haalActieveSoortenPubliek } from "@/lib/afspraken/data";
+import { eersteBestaandeLink } from "@/lib/website/links";
+import { veiligeLink } from "@/lib/website/weergave";
 
-export const dynamic = "force-dynamic";
+// Statisch met ISR. Alles op de homepage komt uit de database en is voor elke
+// bezoeker gelijk: teksten, instellingen, reviews en de nieuwste
+// blogberichten. Die staan in de datacache met tags (lib/cache/tags.ts); opslaan
+// in het beheer vernieuwt de tags en daarmee deze pagina direct. Zonder wijziging
+// wordt de pagina elk uur opnieuw opgebouwd; staat het blogblok aan, dan hooguit
+// elke 2 minuten (Next neemt de kortste levensduur van de gegevens over), zodat
+// ingeplande berichten op tijd verschijnen. Geen cookies of zoekparameters
+// nodig, dus geen force-dynamic meer.
+export const revalidate = 3600;
 
-function formatteerPrijs(cent: number, valuta: string): string {
-  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: valuta }).format(
-    cent / 100,
-  );
-}
-
+/**
+ * De homepage. De blokken staan in components/homepage/Blokken.tsx; volgorde en
+ * zichtbaarheid komen uit Beheer → Website → Homepage (standaard: de volgorde
+ * van het ontwerp in docs/ontwerp). De hero staat altijd bovenaan.
+ */
 export default async function Home() {
+  const site = await leesWebsite();
+  const indeling = normaliseerIndeling(site.homepageIndeling).filter((i) => i.zichtbaar);
+  const toontBlog = indeling.some((i) => i.blok === "blog");
+  const toontErvaringen = indeling.some((i) => i.blok === "ervaringen");
+  const toontDiensten = indeling.some((i) => i.blok === "diensten");
+
+  // Geen lichaamstypes op de homepage: die zijn alleen voor klanten (achter de testlink).
+  const [hero, diensten, probleem, stappen, figuurtypes, advies, over, ervaringen, vragen, afsluiting, nieuwsbrief, blog, blogberichten, reviews, afspraakSoorten] =
+    await Promise.all([
+      leesSectie(WEBSITE_HERO),
+      leesSectie(WEBSITE_DIENSTEN),
+      leesSectie(WEBSITE_PROBLEEM),
+      leesSectie(WEBSITE_STAPPEN),
+      leesSectie(WEBSITE_FIGUURTYPES),
+      leesSectie(WEBSITE_ADVIES),
+      leesSectie(WEBSITE_OVER),
+      leesSectie(WEBSITE_ERVARINGEN),
+      leesSectie(WEBSITE_VRAGEN),
+      leesSectie(WEBSITE_AFSLUITING),
+      leesSectie(NIEUWSBRIEF_AANMELDEN),
+      leesSectie(WEBSITE_BLOG),
+      toontBlog ? haalLaatste(3) : Promise.resolve([]),
+      toontErvaringen ? haalGoedgekeurdeReviews(MAX_ERVARINGEN) : Promise.resolve([]),
+      toontDiensten ? haalActieveSoortenPubliek().catch(() => []) : Promise.resolve([]),
+    ]);
   let prijsLabel: string | null = null;
+  let prijsCent: number | null = null;
+  let valuta = "EUR";
   try {
-    const cent = await leesPrijsCent();
-    const valuta = (await leesInstelling("valuta")) || "EUR";
-    if (cent) prijsLabel = formatteerPrijs(cent, valuta);
+    const prijs = await leesPubliekePrijs();
+    valuta = prijs.valuta;
+    prijsCent = prijs.prijsCent;
+    if (prijsCent) prijsLabel = formatteerBedrag(prijsCent, valuta);
   } catch {
     prijsLabel = null;
   }
 
+  // "vanaf €…" voor de kaart Persoonlijk advies: de laagste prijs van de afspraaksoorten.
+  const afspraakPrijzen = afspraakSoorten.map((s) => s.prijs_cent).filter((c) => c > 0);
+  const afspraakVanaf = afspraakPrijzen.length ? `vanaf ${formatteerBedrag(Math.min(...afspraakPrijzen), valuta)}` : "";
+  // De knop bij Over Lida: de ingestelde pagina als die bestaat, anders contact.
+  const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact", "/afspraak");
+
+  const gegevens: HomepageGegevens = {
+    prijzen: { prijs: prijsLabel ?? "", afspraak_vanaf: afspraakVanaf },
+    ctaTekst: prijsLabel ? `${afsluiting.knop} — ${prijsLabel}` : afsluiting.knop,
+    overLink,
+    hero,
+    diensten,
+    probleem,
+    stappen,
+    figuurtypes,
+    advies,
+    over,
+    ervaringen,
+    reviews,
+    vragen,
+    afsluiting,
+    nieuwsbrief,
+    blog,
+    blogberichten,
+  };
+
+  const jsonLd = await structuur({
+    site,
+    prijsCent,
+    valuta,
+    vragen: indeling.some((i) => i.blok === "vragen") ? vragen.vragen : [],
+  });
+
   return (
-    <>
-      <Link
-        href="/admin/inloggen"
-        className="fixed right-6 top-6 z-10 rounded-full bg-red-600 px-7 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-red-700"
-      >
-        Mama hier moet je op klikken!
-      </Link>
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-10 p-8">
-      <header className="flex flex-col gap-4 text-center">
-        <span className="mx-auto rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-black/50 dark:border-white/15 dark:text-white/50">
-          Lida Thiry · Imago &amp; Kledingadvies
-        </span>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Ontdek je figuurtype en persoonlijk kledingadvies
-        </h1>
-        <p className="mx-auto max-w-xl text-balance text-black/60 dark:text-white/60">
-          Doe de online zelftest op basis van je lengte, gewicht en lichaamsmaten.
-          Je ontvangt direct een persoonlijke PDF met jouw type en bijpassend
-          kledingadvies.
-        </p>
-      </header>
-
-      <ol className="mx-auto grid w-full max-w-md gap-3 text-sm text-black/70 dark:text-white/70">
-        <li className="rounded-lg border border-black/10 px-4 py-3 dark:border-white/15">
-          1. Bestel en betaal veilig
-        </li>
-        <li className="rounded-lg border border-black/10 px-4 py-3 dark:border-white/15">
-          2. Vul de test in (lengte, maten, beeldvragen)
-        </li>
-        <li className="rounded-lg border border-black/10 px-4 py-3 dark:border-white/15">
-          3. Ontvang je persoonlijke advies-PDF per mail
-        </li>
-      </ol>
-
-      <div className="flex flex-col items-center gap-3">
-        <Link
-          href="/bestellen"
-          className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-90"
-        >
-          {prijsLabel ? `Start de test — ${prijsLabel}` : "Start de test"}
-        </Link>
-        {!prijsLabel && (
-          <p className="text-xs text-black/40 dark:text-white/40">
-            De prijs wordt binnenkort bekendgemaakt.
-          </p>
-        )}
-      </div>
+    // -mb-16: de voettekst heeft een marge voor gewone pagina's; de homepage eindigt met eigen ruimte.
+    <main className="-mb-16 flex w-full flex-1 flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: veiligeJson(jsonLd) }} />
+      {indeling.map(({ blok }) => (
+        <Fragment key={blok}>{HOMEPAGE_WEERGAVE[blok](gegevens)}</Fragment>
+      ))}
     </main>
-    </>
   );
+}
+
+/** Een ingevulde instelling zonder invulplek als "[adres]"; anders null. */
+function echt(w: string | null | undefined): string | null {
+  const t = w?.trim();
+  return t && !t.includes("[") ? t : null;
+}
+
+/**
+ * Gestructureerde gegevens voor zoekmachines: de organisatie, de test als
+ * product met prijs, en de veelgestelde vragen (alleen als dat blok zichtbaar is).
+ */
+async function structuur(o: {
+  site: Awaited<ReturnType<typeof leesWebsite>>;
+  prijsCent: number | null;
+  valuta: string;
+  vragen: readonly { vraag: string; antwoord: string }[];
+}): Promise<Record<string, unknown>[]> {
+  const basis = siteUrl();
+  let inst: Record<string, string | null> = {};
+  try {
+    inst = await leesPubliekeInstellingen();
+  } catch {
+    inst = {};
+  }
+  // Gemiddelde score uit goedgekeurde reviews (met toestemming); zonder reviews geen score.
+  const samenvatting = await haalReviewSamenvatting().catch(() => null);
+  const beoordeling: ReviewSamenvatting | null = samenvatting && samenvatting.aantal > 0 ? samenvatting : null;
+  const uit: Record<string, unknown>[] = [
+    organisatieJsonLd({
+      naam: echt(inst.bedrijfsnaam) ?? o.site.volledigeNaam,
+      url: basis,
+      omschrijving: o.site.omschrijving,
+      logo: o.site.logoUrl,
+      email: echt(inst.contact_email),
+      adres: echt(inst.bedrijf_adres),
+      sameAs: o.site.social.map((s) => s.url),
+      telefoon: o.site.telefoon,
+      werkgebied: o.site.werkgebied,
+      type: o.site.bedrijfType,
+    }),
+    testProductJsonLd({
+      naam: echt(inst.product_naam) ?? "Online kledingadviestest",
+      omschrijving: o.site.omschrijving,
+      url: basis,
+      prijsCent: o.prijsCent,
+      valuta: o.valuta,
+      afbeelding: o.site.deelAfbeeldingUrl ?? o.site.logoUrl,
+      beoordeling,
+    }),
+  ];
+  const faq = faqJsonLd(o.vragen);
+  if (faq) uit.push(faq);
+  return uit;
 }

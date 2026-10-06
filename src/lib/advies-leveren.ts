@@ -11,11 +11,12 @@ import { siteUrl } from "./site";
  */
 export async function leverAdvies(orderId: string): Promise<boolean> {
   const supabase = adminClient();
-  const { data: order } = await supabase
+  const { data: order, error } = await supabase
     .from("orders")
     .select("id, klantnaam, email, toegekend_type, testtoken")
     .eq("id", orderId)
-    .single();
+    .maybeSingle();
+  if (error) throw new Error(`Order lezen mislukt: ${error.message}`);
   if (!order?.toegekend_type) return false;
 
   const pad = await genereerAdviesPdf(orderId);
@@ -31,6 +32,13 @@ export async function leverAdvies(orderId: string): Promise<boolean> {
     pdf,
   });
 
-  await supabase.from("orders").update({ status: "advies_verzonden" }).eq("id", orderId);
+  // Alleen vanuit 'test_afgerond' (opnieuw versturen laat 'advies_verzonden' staan).
+  // Mislukt dit, dan gooien: anders mailt de nachtelijke taak het advies opnieuw.
+  const { error: statusFout } = await supabase
+    .from("orders")
+    .update({ status: "advies_verzonden" })
+    .eq("id", orderId)
+    .eq("status", "test_afgerond");
+  if (statusFout) throw new Error(`Advies verstuurd, maar status niet bijgewerkt: ${statusFout.message}`);
   return true;
 }

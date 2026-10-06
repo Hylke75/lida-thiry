@@ -4,7 +4,7 @@
 import type { Maten } from "./types";
 import { MAAT_GRENZEN as M } from "./config/grenzen";
 
-export type Ernst = "blokkerend" | "melding";
+type Ernst = "blokkerend" | "melding";
 
 export interface Bevinding {
   code: string;
@@ -90,19 +90,4 @@ export function logischeChecks(maten: Maten): Bevinding[] {
     });
   }
   return bevindingen;
-}
-
-/**
- * Uitbreidingspunt: een verwachte bandbreedte per maat op basis van lengte en gewicht.
- * Nog niet ingevuld (retourneert null); de logische checks blijven werken.
- */
-export function verwachteBandbreedte(
-  lengte: number,
-  gewicht: number,
-): { maat: keyof Maten; min: number; max: number }[] | null {
-  // Nog niet ingevuld; lengte en gewicht worden hier straks omgezet naar een
-  // verwachte bandbreedte per maat.
-  void lengte;
-  void gewicht;
-  return null;
 }

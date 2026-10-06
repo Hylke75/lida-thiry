@@ -1,0 +1,226 @@
+import "server-only";
+import { adminClient } from "../supabase/admin";
+import { alles } from "../supabase/alles";
+import { normaliseerEmail } from "../email";
+import { ontleedSleutel } from "../adviestypes-beheer";
+import { koppelRelatie } from "../relaties/koppel";
+import {
+  normaliseerTag,
+  valtBinnen,
+  type Bron,
+  type ContactStatus,
+  type Doelgroep,
+  type Klantinfo,
+} from "./doelgroep";
+import { statusNaAanmelding } from "./verzendregels";
+import { BETAALDE_STATUSSEN } from "../order-status";
+
+export interface Contact {
+  id: string;
+  email: string;
+  naam: string | null;
+  status: ContactStatus;
+  bron: Bron;
+  tags: string[];
+  token: string;
+  toestemming_op: string | null;
+  toestemming_tekst: string | null;
+  bevestigd_op: string | null;
+  afgemeld_op: string | null;
+  aangemaakt_op: string;
+  /** Het aanmeldformulier (Beheer → Nieuwsbrief → Formulieren) waarmee iemand zich aanmeldde. */
+  formulier_id: string | null;
+}
+
+export const CONTACT_VELDEN =
+  "id, email, naam, status, bron, tags, token, toestemming_op, toestemming_tekst, bevestigd_op, afgemeld_op, aangemaakt_op, formulier_id";
+
+export { normaliseerEmail };
+
+/** Per e-mailadres: heeft betaald besteld en welke figuurtypes (letters) eruit kwamen. */
+async function klantinfoPerEmail(): Promise<Map<string, Klantinfo>> {
+  const supabase = adminClient();
+  const rijen = await alles<{ email: string; status: string; toegekend_type: string | null }>((van, tot) =>
+    supabase
+      .from("orders")
+      .select("email, status, toegekend_type")
+      .in("status", [...BETAALDE_STATUSSEN])
+      .range(van, tot),
+  );
+  const info = new Map<string, Klantinfo>();
+  for (const r of rijen) {
+    const email = r.email.trim().toLowerCase();
+    const k = info.get(email) ?? { besteld: true, figuurtypes: new Set<string>() };
+    const letter = r.toegekend_type ? ontleedSleutel(r.toegekend_type)?.letter : undefined;
+    if (letter) k.figuurtypes.add(letter);
+    info.set(email, k);
+  }
+  return info;
+}
+
+/** Alle aangemelde contacten die binnen de doelgroep vallen. */
+export async function zoekOntvangers(d: Doelgroep): Promise<Contact[]> {
+  const supabase = adminClient();
+  const contacten = await alles<Contact>((van, tot) =>
+    supabase.from("nb_contacten").select(CONTACT_VELDEN).eq("status", "aangemeld").order("aangemaakt_op").range(van, tot),
+  );
+  const klant = d.besteld || d.figuurtypes?.length ? await klantinfoPerEmail() : undefined;
+  return contacten.filter((c) => valtBinnen(c, d, klant?.get(c.email)));
+}
+
+export interface Aanmelding {
+  email: string;
+  naam?: string | null;
+  bron: Bron;
+  /** De tekst waarmee toestemming is gegeven (bewijs voor de AVG). */
+  toestemmingTekst: string;
+  tags?: string[];
+  /** true = eerst bevestigen via e-mail (dubbele opt-in, voor het websiteformulier). */
+  dubbeleOptIn: boolean;
+  /** Het aanmeldformulier waarmee iemand zich (opnieuw) aanmeldt; blijft anders ongewijzigd. */
+  formulierId?: string | null;
+}
+
+export type AanmeldUitkomst =
+  | { soort: "ongeldig" }
+  | { soort: "al_aangemeld"; contact: Contact }
+  | { soort: "bevestigen"; contact: Contact }
+  | { soort: "aangemeld"; contact: Contact };
+
+/**
+ * Meldt iemand aan of werkt een bestaand contact bij. Een afgemeld of onbestelbaar
+ * adres wordt via een openbaar formulier nooit direct weer actief: dan volgt
+ * altijd eerst een bevestigingsmail (zie statusNaAanmelding). Een klacht
+ * (spammelding) blijft altijd staan. Het adresboek wordt pas bijgewerkt als
+ * iemand echt aangemeld is (niet bij een onbevestigde aanmelding).
+ */
+export async function meldAan(a: Aanmelding): Promise<AanmeldUitkomst> {
+  const email = normaliseerEmail(a.email);
+  if (!email) return { soort: "ongeldig" };
+  const supabase = adminClient();
+  const { data: bestaand } = await supabase.from("nb_contacten").select(CONTACT_VELDEN).eq("email", email).maybeSingle();
+  const nu = new Date().toISOString();
+  const tags = (a.tags ?? []).map(normaliseerTag).filter(Boolean);
+  const naam = a.naam?.trim().slice(0, 120) || null;
+  const koppel = () => koppelRelatie({ email, naam: a.naam, bron: "nieuwsbrief" });
+
+  if (bestaand) {
+    const c = bestaand as Contact;
+    if (c.status === "aangemeld") {
+      const nieuweTags = [...new Set([...c.tags, ...tags])];
+      if (nieuweTags.length !== c.tags.length || (!c.naam && naam)) {
+        await supabase.from("nb_contacten").update({ tags: nieuweTags, naam: c.naam ?? naam }).eq("id", c.id);
+      }
+      // Bij een bestelling of handmatig de relatie aanvullen; via het openbare
+      // formulier niet (dan kan iedereen gegevens bij een bestaand adres zetten).
+      if (a.bron !== "formulier") await koppel();
+      return { soort: "al_aangemeld", contact: c };
+    }
+    const status = statusNaAanmelding(c, a.bron, a.dubbeleOptIn);
+    if (!status) return { soort: "al_aangemeld", contact: c };
+    const wijziging = {
+      naam: c.naam ?? naam,
+      tags: [...new Set([...c.tags, ...tags])],
+      toestemming_op: nu,
+      toestemming_tekst: a.toestemmingTekst,
+      ...(a.formulierId ? { formulier_id: a.formulierId } : {}),
+      ...(status === "onbevestigd" ? { status } : { status, bevestigd_op: nu, afgemeld_op: null }),
+    };
+    const { data, error } = await supabase.from("nb_contacten").update(wijziging).eq("id", c.id).select(CONTACT_VELDEN).single();
+    if (error) throw new Error(`aanmelden: ${error.message}`);
+    if (status === "aangemeld") await koppel();
+    return { soort: status === "onbevestigd" ? "bevestigen" : "aangemeld", contact: data as Contact };
+  }
+
+  const { data, error } = await supabase
+    .from("nb_contacten")
+    .insert({
+      email,
+      naam,
+      bron: a.bron,
+      tags,
+      toestemming_op: nu,
+      toestemming_tekst: a.toestemmingTekst,
+      status: a.dubbeleOptIn ? "onbevestigd" : "aangemeld",
+      bevestigd_op: a.dubbeleOptIn ? null : nu,
+      formulier_id: a.formulierId ?? null,
+    })
+    .select(CONTACT_VELDEN)
+    .single();
+  if (error) throw new Error(`aanmelden: ${error.message}`);
+  if (!a.dubbeleOptIn) await koppel();
+  return { soort: a.dubbeleOptIn ? "bevestigen" : "aangemeld", contact: data as Contact };
+}
+
+/** Bevestigt een aanmelding (dubbele opt-in). Geeft het contact terug, of null bij een onbekende link. */
+export async function bevestig(token: string): Promise<Contact | null> {
+  const supabase = adminClient();
+  const { data } = await supabase.from("nb_contacten").select(CONTACT_VELDEN).eq("token", token).maybeSingle();
+  const c = data as Contact | null;
+  if (!c) return null;
+  if (c.status !== "onbevestigd") return c;
+  const { data: bij } = await supabase
+    .from("nb_contacten")
+    .update({ status: "aangemeld", bevestigd_op: new Date().toISOString(), afgemeld_op: null })
+    .eq("id", c.id)
+    .eq("status", "onbevestigd")
+    .select(CONTACT_VELDEN)
+    .maybeSingle();
+  if (bij) await koppelRelatie({ email: c.email, naam: c.naam, bron: "nieuwsbrief" });
+  return (bij as Contact | null) ?? c;
+}
+
+/** Na hoeveel dagen een nooit bevestigde aanmelding wordt verwijderd. */
+const ONBEVESTIGD_BEWAREN_DAGEN = 30;
+
+/**
+ * Verwijdert aanmeldingen die na 30 dagen nog steeds niet bevestigd zijn en ook
+ * nooit eerder bevestigd waren (dataminimalisatie, AVG). Een eerder bevestigd
+ * contact dat opnieuw moet bevestigen, blijft staan (het krijgt toch geen mail).
+ * Geeft het aantal verwijderde contacten terug.
+ */
+export async function ruimOnbevestigdeOp(nu: Date = new Date()): Promise<number> {
+  const grens = new Date(nu.getTime() - ONBEVESTIGD_BEWAREN_DAGEN * 86_400_000).toISOString();
+  const { data, error } = await adminClient()
+    .from("nb_contacten")
+    .delete()
+    .eq("status", "onbevestigd")
+    .is("bevestigd_op", null)
+    .lt("aangemaakt_op", grens)
+    .or(`toestemming_op.is.null,toestemming_op.lt."${grens}"`)
+    .select("id");
+  if (error) throw new Error(`onbevestigde aanmeldingen opruimen: ${error.message}`);
+  return data?.length ?? 0;
+}
+
+/**
+ * Meldt af via de persoonlijke link. Registreert ook bij welke verzending (als
+ * bekend) de afmelding hoort, voor de campagnestatistiek.
+ */
+export async function meldAf(token: string, verzendingId?: string | null): Promise<Contact | null> {
+  const supabase = adminClient();
+  const { data } = await supabase.from("nb_contacten").select(CONTACT_VELDEN).eq("token", token).maybeSingle();
+  const c = data as Contact | null;
+  if (!c) return null;
+  const nu = new Date().toISOString();
+  if (c.status === "aangemeld" || c.status === "onbevestigd") {
+    await supabase.from("nb_contacten").update({ status: "afgemeld", afgemeld_op: nu }).eq("id", c.id);
+  }
+  // Koppel aan de meest recente verzending als er geen specifieke is meegegeven.
+  let doel = verzendingId ?? null;
+  if (!doel) {
+    const { data: laatste } = await supabase
+      .from("nb_verzendingen")
+      .select("id")
+      .eq("contact_id", c.id)
+      .eq("status", "verzonden")
+      .order("verzonden_op", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    doel = laatste?.id ?? null;
+  }
+  if (doel) {
+    await supabase.from("nb_verzendingen").update({ afgemeld_op: nu }).eq("id", doel).eq("contact_id", c.id).is("afgemeld_op", null);
+  }
+  return { ...c, status: "afgemeld", afgemeld_op: nu };
+}

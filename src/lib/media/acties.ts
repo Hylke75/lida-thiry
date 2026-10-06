@@ -1,0 +1,119 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { vereisBeheerder } from "@/lib/admin-auth";
+import { logActie } from "@/lib/beheer-log";
+import {
+  importeerBestaande,
+  maakUpload,
+  mediaMappen,
+  registreerMedia,
+  verwijderMedia,
+  werkMediaBij,
+  zoekMedia,
+  type MediaItem,
+  type Registratie,
+  type UploadPlek,
+  type VerwijderUitkomst,
+  type ZoekResultaat,
+} from "@/lib/media/beheer";
+import { leesTypeFilter, SOORT_MIMES, type MediaSoort } from "@/lib/media/regels";
+import type { Uitkomst } from "@/lib/uitkomst";
+
+const MEDIA_PAD = "/admin/media";
+
+const foutTekst = (e: unknown) => (e instanceof Error ? e.message : "onbekende fout");
+
+export interface ZoekVraag {
+  q?: string;
+  map?: string;
+  type?: string;
+  /** Alleen bestanden die bij deze soort passen (voor de kiezer). */
+  soort?: MediaSoort;
+  pagina?: number;
+  perPagina?: number;
+}
+
+/** Zoeken in de bibliotheek (voor de kiezer). */
+export async function zoekInMedia(v: ZoekVraag): Promise<Uitkomst<{ resultaat: ZoekResultaat; mappen: string[] }>> {
+  await vereisBeheerder("media");
+  try {
+    const [resultaat, mappen] = await Promise.all([
+      zoekMedia({
+        q: v.q,
+        map: v.map || null,
+        type: leesTypeFilter(v.type),
+        mimes: v.soort && v.soort in SOORT_MIMES ? SOORT_MIMES[v.soort] : undefined,
+        pagina: v.pagina,
+        perPagina: v.perPagina,
+      }),
+      mediaMappen(),
+    ]);
+    return { ok: true, resultaat, mappen };
+  } catch (e) {
+    return { ok: false, fout: `Zoeken is niet gelukt (${foutTekst(e)}).` };
+  }
+}
+
+/** Stap 1 van uploaden: een eenmalige upload-URL in de bucket "media". */
+export async function maakMediaUpload(mime: string, grootte: number, map: string): Promise<Uitkomst<UploadPlek>> {
+  const ik = await vereisBeheerder("media");
+  return maakUpload(String(mime ?? ""), Number(grootte), String(map ?? ""), { magSvg: ik.rol === "eigenaar" });
+}
+
+/** Stap 2: het geüploade bestand in de bibliotheek zetten (ook voor uploads uit de editors). */
+export async function registreerUpload(r: Registratie): Promise<Uitkomst<{ media: MediaItem; webUrl: string | null }>> {
+  const ik = await vereisBeheerder("media");
+  if (!r || typeof r !== "object") return { ok: false, fout: "Onbekend bestand." };
+  try {
+    const u = await registreerMedia(r, { magSvg: ik.rol === "eigenaar" });
+    if (u.ok) revalidatePath(MEDIA_PAD);
+    return u;
+  } catch (e) {
+    return { ok: false, fout: `Opslaan in de bibliotheek is niet gelukt (${foutTekst(e)}).` };
+  }
+}
+
+export async function werkMediaGegevensBij(id: string, w: { naam?: string; alt?: string; map?: string }): Promise<Uitkomst<{ media: MediaItem }>> {
+  await vereisBeheerder("media");
+  const u = await werkMediaBij(String(id ?? ""), {
+    naam: typeof w?.naam === "string" ? w.naam : undefined,
+    alt: typeof w?.alt === "string" ? w.alt : undefined,
+    map: typeof w?.map === "string" ? w.map : undefined,
+  });
+  if (u.ok) revalidatePath(MEDIA_PAD, "layout");
+  return u;
+}
+
+/** Verwijderen; geblokkeerd zolang de afbeelding nog gebruikt wordt, tenzij `forceer`. */
+export async function verwijderMediaBestand(id: string, forceer = false): Promise<VerwijderUitkomst> {
+  const ik = await vereisBeheerder("media");
+  try {
+    const u = await verwijderMedia(String(id ?? ""), forceer === true);
+    if (u.ok) {
+      await logActie({
+        actie: "media.verwijderen",
+        onderwerpSoort: "media",
+        onderwerpId: String(id ?? ""),
+        omschrijving: `Mediabestand verwijderd${forceer === true ? " (terwijl het nog in gebruik was)" : ""}`,
+        gebruiker: ik,
+      });
+      revalidatePath(MEDIA_PAD, "layout");
+    }
+    return u;
+  } catch (e) {
+    return { ok: false, fout: `Verwijderen is niet gelukt (${foutTekst(e)}).` };
+  }
+}
+
+/** Zet oudere uploads uit de buckets "blog" en "nieuwsbrief" in de bibliotheek. */
+export async function importeerBestaandeMedia(): Promise<Uitkomst<{ nieuw: number; bekeken: number }>> {
+  await vereisBeheerder("media");
+  try {
+    const r = await importeerBestaande();
+    revalidatePath(MEDIA_PAD);
+    return { ok: true, ...r };
+  } catch (e) {
+    return { ok: false, fout: `Importeren is niet gelukt (${foutTekst(e)}).` };
+  }
+}

@@ -1,26 +1,219 @@
 @import "tailwindcss";
 
+/*
+ * Huisstijl Lida Thiry (docs/ontwerp/HUISSTIJL-HANDBOEK.md): alle tokens uit de
+ * ontwerpdemo (docs/ontwerp/styles.css), centraal op één plek.
+ *
+ * De publieke site is alleen licht. Het beheer (src/app/admin) heeft wel een
+ * donkere modus: die hangt aan het kenmerk data-thema="beheer" op de wrapper in
+ * src/app/admin/layout.tsx (zie onderaan en @custom-variant dark).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Ontwerptokens (namen gelijk aan de demo). */
+  --ink: #2f2441;
+  --ink-soft: #5d536a;
+  --cream: #fff9f3;
+  --paper: #fffdf9;
+  --white: #ffffff;
+  --berry: #6f2d59;
+  --coral: #ff8877;
+  --coral-soft: #ffe0da;
+  --peach: #ffd2ad;
+  --butter: #f6d879;
+  --sage: #b8d3ae;
+  --mint: #b9dfd9;
+  --sky: #b9d9ef;
+  --lilac: #d8a7c6;
+  --line: #eadfd6;
+  --shadow: 0 22px 55px rgba(64, 39, 55, 0.1);
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+  --container: 1180px;
+  --serif: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  --sans: var(--font-manrope), "Manrope", Arial, sans-serif;
+
+  /*
+   * Koraal als tekstkleur: #ff8877 haalt op de lichte achtergronden maar ~2,3:1.
+   * Voor het accentwoord in grote koppen en het eerste stapnummer gebruiken we
+   * deze donkerdere tint (≥ 3,4:1 op de hero-achtergrond, ≥ 3,7:1 op wit: AA voor grote tekst).
+   */
+  --coral-tekst: #dc5a48;
+  /* Stapnummers 2 en 3 (uit de demo; ≥ 3,8:1 op wit, alleen als grote tekst). */
+  --sage-tekst: #6f8a67;
+  --butter-tekst: #a27b00;
+
+  /* Bestaande tokens van de app, gekoppeld aan het nieuwe palet. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --accent: var(--berry);
+  --accent-zacht: var(--coral-soft);
+  --kaart: var(--white);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent: var(--accent);
+  --color-accent-zacht: var(--accent-zacht);
+  --color-kaart: var(--kaart);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-white: var(--white);
+  --color-berry: var(--berry);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-coral-tekst: var(--coral-tekst);
+  --color-peach: var(--peach);
+  --color-butter: var(--butter);
+  --color-sage: var(--sage);
+  --color-sage-tekst: var(--sage-tekst);
+  --color-butter-tekst: var(--butter-tekst);
+  --color-mint: var(--mint);
+  --color-sky: var(--sky);
+  --color-lilac: var(--lilac);
+  --color-line: var(--line);
+
+  --font-sans: var(--sans);
+  --font-serif: var(--serif);
+
+  /*
+   * De demo gebruikt --radius-lg/md/sm (28/20/14px). Tailwind heeft eigen
+   * variabelen met die namen (rounded-lg = 0,5rem, veel gebruikt in het beheer).
+   * Door Tailwinds waarden hier "inline" te zetten verwijzen de utilities niet
+   * naar de variabele en blijven rounded-sm/md/lg ongewijzigd. De ontwerpradii
+   * zijn er als rounded-ontwerp-lg/md/sm.
+   */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-ontwerp-lg: var(--radius-lg);
+  --radius-ontwerp-md: var(--radius-md);
+  --radius-ontwerp-sm: var(--radius-sm);
+
+  --shadow-ontwerp: var(--shadow);
+  --container-site: var(--container);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  /* De twee breekpunten van het ontwerp: ≤ 640 px en ≤ 980 px (mobiel eerst). */
+  --breakpoint-tablet: 40.0625rem; /* 641px */
+  --breakpoint-desktop: 61.3125rem; /* 981px */
+}
+
+/*
+ * dark: werkt alleen in het beheer (data-thema="beheer", zie src/app/admin/layout.tsx).
+ * Via :has() op de root geldt het ook voor dialogen die in <body> worden gezet.
+ */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:has([data-thema="beheer"]), :root:has([data-thema="beheer"]) *) {
+      @slot;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-color-scheme: dark) {
+  :root:has([data-thema="beheer"]) {
+    --background: #161514;
+    --foreground: #efebe6;
+    --accent: #d79a83;
+    --accent-zacht: #3a2a24;
+    --kaart: #1e1d1b;
+    /* De getekende figuur (components/Lichaam.tsx) in het donkere beheer. */
+    --lichaam-vulling: #3a2a24;
+    --lichaam-lijn: #c9bdb2;
+    --lichaam-lint: #ff8877;
+    color-scheme: dark;
+  }
+}
+
+/*
+ * Onthulling van het figuurtype (test/[token]/TypeOnthulling.tsx): het silhouet
+ * groeit zacht op in zijn vlak, de tekst volgt. Alleen voor wie beweging wil;
+ * anders staat alles meteen stil op zijn plek.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes onthul-vlak {
+    from {
+      opacity: 0;
+      transform: scale(0.86) rotate(-4deg);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes onthul-figuur {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .onthul-vlak {
+    animation: onthul-vlak 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .onthul-figuur {
+    animation: onthul-figuur 650ms 250ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .onthul-tekst {
+    animation: onthul-figuur 600ms 450ms ease-out both;
+  }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--sans);
+    line-height: 1.65;
+  }
+
+  h1,
+  h2 {
+    font-family: var(--serif);
+  }
+
+  /* DM Serif Display heeft alleen gewicht 400: geen nagemaakte vetdruk. */
+  h1,
+  h2,
+  h3,
+  .font-serif {
+    font-synthesis-weight: none;
+  }
+
+  /* Zichtbare focus (berry) op alles wat bedienbaar is; componenten mogen dit verfijnen. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
+/* Fijn stippenpatroon voor lege fotoplekken (inkt, 8% dekking; zie components/site/BeeldPlek.tsx). */
+.stippen {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%232f2441' fill-opacity='.08'/%3E%3C/svg%3E");
+}
+
+/* Geen bewegende hover-effecten voor wie minder beweging wil. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

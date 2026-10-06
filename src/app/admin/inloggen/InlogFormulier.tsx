@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { CodeFormulier } from "./CodeFormulier";
+import { invoer, knop, tekstFout } from "@/components/admin/stijl";
 
 export function InlogFormulier() {
   const router = useRouter();
@@ -10,6 +12,7 @@ export function InlogFormulier() {
   const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
+  const [codeNodig, setCodeNodig] = useState(false);
 
   async function verstuur(e: React.FormEvent) {
     e.preventDefault();
@@ -25,8 +28,26 @@ export function InlogFormulier() {
       setBezig(false);
       return;
     }
+    // Tweestapsverificatie: met een gekoppelde app eerst de code (aal1 → aal2).
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      setBezig(false);
+      setCodeNodig(true);
+      return;
+    }
     router.push("/admin");
     router.refresh();
+  }
+
+  if (codeNodig) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-foreground/70">
+          Je wachtwoord klopt. Vul nu de code van 6 cijfers uit je authenticator-app in.
+        </p>
+        <CodeFormulier />
+      </div>
+    );
   }
 
   return (
@@ -39,7 +60,7 @@ export function InlogFormulier() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20"
+          className={invoer}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -50,14 +71,14 @@ export function InlogFormulier() {
           value={wachtwoord}
           onChange={(e) => setWachtwoord(e.target.value)}
           autoComplete="current-password"
-          className="rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20"
+          className={invoer}
         />
       </label>
-      {fout && <p className="text-sm text-red-600">{fout}</p>}
+      {fout && <p className={`text-sm ${tekstFout}`}>{fout}</p>}
       <button
         type="submit"
         disabled={bezig}
-        className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+        className={knop}
       >
         {bezig ? "Bezig…" : "Inloggen"}
       </button>

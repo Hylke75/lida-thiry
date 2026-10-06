@@ -2,33 +2,47 @@
   "name": "lida-thiry",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:lokaal": "node scripts/e2e-lokaal.mjs",
+    "snelheid": "node scripts/meet-snelheid.mjs",
+    "migraties:bundelen": "node scripts/migraties-bundelen.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@mollie/api-client": "^4.6.0",
     "@react-pdf/renderer": "^4.9.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "resend": "^6.30.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
-    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.7"
