@@ -37,7 +37,7 @@ export function BeeldPlek({
   const adres = src?.trim();
   if (adres && isGeldigAfbeeldingAdres(adres)) {
     return (
-      <div className={`relative overflow-hidden ${className}`}>
+      <div className={`relative overflow-hidden border border-beeldrand ${className}`}>
         <Afbeelding vullen src={adres} alt={alt} sizes={sizes} prioriteit={prioriteit} className={`object-cover ${beeldKlasse}`} />
       </div>
     );

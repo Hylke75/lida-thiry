@@ -55,7 +55,7 @@ export function PaginaWeergave({
       </header>
       {omslag && (
         <div className={`${CONTAINER} mt-10 max-w-[980px] tablet:mt-14`}>
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[8px] bg-sand-deep">
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[8px] border border-beeldrand bg-sand-deep">
             <Afbeelding vullen src={omslag} alt={omslagAlt} prioriteit sizes="(min-width: 1020px) 980px, 100vw" className="object-cover" />
           </div>
         </div>
