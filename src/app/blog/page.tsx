@@ -110,7 +110,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
                           aria-current={actief ? "page" : undefined}
                           className={actief ? PIL_AAN : PIL_UIT}
                         >
-                          {c.naam} <span className="opacity-60">({c.aantal})</span>
+                          {c.naam} <span>({c.aantal})</span>
                         </Link>
                       </li>
                     );
