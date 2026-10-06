@@ -41,7 +41,7 @@ function Melding({
         <KlantKop midden bovenschrift={teksten.bovenschrift} titel={titel} className="mb-0! tablet:mb-0!">
           <p>{tekst}</p>
         </KlantKop>
-        <TekstLink href="/" className="text-[14px] text-ink-soft">
+        <TekstLink href="/" className="text-[16px] text-ink-soft">
           {teksten.start_link}
         </TekstLink>
       </KlantKaart>

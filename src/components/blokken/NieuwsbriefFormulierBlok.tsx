@@ -7,9 +7,9 @@ import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { haalActiefFormulierPubliek } from "@/lib/nieuwsbrief/formulieren";
 import { NIEUWSBRIEF_VERLOOP } from "@/components/site/InhoudNieuwsbrief";
 
-/** Zacht kleurvlak van het nieuwsbriefpaneel (zoals op de homepage). */
+/** Rustig zandvlak van het nieuwsbriefpaneel (zoals op de homepage). */
 function Paneel({ children }: { children: ReactNode }) {
-  return <div className={`rounded-ontwerp-lg ${NIEUWSBRIEF_VERLOOP} px-5 py-9 tablet:px-10 tablet:py-12`}>{children}</div>;
+  return <div className={`rounded-[8px] ${NIEUWSBRIEF_VERLOOP} px-5 py-9 tablet:px-10 tablet:py-12`}>{children}</div>;
 }
 
 /**

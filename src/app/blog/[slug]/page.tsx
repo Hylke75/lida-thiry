@@ -5,7 +5,7 @@ import { BlogBeeld, berichtBeeld } from "@/components/blog/BlogKaart";
 import { KopieerLink } from "@/components/blog/KopieerLink";
 import { Opmaak } from "@/components/Opmaak";
 import { ArtikelRaster } from "@/components/site/ArtikelKaart";
-import { Bovenschrift, Container, KleurLint, knopKlassen, SectieKop, TekstLink } from "@/components/site/Basis";
+import { Bovenschrift, Container, knopKlassen, SectieKop, TekstLink } from "@/components/site/Basis";
 import { INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
 import { InhoudNieuwsbrief } from "@/components/site/InhoudNieuwsbrief";
 import { InhoudOproep } from "@/components/site/InhoudOproep";
@@ -129,9 +129,9 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: veiligeJson([jsonLd, breadcrumbs]) }} />
 
       <article>
-        <header className={KOP_ACHTERGROND}>
+        <header className={`${KOP_ACHTERGROND} border-b border-line`}>
           <div className={`${LEESKOLOM} flex flex-col gap-5 pt-10 pb-12 tablet:pt-14 tablet:pb-14`}>
-            <nav aria-label="Kruimelpad" className="text-[13px] font-semibold text-ink-soft">
+            <nav aria-label="Kruimelpad" className="text-[15px] font-semibold text-ink-soft">
               <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0">
                 <li>
                   <Link href="/" className={KRUIMEL}>
@@ -162,10 +162,10 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
               <h1 className={H1_BERICHT}>{b.titel}</h1>
             </div>
             {b.samenvatting && <p className={INTRO}>{b.samenvatting}</p>}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-[14px] text-ink-soft">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-[15px] text-ink-soft">
               <span className="flex items-center gap-2.5">
                 <span
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-coral-soft font-serif text-[16px] text-berry"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-sand-deep font-serif text-[16px] text-berry"
                   aria-hidden="true"
                 >
                   {auteur
@@ -182,7 +182,6 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
               <span>{leestijdMinuten(b.inhoud)} min lezen</span>
             </div>
           </div>
-          <KleurLint />
         </header>
 
         {b.omslag_url && (
@@ -191,7 +190,7 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
               bericht={b}
               prioriteit
               sizes="(min-width: 1020px) 980px, 100vw"
-              className="aspect-[16/9] w-full rounded-ontwerp-md tablet:rounded-ontwerp-lg"
+              className="aspect-[16/9] w-full rounded-[8px]"
             />
           </figure>
         )}
@@ -207,7 +206,7 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
                 <li key={tag}>
                   <Link
                     href={blogHref({ tag })}
-                    className="inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-ink-soft hover:border-berry hover:text-berry"
+                    className="inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[14px] font-semibold text-ink-soft hover:border-berry hover:text-berry"
                   >
                     #{tag}
                   </Link>
@@ -248,7 +247,7 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
       </div>
 
       {gerelateerd.length > 0 && (
-        <section aria-labelledby="lees-ook" className={`${SECTIE} mt-[68px] bg-[#fffaf4] tablet:mt-[92px]`}>
+        <section aria-labelledby="lees-ook" className={`${SECTIE} mt-[68px] bg-cream tablet:mt-[92px]`}>
           <Container>
             <SectieKop
               id="lees-ook"

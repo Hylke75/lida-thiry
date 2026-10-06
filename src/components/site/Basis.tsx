@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { splitsAccent } from "@/lib/website/weergave";
-import { ACCENT, BOVENSCHRIFT, CONTAINER, H2 } from "./stijl";
+import { ACCENT, BOVENSCHRIFT, CONTAINER, H2, TEKST } from "./stijl";
 
 // Kleine bouwstenen van de publieke site (docs/ontwerp): container, knoppen,
-// tekstlink, bovenschrift, sectiekop en het kleurlint.
+// tekstlink, bovenschrift, sectiekop en de scheidingslijn.
 
 /** .container: gecentreerd, max. 1180 px. */
 export function Container({ className = "", children, ...rest }: ComponentProps<"div">) {
@@ -23,13 +23,13 @@ export type KnopVariant = "primair" | "outline";
  */
 export function knopKlassen({ variant = "primair", klein = false }: { variant?: KnopVariant; klein?: boolean } = {}): string {
   return [
-    "inline-flex items-center justify-center gap-[10px] rounded-full border border-berry text-[14px] leading-[1.65] font-bold",
-    "transition-[transform,box-shadow,background-color,color] duration-[180ms] ease-[ease]",
-    "motion-safe:hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(111,45,89,.16)]",
+    "inline-flex items-center justify-center gap-[10px] rounded-full border border-berry text-[15px] leading-[1.65] font-bold",
+    // Rustig: geen verspringen bij hover, alleen een kleurwissel.
+    "transition-[background-color,border-color,color] duration-[180ms] ease-[ease]",
     "focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry",
     "disabled:pointer-events-none disabled:opacity-60",
     klein ? "min-h-11 px-[18px]" : "min-h-[52px] px-[22px]",
-    variant === "outline" ? "bg-transparent text-berry hover:bg-berry hover:text-white" : "bg-berry text-white",
+    variant === "outline" ? "bg-transparent text-berry hover:bg-berry hover:text-white" : "bg-berry text-white hover:border-ink hover:bg-ink",
   ].join(" ");
 }
 
@@ -146,18 +146,14 @@ export function SectieKop({
 
 /** .section-intro: de korte intro rechts naast een sectiekop. */
 export function SectieIntro({ children }: { children: ReactNode }) {
-  return <p className="mt-0 mb-[10px] max-w-[440px] text-ink-soft">{children}</p>;
+  return <p className={`mt-0 mb-[10px] max-w-[440px] ${TEKST}`}>{children}</p>;
 }
 
-/** .color-ribbon: smalle strook met de vijf accentkleuren (decoratie). */
+/**
+ * Scheidingslijn onder een kop. Vroeger het kleurlint met vijf accentkleuren;
+ * sinds de herziening (oktober 2026) één dunne warm-neutrale lijn. De naam
+ * blijft voor bestaande aanroepen.
+ */
 export function KleurLint({ className = "" }: { className?: string }) {
-  return (
-    <div aria-hidden="true" className={`grid h-[11px] grid-cols-5 ${className}`}>
-      <span className="bg-coral" />
-      <span className="bg-butter" />
-      <span className="bg-sage" />
-      <span className="bg-sky" />
-      <span className="bg-lilac" />
-    </div>
-  );
+  return <div aria-hidden="true" className={`h-px bg-line ${className}`} />;
 }

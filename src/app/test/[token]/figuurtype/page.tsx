@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SilhouetVlak, vlakKleur } from "@/components/figuur/SilhouetVlak";
-import { Bovenschrift, Container, KleurLint, knopKlassen, KopTekst, SectieIntro, SectieKop, TekstLink } from "@/components/site/Basis";
+import { Bovenschrift, Container, knopKlassen, KopTekst, SectieIntro, SectieKop, TekstLink } from "@/components/site/Basis";
 import { H1_INHOUD, INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
 import { KlantVinklijst } from "@/components/site/KlantPagina";
 import { CONTAINER, H3, SECTIE } from "@/components/site/stijl";
@@ -53,12 +53,10 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
 
   return (
     <main className="flex w-full flex-1 flex-col bg-paper">
-      {/* Kop: het silhouet in een organisch vlak naast naam en korte omschrijving. */}
-      <header className={KOP_ACHTERGROND}>
+      {/* Kop: het silhouet in een rustig kader naast naam en korte omschrijving. */}
+      <header className={`${KOP_ACHTERGROND} border-b border-line`}>
         <div className={`${CONTAINER} grid grid-cols-1 items-center gap-10 pt-10 pb-14 tablet:pt-14 tablet:pb-16 desktop:grid-cols-[.9fr_1.1fr] desktop:gap-16`}>
           <div className="relative mx-auto w-full max-w-[460px] desktop:order-none">
-            <span aria-hidden="true" className="absolute top-[6%] -left-1 h-10 w-10 rounded-full bg-butter" />
-            <span aria-hidden="true" className="absolute right-[4%] bottom-[8%] h-7 w-7 rounded-full bg-mint" />
             <SilhouetVlak
               silhouet={eigen}
               titel={`Silhouet: ${eigen.naam}`}
@@ -69,16 +67,16 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
             />
           </div>
           <div className="flex flex-col items-start gap-5">
-            <TekstLink href={testHref} className="text-[14px]">
+            <TekstLink href={testHref} className="text-[15px]">
               ← {t.terug_link}
             </TekstLink>
             <div>
               <Bovenschrift>{vulIn(t.bovenschrift, { naam: order.klantnaam })}</Bovenschrift>
               <h1 className={H1_INHOUD}>{eigen.naam}</h1>
-              {eigen.alias && <p className="mt-2 mb-0 text-[15px] text-ink-soft">ook wel {eigen.alias}</p>}
+              {eigen.alias && <p className="mt-2 mb-0 text-[17px] text-ink-soft">ook wel {eigen.alias}</p>}
             </div>
             {eigen.omschrijving && <p className={INTRO}>{eigen.omschrijving}</p>}
-            <p className="m-0 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-1.5 text-[13px] font-bold text-ink-soft">
+            <p className="m-0 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-1.5 text-[15px] font-bold text-ink-soft">
               Typecode <span className="text-ink">{sleutel}</span>
               {categorie && (
                 <>
@@ -88,7 +86,6 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
             </p>
           </div>
         </div>
-        <KleurLint />
       </header>
 
       {/* Kenmerken en verhoudingen. */}
@@ -101,14 +98,14 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
             {eigen.uitleg && <p className="mt-0 mb-6 text-[18px] whitespace-pre-line text-ink-soft">{eigen.uitleg}</p>}
             <KlantVinklijst punten={eigen.kenmerken} />
           </div>
-          <aside aria-labelledby="verhoudingen-titel" className="self-start rounded-ontwerp-md border-t-[5px] border-t-sage bg-white p-6 shadow-[0_14px_40px_rgba(58,40,52,.06)] tablet:p-8">
+          <aside aria-labelledby="verhoudingen-titel" className="self-start rounded-[8px] border border-line border-t-2 border-t-coral bg-white p-6 tablet:p-8">
             <h2 id="verhoudingen-titel" className={`${H3} mb-4 text-[26px]`}>
               {t.verhoudingen_kop}
             </h2>
             <ul className="m-0 grid list-none gap-3 p-0">
-              {verhouding.map((zin, i) => (
-                <li key={zin} className="flex gap-3 text-ink-soft">
-                  <span aria-hidden="true" className={`mt-[9px] h-2.5 w-2.5 flex-none rounded-full ${["bg-coral", "bg-sage", "bg-butter"][i % 3]}`} />
+              {verhouding.map((zin) => (
+                <li key={zin} className="flex gap-3 text-[17px] text-ink-soft">
+                  <span aria-hidden="true" className="mt-[9px] h-2 w-2 flex-none rounded-full bg-coral" />
                   {zin}
                 </li>
               ))}
@@ -128,7 +125,7 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
                   <p className="m-0 rounded-full bg-berry px-3 py-0.5 text-[12px] font-extrabold tracking-[0.1em] text-white uppercase">{t.jouw_type_label}</p>
                   <SilhouetVlak silhouet={{ vorm: eigen.vorm }} titel="" kleur="coral" className="h-44 w-36" figuurKlasse="h-36" />
                   <h3 className={`${H3} m-0 text-[26px]`}>{eigen.naam}</h3>
-                  {eigen.omschrijving && <p className="m-0 text-[14px] text-ink-soft">{eigen.omschrijving}</p>}
+                  {eigen.omschrijving && <p className="m-0 text-[16px] text-ink-soft">{eigen.omschrijving}</p>}
                 </article>
               </li>
               {anderen.map((s, i) => (
@@ -136,7 +133,7 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
                   <article className="flex h-full flex-col items-center gap-3 rounded-ontwerp-md border border-line bg-white p-6 text-center">
                     <SilhouetVlak silhouet={{ vorm: s.vorm }} titel="" kleur={vlakKleur(i + 1)} variant={i % 2 === 0 ? 1 : 0} className="mt-[30px] h-44 w-36" figuurKlasse="h-36" />
                     <h3 className={`${H3} m-0 text-[26px]`}>{s.naam}</h3>
-                    {s.omschrijving && <p className="m-0 text-[14px] text-ink-soft">{s.omschrijving}</p>}
+                    {s.omschrijving && <p className="m-0 text-[16px] text-ink-soft">{s.omschrijving}</p>}
                     <p className="mt-auto mb-0 border-t border-line pt-3 text-[14px] font-bold text-ink">{vergelijkMetEigen(eigen.vorm, s.vorm)}</p>
                   </article>
                 </li>
@@ -158,13 +155,13 @@ export default async function FiguurtypePagina({ params }: { params: Params }) {
             )}
             <KlantVinklijst punten={t.advies_punten.map((p) => p.tekst)} />
           </div>
-          <aside className="relative overflow-hidden rounded-ontwerp-lg border border-line bg-[#fff1ed] px-6 py-10 text-center tablet:px-12 tablet:py-12">
+          <aside className="relative overflow-hidden rounded-[8px] border border-line bg-sand px-6 py-10 text-center tablet:px-12 tablet:py-12">
             <p className="mx-auto mt-0 mb-3 max-w-[460px] font-serif text-[32px] leading-[1.08] text-balance text-ink tablet:text-[38px]">
               <KopTekst tekst={t.download_kop} />
             </p>
             {downloadbaar ? (
               <>
-                <p className="mx-auto mt-0 mb-7 max-w-[420px] text-ink-soft">{t.download_tekst}</p>
+                <p className="mx-auto mt-0 mb-7 max-w-[420px] text-[17px] text-ink-soft">{t.download_tekst}</p>
                 <a href={pdfHref} className={knopKlassen()}>
                   {uitslag.download_knop}
                 </a>

@@ -5,12 +5,12 @@ import { BeeldPlek } from "./BeeldPlek";
 import { Pijl, TekstLink } from "./Basis";
 import { H3, KLEINE_LINK } from "./stijl";
 
-// De artikelkaart uit het ontwerp (.article-card): foto 1,35:1, categorie in
+// De artikelkaart uit het ontwerp (.article-card): foto 1,35:1 (lege plek: effen zand), categorie in
 // kapitalen (berry), seriftitel en "Lees verder →". Bewust zonder extra
 // metadata (handboek: "geen overmatige metadata").
 
 /** Categorie boven de titel (.article-card span). */
-export const CATEGORIE = "m-0 text-[11px] leading-[1.65] font-extrabold tracking-[0.1em] text-berry uppercase";
+export const CATEGORIE = "m-0 text-[12px] leading-[1.65] font-extrabold tracking-[0.12em] text-berry uppercase";
 
 const HOVER_TITEL = "hover:text-berry hover:underline hover:decoration-1 hover:underline-offset-4";
 
@@ -33,12 +33,11 @@ export function ArtikelKaart({
   const beeld = berichtBeeld(bericht);
   const href = `/blog/${bericht.slug}`;
   return (
-    <article className="group flex h-full flex-col overflow-hidden border border-line bg-white">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[8px] border border-line bg-white">
       <BeeldPlek
         src={beeld?.url}
         alt=""
         sizes={sizes}
-        vlak="bg-sky"
         className="aspect-[1.35/1]"
         beeldKlasse="transition-transform duration-500 motion-safe:group-hover:scale-[1.035]"
       />
@@ -99,19 +98,18 @@ export function ArtikelUitgelicht({
   const beeld = berichtBeeld(bericht);
   const href = `/blog/${bericht.slug}`;
   return (
-    <article className="group grid overflow-hidden border border-line bg-white desktop:grid-cols-[1.15fr_1fr]">
+    <article className="group grid overflow-hidden rounded-[8px] border border-line bg-white desktop:grid-cols-[1.15fr_1fr]">
       <BeeldPlek
         src={beeld?.url}
         alt=""
         prioriteit
         sizes="(min-width: 981px) 630px, 100vw"
-        vlak="bg-butter"
         className="aspect-[1.35/1] desktop:aspect-auto desktop:min-h-[400px]"
         beeldKlasse="transition-transform duration-500 motion-safe:group-hover:scale-[1.035]"
       />
       <div className="flex flex-col items-start justify-center p-6 tablet:p-10 desktop:p-12">
         <p className={`${CATEGORIE} flex flex-wrap items-center gap-x-3 gap-y-1`}>
-          <span className="rounded-full bg-butter px-3 py-0.5 text-ink">{label}</span>
+          <span className="rounded-full border border-berry/40 px-3 py-0.5 text-berry">{label}</span>
           {bericht.categorie && <span>{bericht.categorie}</span>}
         </p>
         <h2 className={`${H3} mt-4 mb-4 text-[30px] text-balance break-words hyphens-auto tablet:text-[40px]`}>
@@ -119,9 +117,9 @@ export function ArtikelUitgelicht({
             {bericht.titel}
           </Link>
         </h2>
-        {bericht.samenvatting && <p className="mt-0 mb-5 max-w-[520px] text-ink-soft">{bericht.samenvatting}</p>}
+        {bericht.samenvatting && <p className="mt-0 mb-5 max-w-[520px] text-[17px] text-ink-soft tablet:text-[18px]">{bericht.samenvatting}</p>}
         <BerichtMeta bericht={bericht} className="mb-4" />
-        <TekstLink href={href} pijl tabIndex={-1} aria-hidden="true" className="text-[14px]">
+        <TekstLink href={href} pijl tabIndex={-1} aria-hidden="true" className="text-[15px]">
           {leesVerder}
         </TekstLink>
       </div>

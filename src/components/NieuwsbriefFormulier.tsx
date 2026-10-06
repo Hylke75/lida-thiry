@@ -121,7 +121,7 @@ export function NieuwsbriefFormulier({
               {titel}
             </Kop>
           )}
-          {tekst && <div className="text-ink-soft [&_a]:text-berry [&_a]:underline [&_p]:m-0">{tekst}</div>}
+          {tekst && <div className="text-[17px] text-ink-soft tablet:text-[18px] [&_a]:text-berry [&_a]:underline [&_p]:m-0">{tekst}</div>}
         </div>
         {gelukt ? (
           <div role="status">
@@ -158,7 +158,7 @@ export function NieuwsbriefFormulier({
               </label>
               <button
                 disabled={bezig}
-                className="inline-flex min-h-[52px] w-full shrink-0 cursor-pointer items-center justify-center gap-[10px] self-center rounded-full border border-berry bg-berry px-[22px] text-[14px] font-bold text-white transition-[transform,box-shadow] duration-[180ms] hover:shadow-[0_12px_30px_rgba(111,45,89,.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry disabled:opacity-60 motion-safe:hover:-translate-y-0.5 tablet:w-auto"
+                className="inline-flex min-h-[52px] w-full shrink-0 cursor-pointer items-center justify-center gap-[10px] self-center rounded-full border border-berry bg-berry px-[22px] text-[14px] font-bold text-white transition-[transform,box-shadow] duration-[180ms] hover:border-ink hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry disabled:opacity-60 tablet:w-auto"
               >
                 {bezig ? "Bezig…" : knop}
                 {!bezig && <span aria-hidden="true">→</span>}
@@ -169,7 +169,7 @@ export function NieuwsbriefFormulier({
                 {fout}
               </p>
             )}
-            <div className="text-[12px] leading-[1.5] text-ink-soft [&_a]:text-berry [&_a]:underline [&_p]:m-0">{toestemming}</div>
+            <div className="text-[15px] leading-[1.55] text-ink-soft [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_p]:m-0">{toestemming}</div>
           </form>
         )}
       </div>
@@ -190,7 +190,7 @@ export function NieuwsbriefFormulier({
         </Kop>
       )}
       {tekst && (
-        <div className="flex flex-col gap-2 text-ink-soft dark:text-foreground/75 [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_a]:underline-offset-[5px] dark:[&_a]:text-accent [&_p]:m-0 [&_ul]:list-inside [&_ul]:list-disc">
+        <div className="flex flex-col gap-2 text-[17px] text-ink-soft dark:text-foreground/75 [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_a]:underline-offset-[5px] dark:[&_a]:text-accent [&_p]:m-0 [&_ul]:list-inside [&_ul]:list-disc">
           {tekst}
         </div>
       )}
@@ -198,7 +198,7 @@ export function NieuwsbriefFormulier({
         <div role="status" className="mt-2 flex flex-col gap-2">
           <p className={`${MELDING_GOED} whitespace-pre-line`}>{succes}</p>
           {voorbeeld && (
-            <button type="button" onClick={() => setGelukt(false)} className="text-xs text-ink-soft underline underline-offset-4 dark:text-foreground/75">
+            <button type="button" onClick={() => setGelukt(false)} className="text-sm text-ink-soft underline underline-offset-4 dark:text-foreground/75">
               Voorbeeld: er is niets verstuurd. Terug naar het formulier
             </button>
           )}

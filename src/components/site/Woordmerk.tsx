@@ -8,9 +8,10 @@ export interface LogoGegevens {
 }
 
 /**
- * Het typografische woordmerk (handboek §3): de naam vet in kapitalen met
- * daaronder een kleine regel met ruime spatiëring, in aubergine. Staat er een
- * logo in Beheer → Website → Instellingen, dan staat dat logo er in plaats van.
+ * Het typografische woordmerk (handboek §3, herziening oktober 2026): de naam in
+ * DM Serif Display (gewone kast, zoals de koppen) met daaronder een kleine,
+ * verfijnde regel in kapitalen met ruime spatiëring. Staat er een logo in
+ * Beheer → Website → Instellingen, dan staat dat logo er in plaats van.
  */
 export function Woordmerk({
   naam,
@@ -36,8 +37,10 @@ export function Woordmerk({
   }
   return (
     <span className="inline-flex flex-col leading-none text-ink">
-      <span className="text-[18px] font-bold tracking-[0.045em] uppercase tablet:text-[20px]">{naam}</span>
-      {subregel && <span className="mt-[5px] text-[8px] font-bold tracking-[0.22em] text-ink-soft uppercase">{subregel}</span>}
+      <span className="font-serif text-[25px] leading-none font-normal tracking-[-0.005em] tablet:text-[28px]">{naam}</span>
+      {subregel && (
+        <span className="mt-[6px] text-[10px] leading-none font-semibold tracking-[0.2em] text-ink-soft uppercase">{subregel}</span>
+      )}
     </span>
   );
 }

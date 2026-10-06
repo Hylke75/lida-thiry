@@ -26,15 +26,15 @@ export function JuridischePagina({
         smal
         titel={titel}
         boven={
-          <TekstLink href="/" className="-my-2 text-[13px]">
+          <TekstLink href="/" className="-my-2 text-[15px]">
             <span aria-hidden="true">←</span> Terug naar de startpagina
           </TekstLink>
         }
-        onder={<p className="m-0 text-[14px] font-semibold text-ink-soft">Laatst bijgewerkt: {bijgewerkt}</p>}
+        onder={<p className="m-0 text-[15px] font-semibold text-ink-soft">Laatst bijgewerkt: {bijgewerkt}</p>}
       />
       <div className={`${CONTAINER} flex max-w-[720px] flex-col gap-10 pt-10 pb-[68px] tablet:pt-14 tablet:pb-[92px]`}>
         {concept && (
-          <p className="m-0 rounded-ontwerp-sm border border-butter bg-[#fff8dd] px-5 py-4 text-[14px] text-ink">
+          <p className="m-0 rounded-[6px] border border-line border-l-2 border-l-coral bg-sand px-5 py-4 text-[16px] text-ink">
             <strong className="font-extrabold">Concept — laten controleren.</strong> Deze tekst is een concept en moet nog
             juridisch worden nagekeken en aangevuld (zie de gegevens tussen [blokhaken]).
           </p>
@@ -62,7 +62,7 @@ export async function Identiteit() {
   ]);
   const waarde = (sleutel: string, placeholder: string) => inst[sleutel]?.trim() || placeholder;
   return (
-    <div className="rounded-ontwerp-sm border border-line bg-cream px-5 py-5 text-[15px] leading-[1.6] text-ink [&_p]:m-0">
+    <div className="rounded-[6px] border border-line bg-cream px-5 py-5 text-[17px] leading-[1.6] text-ink [&_p]:m-0">
       <p className="mb-1! font-serif text-[22px] leading-[1.2]">
         {waarde("bedrijfsnaam", BEDRIJFSNAAM_STANDAARD)}
       </p>

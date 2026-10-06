@@ -43,19 +43,19 @@ export async function generateMetadata({ searchParams }: { searchParams: Zoek })
 
 /** Filterlink (categorie): rustige tekstlink, de actieve met een berry streep eronder. */
 const FILTER =
-  "inline-flex min-h-11 items-center border-b-2 px-0.5 text-[14px] font-bold transition-colors hover:text-berry";
+  "inline-flex min-h-11 items-center border-b-2 px-0.5 text-[15px] font-bold transition-colors hover:text-berry";
 const FILTER_UIT = `${FILTER} border-transparent text-ink-soft`;
 const FILTER_AAN = `${FILTER} border-berry text-berry`;
 
 /** Paginering: ronde knopjes van 44 px. */
 const PAGINA =
-  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-4 text-[14px] font-bold transition-colors";
+  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-4 text-[15px] font-bold transition-colors";
 const PAGINA_UIT = `${PAGINA} border-line bg-white text-ink hover:border-berry hover:text-berry`;
 const PAGINA_AAN = `${PAGINA} border-berry bg-berry text-white`;
 
 /** Tag (#onderwerp): klein en ingetogen. */
 const TAG =
-  "inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-ink-soft hover:border-berry hover:text-berry aria-[current=page]:border-berry aria-[current=page]:bg-berry aria-[current=page]:text-white";
+  "inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[14px] font-semibold text-ink-soft hover:border-berry hover:text-berry aria-[current=page]:border-berry aria-[current=page]:bg-berry aria-[current=page]:text-white";
 
 export default async function BlogOverzicht({ searchParams }: { searchParams: Zoek }) {
   const zoek = await searchParams;
@@ -132,10 +132,10 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
               </nav>
             )}
             {tag && (
-              <p className="m-0 flex flex-wrap items-center gap-2 text-[14px] text-ink-soft">
+              <p className="m-0 flex flex-wrap items-center gap-2 text-[15px] text-ink-soft">
                 {t.tag_label}
                 <span className="rounded-full bg-berry px-3 py-0.5 font-bold text-white">#{tag}</span>
-                <TekstLink href={blogHref({ categorie })} className="text-[14px] text-ink">
+                <TekstLink href={blogHref({ categorie })} className="text-[15px] text-ink">
                   {t.filter_wissen}
                 </TekstLink>
               </p>
@@ -153,7 +153,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
                 {t.alle_berichten}
               </Knop>
             ) : (
-              <p className="m-0 text-ink-soft">{t.leeg_tekst}</p>
+              <p className="m-0 text-[18px] text-ink-soft">{t.leeg_tekst}</p>
             )}
           </section>
         ) : (
@@ -217,7 +217,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
       <InhoudNieuwsbrief
         teksten={nieuwsbrief}
         onder={
-          <p className="mt-5 mb-0 text-center text-[13px] text-ink-soft">
+          <p className="mt-5 mb-0 text-center text-[15px] text-ink-soft">
             {t.rss_vraag}{" "}
             <a href="/blog/rss.xml" className="font-bold text-ink underline underline-offset-[5px] hover:text-berry">
               {t.rss_link}

@@ -1,5 +1,25 @@
 # Huisstijlhandboek — Lida Thiry Kleur- en Stijladvies
 
+## Herziening (oktober 2026)
+
+Deze herziening gaat vóór de rest van dit handboek: waar een oudere regel hieronder (vrolijke accenten, kleurlint, organische vormen, gedraaide kaartjes) ermee botst, geldt deze sectie. Doelgroep: vrouwen van ongeveer 40–65 die meer zelfvertrouwen in hun kleding willen. De site voelt **rustig, als een boetiek**, niet als een vrolijke app.
+
+**Palet.** Hoofdkleuren: aubergine (`--ink` #2f2441, `--berry` #6f2d59) en koraal (`--coral` #ff8877; als tekst `--coral-tekst` #dc5a48, alleen groot). Basis: warme neutrale tinten — `--paper` #fffdf9, `--cream` #fff9f3, `--sand` #f6efe7 (sectie of paneel), `--sand-deep` #ebe1d5 (lege fotoplek), `--line` #eadfd6. De pastels (peach, coral-soft, butter, sage, mint, sky, lilac) alleen spaarzaam als accent: hooguit één subtiel gebruik per pagina, op de homepage geen. Geen kleurverlopen als achtergrond.
+
+**Geen decoratie.** Geen kleurlint (een scheiding is hooguit één dunne lijn in `--line` of koraal), geen boog- of blobvormen, geen halve cirkels, geen monogram ("LT") in een fotoplek, geen gedraaide kaartjes met dikke rand en harde schaduw, geen stippenpatronen.
+
+**Fotoplekken.** Rustige rechthoek, staand 4:5 (of 3:4), radius 6 px (4–8 px), geen rand, hooguit een heel zachte schaduw. Zonder foto een effen `--sand-deep`-vlak; geen nepfoto of stockfoto. De verhouding staat vast (`aspect-ratio`), zodat er niets verspringt. In code: `FOTOKADER` in `src/components/site/stijl.ts` met `BeeldPlek`. Dienstenkaarten: wit, dunne warme lijn, bovenaan zo'n fotokader; geen gekleurde vlakken.
+
+**Citaten.** Typografisch: DM Serif Display, groot (26–30 px), aubergine (`--berry`), recht, met eventueel een dunne koraallijn ervoor; geen kader (`CITAAT` in `stijl.ts`). "Kleding doet iets." staat als rustige tussenregel in de tekstkolom van de hero. Reviews en ervaringen in dezelfde stijl; zonder echte reacties een plaatshouder uit de teksten, nooit verzonnen reviews.
+
+**Leesbaarheid.** Lopende tekst 17–18 px (`TEKST` in `stijl.ts`; blog- en paginatekst 17/18 px), intro's 19–20 px, kleine lettertjes minimaal 14–15 px. Kleur `--ink` of `--ink-soft` (#4a4058, donkerder dan voorheen). Manrope op gewicht 450 voor lopende tekst, nooit dunner dan 400. Contrast minimaal WCAG AA, lopende tekst ≥ 7:1: `--ink-soft` haalt 9,7:1 op wit, 9,3:1 op cream en 8,5:1 op zand; `--ink` 13,9:1 op cream; `--berry` 9,2:1 op cream. Koraal als tekst alleen groot (≥ 24 px; 3,6:1 op cream).
+
+**Woordmerk.** De naam in DM Serif Display (gewone kast, 25–28 px), daaronder een kleine, verfijnde regel in kapitalen (10 px, ruime spatiëring). Een geüpload logo gaat voor. De naam en subregel zelf blijven zoals ingesteld (de definitieve merknaam is nog open).
+
+**Knoppen.** Pil-knop in aubergine; bij hover alleen een kleurwissel naar inkt, geen verspringen.
+
+**Voettekst.** Rustig op cream; de link "Beheer" staat standaard uit (aan te zetten in Beheer → Website → Instellingen; /admin blijft direct bereikbaar).
+
 ## 1. Merkgevoel
 
 De website moet voelen als **persoonlijk, vrolijk, deskundig en menselijk**. Niet corporate, niet high-fashion en niet glad of generiek. De uitstraling is die van een ervaren adviseur die kleur en stijl begrijpelijk maakt.

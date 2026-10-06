@@ -330,12 +330,12 @@ export function AfspraakBoeken({
                   className={`flex flex-col gap-1 rounded-ontwerp-sm p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry ${keuzeTegel(actief)}`}
                 >
                   <span className="font-bold">{s.naam}</span>
-                  <span className="text-[14px] text-ink-soft">
+                  <span className="text-[16px] text-ink-soft">
                     {duurLabel(s.duur_minuten)}
                     {s.prijs_cent > 0 ? ` · ${bedragLabel(s.prijs_cent)}` : ""}
                     {s.online ? " · online" : s.locatie ? ` · ${s.locatie}` : ""}
                   </span>
-                  {s.omschrijving && <span className="text-[14px] whitespace-pre-line text-ink-soft">{s.omschrijving}</span>}
+                  {s.omschrijving && <span className="text-[16px] whitespace-pre-line text-ink-soft">{s.omschrijving}</span>}
                 </button>
               );
             })}
@@ -345,19 +345,19 @@ export function AfspraakBoeken({
       {soorten.length === 1 && soort && (
         <div className="flex flex-col gap-1 rounded-ontwerp-sm border border-line bg-cream p-4">
           <span className="font-bold">{soort.naam}</span>
-          <span className="text-[14px] text-ink-soft">
+          <span className="text-[16px] text-ink-soft">
             {duurLabel(soort.duur_minuten)}
             {soort.prijs_cent > 0 ? ` · ${bedragLabel(soort.prijs_cent)}` : ""}
             {soort.online ? " · online" : soort.locatie ? ` · ${soort.locatie}` : ""}
           </span>
-          {soort.omschrijving && <span className="text-[14px] whitespace-pre-line text-ink-soft">{soort.omschrijving}</span>}
+          {soort.omschrijving && <span className="text-[16px] whitespace-pre-line text-ink-soft">{soort.omschrijving}</span>}
         </div>
       )}
 
       {soort && (
         <Stap nummer={soorten.length > 1 ? 2 : 1} titel={teksten.stap_datum}>
           {laden && !dagen ? (
-            <p className="m-0 text-[14px] text-ink-soft" role="status">
+            <p className="m-0 text-[16px] text-ink-soft" role="status">
               Beschikbare dagen laden…
             </p>
           ) : laadFout ? (
@@ -383,7 +383,7 @@ export function AfspraakBoeken({
 
       {soort && datum && tijden.length > 0 && (
         <Stap nummer={soorten.length > 1 ? 3 : 2} titel={teksten.stap_tijd}>
-          <p className="m-0 text-[14px] font-bold text-ink-soft first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
+          <p className="m-0 text-[16px] font-bold text-ink-soft first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
           <div className="grid grid-cols-3 gap-2 tablet:grid-cols-5" role="radiogroup" aria-label={teksten.stap_tijd}>
             {tijden.map((t) => {
               const actief = tijd?.start === t.start;
@@ -500,7 +500,7 @@ export function AfspraakBoeken({
               {veldFout("privacy")}
             </div>
             {soort.aanbetaling_cent > 0 && (
-              <p className="m-0 text-[14px] text-ink-soft">
+              <p className="m-0 text-[16px] text-ink-soft">
                 {teksten.aanbetaling_uitleg.replace(/\{bedrag\}/g, bedragLabel(soort.aanbetaling_cent))}
               </p>
             )}

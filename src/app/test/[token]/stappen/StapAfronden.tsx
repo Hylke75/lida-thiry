@@ -56,7 +56,7 @@ export function StapAfronden({
               <button
                 type="button"
                 onClick={() => gaNaar(r.stap)}
-                className="inline-flex min-h-11 items-center px-2 text-[13px] font-bold text-berry underline underline-offset-[3px] hover:text-ink"
+                className="inline-flex min-h-11 items-center px-2 text-[15px] font-bold text-berry underline underline-offset-[3px] hover:text-ink"
               >
                 wijzig
               </button>

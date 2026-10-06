@@ -121,7 +121,7 @@ export function ContactFormulier({ teksten, privacy }: { teksten: ContactFormuli
           {teksten.titel}
         </h2>
       )}
-      {teksten.intro && <p className="m-0 text-ink-soft">{teksten.intro}</p>}
+      {teksten.intro && <p className="m-0 text-[17px] text-ink-soft">{teksten.intro}</p>}
       {gelukt ? (
         <div role="status" className={`${MELDING_GOED} mt-2 flex flex-col gap-1`}>
           <p className="m-0 font-serif text-[22px] leading-[1.2]">{teksten.succes_titel}</p>
@@ -229,7 +229,7 @@ export function ContactFormulier({ teksten, privacy }: { teksten: ContactFormuli
               {veldFout("bericht") ?? <span />}
               <span
                 id={`${id}-teller`}
-                className={`shrink-0 text-[12px] tabular-nums ${lengte > MAX.bericht * 0.9 ? "font-bold text-berry" : "text-ink-soft"}`}
+                className={`shrink-0 text-[14px] tabular-nums ${lengte > MAX.bericht * 0.9 ? "font-bold text-berry" : "text-ink-soft"}`}
               >
                 {lengte.toLocaleString("nl-NL")} / {MAX.bericht.toLocaleString("nl-NL")} tekens
               </span>
