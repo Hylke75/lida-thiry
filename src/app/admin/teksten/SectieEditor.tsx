@@ -38,7 +38,7 @@ function EnkelInvoer({
           value={waarde}
           placeholder="https://…"
           onChange={(e) => onChange(e.target.value)}
-          className={invoerKlasse}
+          className={invoerBreed}
         />
         <MediaKiezer
           onKies={({ url }) => onChange(url)}
