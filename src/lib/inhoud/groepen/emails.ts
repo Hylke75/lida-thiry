@@ -188,6 +188,7 @@ export const EMAILS_MIJN_ADVIES = sectie({
     },
     adviezen_kop: { soort: "tekst", label: "Kop boven de adviezen", standaard: "Je persoonlijke advies" },
     advies_knop: { soort: "tekst", label: "Knoptekst bij een advies", max: 60, standaard: "Download je advies (PDF)" },
+    figuur_link: { soort: "tekst", label: "Linktekst naar 'Jouw figuurtype' (leeg = geen link)", max: 60, standaard: "Lees meer over jouw figuurtype" },
     tests_kop: { soort: "tekst", label: "Kop boven de nog niet afgeronde tests", standaard: "Verder met je test" },
     test_knop: { soort: "tekst", label: "Knoptekst bij een test", max: 60, standaard: "Ga verder met de test" },
     na: {

@@ -337,7 +337,7 @@ export function betaalherinneringMail(
 }
 
 export interface MijnAdviesMailLinks {
-  adviezen: readonly { type: string; afgerondOp: string | null; url: string }[];
+  adviezen: readonly { type: string; afgerondOp: string | null; url: string; figuurUrl?: string }[];
   tests: readonly { besteldOp: string; verlooptOp: string | null; url: string }[];
 }
 
@@ -354,7 +354,11 @@ export function mijnAdviesMail(
         .map(
           (a) => `<p style="margin:0 0 4px">Type <strong>${escapeHtml(a.type)}</strong>${
             a.afgerondOp ? ` <span style="color:${KLEUR.inkZacht}">(afgerond op ${escapeHtml(datumLang(a.afgerondOp))})</span>` : ""
-          }</p>${knop(a.url, t.advies_knop, "primair", "12px 0 20px")}`,
+          }</p>${knop(a.url, t.advies_knop, "primair", a.figuurUrl && t.figuur_link.trim() ? "12px 0 8px" : "12px 0 20px")}${
+            a.figuurUrl && t.figuur_link.trim()
+              ? `<p style="margin:0 0 20px"><a href="${escapeHtml(a.figuurUrl)}" style="color:${KLEUR.berry};font-weight:700">${escapeHtml(t.figuur_link)} →</a></p>`
+              : ""
+          }`,
         )
         .join("")}`
     : "";
