@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Knop, knopKlassen } from "@/components/site/Basis";
+import { KlantKaart, KlantKop, KlantPagina, klantMeldingKlassen } from "@/components/site/KlantPagina";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { vulIn } from "@/lib/inhoud/schema";
 import { BESTELLEN_HERVAT, BESTELLEN_FORMULIER } from "@/lib/inhoud/groepen/bestellen";
@@ -29,49 +30,53 @@ export default async function HervatPage({
     oordeel = { soort: "ongeldig" };
   }
 
-  const knop =
-    "mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90";
+  const kop = (titel: string, tekst: string) => (
+    <KlantKop midden bovenschrift="Je bestelling" titel={titel} className="mb-0! tablet:mb-0!">
+      <p className="whitespace-pre-line">{tekst}</p>
+    </KlantKop>
+  );
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
-      <div className="flex flex-col gap-6 rounded-2xl bg-kaart p-8 shadow-sm ring-1 ring-foreground/5">
+    <KlantPagina midden>
+      <KlantKaart
+        accent={oordeel.soort === "open" ? "coral" : oordeel.soort === "betaald" ? "sage" : "butter"}
+        className="flex flex-col items-center gap-6"
+      >
         {oordeel.soort === "open" ? (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.titel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">
-              {vulIn(t.tekst, {
+            {kop(
+              t.titel,
+              vulIn(t.tekst, {
                 naam: oordeel.order.klantnaam,
                 bedrag: formatteerBedrag(oordeel.order.bedrag_cent, oordeel.order.valuta || "EUR"),
-              })}
-            </p>
+              }),
+            )}
             {fout && (
-              <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+              <p role="alert" className={`${klantMeldingKlassen("fout")} w-full text-left`}>
                 {formulier.foutVerbinding}
               </p>
             )}
             <form method="post" action="/api/bestellen/hervat">
               <input type="hidden" name="id" value={id} />
               <input type="hidden" name="t" value={token} />
-              <button className={knop}>{t.knop}</button>
+              <button className={knopKlassen()}>{t.knop}</button>
             </form>
           </>
         ) : oordeel.soort === "betaald" ? (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.alBetaaldTitel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">{t.alBetaaldTekst}</p>
-            <Link href="/mijn-advies" className={knop}>
+            {kop(t.alBetaaldTitel, t.alBetaaldTekst)}
+            <Knop href="/mijn-advies" pijl={false}>
               Mijn advies
-            </Link>
+            </Knop>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.ongeldigTitel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">{t.ongeldigTekst}</p>
-            <Link href="/bestellen" className={knop}>
+            {kop(t.ongeldigTitel, t.ongeldigTekst)}
+            <Knop href="/bestellen" pijl={false}>
               {t.opnieuwKnop}
-            </Link>
+            </Knop>
           </>
         )}
-      </div>
-    </main>
+      </KlantKaart>
+    </KlantPagina>
   );
 }

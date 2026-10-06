@@ -1,11 +1,13 @@
 // Onthulling van het figuurtype na de test (en bij het opnieuw openen van de
 // testlink). Zonder hooks, dus bruikbaar vanuit zowel de wizard als de pagina.
 
-import Link from "next/link";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
 import type { SectieWaarden } from "@/lib/inhoud/schema";
 import type { TEST_UITSLAG } from "@/lib/inhoud/groepen/test";
 import { Lichaam } from "@/components/Lichaam";
+import { Bovenschrift, knopKlassen, TekstLink } from "@/components/site/Basis";
+import { KLANT_H1, KLANT_INTRO, KlantVinklijst, klantKolom } from "@/components/site/KlantPagina";
+import { H3 } from "@/components/site/stijl";
 
 export function TypeOnthulling({
   token,
@@ -28,18 +30,19 @@ export function TypeOnthulling({
   teksten: Pick<SectieWaarden<typeof TEST_UITSLAG>, "silhouet_label" | "download_knop" | "download_uitleg">;
 }) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-4 py-10 sm:px-8">
+    <main className="flex flex-1 flex-col justify-center bg-paper py-14 tablet:py-[84px]">
+      <div className={`${klantKolom("midden")} flex flex-col gap-10`}>
       <div className="text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{kop}</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+        <Bovenschrift>{kop}</Bovenschrift>
+        <h1 className={KLANT_H1}>
           {titel ?? `Type ${sleutel}`}
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-foreground/60">{intro}</p>
+        <p className={`${KLANT_INTRO} mx-auto m-0 max-w-[560px]`}>{intro}</p>
       </div>
 
-      <section className="grid items-center gap-6 rounded-3xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/10 sm:grid-cols-[180px_1fr] sm:p-8">
+      <section className="grid items-center gap-8 rounded-ontwerp-md border border-line bg-[#fff1ed] p-6 tablet:grid-cols-[220px_1fr] tablet:p-[34px]">
         {silhouet && (
-          <div className="mx-auto rounded-2xl bg-accent-zacht px-6 py-4 text-accent">
+          <div className="mx-auto rounded-[46%_54%_46%_54%/52%_42%_58%_48%] bg-coral-soft px-8 py-6 text-berry">
             {silhouet.beeldUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- tijdelijke (signed) URL uit de beeldbank
               <img src={silhouet.beeldUrl} alt={`Silhouet: ${silhouet.naam}`} className="h-56 w-auto object-contain" />
@@ -53,45 +56,31 @@ export function TypeOnthulling({
             )}
           </div>
         )}
-        <div className="flex flex-col gap-3 text-center sm:text-left">
+        <div className="flex flex-col gap-3 text-center tablet:text-left">
           {silhouet && (
             <>
-              <p className="text-xs font-medium uppercase tracking-widest text-foreground/50">
+              <p className="m-0 text-[13px] font-extrabold tracking-[0.1em] text-ink uppercase">
                 {teksten.silhouet_label}
               </p>
-              <h2 className="text-2xl font-semibold">{silhouet.naam}</h2>
-              {silhouet.alias && <p className="-mt-2 text-sm text-foreground/55">ook wel {silhouet.alias}</p>}
-              <p className="leading-relaxed text-foreground/75">{silhouet.uitleg}</p>
-              {silhouet.kenmerken.length > 0 && (
-                <ul className="flex flex-col gap-1 text-left text-sm text-foreground/75">
-                  {silhouet.kenmerken.map((k) => (
-                    <li key={k} className="flex gap-2">
-                      <span className="text-accent">•</span>
-                      {k}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <h2 className={`${H3} m-0 text-[30px]`}>{silhouet.naam}</h2>
+              {silhouet.alias && <p className="m-0 -mt-1 text-[14px] text-ink-soft">ook wel {silhouet.alias}</p>}
+              <p className="m-0 text-ink-soft">{silhouet.uitleg}</p>
+              {silhouet.kenmerken.length > 0 && <KlantVinklijst punten={silhouet.kenmerken} className="mt-2" />}
             </>
           )}
-          <p className="text-xs text-foreground/50">Typecode {sleutel}</p>
+          <p className="m-0 mt-1 text-[13px] text-ink-soft">Typecode {sleutel}</p>
         </div>
       </section>
 
       <div className="flex flex-col items-center gap-3 text-center">
-        <a
-          href={`/api/test/${token}/pdf`}
-          className="rounded-full bg-accent px-8 py-4 text-base font-medium text-background shadow-sm transition-opacity hover:opacity-90"
-        >
+        <a href={`/api/test/${token}/pdf`} className={`${knopKlassen()} w-full tablet:w-auto`}>
           {teksten.download_knop}
         </a>
-        <p className="max-w-sm whitespace-pre-line text-sm text-foreground/60">{teksten.download_uitleg}</p>
-        <Link
-          href="/"
-          className="mt-2 text-sm text-foreground/50 underline underline-offset-4 hover:text-foreground/80"
-        >
+        <p className="m-0 max-w-[420px] text-[14px] whitespace-pre-line text-ink-soft">{teksten.download_uitleg}</p>
+        <TekstLink href="/" className="mt-1 text-[14px] text-ink-soft">
           ← Naar de startpagina
-        </Link>
+        </TekstLink>
+      </div>
       </div>
     </main>
   );

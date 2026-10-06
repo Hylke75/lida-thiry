@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { knopKlassen } from "@/components/site/Basis";
+import { INVOER, LABEL, VERPLICHT } from "@/components/site/FormulierStijl";
+import { klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 export function MijnAdviesFormulier({
   teksten,
@@ -36,14 +39,14 @@ export function MijnAdviesFormulier({
 
   if (klaar) {
     return (
-      <p role="status" className="rounded-lg bg-accent-zacht px-4 py-3 text-sm whitespace-pre-line text-foreground/80">
+      <p role="status" className={`${klantMeldingKlassen("goed")} whitespace-pre-line`}>
         {teksten.bevestiging}
       </p>
     );
   }
 
   return (
-    <form onSubmit={verstuur} className="flex flex-col gap-4">
+    <form onSubmit={verstuur} className="flex flex-col gap-5">
       <input
         type="text"
         name="website"
@@ -52,26 +55,26 @@ export function MijnAdviesFormulier({
         aria-hidden="true"
         className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
       />
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-foreground/70">
-          E-mailadres<span className="text-accent"> *</span>
+      <label className="flex flex-col gap-2">
+        <span className={LABEL}>
+          E-mailadres<span className={VERPLICHT}> *</span>
         </span>
         <input
           name="email"
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-foreground/15 bg-kaart px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className={INVOER}
         />
       </label>
       {fout && (
-        <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        <p role="alert" className={klantMeldingKlassen("fout")}>
           {fout}
         </p>
       )}
       <button
         disabled={bezig}
-        className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+        className={`${knopKlassen()} w-full tablet:w-auto tablet:self-start`}
       >
         {bezig ? teksten.knopBezig : teksten.knop}
       </button>

@@ -20,13 +20,13 @@ export function Voortgang({
 
   return (
     <nav aria-label="Voortgang" className="mt-4">
-      <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-line">
         <div
-          className="h-full rounded-full bg-accent transition-[width] duration-500"
+          className="h-full rounded-full bg-coral transition-[width] duration-500"
           style={{ width: `${((stap + 1) / STAPPEN.length) * 100}%` }}
         />
       </div>
-      <ol className="mt-3 flex items-center gap-0.5 overflow-x-auto [scrollbar-width:none]">
+      <ol className="m-0 mt-3 flex list-none flex-wrap items-center gap-0.5 p-0 py-1 tablet:gap-1">
         {STAPPEN.map((s, i) => {
           const klaar = i < stap;
           const actief = i === stap;
@@ -39,21 +39,21 @@ export function Voortgang({
                 aria-current={actief ? "step" : undefined}
                 aria-label={`Stap ${i + 1}: ${s.titel}`}
                 title={s.titel}
-                className={`flex items-center gap-2 rounded-full px-2 py-1.5 text-xs ${
+                className={`flex min-h-11 items-center gap-2 rounded-full px-0.5 text-[13px] font-bold tablet:px-1.5 ${
                   actief
-                    ? "bg-foreground px-3 font-medium text-background"
+                    ? "bg-berry pr-4 text-white"
                     : bereikbaar(i)
-                      ? "text-black/70 hover:bg-black/5 dark:text-white/70 dark:hover:bg-white/10"
-                      : "text-black/30 dark:text-white/30"
+                      ? "text-ink hover:bg-cream"
+                      : "text-ink-soft"
                 }`}
               >
                 <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[12px] tablet:h-8 tablet:w-8 ${
                     actief
-                      ? "bg-background text-foreground"
+                      ? "bg-white text-berry"
                       : klaar
-                        ? "bg-accent text-background"
-                        : "border border-current"
+                        ? "bg-coral-soft text-ink"
+                        : "border border-[rgba(47,36,65,.3)]"
                   }`}
                 >
                   {klaar ? "✓" : i + 1}

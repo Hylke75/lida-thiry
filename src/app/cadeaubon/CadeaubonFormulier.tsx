@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 import { VinkjeTekst } from "../bestellen/BestelFormulier";
 import { MAX_BOODSCHAP } from "@/lib/cadeaubon/regels";
 import { euroNaarCent } from "@/lib/prijs";
+import { knopKlassen } from "@/components/site/Basis";
+import { HULPTEKST, INVOER, LABEL, LEGENDA, VELDFOUT, VERPLICHT, VINKJE, VINKJE_LABEL, keuzeTegel } from "@/components/site/FormulierStijl";
+import { klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 interface Teksten {
   bedragUitleg: string;
@@ -14,8 +17,7 @@ interface Teksten {
   foutVerbinding: string;
 }
 
-const invoerKlasse =
-  "rounded-lg border border-foreground/15 bg-kaart px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
+const invoerKlasse = INVOER;
 
 export function CadeaubonFormulier({
   opties,
@@ -90,7 +92,7 @@ export function CadeaubonFormulier({
   }
 
   return (
-    <form ref={formRef} onSubmit={verstuur} className="flex flex-col gap-5">
+    <form ref={formRef} onSubmit={verstuur} className="flex flex-col gap-8">
       <input
         type="text"
         name="website"
@@ -100,17 +102,15 @@ export function CadeaubonFormulier({
         className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
       />
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Bedrag</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <fieldset className="flex flex-col gap-3">
+        <legend className={LEGENDA}>Bedrag</legend>
+        <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3">
           {opties.map((o) => (
             <label
               key={o.waarde}
-              className={`flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-center text-sm transition-colors ${
-                keuze === o.waarde
-                  ? "border-accent bg-accent-zacht font-medium text-accent"
-                  : "border-foreground/15 hover:border-accent/50"
-              } ${o.waarde === "prijs" ? "col-span-2 sm:col-span-3" : ""}`}
+              className={`flex min-h-[52px] items-center justify-center rounded-ontwerp-sm px-4 py-2 text-center text-[15px] font-bold ${keuzeTegel(
+                keuze === o.waarde,
+              )} ${o.waarde === "prijs" ? "col-span-2 tablet:col-span-3" : ""}`}
             >
               <input
                 type="radio"
@@ -125,10 +125,10 @@ export function CadeaubonFormulier({
           ))}
         </div>
         {keuze === "anders" && (
-          <label className="mt-1 flex flex-col gap-1 text-sm">
-            <span className="text-foreground/70">
+          <label className="mt-1 flex flex-col gap-2">
+            <span className={LABEL}>
               Bedrag in euro (minimaal 5, maximaal de prijs van de test: {maxLabel})
-              <span className="text-accent"> *</span>
+              <span className={VERPLICHT}> *</span>
             </span>
             <input
               value={eigenBedrag}
@@ -143,45 +143,45 @@ export function CadeaubonFormulier({
           </label>
         )}
         {teHoog && (
-          <p className="text-sm text-accent">
+          <p className={VELDFOUT}>
             Een cadeaubon is maximaal de prijs van de test ({maxLabel}).
           </p>
         )}
-        <p className="text-xs whitespace-pre-line text-foreground/70">{teksten.bedragUitleg}</p>
+        <p className={`${HULPTEKST} whitespace-pre-line`}>{teksten.bedragUitleg}</p>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Jouw gegevens</legend>
+      <fieldset className="flex flex-col gap-4">
+        <legend className={LEGENDA}>Jouw gegevens</legend>
         <Veld naam="koper_naam" label="Je naam" autoComplete="name" verplicht />
         <Veld naam="koper_email" label="Je e-mailadres" type="email" autoComplete="email" verplicht />
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Bezorging</legend>
-        <label className="flex items-start gap-3 text-sm text-foreground/80">
+      <fieldset className="flex flex-col gap-2">
+        <legend className={LEGENDA}>Bezorging</legend>
+        <label className={VINKJE_LABEL}>
           <input
             type="radio"
             name="bezorging"
             checked={bezorging === "koper"}
             onChange={() => setBezorging("koper")}
-            className="mt-1 accent-accent"
+            className={VINKJE}
           />
           <span>Naar mij — ik geef de bon zelf (je krijgt hem ook als PDF om te printen)</span>
         </label>
-        <label className="flex items-start gap-3 text-sm text-foreground/80">
+        <label className={VINKJE_LABEL}>
           <input
             type="radio"
             name="bezorging"
             checked={bezorging === "ontvanger"}
             onChange={() => setBezorging("ontvanger")}
-            className="mt-1 accent-accent"
+            className={VINKJE}
           />
           <span>Direct per e-mail naar de ontvanger</span>
         </label>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Voor wie is de bon?</legend>
+      <fieldset className="flex flex-col gap-4">
+        <legend className={LEGENDA}>Voor wie is de bon?</legend>
         <Veld
           naam="ontvanger_naam"
           label={bezorging === "ontvanger" ? "Naam van de ontvanger" : "Naam van de ontvanger (optioneel)"}
@@ -190,19 +190,19 @@ export function CadeaubonFormulier({
         {bezorging === "ontvanger" && (
           <>
             <Veld naam="ontvanger_email" label="E-mailadres van de ontvanger" type="email" verplicht />
-            <label className="flex items-start gap-3 text-sm text-foreground/80">
+            <label className={VINKJE_LABEL}>
               <input
                 type="checkbox"
                 checked={later}
                 onChange={(e) => setLater(e.target.checked)}
-                className="mt-1 accent-accent"
+                className={VINKJE}
               />
               <span>Later versturen, op een datum naar keuze</span>
             </label>
             {later && (
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-foreground/70">
-                  Verzenddatum<span className="text-accent"> *</span>
+              <label className="flex flex-col gap-2">
+                <span className={LABEL}>
+                  Verzenddatum<span className={VERPLICHT}> *</span>
                 </span>
                 <input
                   name="verzend_op"
@@ -216,28 +216,28 @@ export function CadeaubonFormulier({
             )}
           </>
         )}
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-foreground/70">Persoonlijke boodschap (optioneel)</span>
-          <textarea name="boodschap" rows={3} maxLength={MAX_BOODSCHAP} className={invoerKlasse} />
+        <label className="flex flex-col gap-2">
+          <span className={LABEL}>Persoonlijke boodschap (optioneel)</span>
+          <textarea name="boodschap" rows={3} maxLength={MAX_BOODSCHAP} className={`${invoerKlasse} resize-y`} />
         </label>
       </fieldset>
 
-      <label className="flex items-start gap-3 text-sm text-foreground/70">
-        <input type="checkbox" name="voorwaarden_akkoord" required className="mt-1 accent-accent" />
+      <label className={`${VINKJE_LABEL} border-t border-line pt-6`}>
+        <input type="checkbox" name="voorwaarden_akkoord" required className={VINKJE} />
         <span>
           <VinkjeTekst tekst={teksten.akkoordVoorwaarden} />
         </span>
       </label>
 
       {fout && (
-        <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        <p role="alert" className={klantMeldingKlassen("fout")}>
           {fout}
         </p>
       )}
 
       <button
         disabled={bezig}
-        className="mt-1 rounded-full bg-accent px-6 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+        className={`${knopKlassen()} w-full tablet:w-auto tablet:self-start`}
       >
         {bezig ? teksten.knopBezig : teksten.knop}
       </button>
@@ -259,10 +259,10 @@ function Veld({
   verplicht?: boolean;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-foreground/70">
+    <label className="flex flex-col gap-2">
+      <span className={LABEL}>
         {label}
-        {verplicht && <span className="text-accent"> *</span>}
+        {verplicht && <span className={VERPLICHT}> *</span>}
       </span>
       <input name={naam} type={type} autoComplete={autoComplete} required={verplicht} className={invoerKlasse} />
     </label>

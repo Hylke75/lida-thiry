@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { PasvormVraag } from "@/lib/inhoud/groepen/test";
 import type { Antwoorden } from "../wizard-regels";
+import { keuzeTegel } from "@/components/site/FormulierStijl";
 
 /** Stap "Vragen": de pasvormvragen, elk met keuzeknoppen. */
 export function StapVragen({
@@ -13,21 +14,17 @@ export function StapVragen({
   setA: Dispatch<SetStateAction<Antwoorden>>;
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {vragen.map((q) => (
-        <fieldset key={q.sleutel}>
-          <legend className="mb-2 text-sm font-medium">{q.vraag}</legend>
-          <div className="flex flex-wrap gap-2">
+        <fieldset key={q.sleutel} className="min-w-0 rounded-ontwerp-md border border-line bg-white p-5 tablet:p-6">
+          <legend className="float-left mb-4 w-full text-[17px] font-bold text-ink">{q.vraag}</legend>
+          <div className="clear-left flex flex-wrap gap-2.5">
             {q.opties.map((optie) => {
               const gekozen = a.pasvorm[q.sleutel] === optie;
               return (
                 <label
                   key={optie}
-                  className={`cursor-pointer rounded-full border-2 px-4 py-2 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
-                    gekozen
-                      ? "border-accent bg-accent-zacht"
-                      : "border-black/10 hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
-                  }`}
+                  className={`inline-flex min-h-11 items-center rounded-ontwerp-sm px-4 py-2 text-[15px] font-semibold ${keuzeTegel(gekozen)}`}
                 >
                   <input
                     type="radio"

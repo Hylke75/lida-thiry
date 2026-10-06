@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { TekstLink } from "@/components/site/Basis";
+import { KlantKop, KlantPagina } from "@/components/site/KlantPagina";
 import { createClient } from "@/lib/supabase/server";
 import { vereisBeheerder } from "@/lib/admin-auth";
 
@@ -32,35 +33,28 @@ export default async function StatusPage() {
   ];
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-6 p-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Verbindingsstatus</h1>
-      <ul className="flex flex-col gap-2">
+    <KlantPagina>
+      <KlantKop bovenschrift="Beheer" titel="Verbindingsstatus" />
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {rows.map((r) => (
           <li
             key={r.label}
-            className="flex items-center justify-between gap-4 rounded-lg border border-black/10 px-4 py-3 text-sm dark:border-white/15"
+            className="flex flex-col gap-2 rounded-ontwerp-sm border border-line bg-white px-5 py-4 text-[14px] tablet:flex-row tablet:items-center tablet:justify-between tablet:gap-4"
           >
-            <span className="font-mono text-black/70 dark:text-white/70">
-              {r.label}
-            </span>
+            <span className="font-mono break-all text-ink">{r.label}</span>
             <span className="flex items-center gap-2">
               <span
-                className={`inline-block h-2.5 w-2.5 rounded-full ${
-                  r.ok ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${r.ok ? "bg-[#3f7a35]" : "bg-[#b42318]"}`}
                 aria-hidden
               />
-              <span className="text-black/60 dark:text-white/60">{r.value}</span>
+              <span className="text-ink-soft">{r.value}</span>
             </span>
           </li>
         ))}
       </ul>
-      <Link
-        href="/"
-        className="text-sm text-black/50 underline underline-offset-4 hover:text-black/80 dark:text-white/50 dark:hover:text-white/80"
-      >
+      <TekstLink href="/" className="mt-6 text-[14px]">
         ← Terug
-      </Link>
-    </main>
+      </TekstLink>
+    </KlantPagina>
   );
 }

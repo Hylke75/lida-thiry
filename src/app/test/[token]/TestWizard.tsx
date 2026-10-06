@@ -12,6 +12,8 @@ import { StapMaten } from "./stappen/StapMaten";
 import { StapSilhouet } from "./stappen/StapSilhouet";
 import { StapVragen } from "./stappen/StapVragen";
 import { StapAfronden } from "./stappen/StapAfronden";
+import { Bovenschrift, knopKlassen } from "@/components/site/Basis";
+import { KLANT_H1, klantKolom, klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 export function TestWizard({
   token,
@@ -66,16 +68,17 @@ export function TestWizard({
   const huidig = STAPPEN[stap];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+    <main className="flex flex-1 flex-col bg-paper py-10 tablet:py-14">
+      <div className={`${klantKolom("midden")} flex flex-col gap-8`}>
       <div ref={kop} className="scroll-mt-4">
-        <p className="text-sm text-black/50 dark:text-white/50">
+        <p className="m-0 text-[15px] font-bold text-ink-soft">
           {vulIn(teksten.algemeen.welkom, { naam: klantnaam })}
         </p>
         <Voortgang stappen={STAPPEN} stap={stap} bereikbaar={bereikbaar} gaNaar={gaNaar} />
       </div>
 
       <form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-7"
         onSubmit={(e) => {
           e.preventDefault();
           if (huidig.soort === "controle") verstuur();
@@ -83,23 +86,23 @@ export function TestWizard({
         }}
       >
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-black/40 dark:text-white/40">
+          <Bovenschrift>
             Stap {stap + 1} van {STAPPEN.length}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{huidig.titel}</h1>
+          </Bovenschrift>
+          <h1 className={`${KLANT_H1} mb-0!`}>{huidig.titel}</h1>
         </div>
 
         {melding && (
-          <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className={`${klantMeldingKlassen("letop")} m-0`}>
             {melding}
           </p>
         )}
         {bevindingen.length > 0 && (
-          <ul className="flex flex-col gap-2">
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {bevindingen.map((b, i) => (
               <li
                 key={i}
-                className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                className={klantMeldingKlassen("fout")}
               >
                 {b.bericht}
               </li>
@@ -142,24 +145,24 @@ export function TestWizard({
         )}
 
         {fout && (
-          <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+          <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
             {fout}
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-5 dark:border-white/10">
+        <div className="flex flex-col-reverse items-stretch gap-3 border-t border-line pt-6 tablet:flex-row tablet:items-center tablet:justify-between">
           <button
             type="button"
             onClick={() => gaNaar(stap - 1)}
             disabled={stap === 0 || bezig}
-            className="rounded-full border border-black/15 px-5 py-3 text-sm disabled:invisible dark:border-white/20"
+            className={`${knopKlassen({ variant: "outline" })} disabled:invisible max-tablet:disabled:hidden`}
           >
             ← Terug
           </button>
           <button
             type="submit"
             disabled={bezig}
-            className="rounded-full bg-foreground px-7 py-3 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+            className={knopKlassen()}
           >
             {huidig.soort === "controle"
               ? bezig
@@ -169,6 +172,7 @@ export function TestWizard({
           </button>
         </div>
       </form>
+      </div>
     </main>
   );
 }

@@ -6,6 +6,9 @@ import type { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
 import { bedragLabel, duurLabel, MAX, valideerBoeking, type BoekVeld } from "@/lib/afspraken/regels";
 import { datumPlusDagen, kalenderdatumLabel, weekdagVan } from "@/lib/datum";
 import type { Dag, Tijdslot } from "@/lib/afspraken/slots";
+import { knopKlassen } from "@/components/site/Basis";
+import { invoer, LABEL, TEKST_LINK, VELDFOUT, VERPLICHT, VINKJE, keuzeTegel } from "@/components/site/FormulierStijl";
+import { klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 export type AfspraakBoekenTeksten = SectieWaarden<typeof AFSPRAKEN_BOEKEN>;
 
@@ -25,18 +28,16 @@ const MAANDEN = ["januari", "februari", "maart", "april", "mei", "juni", "juli",
 const DAGKOPPEN = ["ma", "di", "wo", "do", "vr", "za", "zo"];
 const VELD_VOLGORDE: readonly BoekVeld[] = ["naam", "email", "telefoon", "opmerking", "privacy"];
 
-const invoerStijl = (fout: boolean) =>
-  `w-full rounded-lg border bg-kaart px-3 py-2 outline-none focus:ring-2 ${
-    fout
-      ? "border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
-      : "border-foreground/15 focus:border-accent focus:ring-accent/20"
-  }`;
+const invoerStijl = invoer;
+
+/** Kop van het formulier (serif, zoals de h2's van de site maar kleiner). */
+const KOP = "m-0 font-serif text-[34px] leading-[1.05] font-normal tracking-[-0.02em] text-ink tablet:text-[44px]";
 
 function Stap({ nummer, titel, children }: { nummer: number; titel: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="flex items-center gap-3 text-lg font-semibold">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm text-background" aria-hidden="true">
+      <h3 className="m-0 flex items-center gap-3 font-serif text-[25px] leading-[1.15] font-normal text-ink">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-berry font-sans text-[14px] font-extrabold text-white" aria-hidden="true">
           {nummer}
         </span>
         {titel}
@@ -68,33 +69,33 @@ function Kalender({
   const cellen: (string | null)[] = [...Array<null>(leeg).fill(null), ...Array.from({ length: aantal }, (_, i) => datumPlusDagen(eerste, i))];
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-foreground/10 bg-kaart p-4">
+    <div className="w-full max-w-sm rounded-ontwerp-md border border-line bg-white p-4 tablet:p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => setIndex((i) => Math.max(0, i - 1))}
           disabled={index === 0}
-          className="rounded-full px-3 py-1 text-lg disabled:opacity-25"
+          className="grid h-11 w-11 place-items-center rounded-full text-[22px] text-ink hover:bg-cream disabled:opacity-30"
           aria-label="Vorige maand"
         >
           ‹
         </button>
-        <p className="font-medium" aria-live="polite">
+        <p className="m-0 font-bold text-ink" aria-live="polite">
           {MAANDEN[mnd - 1]} {jaar}
         </p>
         <button
           type="button"
           onClick={() => setIndex((i) => Math.min(maanden.length - 1, i + 1))}
           disabled={index >= maanden.length - 1}
-          className="rounded-full px-3 py-1 text-lg disabled:opacity-25"
+          className="grid h-11 w-11 place-items-center rounded-full text-[22px] text-ink hover:bg-cream disabled:opacity-30"
           aria-label="Volgende maand"
         >
           ›
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-sm" role="grid">
+      <div className="grid grid-cols-7 gap-1 text-center text-[14px]">
         {DAGKOPPEN.map((d) => (
-          <span key={d} className="pb-1 text-xs text-foreground/70" role="columnheader">
+          <span key={d} className="pb-1 text-[12px] font-bold text-ink-soft uppercase" aria-hidden="true">
             {d}
           </span>
         ))}
@@ -111,12 +112,12 @@ function Kalender({
               onClick={() => kies(datum)}
               aria-pressed={actief}
               aria-label={`${kalenderdatumLabel(datum)}${beschikbaar ? "" : " (niet beschikbaar)"}`}
-              className={`aspect-square rounded-full text-sm tabular-nums transition-colors ${
+              className={`aspect-square min-h-10 rounded-full text-[14px] tabular-nums transition-colors ${
                 actief
-                  ? "bg-accent font-semibold text-background"
+                  ? "bg-berry font-extrabold text-white"
                   : beschikbaar
-                    ? "bg-accent-zacht font-medium text-foreground hover:bg-accent/20"
-                    : "text-foreground/30"
+                    ? "bg-coral-soft font-bold text-ink hover:bg-[#ffcfc6]"
+                    : "text-ink-soft/70"
               }`}
             >
               {dag}
@@ -264,24 +265,24 @@ export function AfspraakBoeken({
   if (!soorten.length) {
     return (
       <div className="flex flex-col gap-3">
-        {teksten.titel && <h2 className="text-3xl font-semibold tracking-tight">{teksten.titel}</h2>}
-        <p className="text-foreground/70">{teksten.geen_soorten}</p>
+        {teksten.titel && <h2 className={KOP}>{teksten.titel}</h2>}
+        <p className="m-0 text-ink-soft">{teksten.geen_soorten}</p>
       </div>
     );
   }
 
   if (klaar) {
     return (
-      <div role="status" className="flex flex-col gap-2 rounded-2xl bg-accent-zacht px-5 py-5 text-foreground/80">
-        <p className="text-lg font-medium">{teksten.succes_titel}</p>
-        <p>{klaar.status === "aangevraagd" ? teksten.succes_aanvraag : teksten.succes}</p>
+      <div role="status" className="flex flex-col gap-2 border-t-[5px] border-t-sage bg-white p-6 text-ink shadow-[0_14px_40px_rgba(58,40,52,.06)]">
+        <p className="m-0 font-serif text-[30px] leading-[1.1]">{teksten.succes_titel}</p>
+        <p className="m-0 text-ink-soft">{klaar.status === "aangevraagd" ? teksten.succes_aanvraag : teksten.succes}</p>
         {soort && tijd && (
-          <p className="font-medium">
+          <p className="m-0 font-bold">
             {soort.naam} · {kalenderdatumLabel(datum ?? "")} om {tijd.label}
           </p>
         )}
         {klaar.token && (
-          <a href={`/afspraak/${klaar.token}`} className="w-fit text-sm text-accent underline underline-offset-4">
+          <a href={`/afspraak/${klaar.token}`} className={`${TEKST_LINK} inline-flex min-h-11 w-fit items-center`}>
             Bekijk je afspraak
           </a>
         )}
@@ -291,7 +292,7 @@ export function AfspraakBoeken({
 
   const veldFout = (v: BoekVeld) =>
     velden[v] ? (
-      <span id={foutId(v)} className="text-sm text-red-700 dark:text-red-300">
+      <span id={foutId(v)} className={VELDFOUT}>
         {velden[v]}
       </span>
     ) : null;
@@ -301,7 +302,7 @@ export function AfspraakBoeken({
     "aria-describedby": velden[v] ? foutId(v) : undefined,
   });
   const ster = (
-    <span className="text-accent" aria-hidden="true">
+    <span className={VERPLICHT} aria-hidden="true">
       {" "}
       *
     </span>
@@ -310,13 +311,13 @@ export function AfspraakBoeken({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
       <header className="flex flex-col gap-2">
-        {teksten.titel && <h2 className="text-3xl font-semibold tracking-tight">{teksten.titel}</h2>}
-        {teksten.intro && <p className="text-foreground/70">{teksten.intro}</p>}
+        {teksten.titel && <h2 className={KOP}>{teksten.titel}</h2>}
+        {teksten.intro && <p className="m-0 text-[17px] text-ink-soft">{teksten.intro}</p>}
       </header>
 
       {soorten.length > 1 && (
         <Stap nummer={1} titel={teksten.stap_soort}>
-          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={teksten.stap_soort}>
+          <div className="grid gap-3 tablet:grid-cols-2" role="radiogroup" aria-label={teksten.stap_soort}>
             {soorten.map((s) => {
               const actief = s.id === soortId;
               return (
@@ -326,17 +327,15 @@ export function AfspraakBoeken({
                   role="radio"
                   aria-checked={actief}
                   onClick={() => kiesSoort(s.id)}
-                  className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-colors ${
-                    actief ? "border-accent bg-accent-zacht" : "border-foreground/10 bg-kaart hover:border-accent/50"
-                  }`}
+                  className={`flex flex-col gap-1 rounded-ontwerp-sm p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-berry ${keuzeTegel(actief)}`}
                 >
-                  <span className="font-semibold">{s.naam}</span>
-                  <span className="text-sm text-foreground/70">
+                  <span className="font-bold">{s.naam}</span>
+                  <span className="text-[14px] text-ink-soft">
                     {duurLabel(s.duur_minuten)}
                     {s.prijs_cent > 0 ? ` · ${bedragLabel(s.prijs_cent)}` : ""}
                     {s.online ? " · online" : s.locatie ? ` · ${s.locatie}` : ""}
                   </span>
-                  {s.omschrijving && <span className="text-sm whitespace-pre-line text-foreground/70">{s.omschrijving}</span>}
+                  {s.omschrijving && <span className="text-[14px] whitespace-pre-line text-ink-soft">{s.omschrijving}</span>}
                 </button>
               );
             })}
@@ -344,29 +343,29 @@ export function AfspraakBoeken({
         </Stap>
       )}
       {soorten.length === 1 && soort && (
-        <div className="flex flex-col gap-1 rounded-2xl border border-foreground/10 bg-kaart p-4">
-          <span className="font-semibold">{soort.naam}</span>
-          <span className="text-sm text-foreground/70">
+        <div className="flex flex-col gap-1 rounded-ontwerp-sm border border-line bg-cream p-4">
+          <span className="font-bold">{soort.naam}</span>
+          <span className="text-[14px] text-ink-soft">
             {duurLabel(soort.duur_minuten)}
             {soort.prijs_cent > 0 ? ` · ${bedragLabel(soort.prijs_cent)}` : ""}
             {soort.online ? " · online" : soort.locatie ? ` · ${soort.locatie}` : ""}
           </span>
-          {soort.omschrijving && <span className="text-sm whitespace-pre-line text-foreground/70">{soort.omschrijving}</span>}
+          {soort.omschrijving && <span className="text-[14px] whitespace-pre-line text-ink-soft">{soort.omschrijving}</span>}
         </div>
       )}
 
       {soort && (
         <Stap nummer={soorten.length > 1 ? 2 : 1} titel={teksten.stap_datum}>
           {laden && !dagen ? (
-            <p className="text-sm text-foreground/70" role="status">
+            <p className="m-0 text-[14px] text-ink-soft" role="status">
               Beschikbare dagen laden…
             </p>
           ) : laadFout ? (
-            <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
               {laadFout}
             </p>
           ) : dagen && dagen.length === 0 ? (
-            <p className="text-foreground/70">{teksten.geen_tijden}</p>
+            <p className="m-0 text-ink-soft">{teksten.geen_tijden}</p>
           ) : dagen ? (
             <Kalender
               key={soort.id}
@@ -384,8 +383,8 @@ export function AfspraakBoeken({
 
       {soort && datum && tijden.length > 0 && (
         <Stap nummer={soorten.length > 1 ? 3 : 2} titel={teksten.stap_tijd}>
-          <p className="text-sm text-foreground/70 first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5" role="radiogroup" aria-label={teksten.stap_tijd}>
+          <p className="m-0 text-[14px] font-bold text-ink-soft first-letter:uppercase">{kalenderdatumLabel(datum)}</p>
+          <div className="grid grid-cols-3 gap-2 tablet:grid-cols-5" role="radiogroup" aria-label={teksten.stap_tijd}>
             {tijden.map((t) => {
               const actief = tijd?.start === t.start;
               return (
@@ -398,8 +397,8 @@ export function AfspraakBoeken({
                     setTijd(t);
                     setFout(null);
                   }}
-                  className={`rounded-full border px-3 py-2 text-sm tabular-nums transition-colors ${
-                    actief ? "border-accent bg-accent font-semibold text-background" : "border-foreground/15 bg-kaart hover:border-accent"
+                  className={`min-h-11 rounded-ontwerp-sm border-2 px-3 py-2 text-[15px] font-bold tabular-nums transition-colors ${
+                    actief ? "border-berry bg-berry text-white" : "border-[rgba(47,36,65,.24)] bg-white text-ink hover:border-berry"
                   }`}
                 >
                   {t.label}
@@ -411,14 +410,14 @@ export function AfspraakBoeken({
       )}
 
       {fout && !tijd && (
-        <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
           {fout}
         </p>
       )}
 
       {soort && datum && tijd && (
         <Stap nummer={soorten.length > 1 ? 4 : 3} titel={teksten.stap_gegevens}>
-          <p className="rounded-xl bg-accent-zacht px-4 py-3 text-sm">
+          <p className={`${klantMeldingKlassen("info")} m-0`}>
             <strong>{soort.naam}</strong> op <span className="first-letter:lowercase">{kalenderdatumLabel(datum)}</span> om{" "}
             <strong>{tijd.label}</strong> ({duurLabel(soort.duur_minuten)})
           </p>
@@ -431,16 +430,16 @@ export function AfspraakBoeken({
               aria-hidden="true"
               className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1 text-sm">
-                <label htmlFor={veldId("naam")} className="text-foreground/70">
+            <div className="grid gap-4 tablet:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <label htmlFor={veldId("naam")} className={LABEL}>
                   Naam{ster}
                 </label>
                 <input name="naam" autoComplete="name" required maxLength={MAX.naam} className={invoerStijl(!!velden.naam)} {...aria("naam")} />
                 {veldFout("naam")}
               </div>
-              <div className="flex flex-col gap-1 text-sm">
-                <label htmlFor={veldId("email")} className="text-foreground/70">
+              <div className="flex flex-col gap-2">
+                <label htmlFor={veldId("email")} className={LABEL}>
                   E-mailadres{ster}
                 </label>
                 <input
@@ -454,8 +453,8 @@ export function AfspraakBoeken({
                 />
                 {veldFout("email")}
               </div>
-              <div className="flex flex-col gap-1 text-sm">
-                <label htmlFor={veldId("telefoon")} className="text-foreground/70">
+              <div className="flex flex-col gap-2">
+                <label htmlFor={veldId("telefoon")} className={LABEL}>
                   Telefoonnummer (optioneel)
                 </label>
                 <input
@@ -469,8 +468,8 @@ export function AfspraakBoeken({
                 {veldFout("telefoon")}
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm">
-              <label htmlFor={veldId("opmerking")} className="text-foreground/70">
+            <div className="flex flex-col gap-2">
+              <label htmlFor={veldId("opmerking")} className={LABEL}>
                 {teksten.opmerking_label}
               </label>
               <textarea
@@ -482,35 +481,35 @@ export function AfspraakBoeken({
               />
               {veldFout("opmerking")}
             </div>
-            <div className="flex flex-col gap-1 text-sm">
+            <div className="flex flex-col gap-2">
               {/* De privacytekst bevat een link en alinea's; daarom geen <label> eromheen maar aria-labelledby. */}
-              <div className="flex items-start gap-3 text-foreground/80">
+              <div className="flex items-start gap-3 text-[15px] leading-[1.55] text-ink">
                 <input
                   type="checkbox"
                   name="privacy"
-                  className="mt-1 h-4 w-4 shrink-0 accent-accent"
+                  className={VINKJE}
                   aria-labelledby={`${id}-privacy-tekst`}
                   {...aria("privacy")}
                 />
-                <div id={`${id}-privacy-tekst`} className="[&_a]:text-accent [&_a]:underline">
+                <div id={`${id}-privacy-tekst`} className="[&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_p]:m-0">
                   {privacy}
                 </div>
               </div>
               {veldFout("privacy")}
             </div>
             {soort.aanbetaling_cent > 0 && (
-              <p className="text-sm text-foreground/70">
+              <p className="m-0 text-[14px] text-ink-soft">
                 {teksten.aanbetaling_uitleg.replace(/\{bedrag\}/g, bedragLabel(soort.aanbetaling_cent))}
               </p>
             )}
             {fout && (
-              <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+              <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
                 {fout}
               </p>
             )}
             <button
               disabled={bezig}
-              className="w-fit rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+              className={`${knopKlassen()} w-full tablet:w-fit`}
             >
               {bezig ? "Bezig…" : soort.aanbetaling_cent > 0 ? teksten.knop_betalen : teksten.knop}
             </button>

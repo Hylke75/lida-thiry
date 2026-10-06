@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Knop, TekstLink } from "@/components/site/Basis";
+import { KlantKaart, KlantKop, KlantMelding, KlantPagina } from "@/components/site/KlantPagina";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_BETAALD, BESTELLEN_MISLUKT, BESTELLEN_VERWERKEN } from "@/lib/inhoud/groepen/bestellen";
@@ -49,56 +50,52 @@ export default async function BedanktPage({
     leesSectie(MIJN_ADVIES_PAGINA),
   ]);
 
+  const accent = betaald ? "sage" : mislukt ? "coral" : "butter";
+  const bovenschrift = betaald ? "Betaling gelukt" : mislukt ? "Betaling" : "Even geduld";
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
-      <div className="flex flex-col gap-6 rounded-2xl bg-kaart p-8 shadow-sm ring-1 ring-foreground/5">
-      {betaald ? (
-        <>
-          <h1 className="text-2xl font-semibold tracking-tight">{tBetaald.titel}</h1>
-          <p className="whitespace-pre-line text-foreground/70">{tBetaald.tekst}</p>
-          {token ? (
-            <Link
-              href={`/test/${token}`}
-              className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
-            >
-              {tBetaald.knop}
-            </Link>
-          ) : (
-            <p className="text-sm text-foreground/70">
-              Je persoonlijke link naar de test staat in de bevestigingsmail. Kijk ook even in je spammap.
-            </p>
-          )}
-          {tMijnAdvies.verwijzing.trim() && (
-            <Link href="/mijn-advies" className="mx-auto text-sm text-foreground/60 underline underline-offset-4 hover:text-accent">
-              {tMijnAdvies.verwijzing}
-            </Link>
-          )}
-        </>
-      ) : mislukt ? (
-        <>
-          <h1 className="text-2xl font-semibold tracking-tight">{tMislukt.titel}</h1>
-          <p className="whitespace-pre-line text-foreground/70">{tMislukt.tekst}</p>
-          <Link
-            href="/bestellen"
-            className="mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90"
-          >
-            {tMislukt.knop}
-          </Link>
-        </>
-      ) : (
-        <>
-          <h1 className="text-2xl font-semibold tracking-tight">{tVerwerken.titel}</h1>
-          <p className="whitespace-pre-line text-foreground/70">{tVerwerken.tekst}</p>
-          {status === "aangemaakt" && <AutoVernieuwen />}
-        </>
-      )}
-      <Link
-        href="/"
-        className="mx-auto text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
-      >
-        ← Terug naar de startpagina
-      </Link>
-      </div>
-    </main>
+    <KlantPagina midden>
+      <KlantKaart accent={accent} className="flex flex-col items-center gap-6">
+        {betaald ? (
+          <>
+            <KlantKop midden bovenschrift={bovenschrift} titel={tBetaald.titel} className="mb-0! tablet:mb-0!">
+              <p className="whitespace-pre-line">{tBetaald.tekst}</p>
+            </KlantKop>
+            {token ? (
+              <Knop href={`/test/${token}`} pijl={false}>
+                {tBetaald.knop}
+              </Knop>
+            ) : (
+              <KlantMelding className="text-left">
+                Je persoonlijke link naar de test staat in de bevestigingsmail. Kijk ook even in je spammap.
+              </KlantMelding>
+            )}
+            {tMijnAdvies.verwijzing.trim() && (
+              <TekstLink href="/mijn-advies" className="text-[14px]">
+                {tMijnAdvies.verwijzing}
+              </TekstLink>
+            )}
+          </>
+        ) : mislukt ? (
+          <>
+            <KlantKop midden bovenschrift={bovenschrift} titel={tMislukt.titel} className="mb-0! tablet:mb-0!">
+              <p className="whitespace-pre-line">{tMislukt.tekst}</p>
+            </KlantKop>
+            <Knop href="/bestellen" pijl={false}>
+              {tMislukt.knop}
+            </Knop>
+          </>
+        ) : (
+          <>
+            <KlantKop midden bovenschrift={bovenschrift} titel={tVerwerken.titel} className="mb-0! tablet:mb-0!">
+              <p className="whitespace-pre-line">{tVerwerken.tekst}</p>
+            </KlantKop>
+            {status === "aangemaakt" && <AutoVernieuwen />}
+          </>
+        )}
+        <TekstLink href="/" className="text-[14px] text-ink-soft">
+          ← Terug naar de startpagina
+        </TekstLink>
+      </KlantKaart>
+    </KlantPagina>
   );
 }

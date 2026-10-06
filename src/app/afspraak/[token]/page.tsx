@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Knop, knopKlassen } from "@/components/site/Basis";
+import { KlantKaart, KlantKop, KlantPagina, klantMeldingKlassen } from "@/components/site/KlantPagina";
 import { notFound, redirect } from "next/navigation";
 import { AutoVernieuwen } from "@/app/bestellen/bedankt/AutoVernieuwen";
 import { leesSectie } from "@/lib/inhoud/lees";
@@ -55,106 +56,100 @@ export default async function AfspraakTokenPagina({ params, searchParams }: { pa
   const voorbij = Date.parse(a.start_op) < nu.getTime();
   const locatie = soort?.locatie || (soort?.online ? "Online" : "");
 
+  const doorgestreept = a.status === "geannuleerd" ? "line-through" : "";
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12">
-      <div className="flex flex-col gap-6 rounded-2xl bg-kaart p-8 shadow-sm ring-1 ring-foreground/5">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{t.titel}</h1>
-          <p className="text-sm text-foreground/60">Status: {STATUS_LABEL[a.status]}</p>
-        </header>
+    <KlantPagina>
+      <KlantKop bovenschrift="Persoonlijk advies" titel={t.titel}>
+        <p>Status: {STATUS_LABEL[a.status]}</p>
+      </KlantKop>
 
+      <KlantKaart className="flex flex-col gap-6">
         {zoek.fout && (
-          <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+          <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
             {zoek.fout}
           </p>
         )}
 
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-foreground/60">Afspraak</dt>
-          <dd className="font-medium">{soort?.naam ?? "Afspraak"}</dd>
-          <dt className="text-foreground/60">Datum</dt>
-          <dd className={a.status === "geannuleerd" ? "line-through" : ""}>{datumLabel(a.start_op)}</dd>
-          <dt className="text-foreground/60">Tijd</dt>
-          <dd className={a.status === "geannuleerd" ? "line-through" : ""}>
+        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-[15px]">
+          <dt className="font-bold text-ink-soft">Afspraak</dt>
+          <dd className="m-0 font-bold text-ink">{soort?.naam ?? "Afspraak"}</dd>
+          <dt className="font-bold text-ink-soft">Datum</dt>
+          <dd className={`m-0 ${doorgestreept}`}>{datumLabel(a.start_op)}</dd>
+          <dt className="font-bold text-ink-soft">Tijd</dt>
+          <dd className={`m-0 ${doorgestreept}`}>
             {tijdLabel(a.start_op)} – {tijdLabel(a.eind_op)} ({duurLabel(duur)})
           </dd>
           {locatie && (
             <>
-              <dt className="text-foreground/60">Locatie</dt>
-              <dd>{locatie}</dd>
+              <dt className="font-bold text-ink-soft">Locatie</dt>
+              <dd className="m-0">{locatie}</dd>
             </>
           )}
           {a.aanbetaling_cent > 0 && (
             <>
-              <dt className="text-foreground/60">Aanbetaling</dt>
-              <dd>
+              <dt className="font-bold text-ink-soft">Aanbetaling</dt>
+              <dd className="m-0">
                 {bedragLabel(a.aanbetaling_cent)}
                 {a.betaald_op ? " (betaald)" : ""}
               </dd>
             </>
           )}
-          <dt className="text-foreground/60">Naam</dt>
-          <dd>{a.naam}</dd>
+          <dt className="font-bold text-ink-soft">Naam</dt>
+          <dd className="m-0">{a.naam}</dd>
         </dl>
 
         {a.status === "wacht_op_betaling" && (
           <>
-            <p role="status" className="rounded-xl bg-accent-zacht px-4 py-3 text-sm">
+            <p role="status" className={`${klantMeldingKlassen("letop")} m-0`}>
               {t.betaling_bezig}
             </p>
             <AutoVernieuwen />
           </>
         )}
 
-        {a.status === "aangevraagd" && <p className="rounded-xl bg-accent-zacht px-4 py-3 text-sm">{t.aangevraagd}</p>}
+        {a.status === "aangevraagd" && <p className={`${klantMeldingKlassen("info")} m-0`}>{t.aangevraagd}</p>}
 
         {a.status === "geannuleerd" && (
-          <div className="flex flex-col gap-4">
-            <p role="status" className="rounded-xl bg-accent-zacht px-4 py-3 text-sm">
+          <div className="flex flex-col items-start gap-4">
+            <p role="status" className={`${klantMeldingKlassen("info")} m-0 w-full`}>
               {betalingMislukt && !zoek.geannuleerd ? t.betaling_mislukt : t.geannuleerd}
             </p>
-            <Link
-              href="/afspraak"
-              className="w-fit rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-background shadow-sm hover:opacity-90"
-            >
+            <Knop href="/afspraak" pijl={false}>
               Nieuwe afspraak maken
-            </Link>
+            </Knop>
           </div>
         )}
 
         {a.status === "bevestigd" && !voorbij && (
-          <a
-            href={`/afspraak/${a.token}/ics`}
-            className="w-fit rounded-full border border-foreground/15 px-5 py-2 text-sm font-medium hover:border-accent"
-          >
+          <a href={`/afspraak/${a.token}/ics`} className={`${knopKlassen({ variant: "outline" })} w-full tablet:w-fit`}>
             {t.agenda_knop}
           </a>
         )}
 
         {(a.status === "bevestigd" || a.status === "aangevraagd") && !voorbij && (
-          <section className="flex flex-col gap-3 border-t border-foreground/10 pt-5">
+          <section className="flex flex-col gap-3 border-t border-line pt-6">
             {kanAnnuleren ? (
               <>
-                <p className="text-sm text-foreground/70">{vulIn(t.annuleren_uitleg, uren)}</p>
+                <p className="m-0 text-[15px] text-ink-soft">{vulIn(t.annuleren_uitleg, uren)}</p>
                 <details className="group">
-                  <summary className="w-fit cursor-pointer list-none rounded-full border border-red-300 px-5 py-2 text-sm text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40 [&::-webkit-details-marker]:hidden">
+                  <summary className="inline-flex min-h-11 w-fit cursor-pointer list-none items-center rounded-full border border-[#b42318] px-5 text-[14px] font-bold text-[#b42318] hover:bg-[#fff1ed] [&::-webkit-details-marker]:hidden">
                     {t.annuleren_knop}
                   </summary>
-                  <form action={annuleer} className="mt-3 flex flex-col gap-2 rounded-xl bg-red-50 p-4 text-sm dark:bg-red-950/30">
+                  <form action={annuleer} className={`${klantMeldingKlassen("fout")} mt-3 flex flex-col items-start gap-3`}>
                     <input type="hidden" name="token" value={a.token} />
-                    <p>Weet je het zeker? De afspraak wordt direct geannuleerd.</p>
-                    <button className="w-fit rounded-full bg-red-700 px-5 py-2 font-medium text-white hover:opacity-90">
+                    <p className="m-0">Weet je het zeker? De afspraak wordt direct geannuleerd.</p>
+                    <button className="inline-flex min-h-11 items-center rounded-full bg-[#b42318] px-5 text-[14px] font-bold text-white hover:bg-[#9f2a1c]">
                       Ja, annuleer mijn afspraak
                     </button>
                   </form>
                 </details>
               </>
             ) : (
-              <p className="text-sm text-foreground/70">{vulIn(t.te_laat, uren)}</p>
+              <p className="m-0 text-[15px] text-ink-soft">{vulIn(t.te_laat, uren)}</p>
             )}
           </section>
         )}
-      </div>
-    </main>
+      </KlantKaart>
+    </KlantPagina>
   );
 }

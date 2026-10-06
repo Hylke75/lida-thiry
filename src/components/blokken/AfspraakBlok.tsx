@@ -28,7 +28,7 @@ export async function AfspraakBlok() {
     online: s.online,
   }));
   return (
-    <section id="afspraak" className="scroll-mt-24 rounded-2xl border border-foreground/10 bg-kaart p-6 sm:p-8">
+    <section id="afspraak" className="scroll-mt-24 rounded-ontwerp-md border border-line bg-white p-6 tablet:p-[34px]">
       <AfspraakBoeken teksten={teksten} privacy={<Opmaak tekst={teksten.privacy} />} soorten={publiek} />
     </section>
   );

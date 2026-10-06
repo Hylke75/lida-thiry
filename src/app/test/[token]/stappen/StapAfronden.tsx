@@ -4,6 +4,7 @@ import type { PasvormVraag } from "@/lib/inhoud/groepen/test";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Opmaak } from "@/components/Opmaak";
 import { overzichtRijen, type Antwoorden, type Stap } from "../wizard-regels";
+import { KLANT_INTRO, klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 /** Laatste stap: overzicht van alle antwoorden, met per regel een link om te wijzigen. */
 export function StapAfronden({
@@ -34,28 +35,28 @@ export function StapAfronden({
   const rijen = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 text-sm text-black/60 dark:text-white/60 [&_a]:text-accent [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5">
+    <div className="flex flex-col gap-5">
+      <div className={`${KLANT_INTRO} flex flex-col gap-2 text-[17px] [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-5`}>
         <Opmaak tekst={intro} />
       </div>
       {meldingen.map((m) => (
         <p
           key={m.code}
-          className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+          className={`${klantMeldingKlassen("letop")} m-0`}
         >
           {m.bericht}
         </p>
       ))}
-      <dl className="divide-y divide-black/10 rounded-2xl border border-black/10 dark:divide-white/10 dark:border-white/15">
+      <dl className="m-0 divide-y divide-line rounded-ontwerp-md border border-line bg-white">
         {rijen.map((r, i) => (
-          <div key={i} className="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
-            <dt className="text-black/60 dark:text-white/60">{r.label}</dt>
-            <dd className="flex items-center gap-3 text-right font-medium">
+          <div key={i} className="flex items-center justify-between gap-4 py-1 pr-2 pl-5 text-[15px] tablet:pl-6">
+            <dt className="text-ink-soft">{r.label}</dt>
+            <dd className="m-0 flex items-center gap-2 text-right font-bold text-ink">
               {r.waarde}
               <button
                 type="button"
                 onClick={() => gaNaar(r.stap)}
-                className="text-xs font-normal text-accent underline underline-offset-2"
+                className="inline-flex min-h-11 items-center px-2 text-[13px] font-bold text-berry underline underline-offset-[3px] hover:text-ink"
               >
                 wijzig
               </button>
