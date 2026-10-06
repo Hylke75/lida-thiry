@@ -1,6 +1,8 @@
 import "server-only";
 import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { btwSplitsing, formatteerBedrag } from "@/lib/prijs";
+import { leesMerk } from "@/lib/merk";
+import { EYEBROW, KLEUR, Kleurstrook, SANS, SERIF, Woordmerk, type Merk } from "./huisstijl";
 
 export interface FactuurGegevens {
   factuurnummer: string;
@@ -30,55 +32,71 @@ export interface FactuurGegevens {
   btwProcent: number;
 }
 
-const kleur = { tekst: "#2b2a28", grijs: "#6b6b6b", lijn: "#e0ddd6", accent: "#a4634d" };
+const kleur = { tekst: KLEUR.ink, grijs: KLEUR.inkZacht, lijn: KLEUR.lijn, accent: KLEUR.berry };
 
 const s = StyleSheet.create({
-  page: { padding: 56, fontSize: 10, color: kleur.tekst, fontFamily: "Helvetica", lineHeight: 1.5 },
-  kop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 36 },
-  merk: { fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: kleur.accent },
-  titel: { fontSize: 22, fontFamily: "Helvetica-Bold", marginTop: 6 },
-  verkoper: { textAlign: "right", fontSize: 9, color: kleur.grijs },
-  verkoperNaam: { fontFamily: "Helvetica-Bold", color: kleur.tekst },
-  blokken: { flexDirection: "row", justifyContent: "space-between", marginBottom: 28 },
-  label: { fontSize: 8, letterSpacing: 1.2, textTransform: "uppercase", color: kleur.accent, marginBottom: 4 },
+  page: {
+    paddingTop: 60,
+    paddingBottom: 80,
+    paddingHorizontal: 60,
+    fontSize: 9.5,
+    color: kleur.tekst,
+    fontFamily: SANS,
+    lineHeight: 1.6,
+    backgroundColor: KLEUR.paper,
+  },
+  strookBoven: { position: "absolute", top: 0, left: 0, right: 0 },
+  kop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 40 },
+  titel: { fontFamily: SERIF, fontSize: 34, lineHeight: 1.05, marginTop: 28 },
+  verkoper: { textAlign: "right", fontSize: 8.5, color: kleur.grijs },
+  verkoperNaam: { fontWeight: 700, color: kleur.tekst },
+  blokken: { flexDirection: "row", justifyContent: "space-between", marginBottom: 32 },
+  label: { ...EYEBROW, marginBottom: 5 },
   metaRij: { flexDirection: "row", justifyContent: "flex-end" },
   metaLabel: { width: 90, color: kleur.grijs, textAlign: "right", marginRight: 10 },
   tabelKop: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: kleur.lijn,
+    borderBottomColor: kleur.tekst,
     paddingBottom: 6,
     marginBottom: 6,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: 700,
+    fontSize: 8,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
-  rij: { flexDirection: "row", paddingVertical: 4 },
+  rij: { flexDirection: "row", paddingVertical: 6, borderBottomWidth: 0.75, borderBottomColor: kleur.lijn },
   omschrijving: { flex: 1 },
   bedrag: { width: 110, textAlign: "right" },
-  totalen: { marginTop: 12, borderTopWidth: 1, borderTopColor: kleur.lijn, paddingTop: 8 },
+  totalen: { marginTop: 14, paddingTop: 4 },
   totaalRij: { flexDirection: "row", justifyContent: "flex-end", paddingVertical: 2 },
   totaalLabel: { width: 180, textAlign: "right", marginRight: 10, color: kleur.grijs },
-  eindtotaal: { fontFamily: "Helvetica-Bold", color: kleur.tekst },
+  eindtotaal: { fontWeight: 700, color: kleur.tekst, fontSize: 11 },
+  eindRij: { marginTop: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: kleur.lijn },
   betaald: {
-    marginTop: 28,
-    padding: 12,
-    backgroundColor: "#f3e6df",
-    borderRadius: 6,
+    marginTop: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: KLEUR.cream,
+    borderLeftWidth: 4,
+    borderLeftColor: KLEUR.sage,
+    borderRadius: 4,
   },
   voettekst: {
     position: "absolute",
-    bottom: 28,
-    left: 56,
-    right: 56,
+    top: 792,
+    left: 60,
+    right: 60,
     textAlign: "center",
-    fontSize: 8,
+    fontSize: 7.5,
     color: kleur.grijs,
-    borderTopWidth: 1,
+    borderTopWidth: 0.75,
     borderTopColor: kleur.lijn,
-    paddingTop: 8,
+    paddingTop: 10,
   },
 });
 
-function FactuurPdf({ f }: { f: FactuurGegevens }) {
+function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
   const b = (cent: number) => formatteerBedrag(cent, f.valuta);
   const split = btwSplitsing(f.totaalCent, f.btwProcent);
   const verkoperRegels = [
@@ -91,9 +109,10 @@ function FactuurPdf({ f }: { f: FactuurGegevens }) {
   return (
     <Document title={`Factuur ${f.factuurnummer}`} author={f.verkoper.naam}>
       <Page size="A4" style={s.page}>
+        <Kleurstrook hoogte={6} style={s.strookBoven} fixed />
         <View style={s.kop}>
           <View>
-            <Text style={s.merk}>{f.verkoper.naam}</Text>
+            <Woordmerk merk={merk} grootte={13} />
             <Text style={s.titel}>Factuur</Text>
           </View>
           <View style={s.verkoper}>
@@ -151,7 +170,7 @@ function FactuurPdf({ f }: { f: FactuurGegevens }) {
             <Text style={s.totaalLabel}>Btw {f.btwProcent}%</Text>
             <Text style={s.bedrag}>{b(split.btwCent)}</Text>
           </View>
-          <View style={s.totaalRij}>
+          <View style={[s.totaalRij, s.eindRij]}>
             <Text style={[s.totaalLabel, s.eindtotaal]}>Totaal incl. btw</Text>
             <Text style={[s.bedrag, s.eindtotaal]}>{b(split.inclCent)}</Text>
           </View>
@@ -173,7 +192,7 @@ function FactuurPdf({ f }: { f: FactuurGegevens }) {
   );
 }
 
-/** Rendert de factuur naar PDF-bytes. */
-export async function maakFactuurPdf(f: FactuurGegevens): Promise<Buffer> {
-  return renderToBuffer(<FactuurPdf f={f} />);
+/** Rendert de factuur naar PDF-bytes (het woordmerk zoals op de site, tenzij meegegeven). */
+export async function maakFactuurPdf(f: FactuurGegevens, merk?: Merk): Promise<Buffer> {
+  return renderToBuffer(<FactuurPdf f={f} merk={merk ?? (await leesMerk())} />);
 }

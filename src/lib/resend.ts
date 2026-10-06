@@ -28,6 +28,8 @@ import {
   type BestelOverzicht,
   type BonGegevens,
   type MijnAdviesMailLinks, reviewUitnodigingMail } from "./email-html";
+import { KLEIN, KLEUR, kopHtml, knopHtml, mailDocument } from "./mail-opmaak";
+import { leesMerk } from "./merk";
 
 export type { BestelOverzicht } from "./email-html";
 
@@ -36,6 +38,15 @@ export function resend(): Resend {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY ontbreekt (server).");
   return new Resend(key);
+}
+
+/**
+ * De algemene mailteksten (voettekst) plus het woordmerk zoals op de site, voor
+ * de kop van elke klantmail. Faalt zacht (standaardteksten en -woordmerk).
+ */
+export async function leesMailAlgemeen() {
+  const [algemeen, merk] = await Promise.all([leesSectie(EMAILS_ALGEMEEN), leesMerk()]);
+  return { ...algemeen, merk };
 }
 
 /** Afzender van alle mails. */
@@ -57,7 +68,7 @@ export async function stuurTestlinkMail(opts: {
   overzicht?: BestelOverzicht;
   factuur?: { bestandsnaam: string; pdf: Buffer };
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BEVESTIGING), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BEVESTIGING), leesMailAlgemeen()]);
   const { onderwerp, html } = bevestigingMail(teksten, algemeen, {
     naam: opts.naam,
     link: `${siteUrl()}/test/${opts.token}`,
@@ -88,7 +99,7 @@ export async function stuurHerinneringMail(opts: {
   token: string;
   verlooptOp: string | null;
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_HERINNERING), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_HERINNERING), leesMailAlgemeen()]);
   const { onderwerp, html } = herinneringMail(teksten, algemeen, {
     naam: opts.naam,
     link: `${siteUrl()}/test/${opts.token}`,
@@ -109,7 +120,7 @@ export async function stuurHerinneringMail(opts: {
  * bevestigingslink. Teksten: Beheer → Teksten → Nieuwsbrief.
  */
 export async function stuurNieuwsbriefBevestiging(opts: { email: string; naam?: string | null; link: string }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(NIEUWSBRIEF_BEVESTIGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(NIEUWSBRIEF_BEVESTIGMAIL), leesMailAlgemeen()]);
   const { onderwerp, html } = nieuwsbriefBevestigingMail(teksten, algemeen, { naam: opts.naam, link: opts.link });
   const { error } = await resend().emails.send({
     from: afzender(),
@@ -128,9 +139,9 @@ export async function stuurNieuwsbriefBevestiging(opts: { email: string; naam?: 
 export async function stuurBeheerMail(opts: { aan: string; onderwerp: string; details: string }) {
   const html = omhulsel(
     `
-      <h1 style="font-size:18px">${escapeHtml(opts.onderwerp)}</h1>
-      <pre style="white-space:pre-wrap;font-family:Menlo,Consolas,monospace;font-size:12px;background:#f6f4f1;padding:12px;border-radius:8px">${escapeHtml(opts.details)}</pre>
-      <p style="font-size:13px;color:#555">Bekijk de bestellingen in <a href="${siteUrl()}/admin">het beheer</a>.</p>`,
+      ${kopHtml(opts.onderwerp)}
+      <pre style="white-space:pre-wrap;font-family:Menlo,Consolas,monospace;font-size:12px;background:${KLEUR.cream};padding:14px;border-radius:14px">${escapeHtml(opts.details)}</pre>
+      <p style="${KLEIN}">Bekijk de bestellingen in <a href="${siteUrl()}/admin" style="color:${KLEUR.berry}">het beheer</a>.</p>`,
     standaardWaarden(EMAILS_ALGEMEEN).voettekst,
   );
   const { error } = await resend().emails.send({
@@ -150,7 +161,7 @@ export async function stuurAdviesMail(opts: {
   downloadUrl: string;
   pdf: Buffer;
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_ADVIES), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_ADVIES), leesMailAlgemeen()]);
   const { onderwerp, html } = adviesMail(teksten, algemeen, {
     naam: opts.naam,
     sleutel: opts.sleutel,
@@ -174,21 +185,20 @@ export async function stuurAdviesMail(opts: {
  * van het Resend-account mag sturen).
  */
 export async function stuurBeheerderMail(opts: { aan: string; link: string | null; nieuw: boolean }) {
-  const knop = (href: string, tekst: string) =>
-    `<p><a href="${escapeHtml(href)}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">${tekst}</a></p>`;
+  const knop = (href: string, tekst: string) => knopHtml(href, tekst, "donker", "24px 0");
   const inhoud = opts.link
-    ? `<h1 style="font-size:18px">${opts.nieuw ? "Je bent uitgenodigd voor het beheer" : "Inloggen in het beheer"}</h1>
+    ? `${kopHtml(opts.nieuw ? "Je bent uitgenodigd voor het beheer" : "Inloggen in het beheer")}
        <p>${opts.nieuw ? "Je hebt toegang gekregen tot het beheer van de website van Lida Thiry Imago &amp; Kledingadvies." : "Hier is een link om in te loggen in het beheer."} Klik op de knop en kies daarna een eigen wachtwoord.</p>
        ${knop(opts.link, opts.nieuw ? "Uitnodiging accepteren" : "Inloggen en wachtwoord instellen")}
-       <p style="font-size:13px;color:#555">De link werkt één keer en is beperkt geldig (standaard 1 uur). Werkt hij niet meer, vraag dan om een nieuwe.</p>`
-    : `<h1 style="font-size:18px">Je hebt toegang tot het beheer</h1>
+       <p style="${KLEIN}">De link werkt één keer en is beperkt geldig (standaard 1 uur). Werkt hij niet meer, vraag dan om een nieuwe.</p>`
+    : `${kopHtml("Je hebt toegang tot het beheer")}
        <p>Je kunt nu inloggen in het beheer van de website van Lida Thiry Imago &amp; Kledingadvies met je bestaande e-mailadres en wachtwoord.</p>
        ${knop(`${siteUrl()}/admin/inloggen`, "Naar het beheer")}`;
   const { error } = await resend().emails.send({
     from: afzender(),
     to: opts.aan,
     subject: opts.link && opts.nieuw ? "Uitnodiging voor het beheer" : "Toegang tot het beheer",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;line-height:1.6">${inhoud}</div>`,
+    html: mailDocument({ inhoud, onder: "" }),
   });
   if (error) throw new Error(error.message);
 }
@@ -217,7 +227,7 @@ export async function stuurCadeaubonMail(opts: {
   bonPdf: Bijlage | null;
   factuur?: (Bijlage & { factuurnummer: string }) | null;
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(CADEAUBON_MAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(CADEAUBON_MAIL), leesMailAlgemeen()]);
   const basisUrl = siteUrl();
   const { onderwerp, html } = cadeaubonMail(teksten, algemeen, {
     aan: opts.aan,
@@ -247,7 +257,7 @@ export async function stuurCadeaubonKoperMail(opts: {
   const [teksten, bonTeksten, algemeen] = await Promise.all([
     leesSectie(CADEAUBON_KOPERMAIL),
     leesSectie(CADEAUBON_MAIL),
-    leesSectie(EMAILS_ALGEMEEN),
+    leesMailAlgemeen(),
   ]);
   const { onderwerp, html } = cadeaubonKoperMail(teksten, bonTeksten, algemeen, {
     bon: opts.bon,
@@ -274,7 +284,7 @@ export async function stuurBetaalherinneringMail(opts: {
   valuta: string;
   link: string;
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BETAALHERINNERING), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BETAALHERINNERING), leesMailAlgemeen()]);
   const { onderwerp, html } = betaalherinneringMail(teksten, algemeen, { ...opts, basisUrl: siteUrl() });
   const { error } = await resend().emails.send({ from: afzender(), to: opts.email, subject: onderwerp, html });
   if (error) throw new Error(`Resend betaalherinnering: ${error.message}`);
@@ -282,7 +292,7 @@ export async function stuurBetaalherinneringMail(opts: {
 
 /** Nieuwe links naar het advies en/of de nog niet afgeronde test (pagina Mijn advies). */
 export async function stuurMijnAdviesMail(opts: { email: string; naam: string | null } & MijnAdviesMailLinks) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_MIJN_ADVIES), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_MIJN_ADVIES), leesMailAlgemeen()]);
   const { onderwerp, html } = mijnAdviesMail(teksten, algemeen, {
     naam: opts.naam,
     adviezen: opts.adviezen,
@@ -295,7 +305,7 @@ export async function stuurMijnAdviesMail(opts: { email: string; naam: string | 
 
 /** Vraagt een klant om een review (link naar /review/<token>). Teksten: Beheer → Teksten → Reviews. */
 export async function stuurReviewUitnodiging(opts: { email: string; naam: string; token: string }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(REVIEWS_UITNODIGING), leesSectie(EMAILS_ALGEMEEN)]);
+  const [teksten, algemeen] = await Promise.all([leesSectie(REVIEWS_UITNODIGING), leesMailAlgemeen()]);
   const { onderwerp, html } = reviewUitnodigingMail(teksten, algemeen, {
     naam: opts.naam,
     link: `${siteUrl()}/review/${opts.token}`,

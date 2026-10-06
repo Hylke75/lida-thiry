@@ -1,10 +1,10 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
-import { afzender, resend } from "../resend";
+import { afzender, leesMailAlgemeen, resend } from "../resend";
 import { hashIp, magDoorOpSleutel } from "../rate-limit";
 import { leesInstellingen } from "../instellingen";
 import { leesSectie } from "../inhoud/lees";
-import { EMAILS_ALGEMEEN } from "../inhoud/groepen/emails";
+import { leesMerk } from "../merk";
 import { CONTACT_ANTWOORDMAIL, CONTACT_BEVESTIGMAIL } from "../inhoud/groepen/contact";
 import { siteUrl } from "../site";
 import { foutTekst, stuurBeheerMelding } from "../beheermelding";
@@ -143,7 +143,7 @@ export async function stuurContactMails(b: ContactBericht): Promise<void> {
     // Hooguit twee ontvangstbevestigingen per dag naar hetzelfde adres: het
     // formulier accepteert elk adres, dus anders is het een mailkanon.
     if (!(await magDoorOpSleutel(`contact-bevestiging:${hashIp(b.email.toLowerCase())}`, 2, 86_400))) return;
-    const [t, algemeen] = await Promise.all([leesSectie(CONTACT_BEVESTIGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+    const [t, algemeen] = await Promise.all([leesSectie(CONTACT_BEVESTIGMAIL), leesMailAlgemeen()]);
     const mail = contactBevestigingMail(t, algemeen);
     await verstuur({ aan: b.email, mail, replyTo: gevuld(instellingen.contact_email) ?? beheerder });
   };
@@ -168,14 +168,22 @@ export async function stuurContactMails(b: ContactBericht): Promise<void> {
  * Gooit bij een fout; geeft het Resend-id terug.
  */
 export async function verstuurAntwoord(b: ContactBericht, antwoord: string): Promise<string | null> {
-  const [t, instellingen] = await Promise.all([leesSectie(CONTACT_ANTWOORDMAIL), leesInstellingen().catch(() => ({}) as Record<string, string | null>)]);
-  const mail = contactAntwoordMail(t, {
-    antwoord,
-    naam: b.naam,
-    onderwerp: b.onderwerp,
-    bericht: b.bericht,
-    ontvangenOp: b.aangemaakt_op,
-  });
+  const [t, instellingen, merk] = await Promise.all([
+    leesSectie(CONTACT_ANTWOORDMAIL),
+    leesInstellingen().catch(() => ({}) as Record<string, string | null>),
+    leesMerk(),
+  ]);
+  const mail = contactAntwoordMail(
+    t,
+    {
+      antwoord,
+      naam: b.naam,
+      onderwerp: b.onderwerp,
+      bericht: b.bericht,
+      ontvangenOp: b.aangemaakt_op,
+    },
+    merk,
+  );
   return verstuur({
     aan: b.email,
     mail,

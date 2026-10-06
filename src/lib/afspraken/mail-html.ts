@@ -16,6 +16,7 @@ import type {
 import { datumLabel, tijdLabel } from "../datum";
 import { bedragLabel, duurLabel, STATUS_LABEL, type AfspraakStatus } from "./regels";
 import { BEDRIJFSNAAM_STANDAARD } from "../site";
+import { KLEIN, KLEUR, kopHtml, knopHtml, type Merk } from "../mail-opmaak";
 
 export interface AfspraakMail {
   onderwerp: string;
@@ -38,10 +39,9 @@ export interface MailAfspraak {
   betaald: boolean;
 }
 
-type Algemeen = SectieWaarden<typeof EMAILS_ALGEMEEN>;
+type Algemeen = SectieWaarden<typeof EMAILS_ALGEMEEN> & { merk?: Merk };
 
-const KLEIN = "font-size:13px;color:#555";
-const STIJL = { a: "color:#a4634d", ul: "padding-left:20px" } as const;
+const STIJL = { a: `color:${KLEUR.berry}`, ul: "padding-left:20px" } as const;
 
 /** Invulwaarden voor de teksten. */
 export function mailWaarden(a: MailAfspraak): Record<string, string> {
@@ -74,10 +74,10 @@ function detailsHtml(a: MailAfspraak): string {
   const rijen = detailRegels(a)
     .map(
       ([k, v]) =>
-        `<tr><td style="padding:4px 14px 4px 0;color:#777;vertical-align:top;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:4px 0">${escapeHtml(v)}</td></tr>`,
+        `<tr><td style="padding:4px 14px 4px 0;color:${KLEUR.inkZacht};vertical-align:top;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:4px 0;font-weight:600">${escapeHtml(v)}</td></tr>`,
     )
     .join("");
-  return `<table style="border-collapse:collapse;font-size:14px;margin:20px 0;background:#f6f4f1;border-radius:8px;width:100%"><tbody><tr><td style="padding:12px 16px"><table style="border-collapse:collapse">${rijen}</table></td></tr></tbody></table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;font-size:14px;margin:24px 0;background:${KLEUR.cream};border-left:4px solid ${KLEUR.sage};border-radius:14px;width:100%"><tbody><tr><td style="padding:14px 20px"><table role="presentation" style="border-collapse:collapse;font-size:14px;color:${KLEUR.ink}">${rijen}</table></td></tr></tbody></table>`;
 }
 
 function detailsTekst(a: MailAfspraak): string {
@@ -87,7 +87,7 @@ function detailsTekst(a: MailAfspraak): string {
 }
 
 function knop(url: string, tekst: string): string {
-  return `<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="background:#a4634d;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9999px;font-weight:600">${escapeHtml(tekst)}</a></p>`;
+  return knopHtml(url, tekst, "primair", "28px 0");
 }
 
 function klantMail(
@@ -101,7 +101,7 @@ function klantMail(
   const w = mailWaarden(a);
   const html = omhulsel(
     `
-      <h1 style="font-size:20px">${escapeHtml(vulIn(t.kop, w))}</h1>
+      ${kopHtml(vulIn(t.kop, w))}
       ${opmaakNaarHtml(t.tekst, { variabelen: w, stijl: STIJL })}
       ${detailsHtml(a)}
       ${extraHtml}
@@ -109,6 +109,7 @@ function klantMail(
       ${t.na_knop ? opmaakNaarHtml(t.na_knop, { variabelen: w, stijl: { ...STIJL, p: KLEIN } }) : ""}
       <p style="${KLEIN}">Werkt de knop niet? Kopieer dan deze link:<br>${escapeHtml(link)}</p>`,
     algemeen.voettekst,
+    algemeen.merk,
   );
   const tekst = [
     vulIn(t.kop, w),
@@ -169,7 +170,7 @@ export function afspraakAnnuleringMail(
 ): AfspraakMail {
   const r = reden?.trim();
   const extraHtml = r
-    ? `<p style="${KLEIN};margin:0 0 6px">${escapeHtml(t.reden_kop)}</p><div style="border-left:3px solid #e5ddd5;padding:4px 0 4px 14px;color:#555">${platteTekstHtml(r, "margin:0 0 10px")}</div>`
+    ? `<p style="${KLEIN};margin:0 0 6px">${escapeHtml(t.reden_kop)}</p><div style="border-left:3px solid ${KLEUR.lilac};padding:4px 0 4px 14px;color:${KLEUR.inkZacht}">${platteTekstHtml(r, "margin:0 0 10px")}</div>`
     : "";
   const extraTekst = r ? `${t.reden_kop}\n${r}` : "";
   return klantMail(t, algemeen, a, link, extraHtml, extraTekst);
@@ -209,15 +210,15 @@ export function afspraakMeldingMail(opts: {
     ["Status", STATUS_LABEL[opts.status]],
   ];
   const rij = ([k, v]: [string, string]) =>
-    `<tr><td style="padding:3px 12px 3px 0;color:#777;vertical-align:top;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:3px 0">${escapeHtml(v)}</td></tr>`;
+    `<tr><td style="padding:3px 12px 3px 0;color:${KLEUR.inkZacht};vertical-align:top;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:3px 0">${escapeHtml(v)}</td></tr>`;
   const html = omhulsel(
     `
-      <h1 style="font-size:20px">${escapeHtml(kop)}</h1>
+      ${kopHtml(kop)}
       ${toelichting ? `<p>${escapeHtml(toelichting)}</p>` : ""}
-      <table style="border-collapse:collapse;font-size:14px;margin:0 0 8px">${contact.map(rij).join("")}</table>
+      <table role="presentation" style="border-collapse:collapse;font-size:14px;margin:0 0 8px">${contact.map(rij).join("")}</table>
       ${detailsHtml(a)}
-      ${a.opmerking ? `<p style="${KLEIN};margin:0 0 6px">Opmerking van de klant:</p><div style="background:#f6f4f1;border-radius:8px;padding:12px 16px">${platteTekstHtml(a.opmerking, "margin:0 0 10px")}</div>` : ""}
-      <p style="margin:24px 0"><a href="${escapeHtml(opts.link)}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-weight:600">Bekijk in het beheer</a></p>`,
+      ${a.opmerking ? `<p style="${KLEIN};margin:0 0 6px">Opmerking van de klant:</p><div style="background:${KLEUR.cream};border-radius:14px;padding:12px 18px">${platteTekstHtml(a.opmerking, "margin:0 0 10px")}</div>` : ""}
+      ${knopHtml(opts.link, "Bekijk in het beheer", "donker", "24px 0")}`,
     opts.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD,
   );
   const tekst = [

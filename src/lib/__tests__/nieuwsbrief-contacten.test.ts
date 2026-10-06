@@ -169,7 +169,7 @@ describe("e-mails: bevestiging nieuwsbrief", () => {
       link,
     });
     expect(mail.onderwerp).toBe("Bevestig je aanmelding voor de nieuwsbrief");
-    expect(mail.html).toContain('<h1 style="font-size:20px">Nog één klik…</h1>');
+    expect(mail.html).toMatch(/<h1 style="[^"]*">Nog één klik…<\/h1>/);
     expect(mail.html).toContain("<p>Hoi Anna &lt;b&gt;,</p>");
     expect(mail.html).not.toContain("<b>");
     expect(mail.html).toContain('href="https://example.com/nieuwsbrief/bevestig/abc?x=1&amp;y=2"');

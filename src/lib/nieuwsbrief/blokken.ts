@@ -3,6 +3,7 @@
 
 import { escapeHtml, opmaakNaarHtml, opmaakNaarTekst } from "../inhoud/opmaak";
 import { vulIn } from "../inhoud/schema";
+import { KLEUR as HUIS, LETTER, LETTER_SERIF, knopHtml, mailDocument, type Merk } from "../mail-opmaak";
 
 export type Blok =
   | { id: string; soort: "kop"; tekst: string }
@@ -133,20 +134,21 @@ export interface RenderOpties {
   afmeldUrl: string;
   /** Afzendergegevens onderaan (naam en adres, verplicht bij marketingmail). */
   afzender: { naam: string; adres: string | null };
+  /** Woordmerk bovenaan (standaard: zoals op de website). */
+  merk?: Merk;
   /** Herschrijft een link voor klikmeting; laat weg om niet te meten. */
   volgLink?: (url: string) => string;
   /** URL van de onzichtbare afbeelding voor openmeting; laat weg om niet te meten. */
   pixelUrl?: string;
 }
 
-const KLEUR = { accent: "#a4634d", tekst: "#1a1a1a", zacht: "#6b6b6b", lijn: "#e8e2dc", achtergrond: "#f6f2ee" };
-const LETTER = "Arial,Helvetica,sans-serif";
+const KLEUR = { accent: HUIS.berry, tekst: HUIS.ink, zacht: HUIS.inkZacht, lijn: HUIS.lijn };
 const STIJL = {
-  h2: `font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.3;margin:24px 0 8px;color:${KLEUR.tekst}`,
-  h3: `font-size:16px;margin:20px 0 6px;color:${KLEUR.tekst}`,
-  p: `margin:0 0 14px;font-size:15px;line-height:1.6;color:${KLEUR.tekst}`,
-  ul: "margin:0 0 14px;padding-left:20px",
-  li: `font-size:15px;line-height:1.6;color:${KLEUR.tekst};margin:0 0 4px`,
+  h2: `font-family:${LETTER_SERIF};font-size:22px;line-height:1.2;font-weight:400;margin:28px 0 8px;color:${KLEUR.tekst}`,
+  h3: `font-family:${LETTER};font-size:16px;font-weight:700;margin:22px 0 6px;color:${KLEUR.tekst}`,
+  p: `margin:0 0 16px;font-family:${LETTER};font-size:15px;line-height:1.65;color:${KLEUR.tekst}`,
+  ul: "margin:0 0 16px;padding-left:20px",
+  li: `font-family:${LETTER};font-size:15px;line-height:1.65;color:${KLEUR.tekst};margin:0 0 4px`,
   a: `color:${KLEUR.accent}`,
 };
 
@@ -163,21 +165,19 @@ function blokHtml(b: Blok, w: Record<string, string>): string {
   switch (b.soort) {
     case "kop":
       return b.tekst.trim()
-        ? `<h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;font-weight:normal;margin:8px 0 16px;color:${KLEUR.tekst}">${escapeHtml(vulIn(b.tekst, w))}</h1>`
+        ? `<h1 style="font-family:${LETTER_SERIF};font-size:30px;line-height:1.15;font-weight:400;margin:4px 0 18px;color:${KLEUR.tekst}">${escapeHtml(vulIn(b.tekst, w))}</h1>`
         : "";
     case "tekst":
       return opmaakNaarHtml(b.tekst, { variabelen: w, stijl: STIJL });
     case "afbeelding": {
       if (!b.url) return "";
-      const img = `<img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt)}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;border-radius:8px;margin:8px 0 16px">`;
+      const img = `<img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt)}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;border-radius:14px;margin:8px 0 18px">`;
       return b.link ? `<a href="${escapeHtml(b.link)}">${img}</a>` : img;
     }
     case "knop":
-      return b.tekst && b.url
-        ? `<p style="margin:20px 0 24px"><a href="${escapeHtml(b.url)}" style="display:inline-block;background:${KLEUR.accent};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:9999px;font-family:${LETTER};font-size:15px;font-weight:bold">${escapeHtml(vulIn(b.tekst, w))}</a></p>`
-        : "";
+      return b.tekst && b.url ? knopHtml(b.url, vulIn(b.tekst, w), "primair", "20px 0 26px") : "";
     case "scheiding":
-      return `<hr style="border:none;border-top:1px solid ${KLEUR.lijn};margin:24px 0">`;
+      return `<hr style="border:none;border-top:1px solid ${KLEUR.lijn};margin:28px 0">`;
     case "ruimte":
       return `<div style="height:24px;line-height:24px">&nbsp;</div>`;
   }
@@ -189,22 +189,19 @@ export function renderNieuwsbrief(o: RenderOpties): { onderwerp: string; html: s
   const inhoud = herschrijfLinks(o.blokken.map((b) => blokHtml(b, w)).join("\n"), o.volgLink);
   const preheader = vulIn(o.preheader, w);
   const adres = o.afzender.adres ? `<br>${escapeHtml(o.afzender.adres).replace(/\n/g, ", ")}` : "";
-  const html = `<!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(vulIn(o.onderwerp, w))}</title></head>
-<body style="margin:0;padding:0;background:${KLEUR.achtergrond}">
-${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}${"&#847; &zwnj; &nbsp; ".repeat(30)}</div>` : ""}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${KLEUR.achtergrond}"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px"><tr><td style="padding:32px 40px;font-family:${LETTER};color:${KLEUR.tekst}">
-<p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${KLEUR.accent}">${escapeHtml(o.afzender.naam)}</p>
-${inhoud}
-</td></tr></table>
-<p style="max-width:600px;margin:20px auto 0;font-family:${LETTER};font-size:12px;line-height:1.5;color:${KLEUR.zacht}">
-Je ontvangt deze mail omdat je je hebt aangemeld voor de nieuwsbrief van ${escapeHtml(o.afzender.naam)}.<br>
-<a href="${escapeHtml(o.afmeldUrl)}" style="color:${KLEUR.zacht}">Afmelden</a>${adres}
-</p>
-</td></tr></table>
-${o.pixelUrl ? `<img src="${escapeHtml(o.pixelUrl)}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px">` : ""}
-</body></html>`;
+  const html = mailDocument({
+    titel: vulIn(o.onderwerp, w),
+    preheader: preheader
+      ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}${"&#847; &zwnj; &nbsp; ".repeat(30)}</div>\n`
+      : "",
+    merk: o.merk,
+    inhoud: `\n${inhoud}\n`,
+    onder: `Je ontvangt deze mail omdat je je hebt aangemeld voor de nieuwsbrief van ${escapeHtml(o.afzender.naam)}.<br>
+<a href="${escapeHtml(o.afmeldUrl)}" style="color:${KLEUR.zacht}">Afmelden</a>${adres}`,
+    naBody: o.pixelUrl
+      ? `<img src="${escapeHtml(o.pixelUrl)}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px">\n`
+      : "",
+  });
 
   const tekst = [
     ...o.blokken.map((b) => {

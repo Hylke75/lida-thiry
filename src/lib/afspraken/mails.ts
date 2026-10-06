@@ -3,14 +3,13 @@ import { stuurPushMelding } from "../push/versturen";
 import { adminClient } from "../supabase/admin";
 import { leesInstellingen } from "../instellingen";
 import { leesSectie } from "../inhoud/lees";
-import { EMAILS_ALGEMEEN } from "../inhoud/groepen/emails";
 import {
   AFSPRAKEN_AANVRAAGMAIL,
   AFSPRAKEN_ANNULEERMAIL,
   AFSPRAKEN_BEVESTIGMAIL,
   AFSPRAKEN_HERINNERINGMAIL,
 } from "../inhoud/groepen/afspraken";
-import { stuurAfspraakMail } from "../resend";
+import { leesMailAlgemeen, stuurAfspraakMail } from "../resend";
 import { BEDRIJFSNAAM_STANDAARD, siteUrl } from "../site";
 import { foutTekst, stuurBeheerMelding } from "../beheermelding";
 import { maakIcs } from "./ics";
@@ -147,28 +146,28 @@ async function verstuurKlant(
 /** Bevestiging aan de klant met het agendabestand. Gooit bij een fout. */
 export async function stuurBevestiging(a: MailbareAfspraak): Promise<void> {
   const c = await context(a);
-  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_BEVESTIGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_BEVESTIGMAIL), leesMailAlgemeen()]);
   await verstuurKlant(a, c, afspraakBevestigingMail(t, algemeen, c.mail, afspraakLink(a.token)), "bevestiging");
 }
 
 /** Ontvangstbevestiging van een aanvraag (zonder agendabestand). Gooit bij een fout. */
 async function stuurAanvraag(a: MailbareAfspraak): Promise<void> {
   const c = await context(a);
-  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_AANVRAAGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_AANVRAAGMAIL), leesMailAlgemeen()]);
   await verstuurKlant(a, c, afspraakAanvraagMail(t, algemeen, c.mail, afspraakLink(a.token)), null);
 }
 
 /** Herinnering een dag van tevoren. Gooit bij een fout. */
 export async function stuurHerinnering(a: MailbareAfspraak): Promise<void> {
   const c = await context(a);
-  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_HERINNERINGMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_HERINNERINGMAIL), leesMailAlgemeen()]);
   await verstuurKlant(a, c, afspraakHerinneringMail(t, algemeen, c.mail, afspraakLink(a.token)), null);
 }
 
 /** Annulering aan de klant, met een .ics die de afspraak uit de agenda haalt. Gooit bij een fout. */
 export async function stuurAnnulering(a: MailbareAfspraak, reden?: string | null): Promise<void> {
   const c = await context(a);
-  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_ANNULEERMAIL), leesSectie(EMAILS_ALGEMEEN)]);
+  const [t, algemeen] = await Promise.all([leesSectie(AFSPRAKEN_ANNULEERMAIL), leesMailAlgemeen()]);
   await verstuurKlant(a, c, afspraakAnnuleringMail(t, algemeen, c.mail, `${siteUrl()}/afspraak`, reden), "annulering");
 }
 
