@@ -89,7 +89,7 @@ function CadeaubonPdf({ b, bestelUrl, merk, teksten }: { b: BonGegevens; bestelU
     .join(" · ");
   const geldigTot = datumLang(b.geldigTot);
   return (
-    <Document title={`Cadeaubon ${b.code}`} author={BEDRIJFSNAAM_STANDAARD}>
+    <Document title={`Cadeaubon ${b.code}`} author={merk.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD}>
       <Page size="A4" orientation="landscape" style={s.page}>
         <Kleurstrook hoogte={10} style={s.strookBoven} />
         <Kleurstrook hoogte={10} style={s.strookOnder} />

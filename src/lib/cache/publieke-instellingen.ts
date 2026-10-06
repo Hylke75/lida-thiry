@@ -10,6 +10,7 @@ import { WEBSITE_SLEUTELS } from "../website/instellingen";
 export const PUBLIEKE_INSTELLINGEN: readonly string[] = [
   ...WEBSITE_SLEUTELS,
   "homepage_indeling",
+  "seo_paginas",
   "prijs_cent",
   "valuta",
   "bewaartermijn_maten_dagen",

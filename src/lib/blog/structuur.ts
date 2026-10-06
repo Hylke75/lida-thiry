@@ -14,6 +14,10 @@ export interface BlogPostingInvoer {
   auteur: string;
   tags?: readonly string[];
   categorie?: string | null;
+  /** Naam van de uitgever (bedrijfsnaam); standaard de bedrijfsnaam uit de code. */
+  uitgever?: string;
+  /** Auteur als het bericht geen eigen auteur heeft. */
+  standaardAuteur?: string;
   /** Absolute basis-URL van de site (voor de uitgever). */
   siteUrl: string;
 }
@@ -27,10 +31,10 @@ export function blogPostingJsonLd(b: BlogPostingInvoer): Record<string, unknown>
     ...(b.afbeelding ? { image: [b.afbeelding] } : {}),
     datePublished: b.gepubliceerdOp,
     dateModified: b.bijgewerktOp > b.gepubliceerdOp ? b.bijgewerktOp : b.gepubliceerdOp,
-    author: { "@type": "Person", name: b.auteur || "Lida Thiry", url: b.siteUrl },
+    author: { "@type": "Person", name: b.auteur || b.standaardAuteur || "Lida Thiry", url: b.siteUrl },
     publisher: {
       "@type": "Organization",
-      name: BEDRIJFSNAAM_STANDAARD,
+      name: b.uitgever?.trim() || BEDRIJFSNAAM_STANDAARD,
       url: b.siteUrl,
       logo: { "@type": "ImageObject", url: `${b.siteUrl}/icon.svg` },
     },

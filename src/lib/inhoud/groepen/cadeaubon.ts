@@ -164,6 +164,7 @@ export const CADEAUBON_MAIL = sectie({
     bedrag: "waarde van de bon, bijv. € 35,00",
     code: "de code van de bon",
     geldig_tot: "laatste geldigheidsdag, bijv. 4 oktober 2027",
+    bedrijf: "naam van de website (alleen in de regel onder de titel van de bon)",
   },
   velden: {
     onderwerpOntvanger: {
@@ -209,7 +210,7 @@ export const CADEAUBON_MAIL = sectie({
       soort: "tekst",
       label: "De bon in de mail: regel onder de titel",
       max: 120,
-      standaard: "Persoonlijk kledingadvies · Lida Thiry",
+      standaard: "Persoonlijk kledingadvies · {bedrijf}",
     },
     bonVoor: {
       soort: "tekst",

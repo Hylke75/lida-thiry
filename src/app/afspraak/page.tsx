@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { AfspraakBlok } from "@/components/blokken/AfspraakBlok";
 import { Bovenschrift } from "@/components/site/Basis";
 import { KlantPagina } from "@/components/site/KlantPagina";
@@ -11,11 +12,10 @@ import { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
 // /api/afspraak/tijden (dynamisch), dus de pagina hoeft daarvoor niet per request.
 export const revalidate = 900;
 
-export const metadata: Metadata = {
-  title: "Afspraak maken",
-  description: "Maak online een afspraak voor persoonlijk imago- en kledingadvies.",
-  alternates: { canonical: "/afspraak" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("afspraak");
+}
 
 export default async function AfspraakPagina() {
   const t = await leesSectie(AFSPRAKEN_BOEKEN);

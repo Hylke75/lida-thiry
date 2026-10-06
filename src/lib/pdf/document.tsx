@@ -382,6 +382,7 @@ export function AdviesPdf({
 }: AdviesPdfProps) {
   const t = teksten.voorpagina;
   const maatLabel = (k: keyof PdfMaten) => teksten.maten[k]?.trim() || MAAT_LABELS_STANDAARD[k];
+  const bedrijfsnaam = merk.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD;
   const cm = (v: number | null) => (v == null ? "–" : `${v} cm`);
   const matenRijen: { label: string; waarde: string }[] = [
     { label: maatLabel("lengte_cm"), waarde: cm(maten.lengte_cm) },
@@ -395,7 +396,7 @@ export function AdviesPdf({
   ];
   const helft = Math.ceil(matenRijen.length / 2);
   const toonMaten = matenRijen.some((r) => r.waarde !== "–");
-  const voettekst = vulIn(t.voettekst, { bedrijf: BEDRIJFSNAAM_STANDAARD, type: sleutel });
+  const voettekst = vulIn(t.voettekst, { bedrijf: bedrijfsnaam, type: sleutel });
   const metNaam = (tekst: string) => vulIn(tekst, { naam: klantnaam });
   const intro = teksten.intro;
   const toonIntro = intro.tekst.trim() !== "";
@@ -404,7 +405,7 @@ export function AdviesPdf({
   const toonSlot = Boolean(slot.titel.trim() || slotBlokken.length || slot.oproep.trim() || slot.disclaimer.trim());
 
   return (
-    <Document title={`Kledingadvies ${sleutel}`} author={BEDRIJFSNAAM_STANDAARD}>
+    <Document title={`Kledingadvies ${sleutel}`} author={bedrijfsnaam}>
       {/* Voorpagina */}
       <Page size="A4" style={[styles.page, styles.cover]}>
         <Rand voettekst={voettekst} />

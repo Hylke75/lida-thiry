@@ -109,7 +109,14 @@ export default async function FoutenPagina({
             niet opgeslagen.
           </>
         }
-        acties={<TestfoutKnop className={knopKlein} />}
+        acties={
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/status" className={knopKlein}>
+              Verbindingsstatus
+            </Link>
+            <TestfoutKnop className={knopKlein} />
+          </div>
+        }
       />
 
       {ok && <Melding soort="ok">{ok}</Melding>}

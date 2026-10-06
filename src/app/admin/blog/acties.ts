@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { vereisBeheerder } from "@/lib/admin-auth";
 import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
+import { leesStandaardAuteur } from "@/lib/website/lees";
 import { aiBeschikbaar, bewerkMetAi, stelVoor, type Suggesties } from "@/lib/blog/ai";
 import { BEWERKINGEN, type Bewerking } from "@/lib/blog/ai-prompt";
 import { campagneBlokkenUitBericht } from "@/lib/blog/beheer";
@@ -40,7 +41,7 @@ export async function nieuwBericht() {
   const slug = await vrijeSlug("nieuw-bericht");
   const { data, error } = await adminClient()
     .from("blog_berichten")
-    .insert({ titel: "Nieuw bericht", slug })
+    .insert({ titel: "Nieuw bericht", slug, auteur: await leesStandaardAuteur() })
     .select("id")
     .single();
   if (error || !data) redirect(`${BLOG_PAD}?fout=aanmaken`);
@@ -116,7 +117,7 @@ export async function slaBerichtOp(id: string, ruw: unknown): Promise<BerichtUit
   const user = await vereisBeheerder("blog");
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
-  const v = valideerBericht(ruw);
+  const v = valideerBericht(ruw, await leesStandaardAuteur());
   if (!v.ok) return fout(...v.fouten);
   if (huidig.status === "gepubliceerd") {
     const problemen = publicatieProblemen(v.waarde);
@@ -160,7 +161,7 @@ export async function publiceer(
   const user = await vereisBeheerder("blog");
   const huidig = await haalBericht(id);
   if (!huidig) return fout("Dit bericht bestaat niet (meer).");
-  const v = valideerBericht(ruw);
+  const v = valideerBericht(ruw, await leesStandaardAuteur());
   if (!v.ok) return fout(...v.fouten);
   const problemen = publicatieProblemen(v.waarde);
   if (problemen.length) return fout("Het bericht is nog niet klaar om te publiceren:", ...problemen);

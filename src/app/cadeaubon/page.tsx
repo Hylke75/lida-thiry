@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { CADEAUBON_PAGINA } from "@/lib/inhoud/groepen/cadeaubon";
@@ -13,12 +14,10 @@ import { CadeaubonFormulier } from "./CadeaubonFormulier";
 // datum van vandaag. De gegevens zelf (teksten, prijs) komen wel uit de datacache.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Cadeaubon",
-  description:
-    "Geef de online kledingadviestest van Lida Thiry cadeau. Kies een bedrag en laat de cadeaubon direct of op een datum naar keuze mailen.",
-  alternates: { canonical: "/cadeaubon" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("cadeaubon");
+}
 
 export default async function CadeaubonPage() {
   const t = await leesSectie(CADEAUBON_PAGINA);

@@ -18,6 +18,8 @@ export interface IcsAfspraak {
   /** Gewijzigd bij elke herziening; geannuleerd = hoger dan de bevestiging. */
   volgnummer?: number;
   geannuleerd?: boolean;
+  /** Bedrijfsnaam in de PRODID (Beheer → Instellingen); standaard de naam uit de code. */
+  bedrijf?: string;
   /** Tijdstip van aanmaken van dit bestand (DTSTAMP); standaard nu. */
   gemaaktOp?: Date;
 }
@@ -66,7 +68,7 @@ export function maakIcs(a: IcsAfspraak): string {
   const regels = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//${BEDRIJFSNAAM_STANDAARD}//Afspraken//NL`,
+    `PRODID:-//${(a.bedrijf?.trim() || BEDRIJFSNAAM_STANDAARD).replace(/[\r\n/]/g, " ")}//Afspraken//NL`,
     "CALSCALE:GREGORIAN",
     `METHOD:${a.geannuleerd ? "CANCEL" : "PUBLISH"}`,
     "BEGIN:VEVENT",

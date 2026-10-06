@@ -9,7 +9,7 @@
 // - Pagina's die zelf `openGraph` (met `images`) opgeven, vervangen dit geheel.
 
 import type { Metadata } from "next";
-import { STANDAARD_SITE, type WebsiteInstellingen } from "./instellingen";
+import type { WebsiteInstellingen } from "./instellingen";
 
 /** Het MIME-type van een pictogram, afgeleid van de extensie (of undefined). */
 export function pictogramType(url: string): string | undefined {
@@ -24,18 +24,20 @@ export function pictogramType(url: string): string | undefined {
 }
 
 export function bouwSiteMetadata(site: WebsiteInstellingen, basisUrl: string): Metadata {
-  const deelTitel = `${STANDAARD_SITE.deelTitel} · ${site.korteNaam}`;
+  const deelTitel = `${site.deelTitel} · ${site.korteNaam}`;
   const type = site.faviconUrl ? pictogramType(site.faviconUrl) : undefined;
 
   return {
     metadataBase: new URL(basisUrl),
     title: {
-      default: `${STANDAARD_SITE.homeTitel} · ${site.korteNaam}`,
+      default: `${site.homeTitel} · ${site.korteNaam}`,
       template: `%s · ${site.korteNaam}`,
     },
     description: site.omschrijving,
     applicationName: site.volledigeNaam,
-    authors: [{ name: "Lida Thiry" }],
+    authors: [{ name: site.standaardAuteur }],
+    // Vóór de livegang: de hele site uit zoekmachines (pagina's zonder eigen robots erven dit).
+    ...(site.nietIndexeren ? { robots: { index: false, follow: false } } : {}),
     ...(site.faviconUrl
       ? {
           icons: {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { vastePaginaMetadataVoor } from "@/lib/website/lees";
 import { contactEmail, Identiteit, JuridischePagina } from "@/components/JuridischePagina";
 import { Opmaak } from "@/components/Opmaak";
 import { leesPubliekeInstellingen } from "@/lib/instellingen";
@@ -14,12 +15,10 @@ import { JURIDISCH_PRIVACY } from "@/lib/inhoud/groepen/juridisch";
 // standaardtekst er maar 30 s (zie noodvoorziening in lib/cache/publiek.ts).
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Privacyverklaring",
-  description:
-    "Hoe Lida Thiry Imago & Kledingadvies omgaat met je persoonsgegevens en lichaamsmaten bij de online kledingadviestest.",
-  alternates: { canonical: "/privacy" },
-};
+/** Titel en omschrijving: Beheer → Website → SEO (standaard in lib/website/seo.ts). */
+export function generateMetadata(): Promise<Metadata> {
+  return vastePaginaMetadataVoor("privacy");
+}
 
 const STANDAARD_BEWAARTERMIJN_DAGEN = 120;
 

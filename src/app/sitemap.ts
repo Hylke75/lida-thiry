@@ -4,6 +4,8 @@ import { haalSitemapItems } from "@/lib/blog/publiek";
 import { haalSitemapPaginas } from "@/lib/paginas/publiek";
 import { publiekClient, publiekGecached } from "@/lib/cache/publiek";
 import { geldigeFormulierSlug } from "@/lib/nieuwsbrief/formulierregels";
+import { leesWebsite } from "@/lib/website/lees";
+import { leesSeoPaginas, vastePaginasInSitemap } from "@/lib/website/seo";
 
 // Elke 5 minuten opnieuw opgebouwd, zodat ingeplande blogberichten vanzelf
 // verschijnen. Is de database niet bereikbaar, dan blijven de vaste pagina's staan
@@ -33,20 +35,22 @@ async function haalFormulierPaginas(): Promise<{ slug: string; bijgewerkt_op: st
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const basis = siteUrl();
+  const site = await leesWebsite();
+  // Vóór de livegang (Beheer → Website → Instellingen → niet indexeren): een lege sitemap.
+  if (site.nietIndexeren) return [];
   const [berichten, paginas, formulieren] = await Promise.all([haalSitemapItems(), haalSitemapPaginas(), haalFormulierPaginas()]);
   const nieuwste = berichten.reduce<string | undefined>((max, b) => (!max || b.bijgewerkt_op > max ? b.bijgewerkt_op : max), undefined);
+  // Vaste pagina's (bestellen, afspraak, blog, privacy …): aan/uit per pagina in Beheer → Website → SEO.
+  const vast = vastePaginasInSitemap(leesSeoPaginas(site.seoPaginas), basis, { blogBijgewerkt: nieuwste });
   return [
     { url: `${basis}/`, changeFrequency: "monthly", priority: 1 },
-    { url: `${basis}/bestellen`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${basis}/afspraak`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${basis}/cadeaubon`, changeFrequency: "monthly", priority: 0.6 },
+    ...vast,
     ...paginas.map((p) => ({
       url: `${basis}/${p.slug}`,
       lastModified: p.bijgewerkt_op,
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
-    { url: `${basis}/blog`, changeFrequency: "weekly", priority: 0.7, ...(nieuwste ? { lastModified: nieuwste } : {}) },
     ...berichten.map((b) => ({
       url: `${basis}/blog/${b.slug}`,
       lastModified: b.bijgewerkt_op,
@@ -59,7 +63,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.4,
     })),
-    { url: `${basis}/voorwaarden`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${basis}/privacy`, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

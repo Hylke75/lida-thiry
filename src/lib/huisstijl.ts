@@ -32,6 +32,8 @@ export const STROOK = [KLEUR.coral, KLEUR.butter, KLEUR.sage, KLEUR.sky, KLEUR.l
 export interface Merk {
   naam: string;
   subregel: string;
+  /** Bedrijfsnaam (Beheer → Instellingen) voor voetteksten en documentgegevens; leeg = de standaard. */
+  bedrijfsnaam?: string;
 }
 
 /** Zoals op de website zolang er niets anders is ingesteld (Beheer → Teksten → Kop en voettekst). */
