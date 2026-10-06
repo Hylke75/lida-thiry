@@ -412,6 +412,8 @@ export function bepaalLink(href: string, ctx: LinkContext): LinkKeuze {
   if (!OUDE_HOST.test(u.hostname)) return u.toString();
 
   const pad = u.pathname.replace(/\/{2,}/g, "/");
+  // Tekst die per ongeluk als adres is ingevuld (spaties, "<a href=") of een beheerlink.
+  if (/%20|%3C|\s/i.test(pad) || pad.startsWith("/wp-admin")) return null;
   if (pad.startsWith("/wp-content/")) return BEELD_EXT.test(pad) ? null : normaliseerOudeUrl(u.toString());
   const p = u.searchParams.get("p");
   if (p && /^\d+$/.test(p)) {

@@ -54,6 +54,10 @@ describe("htmlNaarOpmaak", () => {
     expect(zet('<p><a href="https://www.lidathiry.nl/wp-content/uploads/b.jpg">groot</a></p>')).toBe("groot");
   });
 
+  it("maakt van kapotte links gewone tekst", () => {
+    expect(zet('<a href="https://www.lidathiry.nl/Altijd bang geweest">tekst</a> <a href="https://www.lidathiry.nl/wp-admin/post.php">x</a>')).toBe("tekst x");
+  });
+
   it("maakt van een YouTube-video een link", () => {
     expect(zet('<p><iframe title="Zo zoom je" src="https://www.youtube.com/embed/N7_AsdW6d0M?feature=oembed"></iframe></p>')).toBe(
       "[Bekijk de video: Zo zoom je](https://www.youtube.com/watch?v=N7_AsdW6d0M)",
