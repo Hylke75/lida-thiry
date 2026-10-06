@@ -7,6 +7,7 @@ import { BEELD_BUCKET } from "@/lib/beeldbank-regels";
 import { silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { vormUitMaten } from "@/lib/lichaam-pad";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
+import { leesMerk } from "@/lib/merk";
 
 const BUCKET = ADVIEZEN_PDF;
 
@@ -70,8 +71,11 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
   const supabase = adminClient();
   const inhoud = await haalAdviesInhoud(sleutel);
   if (!inhoud) return null;
-  const secties = await pdfSecties(supabase, inhoud);
-  const optie = await silhouetVoorSleutel(sleutel);
+  const [secties, optie, merk] = await Promise.all([
+    pdfSecties(supabase, inhoud),
+    silhouetVoorSleutel(sleutel),
+    leesMerk(),
+  ]);
   const maten: PdfMaten = {
     lengte_cm: null,
     gewicht_kg: null,
@@ -91,6 +95,7 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
       maten={maten}
       secties={secties}
       silhouet={optie ? { naam: optie.naam, uitleg: optie.uitleg, eigenMaten: false, vorm: optie.vorm } : null}
+      merk={merk}
     />,
   );
 }
@@ -168,6 +173,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
       }}
       secties={secties}
       silhouet={silhouet}
+      merk={await leesMerk()}
     />,
   );
 

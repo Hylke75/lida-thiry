@@ -4,55 +4,82 @@ import { formatteerBedrag } from "@/lib/prijs";
 import type { BonGegevens } from "@/lib/email-html";
 import { datumLang } from "@/lib/datum";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
+import { leesMerk } from "@/lib/merk";
+import { EYEBROW, KLEUR, Kleurstrook, SANS, SERIF, Woordmerk, type Merk } from "./huisstijl";
 
-const kleur = { tekst: "#2b2a28", grijs: "#6b6b6b", accent: "#a4634d", zacht: "#f6efe9" };
+const kleur = { tekst: KLEUR.ink, grijs: KLEUR.inkZacht, accent: KLEUR.berry, zacht: KLEUR.cream };
 
 const s = StyleSheet.create({
-  page: { padding: 36, fontSize: 11, color: kleur.tekst, fontFamily: "Helvetica", lineHeight: 1.5 },
-  kader: {
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: kleur.accent,
-    borderRadius: 16,
-    backgroundColor: kleur.zacht,
-    paddingVertical: 28,
+  page: {
+    paddingTop: 40,
+    paddingBottom: 34,
     paddingHorizontal: 48,
-    alignItems: "center",
+    fontSize: 10.5,
+    color: kleur.tekst,
+    fontFamily: SANS,
+    lineHeight: 1.55,
+    backgroundColor: kleur.zacht,
   },
-  merk: { fontSize: 10, letterSpacing: 4, textTransform: "uppercase", color: kleur.accent },
-  titel: { fontSize: 34, lineHeight: 1.2, fontFamily: "Helvetica-Bold", marginTop: 10 },
-  sub: { fontSize: 12, color: kleur.grijs, marginTop: 4 },
-  bedrag: { fontSize: 44, lineHeight: 1.2, fontFamily: "Helvetica-Bold", marginTop: 16 },
-  voorVan: { fontSize: 13, color: kleur.grijs, marginTop: 6 },
-  codeLabel: { fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: kleur.grijs, marginTop: 18 },
+  strookBoven: { position: "absolute", top: 0, left: 0, right: 0 },
+  strookOnder: { position: "absolute", bottom: 0, left: 0, right: 0 },
+  kader: {
+    flexGrow: 1,
+    borderWidth: 1,
+    borderColor: KLEUR.lijn,
+    borderRadius: 28,
+    backgroundColor: KLEUR.paper,
+    paddingVertical: 26,
+    paddingHorizontal: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titel: { fontFamily: SERIF, fontSize: 46, lineHeight: 1.05, marginTop: 20, color: kleur.tekst },
+  sub: { fontSize: 11, color: kleur.grijs, marginTop: 6 },
+  bedrag: { fontFamily: SERIF, fontSize: 50, lineHeight: 1.1, marginTop: 14, color: kleur.accent },
+  voorVan: { fontSize: 12, color: kleur.grijs, marginTop: 4 },
+  codeLabel: { ...EYEBROW, marginTop: 16 },
   code: {
-    fontSize: 22,
+    fontSize: 20,
     lineHeight: 1.2,
     fontFamily: "Courier-Bold",
     letterSpacing: 2,
     marginTop: 6,
     paddingVertical: 8,
-    paddingHorizontal: 18,
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
+    paddingHorizontal: 20,
+    color: kleur.tekst,
+    backgroundColor: KLEUR.wit,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: kleur.accent,
+    borderRadius: 14,
   },
-  geldig: { fontSize: 10, color: kleur.grijs, marginTop: 12 },
-  boodschap: { marginTop: 18, maxWidth: 520, alignItems: "center" },
-  boodschapLabel: { fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: kleur.accent, marginBottom: 6 },
-  boodschapTekst: { fontFamily: "Helvetica-Oblique", fontSize: 11, lineHeight: 1.4, textAlign: "center" },
-  uitleg: { marginTop: 20, fontSize: 10, color: kleur.grijs, textAlign: "center" },
+  geldig: { fontSize: 9.5, color: kleur.grijs, marginTop: 10 },
+  boodschap: {
+    marginTop: 14,
+    maxWidth: 520,
+    alignItems: "center",
+    backgroundColor: KLEUR.coralZacht,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+  },
+  boodschapLabel: { ...EYEBROW, marginBottom: 4 },
+  boodschapTekst: { fontFamily: SERIF, fontStyle: "italic", fontSize: 13, lineHeight: 1.35, textAlign: "center" },
+  uitleg: { marginTop: 14, fontSize: 9, color: kleur.grijs, textAlign: "center" },
 });
 
 /** De cadeaubon als PDF (A4 liggend), om te printen of door te sturen. */
-function CadeaubonPdf({ b, bestelUrl }: { b: BonGegevens; bestelUrl: string }) {
+function CadeaubonPdf({ b, bestelUrl, merk }: { b: BonGegevens; bestelUrl: string; merk: Merk }) {
   const voorVan = [b.ontvangerNaam ? `Voor ${b.ontvangerNaam}` : "", b.koperNaam ? `van ${b.koperNaam}` : ""]
     .filter(Boolean)
     .join(" · ");
   return (
     <Document title={`Cadeaubon ${b.code}`} author={BEDRIJFSNAAM_STANDAARD}>
       <Page size="A4" orientation="landscape" style={s.page}>
+        <Kleurstrook hoogte={10} style={s.strookBoven} />
+        <Kleurstrook hoogte={10} style={s.strookOnder} />
         <View style={s.kader} wrap={false}>
-          <Text style={s.merk}>{BEDRIJFSNAAM_STANDAARD}</Text>
+          <Woordmerk merk={merk} grootte={14} midden />
           <Text style={s.titel}>Cadeaubon</Text>
           <Text style={s.sub}>voor de online persoonlijke kledingadviestest</Text>
           <Text style={s.bedrag}>{formatteerBedrag(b.bedragCent, b.valuta)}</Text>
@@ -76,7 +103,7 @@ function CadeaubonPdf({ b, bestelUrl }: { b: BonGegevens; bestelUrl: string }) {
   );
 }
 
-/** Rendert de cadeaubon naar PDF-bytes. */
-export async function maakCadeaubonPdf(b: BonGegevens, bestelUrl: string): Promise<Buffer> {
-  return renderToBuffer(<CadeaubonPdf b={b} bestelUrl={bestelUrl} />);
+/** Rendert de cadeaubon naar PDF-bytes (het woordmerk zoals op de site, tenzij meegegeven). */
+export async function maakCadeaubonPdf(b: BonGegevens, bestelUrl: string, merk?: Merk): Promise<Buffer> {
+  return renderToBuffer(<CadeaubonPdf b={b} bestelUrl={bestelUrl} merk={merk ?? (await leesMerk())} />);
 }

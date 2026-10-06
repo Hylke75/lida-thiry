@@ -7,7 +7,19 @@ import { opslagPatroon } from "./src/lib/media/afbeelding";
 // src/components/Afbeelding.tsx), zodat de optimalisatie niet te misbruiken is.
 const opslag = opslagPatroon(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
+// Lettertypen van de huisstijl (src/lib/pdf/fonts, SIL OFL). Ze worden met
+// fs gelezen vanaf process.cwd() (src/lib/pdf/huisstijl.tsx, app/opengraph-image.tsx),
+// dus de bestandstracering ziet ze niet vanzelf: meegeven aan elke functie die
+// een PDF of de deelafbeelding maakt. PDF's ontstaan in API-routes (testlink,
+// Mollie-webhook, onderhoud) en in serveracties en routes van het beheer.
+const LETTERTYPEN = ["./src/lib/pdf/fonts/**/*"];
+
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/**": LETTERTYPEN,
+    "/admin/**": LETTERTYPEN,
+    "/opengraph-image": LETTERTYPEN,
+  },
   images: {
     remotePatterns: opslag ? [opslag] : [],
     // WebP: goed ondersteund en snel te maken. (AVIF is kleiner maar kost veel
