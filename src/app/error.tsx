@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { KleurLint, Knop, knopKlassen, KopTekst } from "@/components/site/Basis";
+import { H1_INHOUD, INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
+import { CONTAINER } from "@/components/site/stijl";
 import { meldBrowserFout } from "@/lib/fouten/browser";
 import { WEBSITE_FOUT } from "@/lib/inhoud/groepen/website";
 import { standaardWaarden } from "@/lib/inhoud/schema";
@@ -48,31 +50,27 @@ export default function Fout({ error, retry }: { error: Error & { digest?: strin
 
   return (
     <main className="flex w-full flex-1 flex-col">
-      <section className="bg-accent-zacht/60">
+      <section className={`${KOP_ACHTERGROND} flex flex-1 flex-col`}>
         <div
           aria-busy={teksten === null}
-          className={`mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-6 py-16 text-center transition-opacity duration-300 sm:py-24 ${
+          className={`${CONTAINER} flex max-w-[860px] flex-1 flex-col items-center justify-center gap-5 py-[68px] text-center transition-opacity duration-300 tablet:py-[110px] ${
             teksten === null ? "opacity-0" : "opacity-100"
           }`}
         >
-          <h1 className="text-balance text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">{t.foutTitel}</h1>
-          <p className="max-w-xl text-balance text-lg text-foreground/70">{t.foutTekst}</p>
-          <div className="flex flex-col items-center gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => retry()}
-              className="rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
+          <h1 className={H1_INHOUD}>
+            <KopTekst tekst={t.foutTitel} />
+          </h1>
+          <p className={`${INTRO} mx-auto`}>{t.foutTekst}</p>
+          <div className="mt-3 flex flex-col items-center gap-3 tablet:flex-row tablet:gap-4">
+            <button type="button" onClick={() => retry()} className={`${knopKlassen()} cursor-pointer`}>
               {t.opnieuwKnop}
             </button>
-            <Link
-              href="/"
-              className="rounded-full px-5 py-3 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
+            <Knop href="/" variant="outline" pijl={false}>
               {t.homeKnop}
-            </Link>
+            </Knop>
           </div>
         </div>
+        <KleurLint />
       </section>
     </main>
   );

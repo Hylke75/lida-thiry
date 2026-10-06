@@ -153,6 +153,28 @@ const BLOG = [
   blogBericht(1, "vijf-kleurcombinaties", "Vijf onverwachte kleurcombinaties die vrolijk zijn zonder druk te worden", null),
 ];
 
+// Eén bericht met rijke opmaak (koppen, lijst, link), alleen op te vragen via zijn
+// slug (/blog/kleuren-die-je-laten-stralen): zo blijven de lijsten hierboven gelijk.
+const BLOG_RIJK = {
+  ...blogBericht(4, "kleuren-die-je-laten-stralen", "Kleuren die je laten stralen: zo vind je ze zelf", "Kleur"),
+  samenvatting: "Geen regelsboek, maar een paar eenvoudige proefjes voor de spiegel. Zo ontdek je welke tinten jouw gezicht laten oplichten.",
+  inhoud: [
+    "Je kent het vast: een trui die in de winkel prachtig is, maar thuis ineens flets oogt. Dat ligt zelden aan de trui. Het zit in de wisselwerking tussen de kleur en jouw huid, haar en ogen.",
+    "## Begin bij daglicht",
+    "Ga bij een raam staan, zonder make-up, met je haar naar achteren. Houd steeds twee stoffen onder je gezicht en kijk niet naar de stof, maar naar je huid.",
+    "- Warme tinten (camel, koraal, olijf) tegenover koele tinten (grijs, framboos, marine)",
+    "- Zachte, gedempte kleuren tegenover heldere, pure kleuren",
+    "- Licht tegenover donker, vlak bij je gezicht",
+    "### Wat zie je?",
+    "Een kleur die bij je past laat je huid **egaler en frisser** ogen. Een kleur die niet past, benadrukt schaduwen en kringen. Twijfel je? Lees ook [hoe de juiste verhouding meer doet dan een trend](/blog/verhouding-boven-trend).",
+    "## Combineren zonder druk",
+    "Kies één kleur die je laat stralen als uitgangspunt en combineer die met rustige basiskleuren. Zo blijft het vrolijk zonder te druk te worden.",
+  ].join("\n\n"),
+  tags: ["kleur", "basis"],
+  gepubliceerd_op: "2026-05-01T10:00:00Z",
+};
+const BLOG_OP_SLUG = [...BLOG, BLOG_RIJK];
+
 /**
  * Antwoordt als PostgREST/GoTrue, maar kent bijna niets: alleen
  * `paginas?slug=eq.contact` en `instellingen` (een prijs) geven rijen. Al het
@@ -181,7 +203,7 @@ function nepSupabase() {
     }
     if (voorbeelddata && req.method === "GET" && url.pathname === "/rest/v1/blog_berichten") {
       const slug = url.searchParams.get("slug")?.replace(/^eq\./, "");
-      const rijen = slug ? BLOG.filter((b) => b.slug === slug) : BLOG;
+      const rijen = slug ? BLOG_OP_SLUG.filter((b) => b.slug === slug) : BLOG;
       if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {
         return rijen[0] ? json(200, rijen[0]) : json(406, { code: "PGRST116", message: "Geen rij" });
       }

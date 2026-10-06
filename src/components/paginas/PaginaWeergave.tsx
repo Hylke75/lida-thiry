@@ -1,30 +1,25 @@
 import type { ReactNode } from "react";
 import { Afbeelding } from "@/components/Afbeelding";
 import { Opmaak } from "@/components/Opmaak";
+import { KleurLint, KopTekst } from "@/components/site/Basis";
+import { InhoudBlok, InhoudProza } from "@/components/site/InhoudProza";
+import { H1_INHOUD, INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
+import { CONTAINER } from "@/components/site/stijl";
 
-// Typografie voor de paginatekst. Bewust met kind-selectors ([&>h2], [&>p_a], …):
-// zo krijgen de blokken (formulieren, kaarten, knoppen) die tussen de tekst
-// staan géén tekstopmaak opgedrongen.
-const PAGINA_PROZA = [
-  "flex min-w-0 flex-col gap-5 text-[1.0625rem] leading-[1.8] text-foreground/85 [overflow-wrap:anywhere]",
-  "[&>h2]:mt-8 [&>h2]:font-serif [&>h2]:text-2xl [&>h2]:leading-snug [&>h2]:font-semibold [&>h2]:text-foreground sm:[&>h2]:text-3xl",
-  "[&>h3]:mt-4 [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-foreground",
-  "[&>p_a]:text-accent [&>p_a]:underline [&>p_a]:decoration-accent/40 [&>p_a]:underline-offset-4 [&>p_a:hover]:decoration-accent",
-  "[&>ul_a]:text-accent [&>ul_a]:underline [&>ul_a]:underline-offset-4",
-  "[&>p_strong]:font-semibold [&>p_strong]:text-foreground [&>ul_strong]:font-semibold [&>ul_strong]:text-foreground",
-  "[&>ul]:flex [&>ul]:list-disc [&>ul]:flex-col [&>ul]:gap-2 [&>ul]:pl-6 [&>ul>li]:marker:text-accent",
-  "[&>img]:my-3 [&>img]:h-auto [&>img]:w-full [&>img]:rounded-2xl [&>img]:shadow-sm",
-].join(" ");
+/** Leeskolom van een pagina (max. ~720 px). */
+const LEESKOLOM = `${CONTAINER} max-w-[720px]`;
 
 /** Omslag van een blok binnen de tekst: wat ruimte erboven en eronder, geen tekstopmaak. */
 export function BlokRuimte({ children }: { children: ReactNode }) {
-  return <div className="my-3 min-w-0 text-base leading-normal text-foreground">{children}</div>;
+  return <InhoudBlok>{children}</InhoudBlok>;
 }
 
 /**
- * Een beheerbare pagina zoals bezoekers hem zien: titel, intro, omslagfoto en
- * de tekst. De blokken ({contactformulier}, …) geeft de aanroeper mee: echte
- * componenten op de site, gemarkeerde vakken in het voorbeeld in het beheer.
+ * Een beheerbare pagina zoals bezoekers hem zien: kop (warme band met titel en
+ * intro), omslagfoto en de tekst in een leeskolom. De blokken ({contactformulier}, …)
+ * geeft de aanroeper mee: echte componenten op de site, gemarkeerde vakken in
+ * het voorbeeld in het beheer. Accentwoorden met *sterretjes* in de titel
+ * worden cursief koraal, net als op de homepage.
  */
 export function PaginaWeergave({
   titel,
@@ -50,21 +45,27 @@ export function PaginaWeergave({
   const Kop = kop;
   const omslag = omslagUrl && /^https:\/\//.test(omslagUrl) ? omslagUrl : null;
   return (
-    <article className="flex min-w-0 flex-col">
-      <header className="flex flex-col gap-4">
-        <Kop className="font-serif text-4xl leading-[1.15] font-semibold tracking-tight text-balance break-words hyphens-auto sm:text-5xl">
-          {titel || "(nog geen titel)"}
-        </Kop>
-        {intro && <p className="text-lg leading-relaxed whitespace-pre-line text-balance text-foreground/70">{intro}</p>}
+    <article className="flex min-w-0 flex-col pb-[68px] tablet:pb-[92px]">
+      {/* In het beheer (donkere modus) zonder de warme band, zodat de tekst leesbaar blijft. */}
+      <header className={`${KOP_ACHTERGROND} dark:bg-none`}>
+        <div className={`${LEESKOLOM} flex flex-col gap-5 pt-12 pb-12 tablet:pt-[72px] tablet:pb-14`}>
+          <Kop className={H1_INHOUD}>{titel ? <KopTekst tekst={titel} /> : "(nog geen titel)"}</Kop>
+          {intro && <p className={`${INTRO} whitespace-pre-line dark:text-foreground/75`}>{intro}</p>}
+        </div>
+        <KleurLint />
       </header>
       {omslag && (
-        <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-3xl">
-          <Afbeelding vullen src={omslag} alt={omslagAlt} prioriteit sizes="(min-width: 768px) 720px, 100vw" className="object-cover" />
+        <div className={`${CONTAINER} mt-10 max-w-[980px] tablet:mt-14`}>
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-ontwerp-md tablet:rounded-ontwerp-lg">
+            <Afbeelding vullen src={omslag} alt={omslagAlt} prioriteit sizes="(min-width: 1020px) 980px, 100vw" className="object-cover" />
+          </div>
         </div>
       )}
       {inhoud.trim() && (
-        <div className={`mt-8 ${PAGINA_PROZA}`}>
-          <Opmaak tekst={inhoud} blokken={blokken} afmetingen={afmetingen} />
+        <div className={`${LEESKOLOM} pt-10 tablet:pt-14`}>
+          <InhoudProza>
+            <Opmaak tekst={inhoud} blokken={blokken} afmetingen={afmetingen} />
+          </InhoudProza>
         </div>
       )}
     </article>

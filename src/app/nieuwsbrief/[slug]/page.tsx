@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AanmeldFormulier } from "@/components/AanmeldFormulier";
 import { leesSectie } from "@/lib/inhoud/lees";
@@ -7,6 +6,7 @@ import { opmaakNaarTekst } from "@/lib/inhoud/opmaak";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { haalActiefFormulierPubliek } from "@/lib/nieuwsbrief/formulieren";
 import { geldigeFormulierSlug, type Formulier } from "@/lib/nieuwsbrief/formulierregels";
+import { NieuwsbriefKaart } from "../Kader";
 
 // Landingspagina voor een aanmeldformulier met "eigen pagina" aan
 // (Beheer → Nieuwsbrief → Formulieren). De vaste routes /nieuwsbrief/bevestig/…
@@ -51,20 +51,8 @@ export default async function FormulierPagina({ params }: { params: Params }) {
   const teksten = await leesSectie(NIEUWSBRIEF_AANMELDEN);
 
   return (
-    <main className="flex w-full flex-1 flex-col items-center justify-center bg-accent-zacht/40 px-4 py-12 sm:px-6 sm:py-20">
-      <div className="flex w-full max-w-2xl flex-col gap-8">
-        <p className="text-center font-serif text-lg tracking-tight text-foreground/70">
-          <Link href="/" className="hover:text-accent">
-            Lida Thiry · Imago &amp; Kledingadvies
-          </Link>
-        </p>
-        <div className="rounded-3xl border border-foreground/10 bg-kaart px-5 py-10 shadow-sm sm:px-10">
-          <AanmeldFormulier formulier={f} standaard={teksten} kop="h1" />
-        </div>
-        <Link href="/" className="mx-auto text-sm text-foreground/50 underline underline-offset-4 hover:text-accent">
-          ← Naar de website
-        </Link>
-      </div>
-    </main>
+    <NieuwsbriefKaart terug="Naar de website">
+      <AanmeldFormulier formulier={f} standaard={teksten} kop="h1" />
+    </NieuwsbriefKaart>
   );
 }

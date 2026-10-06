@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Afbeelding } from "@/components/Afbeelding";
 import { eersteAfbeelding, leestijdMinuten, type BlogBericht } from "@/lib/blog/regels";
 import { formatteerDatum } from "@/lib/blog/lijst";
@@ -9,8 +8,8 @@ export function berichtBeeld(b: Pick<BlogBericht, "omslag_url" | "omslag_alt" | 
   return eersteAfbeelding(b.inhoud);
 }
 
-/** Breedte van een kaart in het raster (max-w-5xl, 3 / 2 / 1 kolommen). */
-const KAART_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw";
+/** Breedte van een kaart in het raster (3 / 2 / 1 kolommen). */
+const KAART_SIZES = "(min-width: 981px) 380px, (min-width: 641px) 50vw, 100vw";
 
 /**
  * Omslagbeeld met vaste verhouding (geen verspringende pagina). Foto's uit onze
@@ -37,7 +36,7 @@ export function BlogBeeld({
   const beeld = berichtBeeld(bericht);
   if (beeld) {
     return (
-      <div className={`relative overflow-hidden bg-accent-zacht ${className}`}>
+      <div className={`relative overflow-hidden bg-coral-soft ${className}`}>
         <Afbeelding
           vullen
           src={beeld.url}
@@ -53,11 +52,11 @@ export function BlogBeeld({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-accent-zacht via-accent-zacht/70 to-kaart ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden bg-sky ${className}`}
     >
-      <span className="absolute -right-6 -bottom-10 h-40 w-40 rounded-full border border-accent/20" />
-      <span className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-accent/10" />
-      <span className="font-serif text-6xl text-accent/60 italic">{letter}</span>
+      {/* Rustig kleurvlak met stippen (zoals een lege fotoplek, zie site/BeeldPlek). */}
+      <span className="stippen absolute inset-0" />
+      <span className="relative font-serif text-7xl text-ink/30 italic">{letter}</span>
     </div>
   );
 }
@@ -66,35 +65,10 @@ export function BlogBeeld({
 export function BerichtMeta({ bericht, className = "" }: { bericht: BlogBericht; className?: string }) {
   const minuten = leestijdMinuten(bericht.inhoud);
   return (
-    <p className={`flex flex-wrap items-center gap-x-2 text-xs text-foreground/75 ${className}`}>
+    <p className={`flex flex-wrap items-center gap-x-2 text-[13px] font-semibold text-ink-soft ${className}`}>
       {bericht.gepubliceerd_op && <time dateTime={bericht.gepubliceerd_op}>{formatteerDatum(bericht.gepubliceerd_op)}</time>}
       <span aria-hidden="true">·</span>
       <span>{minuten} min lezen</span>
     </p>
-  );
-}
-
-/** Kaart in het overzicht, op de homepage en bij "Lees ook". De hele kaart is klikbaar. */
-export function BlogKaart({ bericht, kop = "h3" }: { bericht: BlogBericht; kop?: "h2" | "h3" }) {
-  const Kop = kop;
-  return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-kaart shadow-sm ring-1 ring-foreground/5 transition-shadow focus-within:ring-2 focus-within:ring-accent hover:shadow-md">
-      <BlogBeeld bericht={bericht} decoratief className="aspect-[3/2] w-full" />
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        {bericht.categorie && (
-          <p className="text-xs font-medium tracking-widest text-accent uppercase">{bericht.categorie}</p>
-        )}
-        <Kop className="font-serif text-xl leading-snug font-semibold text-balance break-words hyphens-auto">
-          <Link
-            href={`/blog/${bericht.slug}`}
-            className="outline-none after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
-          >
-            {bericht.titel}
-          </Link>
-        </Kop>
-        {bericht.samenvatting && <p className="line-clamp-3 text-sm text-foreground/70">{bericht.samenvatting}</p>}
-        <BerichtMeta bericht={bericht} className="mt-auto pt-2" />
-      </div>
-    </article>
   );
 }

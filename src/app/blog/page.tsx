@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BerichtMeta, BlogBeeld, BlogKaart } from "@/components/blog/BlogKaart";
-import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
-import { Opmaak } from "@/components/Opmaak";
+import { ArtikelRaster, ArtikelUitgelicht } from "@/components/site/ArtikelKaart";
+import { Knop, TekstLink } from "@/components/site/Basis";
+import { InhoudKop } from "@/components/site/InhoudKop";
+import { InhoudNieuwsbrief } from "@/components/site/InhoudNieuwsbrief";
+import { BOVENSCHRIFT, CONTAINER, H3 } from "@/components/site/stijl";
 import { haalCategorieen, haalGepubliceerd, haalTags, haalUitgelicht } from "@/lib/blog/publiek";
 import { blogHref, leesFilter, leesPagina, paginaNummers, paginering, PER_PAGINA } from "@/lib/blog/lijst";
 import { leesSectie } from "@/lib/inhoud/lees";
@@ -36,10 +38,21 @@ export async function generateMetadata({ searchParams }: { searchParams: Zoek })
   };
 }
 
-const PIL =
-  "rounded-full px-4 py-1.5 text-sm ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const PIL_UIT = `${PIL} bg-kaart text-foreground/70 ring-foreground/10 hover:text-accent hover:ring-accent/40`;
-const PIL_AAN = `${PIL} bg-accent text-background ring-accent`;
+/** Filterlink (categorie): rustige tekstlink, de actieve met een berry streep eronder. */
+const FILTER =
+  "inline-flex min-h-11 items-center border-b-2 px-0.5 text-[14px] font-bold transition-colors hover:text-berry";
+const FILTER_UIT = `${FILTER} border-transparent text-ink-soft`;
+const FILTER_AAN = `${FILTER} border-berry text-berry`;
+
+/** Paginering: ronde knopjes van 44 px. */
+const PAGINA =
+  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-4 text-[14px] font-bold transition-colors";
+const PAGINA_UIT = `${PAGINA} border-line bg-white text-ink hover:border-berry hover:text-berry`;
+const PAGINA_AAN = `${PAGINA} border-berry bg-berry text-white`;
+
+/** Tag (#onderwerp): klein en ingetogen. */
+const TAG =
+  "inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-ink-soft hover:border-berry hover:text-berry aria-[current=page]:border-berry aria-[current=page]:bg-berry aria-[current=page]:text-white";
 
 export default async function BlogOverzicht({ searchParams }: { searchParams: Zoek }) {
   const zoek = await searchParams;
@@ -75,29 +88,25 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
       {p.vorige && <link rel="prev" href={href(p.vorige)} />}
       {p.volgende && <link rel="next" href={href(p.volgende)} />}
 
-      <header className="bg-accent-zacht/60">
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-4 px-6 py-14 text-center sm:py-20">
-          <Link
-            href="/"
-            className="text-xs font-medium tracking-widest text-accent uppercase hover:underline focus-visible:underline"
-          >
+      <InhoudKop
+        midden
+        bovenschrift={
+          <Link href="/" className="hover:underline focus-visible:underline">
             Lida Thiry · {t.bovenschrift}
           </Link>
-          <h1 className="font-serif text-4xl leading-tight font-semibold tracking-tight text-balance break-words hyphens-auto sm:text-5xl">
-            {t.titel}
-          </h1>
-          <p className="max-w-2xl text-lg text-balance text-foreground/70">{t.intro}</p>
-        </div>
-      </header>
+        }
+        titel={t.titel}
+        intro={t.intro}
+      />
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-10 sm:py-14">
+      <div className={`${CONTAINER} flex flex-col gap-12 py-12 tablet:py-16`}>
         {(categorieen.length > 0 || tag) && (
           <div className="flex flex-col gap-4">
             {categorieen.length > 0 && (
-              <nav aria-label="Categorieën">
-                <ul className="flex flex-wrap gap-2">
+              <nav aria-label="Categorieën" className="border-b border-line">
+                <ul className="m-0 flex list-none flex-wrap gap-x-7 gap-y-1 p-0">
                   <li>
-                    <Link href="/blog" aria-current={!categorie ? "page" : undefined} className={!categorie ? PIL_AAN : PIL_UIT}>
+                    <Link href="/blog" aria-current={!categorie ? "page" : undefined} className={!categorie ? FILTER_AAN : FILTER_UIT}>
                       {t.alle_label}
                     </Link>
                   </li>
@@ -108,9 +117,9 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
                         <Link
                           href={blogHref({ categorie: c.naam })}
                           aria-current={actief ? "page" : undefined}
-                          className={actief ? PIL_AAN : PIL_UIT}
+                          className={actief ? FILTER_AAN : FILTER_UIT}
                         >
-                          {c.naam} <span>({c.aantal})</span>
+                          {c.naam}&nbsp;<span className="font-semibold">({c.aantal})</span>
                         </Link>
                       </li>
                     );
@@ -119,80 +128,48 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
               </nav>
             )}
             {tag && (
-              <p className="flex flex-wrap items-center gap-2 text-sm text-foreground/70">
+              <p className="m-0 flex flex-wrap items-center gap-2 text-[14px] text-ink-soft">
                 Berichten met de tag
-                <span className="rounded-full bg-accent-zacht px-3 py-1 font-medium text-accent">#{tag}</span>
-                <Link
-                  href={blogHref({ categorie })}
-                  className="text-foreground/70 underline underline-offset-4 hover:text-accent"
-                >
+                <span className="rounded-full bg-berry px-3 py-0.5 font-bold text-white">#{tag}</span>
+                <TekstLink href={blogHref({ categorie })} className="text-[14px] text-ink">
                   filter wissen
-                </Link>
+                </TekstLink>
               </p>
             )}
           </div>
         )}
 
-        {toonUitgelicht && uitgelicht && (
-          <article className="group relative grid overflow-hidden rounded-3xl bg-kaart shadow-sm ring-1 ring-foreground/5 transition-shadow focus-within:ring-2 focus-within:ring-accent hover:shadow-md md:grid-cols-[1.25fr_1fr]">
-            <BlogBeeld bericht={uitgelicht} prioriteit decoratief sizes="(min-width: 1024px) 570px, (min-width: 768px) 55vw, 100vw" className="aspect-[3/2] w-full md:aspect-auto md:min-h-80" />
-            <div className="flex flex-col justify-center gap-3 p-6 sm:p-8">
-              <p className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-widest uppercase">
-                <span className="rounded-full bg-accent px-2.5 py-0.5 text-background">{t.uitgelicht_label}</span>
-                {uitgelicht.categorie && <span className="text-accent">{uitgelicht.categorie}</span>}
-              </p>
-              <h2 className="font-serif text-3xl leading-tight font-semibold text-balance break-words hyphens-auto sm:text-4xl">
-                <Link
-                  href={`/blog/${uitgelicht.slug}`}
-                  className="outline-none after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
-                >
-                  {uitgelicht.titel}
-                </Link>
-              </h2>
-              {uitgelicht.samenvatting && <p className="text-foreground/70">{uitgelicht.samenvatting}</p>}
-              <BerichtMeta bericht={uitgelicht} className="mt-2" />
-            </div>
-          </article>
-        )}
+        {toonUitgelicht && uitgelicht && <ArtikelUitgelicht bericht={uitgelicht} label={t.uitgelicht_label} />}
 
         {leeg ? (
           <section className="mx-auto flex max-w-xl flex-col items-center gap-3 py-10 text-center">
-            <span className="font-serif text-5xl text-accent/60 italic" aria-hidden="true">
-              ~
-            </span>
-            <h2 className="font-serif text-2xl font-semibold">{gefilterd ? t.leeg_filter : t.leeg_titel}</h2>
+            <h2 className={`${H3} text-[30px]`}>{gefilterd ? t.leeg_filter : t.leeg_titel}</h2>
             {gefilterd ? (
-              <Link href="/blog" className="text-accent underline underline-offset-4">
+              <Knop href="/blog" variant="outline" klein>
                 Bekijk alle berichten
-              </Link>
+              </Knop>
             ) : (
-              <p className="text-foreground/70">{t.leeg_tekst}</p>
+              <p className="m-0 text-ink-soft">{t.leeg_tekst}</p>
             )}
           </section>
         ) : (
           berichten.length > 0 && (
             <section aria-label="Berichten">
-              <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {berichten.map((b) => (
-                  <li key={b.id}>
-                    <BlogKaart bericht={b} kop="h2" />
-                  </li>
-                ))}
-              </ul>
+              <ArtikelRaster berichten={berichten} kop="h2" />
             </section>
           )
         )}
 
         {p.paginas > 1 && (
-          <nav aria-label="Paginering" className="flex flex-wrap items-center justify-center gap-2 text-sm">
+          <nav aria-label="Paginering" className="flex flex-wrap items-center justify-center gap-2">
             {p.vorige ? (
-              <Link href={href(p.vorige)} rel="prev" className={PIL_UIT}>
-                ← Vorige
+              <Link href={href(p.vorige)} rel="prev" className={PAGINA_UIT}>
+                <span aria-hidden="true">←</span>&nbsp;Vorige
               </Link>
             ) : null}
             {paginaNummers(p.pagina, p.paginas).map((n, i) =>
               n === "…" ? (
-                <span key={`gat${i}`} className="px-1 text-foreground/40" aria-hidden="true">
+                <span key={`gat${i}`} className="px-1 text-ink-soft" aria-hidden="true">
                   …
                 </span>
               ) : (
@@ -201,31 +178,29 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
                   href={href(n)}
                   aria-current={n === p.pagina ? "page" : undefined}
                   aria-label={`Pagina ${n}`}
-                  className={n === p.pagina ? PIL_AAN : PIL_UIT}
+                  className={n === p.pagina ? PAGINA_AAN : PAGINA_UIT}
                 >
                   {n}
                 </Link>
               ),
             )}
             {p.volgende ? (
-              <Link href={href(p.volgende)} rel="next" className={PIL_UIT}>
-                Volgende →
+              <Link href={href(p.volgende)} rel="next" className={PAGINA_UIT}>
+                Volgende&nbsp;<span aria-hidden="true">→</span>
               </Link>
             ) : null}
           </nav>
         )}
 
         {tags.length > 0 && (
-          <nav aria-label="Onderwerpen" className="border-t border-foreground/10 pt-8">
-            <h2 className="mb-3 text-sm font-medium text-foreground/70">Onderwerpen</h2>
-            <ul className="flex flex-wrap gap-2">
+          <nav aria-labelledby="onderwerpen" className="border-t border-line pt-8">
+            <h2 id="onderwerpen" className={`${BOVENSCHRIFT} font-sans`}>
+              Onderwerpen
+            </h2>
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
               {tags.slice(0, 20).map((tg) => (
                 <li key={tg.naam}>
-                  <Link
-                    href={blogHref({ tag: tg.naam })}
-                    aria-current={tg.naam === tag ? "page" : undefined}
-                    className="inline-block rounded-full bg-accent-zacht/70 px-3 py-1 text-xs text-foreground/70 hover:text-accent focus-visible:outline-2 focus-visible:outline-accent aria-[current=page]:bg-accent aria-[current=page]:text-background"
-                  >
+                  <Link href={blogHref({ tag: tg.naam })} aria-current={tg.naam === tag ? "page" : undefined} className={TAG}>
                     #{tg.naam}
                   </Link>
                 </li>
@@ -235,17 +210,17 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
         )}
       </div>
 
-      <section className="bg-kaart">
-        <div className="mx-auto w-full max-w-5xl px-6 py-16">
-          <NieuwsbriefAanmelden teksten={nieuwsbrief} toestemming={<Opmaak tekst={nieuwsbrief.toestemming_tekst} />} />
-          <p className="mt-6 text-center text-xs text-foreground/70">
+      <InhoudNieuwsbrief
+        teksten={nieuwsbrief}
+        onder={
+          <p className="mt-5 mb-0 text-center text-[13px] text-ink-soft">
             Liever een feedlezer?{" "}
-            <a href="/blog/rss.xml" className="underline underline-offset-4 hover:text-accent">
+            <a href="/blog/rss.xml" className="font-bold text-ink underline underline-offset-[5px] hover:text-berry">
               Volg de blog via RSS
             </a>
           </p>
-        </div>
-      </section>
+        }
+      />
     </main>
   );
 }

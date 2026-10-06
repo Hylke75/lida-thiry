@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Lichaam } from "@/components/Lichaam";
 import { Opmaak } from "@/components/Opmaak";
 import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
-import { berichtBeeld } from "@/components/blog/BlogKaart";
+import { ArtikelKaart } from "@/components/site/ArtikelKaart";
 import { BeeldPlek } from "@/components/site/BeeldPlek";
 import { Bovenschrift, Container, KleurLint, Knop, KopTekst, Pijl, SectieIntro, SectieKop, TekstLink } from "@/components/site/Basis";
 import {
@@ -347,38 +347,11 @@ const Blog: Blok = ({ blog, blogberichten }) => {
           }
         />
         <ul className="m-0 grid list-none grid-cols-1 gap-5 p-0 desktop:grid-cols-3">
-          {blogberichten.map((b) => {
-            const beeld = berichtBeeld(b);
-            const href = `/blog/${b.slug}`;
-            return (
-              <li key={b.id}>
-                <article className="group flex h-full flex-col overflow-hidden border border-line bg-white">
-                  <BeeldPlek
-                    src={beeld?.url}
-                    alt=""
-                    sizes="(min-width: 981px) 380px, 100vw"
-                    vlak="bg-sky"
-                    className="aspect-[1.35/1]"
-                    beeldKlasse="transition-transform duration-500 motion-safe:group-hover:scale-[1.035]"
-                  />
-                  <div className="flex flex-1 flex-col items-start p-6">
-                    {b.categorie && (
-                      <p className="m-0 text-[11px] font-extrabold tracking-[0.1em] text-berry uppercase">{b.categorie}</p>
-                    )}
-                    <h3 className={`${H3} mt-[10px] mb-5 text-[25px]`}>
-                      <Link href={href} className="hover:text-berry hover:underline hover:decoration-1 hover:underline-offset-4">
-                        {b.titel}
-                      </Link>
-                    </h3>
-                    {/* Dubbel met de titellink: alleen voor de muis, niet in de tabvolgorde. */}
-                    <Link href={href} tabIndex={-1} aria-hidden="true" className={`${KLEINE_LINK} mt-auto`}>
-                      {blog.leesVerder} <Pijl />
-                    </Link>
-                  </div>
-                </article>
-              </li>
-            );
-          })}
+          {blogberichten.map((b) => (
+            <li key={b.id}>
+              <ArtikelKaart bericht={b} leesVerder={blog.leesVerder} />
+            </li>
+          ))}
         </ul>
       </Container>
     </section>

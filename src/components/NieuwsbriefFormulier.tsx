@@ -4,6 +4,8 @@ import { meet } from "@/lib/analytics/meet";
 import { GEBEURTENISSEN } from "@/lib/analytics/regels";
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { NaamVeld } from "@/lib/nieuwsbrief/formulierregels";
+import { knopKlassen, Pijl } from "@/components/site/Basis";
+import { KLEINE_LETTERS, LABEL, MELDING_FOUT, MELDING_GOED, VERPLICHT, veldKlassen } from "@/components/site/InhoudFormulier";
 
 export interface NieuwsbriefFormulierProps {
   titel?: string;
@@ -29,8 +31,6 @@ export interface NieuwsbriefFormulierProps {
   bovenschrift?: string;
 }
 
-const veld =
-  "rounded-lg border border-foreground/15 bg-kaart px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /**
  * Aanmeldformulier voor de nieuwsbrief: het standaard aanmeldblok of een
@@ -177,65 +177,69 @@ export function NieuwsbriefFormulier({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 text-center">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 text-center">
       {titel && (
-        <Kop className={`${kop === "h1" ? "text-3xl sm:text-4xl" : "text-3xl"} font-semibold tracking-tight`}>{titel}</Kop>
+        <Kop
+          className={`mt-0 mb-0 font-serif font-normal tracking-[-0.02em] text-balance ${
+            kop === "h1"
+              ? "text-[40px] leading-[1.04] tablet:text-[clamp(40px,4.6vw,56px)]"
+              : "text-[32px] leading-[1.08] tablet:text-[40px]"
+          }`}
+        >
+          {titel}
+        </Kop>
       )}
       {tekst && (
-        <div className="flex flex-col gap-2 text-foreground/70 [&_a]:text-accent [&_a]:underline [&_ul]:list-inside [&_ul]:list-disc">
+        <div className="flex flex-col gap-2 text-ink-soft dark:text-foreground/75 [&_a]:font-bold [&_a]:text-berry [&_a]:underline [&_a]:underline-offset-[5px] dark:[&_a]:text-accent [&_p]:m-0 [&_ul]:list-inside [&_ul]:list-disc">
           {tekst}
         </div>
       )}
       {gelukt ? (
-        <div role="status" className="flex flex-col gap-2">
-          <p className="whitespace-pre-line rounded-2xl bg-accent-zacht px-5 py-4 text-foreground/80">{succes}</p>
+        <div role="status" className="mt-2 flex flex-col gap-2">
+          <p className={`${MELDING_GOED} whitespace-pre-line`}>{succes}</p>
           {voorbeeld && (
-            <button type="button" onClick={() => setGelukt(false)} className="text-xs text-foreground/70 underline underline-offset-4">
+            <button type="button" onClick={() => setGelukt(false)} className="text-xs text-ink-soft underline underline-offset-4 dark:text-foreground/75">
               Voorbeeld: er is niets verstuurd. Terug naar het formulier
             </button>
           )}
         </div>
       ) : (
-        <form onSubmit={verstuur} className="mt-2 flex flex-col gap-3 text-left">
+        <form onSubmit={verstuur} className="mt-3 flex flex-col gap-4 text-left">
           {honeypot}
-          <div className={metNaam ? "grid gap-3 sm:grid-cols-[1fr_1.4fr]" : "grid gap-3"}>
+          <div className={metNaam ? "grid gap-4 tablet:grid-cols-[1fr_1.4fr]" : "grid gap-4"}>
             {metNaam && (
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-foreground/70">
+              <label className="flex flex-col gap-2">
+                <span className={LABEL}>
                   {naamLabel}
-                  {naamVeld === "verplicht" && <span className="text-accent"> *</span>}
+                  {naamVeld === "verplicht" && <span className={VERPLICHT}> *</span>}
                 </span>
                 <input
                   name="naam"
                   autoComplete="given-name"
                   maxLength={120}
                   required={naamVeld === "verplicht"}
-                  className={veld}
+                  className={veldKlassen()}
                 />
               </label>
             )}
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-foreground/70">
+            <label className="flex flex-col gap-2">
+              <span className={LABEL}>
                 {emailLabel}
-                <span className="text-accent"> *</span>
+                <span className={VERPLICHT}> *</span>
               </span>
-              <input name="email" type="email" required autoComplete="email" maxLength={254} className={veld} />
+              <input name="email" type="email" required autoComplete="email" maxLength={254} className={veldKlassen()} />
             </label>
           </div>
           {fout && (
-            <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            <p role="alert" className={MELDING_FOUT}>
               {fout}
             </p>
           )}
-          <button
-            disabled={bezig}
-            className="mx-auto mt-1 rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
+          <button disabled={bezig} className={`${knopKlassen()} mx-auto mt-1 w-full cursor-pointer tablet:w-auto`}>
             {bezig ? "Bezig…" : knop}
+            {!bezig && <Pijl />}
           </button>
-          <div className="text-center text-xs text-foreground/70 [&_a]:text-accent [&_a]:underline [&_p]:mt-1">
-            {toestemming}
-          </div>
+          <div className={`${KLEINE_LETTERS} text-center [&_p]:mt-1`}>{toestemming}</div>
         </form>
       )}
     </div>

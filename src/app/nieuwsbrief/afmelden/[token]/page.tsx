@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Opmaak } from "@/components/Opmaak";
+import { knopKlassen } from "@/components/site/Basis";
+import { KLEINE_LETTERS, MELDING_FOUT } from "@/components/site/InhoudFormulier";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { NIEUWSBRIEF_AFMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { contactViaToken } from "@/lib/nieuwsbrief/beheer";
@@ -14,9 +16,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const hoofdknop =
-  "rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90";
-const tweedeKnop = "rounded-full border border-accent/40 px-6 py-2.5 text-sm font-medium text-accent hover:bg-accent-zacht";
+const hoofdknop = `${knopKlassen()} cursor-pointer`;
+const tweedeKnop = `${knopKlassen({ variant: "outline", klein: true })} cursor-pointer`;
 
 // Afmelden gebeurt pas na een klik op de knop (POST): virusscanners en
 // linkvoorbeelden openen links in mails automatisch, en mogen niemand afmelden.
@@ -33,7 +34,7 @@ export default async function AfmeldPagina({
   if (!contact) return <Kader titel={t.ongeldig_titel} tekst={t.ongeldig_tekst} />;
 
   const fout = stap === "fout" && (
-    <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+    <p role="alert" className={MELDING_FOUT}>
       Er ging iets mis. Probeer het nog eens.
     </p>
   );
@@ -60,11 +61,11 @@ export default async function AfmeldPagina({
     <Kader titel={t.afgemeld_titel} tekst={t.afgemeld_tekst}>
       {fout}
       {contact.status === "afgemeld" && (
-        <form action={opnieuwAanmelden} className="mt-6 flex flex-col items-center gap-3 border-t border-foreground/10 pt-6">
+        <form action={opnieuwAanmelden} className="mt-4 flex w-full flex-col items-center gap-4 border-t border-line pt-7">
           <input type="hidden" name="token" value={token} />
-          <p className="text-sm text-foreground/70">{t.opnieuw_tekst}</p>
+          <p className="m-0 text-[15px] text-ink-soft">{t.opnieuw_tekst}</p>
           <button className={tweedeKnop}>{t.opnieuw_knop}</button>
-          <div className="text-xs text-foreground/50 [&_a]:text-accent [&_a]:underline">
+          <div className={KLEINE_LETTERS}>
             <Opmaak tekst={t.opnieuw_toestemming} />
           </div>
         </form>

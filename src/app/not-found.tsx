@@ -4,7 +4,13 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { WEBSITE_FOUT } from "@/lib/inhoud/groepen/website";
 import { haalLaatste } from "@/lib/blog/publiek";
 import { haalPagina } from "@/lib/paginas/publiek";
-import { BlogKaart } from "@/components/blog/BlogKaart";
+import { ArtikelRaster } from "@/components/site/ArtikelKaart";
+import { Container, Knop, Pijl, SectieKop, TekstLink } from "@/components/site/Basis";
+import { InhoudKop } from "@/components/site/InhoudKop";
+import { H3, SECTIE } from "@/components/site/stijl";
+
+/** Gekleurde rand bovenaan de suggesties (zoals de stappen op de homepage). */
+const RANDEN = ["border-t-coral", "border-t-sage", "border-t-butter", "border-t-sky"] as const;
 
 export const metadata: Metadata = {
   title: "Pagina niet gevonden",
@@ -32,55 +38,53 @@ export default async function NietGevonden() {
 
   return (
     <main className="flex w-full flex-1 flex-col">
-      <section className="bg-accent-zacht/60">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-6 py-16 text-center sm:py-24">
-          <span className="rounded-full border border-accent/30 px-3 py-1 text-xs font-medium uppercase tracking-widest text-accent">
-            404
-          </span>
-          <h1 className="text-balance text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">{t.nietGevondenTitel}</h1>
-          <p className="max-w-xl text-balance text-lg text-foreground/70">{t.nietGevondenTekst}</p>
-          <Link
-            href="/"
-            className="rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            {t.homeKnop}
-          </Link>
-        </div>
-      </section>
+      <InhoudKop
+        midden
+        bovenschrift="Foutcode 404"
+        titel={t.nietGevondenTitel}
+        intro={t.nietGevondenTekst}
+        onder={
+          <div className="mt-3">
+            <Knop href="/">{t.homeKnop}</Knop>
+          </div>
+        }
+      />
 
-      <section aria-labelledby="suggesties" className="mx-auto w-full max-w-5xl px-6 py-14">
-        <h2 id="suggesties" className="text-center text-2xl font-semibold tracking-tight">
-          {t.suggestiesTitel}
-        </h2>
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {suggesties.map((s) => (
-            <li key={s.href}>
-              <Link
-                href={s.href}
-                className="flex h-full flex-col gap-1.5 rounded-2xl bg-kaart p-5 shadow-sm ring-1 ring-foreground/5 transition-colors hover:ring-accent/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-              >
-                <span className="font-semibold text-accent">{s.label} →</span>
-                <span className="text-sm text-foreground/65">{s.uitleg}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+      <section aria-labelledby="suggesties" className={SECTIE}>
+        <Container>
+          <SectieKop id="suggesties" variant="midden" titel={t.suggestiesTitel} />
+          <ul className="m-0 grid list-none grid-cols-1 gap-[18px] p-0 tablet:grid-cols-2 desktop:grid-cols-4">
+            {suggesties.map((s, i) => (
+              <li key={s.href}>
+                <Link
+                  href={s.href}
+                  className={`group flex h-full flex-col gap-2 border-t-[5px] bg-white px-6 py-7 shadow-[0_14px_40px_rgba(58,40,52,.06)] transition-transform motion-safe:hover:-translate-y-0.5 ${RANDEN[i % RANDEN.length]}`}
+                >
+                  <span className={`${H3} text-[23px] group-hover:text-berry`}>
+                    {s.label}&nbsp;<Pijl />
+                  </span>
+                  <span className="text-[15px] text-ink-soft">{s.uitleg}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Container>
       </section>
 
       {berichten.length > 0 && (
-        <section aria-labelledby="nieuw-op-blog" className="bg-kaart">
-          <div className="mx-auto w-full max-w-5xl px-6 py-14">
-            <h2 id="nieuw-op-blog" className="text-center text-2xl font-semibold tracking-tight">
-              {t.blogTitel}
-            </h2>
-            <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {berichten.map((b) => (
-                <li key={b.id}>
-                  <BlogKaart bericht={b} />
-                </li>
-              ))}
-            </ul>
-          </div>
+        <section aria-labelledby="nieuw-op-blog" className={`${SECTIE} bg-[#fffaf4]`}>
+          <Container>
+            <SectieKop
+              id="nieuw-op-blog"
+              titel={t.blogTitel}
+              rechts={
+                <TekstLink href="/blog" pijl>
+                  Alle artikelen
+                </TekstLink>
+              }
+            />
+            <ArtikelRaster berichten={berichten} />
+          </Container>
         </section>
       )}
     </main>

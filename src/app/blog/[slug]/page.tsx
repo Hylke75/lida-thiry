@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BlogBeeld, BlogKaart, berichtBeeld } from "@/components/blog/BlogKaart";
+import { BlogBeeld, berichtBeeld } from "@/components/blog/BlogKaart";
 import { KopieerLink } from "@/components/blog/KopieerLink";
-import { NieuwsbriefAanmelden } from "@/components/NieuwsbriefAanmelden";
 import { Opmaak } from "@/components/Opmaak";
+import { ArtikelRaster } from "@/components/site/ArtikelKaart";
+import { Bovenschrift, Container, KleurLint, knopKlassen, SectieKop, TekstLink } from "@/components/site/Basis";
+import { INTRO, KOP_ACHTERGROND } from "@/components/site/InhoudKop";
+import { InhoudNieuwsbrief } from "@/components/site/InhoudNieuwsbrief";
+import { InhoudOproep } from "@/components/site/InhoudOproep";
+import { InhoudProza } from "@/components/site/InhoudProza";
+import { BOVENSCHRIFT, CONTAINER, SECTIE } from "@/components/site/stijl";
 import { haalBericht, haalGerelateerd } from "@/lib/blog/publiek";
 import { leestijdMinuten, metaOmschrijving } from "@/lib/blog/regels";
 import { blogHref, formatteerDatum } from "@/lib/blog/lijst";
@@ -66,20 +72,18 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const DEEL_KNOP =
-  "inline-flex items-center rounded-full bg-kaart px-4 py-2 text-sm text-foreground/70 ring-1 ring-foreground/10 transition-colors hover:text-accent hover:ring-accent/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+/** Deelknoppen: kleine outline-pillen (secundair, naast elkaar). */
+const DEEL_KNOP = `${knopKlassen({ variant: "outline", klein: true })} cursor-pointer`;
 
-// Typografie voor de berichttekst (de elementen uit <Opmaak> hebben geen eigen klassen).
-const PROZA = [
-  "flex flex-col gap-5 text-[1.0625rem] leading-[1.8] text-foreground/85 [overflow-wrap:anywhere]",
-  "[&_h2]:mt-8 [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:text-foreground sm:[&_h2]:text-3xl",
-  "[&_h3]:mt-4 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-foreground",
-  "[&_a]:text-accent [&_a]:underline [&_a]:decoration-accent/40 [&_a]:underline-offset-4 [&_a:hover]:decoration-accent",
-  "[&_strong]:font-semibold [&_strong]:text-foreground",
-  "[&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-6 [&_li]:marker:text-accent",
-  "[&_img]:my-3 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-2xl [&_img]:shadow-sm",
-  "[&>p:first-child]:text-xl [&>p:first-child]:leading-relaxed [&>p:first-child]:text-foreground",
-].join(" ");
+/** Link in het kruimelpad: ruim genoeg om aan te tikken. */
+const KRUIMEL = "inline-flex min-h-8 items-center hover:text-berry hover:underline hover:underline-offset-4";
+
+/** h1 van een bericht: iets kleiner dan op andere pagina's, titels zijn vaak lang. */
+const H1_BERICHT =
+  "mt-0 mb-0 font-serif text-[38px] leading-[1.06] font-normal tracking-[-0.02em] text-balance break-words hyphens-auto tablet:text-[clamp(40px,4.6vw,56px)]";
+
+/** Breedte van de leeskolom (max. ~720 px). */
+const LEESKOLOM = `${CONTAINER} max-w-[720px]`;
 
 export default async function BlogBerichtPagina({ params }: { params: Params }) {
   const { slug } = await params;
@@ -119,79 +123,85 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: veiligeJson([jsonLd, breadcrumbs]) }} />
 
       <article>
-        <header className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 pt-10 sm:pt-14">
-          <nav aria-label="Kruimelpad" className="text-sm text-foreground/50">
-            <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <li>
-                <Link href="/" className="hover:text-accent">
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden="true">/</li>
-              <li>
-                <Link href="/blog" className="hover:text-accent">
-                  Blog
-                </Link>
-              </li>
-              {b.categorie && (
-                <>
-                  <li aria-hidden="true">/</li>
-                  <li>
-                    <Link href={blogHref({ categorie: b.categorie })} className="hover:text-accent">
-                      {b.categorie}
-                    </Link>
-                  </li>
-                </>
-              )}
-            </ol>
-          </nav>
+        <header className={KOP_ACHTERGROND}>
+          <div className={`${LEESKOLOM} flex flex-col gap-5 pt-10 pb-12 tablet:pt-14 tablet:pb-14`}>
+            <nav aria-label="Kruimelpad" className="text-[13px] font-semibold text-ink-soft">
+              <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0">
+                <li>
+                  <Link href="/" className={KRUIMEL}>
+                    Home
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li>
+                  <Link href="/blog" className={KRUIMEL}>
+                    Blog
+                  </Link>
+                </li>
+                {b.categorie && (
+                  <>
+                    <li aria-hidden="true">/</li>
+                    <li>
+                      <Link href={blogHref({ categorie: b.categorie })} className={KRUIMEL}>
+                        {b.categorie}
+                      </Link>
+                    </li>
+                  </>
+                )}
+              </ol>
+            </nav>
 
-          {b.categorie && (
-            <p className="text-xs font-medium tracking-widest text-accent uppercase">{b.categorie}</p>
-          )}
-          <h1 className="font-serif text-4xl leading-[1.15] font-semibold tracking-tight text-balance break-words hyphens-auto sm:text-5xl">
-            {b.titel}
-          </h1>
-          {b.samenvatting && <p className="text-lg text-balance text-foreground/70">{b.samenvatting}</p>}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-y border-foreground/10 py-3 text-sm text-foreground/60">
-            <span className="flex items-center gap-2">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-zacht font-serif text-sm text-accent"
-                aria-hidden="true"
-              >
-                {(b.auteur || "Lida Thiry")
-                  .split(/\s+/)
-                  .map((w) => w.charAt(0))
-                  .slice(0, 2)
-                  .join("")}
+            <div>
+              {b.categorie && <Bovenschrift>{b.categorie}</Bovenschrift>}
+              <h1 className={H1_BERICHT}>{b.titel}</h1>
+            </div>
+            {b.samenvatting && <p className={INTRO}>{b.samenvatting}</p>}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-[14px] text-ink-soft">
+              <span className="flex items-center gap-2.5">
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-coral-soft font-serif text-[16px] text-berry"
+                  aria-hidden="true"
+                >
+                  {(b.auteur || "Lida Thiry")
+                    .split(/\s+/)
+                    .map((w) => w.charAt(0))
+                    .slice(0, 2)
+                    .join("")}
+                </span>
+                <span className="font-bold text-ink">{b.auteur || "Lida Thiry"}</span>
               </span>
-              <span className="font-medium text-foreground/80">{b.auteur || "Lida Thiry"}</span>
-            </span>
-            <span aria-hidden="true">·</span>
-            {b.gepubliceerd_op && <time dateTime={b.gepubliceerd_op}>{formatteerDatum(b.gepubliceerd_op)}</time>}
-            <span aria-hidden="true">·</span>
-            <span>{leestijdMinuten(b.inhoud)} min lezen</span>
+              <span aria-hidden="true">·</span>
+              {b.gepubliceerd_op && <time dateTime={b.gepubliceerd_op}>{formatteerDatum(b.gepubliceerd_op)}</time>}
+              <span aria-hidden="true">·</span>
+              <span>{leestijdMinuten(b.inhoud)} min lezen</span>
+            </div>
           </div>
+          <KleurLint />
         </header>
 
         {b.omslag_url && (
-          <figure className="mx-auto mt-8 w-full max-w-5xl px-0 sm:px-6">
-            <BlogBeeld bericht={b} prioriteit sizes="(min-width: 1024px) 976px, 100vw" className="aspect-[16/9] w-full sm:rounded-3xl" />
+          <figure className={`${CONTAINER} mx-auto mt-10 mb-0 max-w-[980px] tablet:mt-14`}>
+            <BlogBeeld
+              bericht={b}
+              prioriteit
+              sizes="(min-width: 1020px) 980px, 100vw"
+              className="aspect-[16/9] w-full rounded-ontwerp-md tablet:rounded-ontwerp-lg"
+            />
           </figure>
         )}
 
-        <div className="mx-auto mt-10 w-full max-w-[68ch] px-6">
-          <div className={PROZA}>
-            <Opmaak tekst={b.inhoud} afmetingen={afmetingen} beeldSizes="(min-width: 768px) 680px, 100vw" />
-          </div>
+        <div className={`${LEESKOLOM} pt-10 tablet:pt-14`}>
+          <InhoudProza intro>
+            <Opmaak tekst={b.inhoud} afmetingen={afmetingen} beeldSizes="(min-width: 760px) 720px, 100vw" />
+          </InhoudProza>
 
           {b.tags.length > 0 && (
-            <ul className="mt-10 flex flex-wrap gap-2" aria-label="Tags">
+            <ul className="mt-12 mb-0 flex list-none flex-wrap gap-2 p-0" aria-label="Tags">
               {b.tags.map((tag) => (
                 <li key={tag}>
                   <Link
                     href={blogHref({ tag })}
-                    className="inline-block rounded-full bg-accent-zacht/70 px-3 py-1 text-xs text-foreground/70 hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+                    className="inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-ink-soft hover:border-berry hover:text-berry"
                   >
                     #{tag}
                   </Link>
@@ -200,8 +210,8 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
             </ul>
           )}
 
-          <section aria-labelledby="delen" className="mt-8 flex flex-col gap-3 border-t border-foreground/10 pt-6">
-            <p id="delen" className="text-sm font-medium text-foreground/60">
+          <section aria-labelledby="delen" className="mt-8 flex flex-col gap-3 border-t border-line pt-6">
+            <p id="delen" className={`${BOVENSCHRIFT} mb-1`}>
               {t.delen_label}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -223,43 +233,31 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
       </article>
 
       {/* Oproep tot de test */}
-      <aside className="mx-auto mt-14 w-full max-w-3xl px-6">
-        <div className="relative overflow-hidden rounded-3xl bg-accent-zacht/70 px-6 py-10 text-center ring-1 ring-accent/15 sm:px-12">
-          <span className="absolute -top-10 -right-10 h-40 w-40 rounded-full border border-accent/20" aria-hidden="true" />
-          <h2 className="font-serif text-2xl font-semibold text-balance sm:text-3xl">{t.cta_titel}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-foreground/70">{t.cta_tekst}</p>
-          <Link
-            href="/bestellen"
-            className="mt-6 inline-block rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            {t.cta_knop}
-          </Link>
-        </div>
-      </aside>
+      <div className={`${CONTAINER} mt-[68px] max-w-[860px] tablet:mt-[92px]`}>
+        <InhoudOproep titel={t.cta_titel} tekst={t.cta_tekst} knop={t.cta_knop} />
+      </div>
 
       {gerelateerd.length > 0 && (
-        <section aria-labelledby="lees-ook" className="mx-auto mt-16 w-full max-w-5xl px-6">
-          <h2 id="lees-ook" className="text-center text-3xl font-semibold tracking-tight">
-            {t.lees_ook}
-          </h2>
-          <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {gerelateerd.map((g) => (
-              <li key={g.id}>
-                <BlogKaart bericht={g} />
-              </li>
-            ))}
-          </ul>
+        <section aria-labelledby="lees-ook" className={`${SECTIE} mt-[68px] bg-[#fffaf4] tablet:mt-[92px]`}>
+          <Container>
+            <SectieKop
+              id="lees-ook"
+              titel={t.lees_ook}
+              rechts={
+                <TekstLink href="/blog" pijl>
+                  Alle artikelen
+                </TekstLink>
+              }
+            />
+            <ArtikelRaster berichten={gerelateerd} />
+          </Container>
         </section>
       )}
 
-      <section className="mt-16 bg-kaart">
-        <div className="mx-auto w-full max-w-5xl px-6 py-16">
-          <NieuwsbriefAanmelden
-            teksten={{ ...nieuwsbrief, titel: t.nieuwsbrief_titel || nieuwsbrief.titel }}
-            toestemming={<Opmaak tekst={nieuwsbrief.toestemming_tekst} />}
-          />
-        </div>
-      </section>
+      <InhoudNieuwsbrief
+        className={gerelateerd.length > 0 ? "" : "mt-[68px] tablet:mt-[92px]"}
+        teksten={{ ...nieuwsbrief, titel: t.nieuwsbrief_titel || nieuwsbrief.titel }}
+      />
     </main>
   );
 }
