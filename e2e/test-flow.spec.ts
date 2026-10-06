@@ -13,8 +13,8 @@ async function volgende(page: Page, stap: string) {
 
 async function vulMaat(page: Page, titel: string, waarde: string) {
   const kaart = page.locator("section").filter({ has: page.getByRole("heading", { name: titel, exact: true }) });
-  await kaart.getByLabel("1e meting", { exact: true }).fill(waarde);
-  await kaart.getByLabel("2e meting (controle)", { exact: true }).fill(waarde);
+  await kaart.getByLabel(/^1e meting\b/).fill(waarde);
+  await kaart.getByLabel(/^2e meting \(controle\)/).fill(waarde);
 }
 
 test("gratis bestelling, test invullen en advies-PDF downloaden", async ({ page, request }) => {
@@ -40,8 +40,8 @@ test("gratis bestelling, test invullen en advies-PDF downloaden", async ({ page,
 
   // 1. Over jou
   await expect(page.getByRole("heading", { level: 1, name: "Over jou" })).toBeVisible();
-  await page.getByLabel("Lengte", { exact: true }).fill("170");
-  await page.getByLabel("Gewicht", { exact: true }).fill("65");
+  await page.getByLabel(/^Lengte\b/).fill("170");
+  await page.getByLabel(/^Gewicht\b/).fill("65");
   await volgende(page, "Bovenlichaam");
 
   // 2. Bovenlichaam (schouder is optioneel)
