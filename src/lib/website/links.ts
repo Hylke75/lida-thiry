@@ -20,7 +20,7 @@ export async function bestaandeLinks<T extends { href: string }>(items: readonly
   return items.filter((_, n) => bestaat[n]);
 }
 
-/** De eerste link die bestaat (bijv. /over-mij, anders /contact), of de laatste als reserve. */
+/** De eerste link die bestaat (bijv. /over-mij, anders /contact), of de laatste als reserve — geef als laatste een vaste route mee. */
 export async function eersteBestaandeLink(...links: string[]): Promise<string> {
   for (const l of links) if (await linkBestaat(l)) return l;
   return links[links.length - 1];

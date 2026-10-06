@@ -56,7 +56,7 @@ export interface HomepageGegevens {
   prijzen: { prijs: string; afspraak_vanaf: string };
   /** Tekst van de knop naar de test in de afsluiting (met prijs). */
   ctaTekst: string;
-  /** Link van de knop bij Over Lida (bestaande pagina, anders /contact). */
+  /** Link van de knop bij Over Lida (bestaande pagina, anders /contact of /afspraak). */
   overLink: string;
   hero: SectieWaarden<typeof WEBSITE_HERO>;
   diensten: SectieWaarden<typeof WEBSITE_DIENSTEN>;

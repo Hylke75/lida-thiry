@@ -90,7 +90,7 @@ export default async function Home() {
   const afspraakPrijzen = afspraakSoorten.map((s) => s.prijs_cent).filter((c) => c > 0);
   const afspraakVanaf = afspraakPrijzen.length ? `vanaf ${formatteerBedrag(Math.min(...afspraakPrijzen), valuta)}` : "";
   // De knop bij Over Lida: de ingestelde pagina als die bestaat, anders contact.
-  const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact");
+  const overLink = await eersteBestaandeLink(veiligeLink(over.knopLink, "/over-mij"), "/contact", "/afspraak");
 
   const gegevens: HomepageGegevens = {
     silhouetten,

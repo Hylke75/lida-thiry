@@ -323,7 +323,7 @@ export const WEBSITE_OVER = sectie({
     knopLink: {
       soort: "tekst",
       label: "Knop: link",
-      uitleg: "Bijv. /over-mij. Bestaat die pagina (nog) niet, dan gaat de knop naar /contact.",
+      uitleg: "Bijv. /over-mij. Bestaat die pagina (nog) niet, dan gaat de knop naar /contact, en als die er ook niet is naar /afspraak.",
       max: 200,
       standaard: "/over-mij",
     },
