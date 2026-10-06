@@ -30,6 +30,17 @@ export interface VastePagina {
 
 export const VASTE_PAGINAS = [
   {
+    sleutel: "figuurtest",
+    pad: "/figuurtest",
+    naam: "Figuurtest (productpagina)",
+    titel: "Online figuurtest",
+    omschrijving:
+      "Ontdek met de online figuurtest welk figuurtype je hebt en ontvang persoonlijk kledingadvies als PDF. Gewoon vanuit huis, in ongeveer 15 tot 20 minuten.",
+    sitemap: true,
+    prioriteit: 0.9,
+    frequentie: "monthly",
+  },
+  {
     sleutel: "bestellen",
     pad: "/bestellen",
     naam: "Bestellen",

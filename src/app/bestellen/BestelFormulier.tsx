@@ -35,15 +35,12 @@ export function BestelFormulier({
     setFout(null);
     setBezig(true);
     const f = new FormData(form);
+    // Geen adres: een digitaal product, en een factuur aan een consument heeft
+    // geen adres van de klant nodig. /api/bestellen accepteert factuurgegevens
+    // nog wel (oudere formulieren), maar ze zijn optioneel.
     const payload = {
       klantnaam: String(f.get("klantnaam") || ""),
       email: String(f.get("email") || ""),
-      factuurgegevens: {
-        adres: String(f.get("adres") || ""),
-        postcode: String(f.get("postcode") || ""),
-        plaats: String(f.get("plaats") || ""),
-        land: "Nederland",
-      },
       voorwaarden_akkoord: f.get("voorwaarden_akkoord") === "on",
       directe_levering_akkoord: f.get("directe_levering_akkoord") === "on",
       gratis,
@@ -84,11 +81,6 @@ export function BestelFormulier({
       />
       <Veld naam="klantnaam" label={teksten.naamLabel} autoComplete="name" verplicht />
       <Veld naam="email" label={teksten.emailLabel} type="email" autoComplete="email" verplicht />
-      <Veld naam="adres" label={teksten.adresLabel} autoComplete="street-address" />
-      <div className="grid grid-cols-1 gap-5 tablet:grid-cols-[.8fr_1.2fr]">
-        <Veld naam="postcode" label={teksten.postcodeLabel} autoComplete="postal-code" />
-        <Veld naam="plaats" label={teksten.plaatsLabel} autoComplete="address-level2" />
-      </div>
       <Veld naam="kortingscode" label={teksten.kortingscodeLabel} autoComplete="off" />
 
       <div className="mt-1 flex flex-col gap-2 border-t border-line pt-5">

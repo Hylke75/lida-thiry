@@ -52,6 +52,32 @@ export const AFSPRAKEN_BOEKEN = sectie({
       regels: 2,
       standaard: "Online een afspraak maken is op dit moment niet mogelijk. Neem gerust contact met me op.",
     },
+    geen_soorten_titel: {
+      soort: "tekst",
+      label: "Op /afspraak als er niets te boeken is: titel",
+      uitleg: "Zolang er geen actieve afspraaksoort is, toont /afspraak deze titel, de tekst hierboven en een knop naar contact.",
+      max: 120,
+      standaard: "Persoonlijk advies",
+    },
+    geen_soorten_knop: {
+      soort: "tekst",
+      label: "Op /afspraak als er niets te boeken is: knoptekst (leeg = geen knop)",
+      max: 60,
+      standaard: "Stel je vraag",
+    },
+    geen_soorten_link: {
+      soort: "tekst",
+      label: "Op /afspraak als er niets te boeken is: link van de knop",
+      uitleg: "Bijv. /contact. Bestaat die pagina (nog) niet, dan staat er geen knop.",
+      max: 200,
+      standaard: "/contact",
+    },
+    geen_soorten_test: {
+      soort: "tekst",
+      label: "Op /afspraak als er niets te boeken is: tekst van de link naar de figuurtest (leeg = geen link)",
+      max: 80,
+      standaard: "Of begin zelf met de online figuurtest",
+    },
     geen_tijden: {
       soort: "tekstvak",
       label: "Als er geen tijden vrij zijn",

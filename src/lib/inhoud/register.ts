@@ -2,6 +2,7 @@ import type { Groep, Sectie } from "./schema";
 import { WEBSITE } from "./groepen/website";
 import { CONTACT } from "./groepen/contact";
 import { BESTELLEN } from "./groepen/bestellen";
+import { FIGUURTEST } from "./groepen/figuurtest";
 import { TEST } from "./groepen/test";
 import { EMAILS } from "./groepen/emails";
 import { NIEUWSBRIEF } from "./groepen/nieuwsbrief";
@@ -18,6 +19,7 @@ export const GROEPEN: readonly Groep[] = [
   WEBSITE,
   CONTACT,
   BLOG,
+  FIGUURTEST,
   BESTELLEN,
   CADEAUBON,
   MIJN_ADVIES,

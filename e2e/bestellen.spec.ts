@@ -22,14 +22,24 @@ async function naarBestelformulier(page: Page) {
 async function vulIn(page: Page) {
   await page.getByLabel("Naam", { exact: false }).first().fill("E2E Test");
   await page.getByLabel("E-mailadres", { exact: false }).fill(`e2e+${Date.now()}@example.com`);
-  await page.getByLabel("Adres", { exact: true }).fill("Teststraat 1");
-  await page.getByLabel("Postcode").fill("1234 AB");
-  await page.getByLabel("Plaats").fill("Hilversum");
   await page.locator('input[name="voorwaarden_akkoord"]').check();
   await page.locator('input[name="directe_levering_akkoord"]').check();
 }
 
 test.describe("bestelformulier", () => {
+  test("overzicht boven het formulier en geen adresvelden (digitaal product)", async ({ page }) => {
+    await naarBestelformulier(page);
+    const overzicht = page.getByRole("heading", { level: 2 }).first();
+    await expect(overzicht).toBeVisible();
+    await expect(page.getByTestId("bestelling-prijs")).toContainText("€");
+    // Het overzicht staat boven het formulier.
+    const overzichtY = (await overzicht.boundingBox())!.y;
+    const naamY = (await page.locator('input[name="klantnaam"]').boundingBox())!.y;
+    expect(overzichtY).toBeLessThan(naamY);
+    for (const veld of ["adres", "postcode", "plaats"]) await expect(page.locator(`input[name="${veld}"]`)).toHaveCount(0);
+    await expect(page.locator('input[name="kortingscode"]')).toBeVisible();
+  });
+
   test("verplichte velden en vinkjes worden gecontroleerd", async ({ page }) => {
     let verzoeken = 0;
     await page.route("**/api/bestellen", (route) => {
@@ -71,8 +81,8 @@ test.describe("bestelformulier", () => {
       directe_levering_akkoord: true,
       gratis: false,
       website: "",
-      factuurgegevens: { adres: "Teststraat 1", postcode: "1234 AB", plaats: "Hilversum", land: "Nederland" },
     });
+    expect(ontvangen).not.toHaveProperty("factuurgegevens");
   });
 
   test("een fout van de server wordt getoond en het formulier blijft staan", async ({ page }) => {

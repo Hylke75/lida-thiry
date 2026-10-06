@@ -10,6 +10,7 @@ import {
   veiligeLink,
   voornaam,
   zonderAccent,
+  zonderDoodlopendeAfspraak,
   zonderDubbele,
 } from "../website/weergave";
 import { isGeldigAfbeeldingAdres, valideer, type Sectie } from "../inhoud/schema";
@@ -137,7 +138,16 @@ describe("kiesMenu", () => {
 
   it("het standaardmenu uit de teksten verwijst naar bestaande routes", () => {
     const items = kiesMenu([], WEBSITE_KOP.velden.menu.standaard);
-    expect(items.map((i) => i.href)).toEqual(["/bestellen", "/afspraak", "/blog", "/cadeaubon", "/over-mij", "/contact"]);
+    expect(items.map((i) => i.href)).toEqual(["/figuurtest", "/afspraak", "/blog", "/cadeaubon", "/over-mij", "/contact"]);
+  });
+
+  it("de hoofdroute is de figuurtest: knop rechtsboven, hero en eerste kaart", () => {
+    expect(WEBSITE_KOP.velden.knop.standaard).toBe("Start de figuurtest");
+    expect(WEBSITE_KOP.velden.knopLink.standaard).toBe("/figuurtest");
+    expect(WEBSITE_HERO.velden.knop.standaard).toBe("Start de figuurtest");
+    expect(WEBSITE_HERO.velden.knopLink.standaard).toBe("/figuurtest");
+    const eerste = WEBSITE_DIENSTEN.velden.kaarten.standaard[0];
+    expect([eerste.linkTekst, eerste.link]).toEqual(["Start de figuurtest", "/figuurtest"]);
   });
 
   it("zonderDubbele houdt de eerste", () => {
@@ -197,5 +207,34 @@ describe("afbeeldingsvelden in de teksten", () => {
   it("de dienstenkaarten gebruiken alleen gedeclareerde prijsvariabelen", () => {
     const prijzen = WEBSITE_DIENSTEN.velden.kaarten.standaard.map((k) => k.prijs);
     expect(prijzen).toEqual(["{prijs}", "{afspraak_vanaf}", ""]);
+  });
+});
+
+describe("zonderDoodlopendeAfspraak", () => {
+  const kaarten = [
+    { _id: "a", linkTekst: "Start de figuurtest", link: "/figuurtest" },
+    { _id: "b", linkTekst: "Plan een afspraak", link: " /afspraak " },
+    { _id: "c", linkTekst: "Bekijk de cadeaubon", link: "/cadeaubon" },
+  ];
+
+  it("laat de kaarten staan als er iets te boeken is", () => {
+    expect(zonderDoodlopendeAfspraak(kaarten, true, null)).toEqual(kaarten);
+  });
+
+  it("zonder afspraaksoorten: de kaart naar /afspraak verwijst naar contact", () => {
+    const uit = zonderDoodlopendeAfspraak(kaarten, false, { tekst: "Stel je vraag", link: "/contact" });
+    expect(uit.map((k) => [k.linkTekst, k.link])).toEqual([
+      ["Start de figuurtest", "/figuurtest"],
+      ["Stel je vraag", "/contact"],
+      ["Bekijk de cadeaubon", "/cadeaubon"],
+    ]);
+  });
+
+  it("zonder afspraaksoorten en zonder (bestaande) contactpagina: geen link", () => {
+    for (const vervanging of [null, { tekst: "", link: "/contact" }, { tekst: "Stel je vraag", link: "" }]) {
+      const uit = zonderDoodlopendeAfspraak(kaarten, false, vervanging);
+      expect(uit[1]).toMatchObject({ linkTekst: "", link: "" });
+      expect(uit[0]).toEqual(kaarten[0]);
+    }
   });
 });

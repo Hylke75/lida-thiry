@@ -3,24 +3,34 @@ import { sectie, type Groep } from "../schema";
 export const BESTELLEN_PAGINA = sectie({
   sleutel: "bestellen.pagina",
   titel: "Bestelpagina",
-  uitleg: "De kop van de bestelpagina. De prijs komt uit Beheer → Instellingen.",
-  variabelen: { prijs: "de prijs inclusief valuta, bijv. € 49,00 (wordt vet en in de accentkleur getoond)" },
+  uitleg:
+    "De kop van de bestelpagina en het overzicht van de bestelling boven het formulier. De productnaam en de prijs komen uit Beheer → Instellingen.",
   velden: {
     bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Online figuurtest" },
     titel: { soort: "tekst", label: "Titel", standaard: "Bestellen" },
-    prijsregel: {
+    overzichtTitel: { soort: "tekst", label: "Overzicht: klein label boven de productnaam", max: 60, standaard: "Je bestelling" },
+    overzichtTekst: {
+      soort: "tekstvak",
+      label: "Overzicht: korte uitleg onder de productnaam (leeg = geen)",
+      regels: 2,
+      max: 300,
+      standaard: "Direct na het betalen start je de test. Je persoonlijke advies ontvang je als PDF in je mailbox.",
+    },
+    overzichtLink: {
       soort: "tekst",
-      label: "Regel met de prijs",
-      standaard: "Online kledingadviestest — {prijs}",
+      label: "Overzicht: link naar de pagina over de figuurtest (leeg = geen link)",
+      max: 60,
+      standaard: "Wat krijg je precies?",
     },
     btw: { soort: "tekst", label: "Kleine tekst achter de prijs", standaard: "(incl. btw)" },
     geenPrijs: {
       soort: "tekstvak",
       label: "Melding als er nog geen prijs is ingesteld",
+      uitleg: "Staat ook op /figuurtest op de plek van de prijs.",
       regels: 2,
       standaard: "De prijs is nog niet ingesteld, dus bestellen is nu niet mogelijk. Kom binnenkort terug.",
     },
-    terug: { soort: "tekst", label: "Link terug naar de homepage", max: 60, standaard: "← Terug" },
+    terug: { soort: "tekst", label: "Link terug naar de pagina over de figuurtest", max: 60, standaard: "← Terug" },
   },
 });
 
@@ -33,9 +43,6 @@ export const BESTELLEN_FORMULIER = sectie({
   velden: {
     naamLabel: { soort: "tekst", label: "Veld: naam", max: 60, standaard: "Naam" },
     emailLabel: { soort: "tekst", label: "Veld: e-mailadres", max: 60, standaard: "E-mailadres" },
-    adresLabel: { soort: "tekst", label: "Veld: adres", max: 60, standaard: "Adres" },
-    postcodeLabel: { soort: "tekst", label: "Veld: postcode", max: 60, standaard: "Postcode" },
-    plaatsLabel: { soort: "tekst", label: "Veld: plaats", max: 60, standaard: "Plaats" },
     kortingscodeLabel: {
       soort: "tekst",
       label: "Veld: kortingscode of cadeaubon",

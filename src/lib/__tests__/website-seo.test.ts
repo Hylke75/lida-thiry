@@ -108,8 +108,9 @@ describe("SEO vaste pagina's", () => {
   it("sitemap: de vaste pagina's volgens de instellingen", () => {
     const paden = (s: Parameters<typeof vastePaginasInSitemap>[0]) =>
       vastePaginasInSitemap(s, "https://lida.nl").map((i) => i.url.replace("https://lida.nl", ""));
-    expect(paden({})).toEqual(["/bestellen", "/afspraak", "/cadeaubon", "/blog", "/privacy", "/voorwaarden"]);
+    expect(paden({})).toEqual(["/figuurtest", "/bestellen", "/afspraak", "/cadeaubon", "/blog", "/privacy", "/voorwaarden"]);
     expect(paden({ cadeaubon: { sitemap: false }, "mijn-advies": { sitemap: true }, privacy: { nietIndexeren: true } })).toEqual([
+      "/figuurtest",
       "/bestellen",
       "/afspraak",
       "/blog",
