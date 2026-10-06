@@ -11,6 +11,7 @@ import { REVIEWS } from "./groepen/reviews";
 import { CADEAUBON } from "./groepen/cadeaubon";
 import { MIJN_ADVIES } from "./groepen/mijn-advies";
 import { AFSPRAKEN } from "./groepen/afspraken";
+import { PDF_ADVIES } from "./groepen/pdf-advies";
 
 /** Alle groepen beheerbare teksten, in de volgorde van het beheerscherm. */
 export const GROEPEN: readonly Groep[] = [
@@ -21,6 +22,7 @@ export const GROEPEN: readonly Groep[] = [
   CADEAUBON,
   MIJN_ADVIES,
   TEST,
+  PDF_ADVIES,
   EMAILS,
   AFSPRAKEN,
   NIEUWSBRIEF,

@@ -12,6 +12,7 @@ import { BlokRuimte, PaginaWeergave } from "@/components/paginas/PaginaWeergave"
 import { haalLaatste } from "@/lib/blog/publiek";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
+import { veiligeLink } from "@/lib/website/weergave";
 import { gebruikteBlokken, paginaOmschrijving } from "@/lib/paginas/beheer";
 import { haalPagina } from "@/lib/paginas/publiek";
 import { afmetingenVoorTekst } from "@/lib/media/publiek";
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 /** {test}: korte uitnodiging met een knop naar de test (teksten uit Teksten → Blog). */
 async function TestBlok() {
   const t = await leesSectie(BLOG_ARTIKEL);
-  return <InhoudOproep kop="p" titel={t.cta_titel} tekst={t.cta_tekst} knop={t.cta_knop} />;
+  return <InhoudOproep kop="p" titel={t.cta_titel} tekst={t.cta_tekst} knop={t.cta_knop} href={veiligeLink(t.cta_link, "/bestellen")} />;
 }
 
 /** {laatste_blogs}: de drie nieuwste berichten; niets als er (nog) geen zijn. */

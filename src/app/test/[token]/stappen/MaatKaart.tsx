@@ -4,6 +4,8 @@ import { kaalLabel, metingenKomenOvereen } from "../wizard-regels";
 import { Invoer } from "./Invoer";
 import { HULPTEKST, VELDFOUT } from "@/components/site/FormulierStijl";
 import { H3 } from "@/components/site/stijl";
+import { vulIn } from "@/lib/inhoud/schema";
+import type { TestTeksten } from "@/lib/inhoud/groepen/test";
 
 /** Eén maat: meetbeeld, instructie, meting (en controlemeting) en terugkoppeling. */
 export function MaatKaart({
@@ -14,7 +16,7 @@ export function MaatKaart({
   zetWaarde,
   zetControle,
   fout,
-  tweeKeerHint,
+  teksten,
 }: {
   veld: MaatVeld;
   beeld?: string;
@@ -23,9 +25,11 @@ export function MaatKaart({
   zetWaarde: (w: string) => void;
   zetControle: (w: string) => void;
   fout: string | null;
-  tweeKeerHint: string;
+  teksten: TestTeksten["meten"];
 }) {
   const label = kaalLabel(veld.label);
+  const tweeKeerHint = teksten.twee_keer;
+  const beeldAlt = vulIn(teksten.beeld_alt, { maat: label.toLowerCase() });
   const beideIngevuld = veld.controle && waarde !== "" && controle !== "";
   const komtOvereen = beideIngevuld && metingenKomenOvereen(waarde, controle);
 
@@ -41,32 +45,32 @@ export function MaatKaart({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={beeld}
-            alt={`Zo meet je je ${label.toLowerCase()}`}
+            alt={beeldAlt}
             className="h-40 w-auto rounded-ontwerp-sm object-contain tablet:h-56"
           />
         ) : (
-          <Lichaam meet={veld.sleutel} titel={`Zo meet je je ${label.toLowerCase()}`} className="h-40 tablet:h-56" />
+          <Lichaam meet={veld.sleutel} titel={beeldAlt} className="h-40 tablet:h-56" />
         )}
       </div>
       <div className="flex flex-col gap-3">
         <h2 className={`${H3} m-0 text-[27px]`}>
           {label}
           {!veld.verplicht && (
-            <span className="ml-2 align-middle font-sans text-[12px] font-extrabold tracking-[0.1em] text-ink-soft uppercase">optioneel</span>
+            <span className="ml-2 align-middle font-sans text-[12px] font-extrabold tracking-[0.1em] text-ink-soft uppercase">{teksten.optioneel}</span>
           )}
         </h2>
         <p className="m-0 whitespace-pre-line text-[15px] text-ink-soft">
           {veld.instructie}
         </p>
         <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
-          <Invoer label={veld.controle ? "1e meting" : "Meting"} eenheid="cm" waarde={waarde} zet={zetWaarde} />
-          {veld.controle && <Invoer label="2e meting (controle)" eenheid="cm" waarde={controle} zet={zetControle} />}
+          <Invoer label={veld.controle ? teksten.eerste_meting : teksten.meting_label} eenheid="cm" waarde={waarde} zet={zetWaarde} />
+          {veld.controle && <Invoer label={teksten.tweede_meting} eenheid="cm" waarde={controle} zet={zetControle} />}
         </div>
         {fout ? (
           <p className={`${VELDFOUT} m-0`}>{fout}</p>
         ) : beideIngevuld ? (
           <p className={`m-0 text-[14px] font-bold ${komtOvereen ? "text-[#3f6b35]" : "text-[#8a5a00]"}`}>
-            {komtOvereen ? "✓ Je metingen komen overeen." : "Je metingen verschillen te veel. Meet nog een keer."}
+            {komtOvereen ? teksten.overeen : teksten.verschil}
           </p>
         ) : veld.controle && tweeKeerHint ? (
           <p className={`${HULPTEKST} m-0`}>{tweeKeerHint}</p>

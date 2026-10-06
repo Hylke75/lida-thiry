@@ -48,7 +48,7 @@ export default async function CadeaubonBedanktPage({
   let tekst = t.tekstKoper;
   if (bon && bon.bezorging === "ontvanger") {
     const w = {
-      ontvanger: bon.ontvanger_naam?.trim() || bon.ontvanger_email || "de ontvanger",
+      ontvanger: bon.ontvanger_naam?.trim() || bon.ontvanger_email || t.ontvangerReserve,
       datum: bon.verzend_op ? leesbareDatum(bon.verzend_op) : "",
     };
     tekst = vulIn(verzendenIsAanDeBeurt(bon.verzend_op) ? t.tekstOntvanger : t.tekstGepland, w);
@@ -63,22 +63,22 @@ export default async function CadeaubonBedanktPage({
     <KlantPagina midden>
       <KlantKaart accent={betaald ? "sage" : mislukt ? "coral" : "butter"} className="flex flex-col items-center gap-6">
         {betaald ? (
-          kop("Cadeaubon", t.titel, tekst)
+          kop(t.bovenschrift, t.titel, tekst)
         ) : mislukt ? (
           <>
-            {kop("Betaling", t.misluktTitel, t.misluktTekst)}
+            {kop(t.misluktBovenschrift, t.misluktTitel, t.misluktTekst)}
             <Knop href="/cadeaubon" pijl={false}>
               {t.misluktKnop}
             </Knop>
           </>
         ) : (
           <>
-            {kop("Even geduld", t.verwerkenTitel, t.verwerkenTekst)}
+            {kop(t.verwerkenBovenschrift, t.verwerkenTitel, t.verwerkenTekst)}
             {bon?.status === "aangemaakt" && <AutoVernieuwen />}
           </>
         )}
         <TekstLink href="/" className="text-[14px] text-ink-soft">
-          ← Terug naar de startpagina
+          {t.terugLink}
         </TekstLink>
       </KlantKaart>
     </KlantPagina>

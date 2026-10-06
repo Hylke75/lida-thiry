@@ -9,11 +9,17 @@ import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { AdviesPdf, type AdviesPdfProps } from "../pdf/document";
+import { AdviesPdf, standaardAdviesPdfTeksten, type AdviesPdfProps } from "../pdf/document";
 import { maakCadeaubonPdf } from "../pdf/cadeaubon";
 import { maakFactuurPdf } from "../pdf/factuur";
 import { vormUitMaten } from "../lichaam-pad";
 import { MERK_STANDAARD } from "../huisstijl";
+import { standaardWaarden } from "../inhoud/schema";
+import { CADEAUBON_MAIL, CADEAUBON_PDF } from "../inhoud/groepen/cadeaubon";
+import { BESTELLEN_FACTUUR } from "../inhoud/groepen/bestellen";
+
+/** Aantal pagina's in een PDF (de /Type /Page-objecten, niet /Pages). */
+const paginas = (pdf: Buffer) => pdf.toString("latin1").match(/\/Type\s*\/Page(?!s)/g)?.length ?? 0;
 
 const MAP = process.env.PDF_VOORBEELD_MAP;
 
@@ -94,6 +100,31 @@ describe("PDF's in de huisstijl", () => {
     expect(fonts).toMatch(/Manrope-Regular/);
     expect(fonts).toMatch(/Manrope-Bold/);
     expect(fonts).not.toMatch(/Helvetica|Times/);
+
+    // Met een ingevulde introductie- en slotpagina (Beheer → Teksten → PDF-advies) komen er twee pagina's bij.
+    const standaard = standaardAdviesPdfTeksten();
+    const metExtra = await renderToBuffer(
+      createElement(AdviesPdf, {
+        ...props,
+        teksten: {
+          ...standaard,
+          intro: {
+            bovenschrift: "Welkom",
+            titel: "Fijn dat je er *bent*, {naam}",
+            tekst: "Dit advies is speciaal voor jou gemaakt.\n\n## Zo lees je het\n\n- Begin bij je type\n- Neem het mee als je gaat winkelen",
+          },
+          slot: {
+            titel: "Tot *ziens*",
+            over: "Ik ben **Lida Thiry**, imago- en kledingadviseur.",
+            contact: "Mail me via [info@example.nl](mailto:info@example.nl).",
+            oproep: "Liever persoonlijk advies? [Maak een afspraak](https://www.example.nl/afspraak).",
+            disclaimer: "Dit advies is algemeen van aard.",
+          },
+        },
+      }) as Parameters<typeof renderToBuffer>[0],
+    );
+    bewaar("advies-met-intro-en-slot.pdf", metExtra);
+    expect(paginas(metExtra)).toBe(paginas(pdf) + 2);
   }, 30_000);
 
   it("cadeaubon (A4 liggend) met boodschap", async () => {
@@ -109,6 +140,7 @@ describe("PDF's in de huisstijl", () => {
       },
       "https://www.lidathiry.nl/bestellen",
       MERK_STANDAARD,
+      { pdf: standaardWaarden(CADEAUBON_PDF), bon: standaardWaarden(CADEAUBON_MAIL) },
     );
     bewaar("cadeaubon.pdf", pdf);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
@@ -138,6 +170,7 @@ describe("PDF's in de huisstijl", () => {
         btwProcent: 21,
       },
       MERK_STANDAARD,
+      standaardWaarden(BESTELLEN_FACTUUR),
     );
     bewaar("factuur.pdf", pdf);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");

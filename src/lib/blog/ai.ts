@@ -2,9 +2,12 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { adminClient } from "../supabase/admin";
 import { haalLichaamstypes } from "../lichaamstypes";
+import { leesSectieVers } from "../inhoud/lees";
+import { BLOG_SCHRIJFSTIJL } from "../inhoud/groepen/blog";
 import {
   berekenGebruik,
   bewerkVraag,
+  korteNaam,
   schrijfVraag,
   SCHRIJF_SCHEMA,
   suggestieVraag,
@@ -13,6 +16,7 @@ import {
   type AiGebruik,
   type Bewerking,
   type SchrijfOpdracht,
+  type Schrijfstijl,
 } from "./ai-prompt";
 import { normaliseerTags } from "./regels";
 import { slugify } from "../slug";
@@ -31,9 +35,14 @@ function client(): Anthropic {
   return new Anthropic();
 }
 
+/** De schrijfstijl uit het beheer (Beheer → Teksten → Blog → Schrijfstijl), vers gelezen; anders de standaard. */
+function leesStijl(): Promise<Schrijfstijl> {
+  return leesSectieVers(BLOG_SCHRIJFSTIJL);
+}
+
 async function systeem(): Promise<string> {
-  const types = await haalLichaamstypes().catch(() => []);
-  return systeemPrompt(types.map((t) => t.naam));
+  const [types, stijl] = await Promise.all([haalLichaamstypes().catch(() => []), leesStijl()]);
+  return systeemPrompt(types.map((t) => t.naam), stijl);
 }
 
 /**
@@ -146,7 +155,7 @@ export async function schrijfConcept(
   opdracht: SchrijfOpdracht,
 ): Promise<{ concept: Concept; gebruik: AiGebruik; gebruikId: number | null }> {
   const { tekst, gebruik, gebruikId } = await vraag({
-    vraag: schrijfVraag(opdracht),
+    vraag: schrijfVraag(opdracht, korteNaam(await leesStijl())),
     schema: SCHRIJF_SCHEMA,
     maxTokens: 32_000,
     soort: "schrijven",
@@ -176,7 +185,8 @@ export async function schrijfConcept(
 export async function bewerkMetAi(bewerking: Bewerking, tekst: string, berichtId: string | null): Promise<string> {
   if (!tekst.trim()) throw new AiFout("Er is geen tekst om te bewerken.");
   if (tekst.length > 60_000) throw new AiFout("De tekst is te lang om in één keer te bewerken. Selecteer een deel.");
-  const { tekst: nieuw } = await vraag({ vraag: bewerkVraag(bewerking, tekst), maxTokens: 32_000, soort: bewerking, berichtId });
+  const naam = korteNaam(await leesStijl());
+  const { tekst: nieuw } = await vraag({ vraag: bewerkVraag(bewerking, tekst, naam), maxTokens: 32_000, soort: bewerking, berichtId });
   if (!nieuw.trim()) throw new AiFout("De AI leverde geen tekst. Probeer het opnieuw.");
   return nieuw.trim();
 }

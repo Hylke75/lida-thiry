@@ -53,7 +53,7 @@ export default async function BestellenPage() {
 
   return (
     <KlantPagina>
-      <KlantKop bovenschrift="Online figuurtest" titel={pagina.titel} terug={{ href: "/", tekst: "← Terug" }}>
+      <KlantKop bovenschrift={pagina.bovenschrift} titel={pagina.titel} terug={{ href: "/", tekst: pagina.terug }}>
         {prijsLabel && (
           <p>
             {metPrijs(pagina.prijsregel, <strong className="font-extrabold text-ink">{prijsLabel}</strong>)}{" "}

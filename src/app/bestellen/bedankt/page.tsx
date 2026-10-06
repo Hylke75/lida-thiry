@@ -51,7 +51,7 @@ export default async function BedanktPage({
   ]);
 
   const accent = betaald ? "sage" : mislukt ? "coral" : "butter";
-  const bovenschrift = betaald ? "Betaling gelukt" : mislukt ? "Betaling" : "Even geduld";
+  const bovenschrift = betaald ? tBetaald.bovenschrift : mislukt ? tMislukt.bovenschrift : tVerwerken.bovenschrift;
   return (
     <KlantPagina midden>
       <KlantKaart accent={accent} className="flex flex-col items-center gap-6">
@@ -65,9 +65,7 @@ export default async function BedanktPage({
                 {tBetaald.knop}
               </Knop>
             ) : (
-              <KlantMelding className="text-left">
-                Je persoonlijke link naar de test staat in de bevestigingsmail. Kijk ook even in je spammap.
-              </KlantMelding>
+              <KlantMelding className="text-left">{tBetaald.geenLink}</KlantMelding>
             )}
             {tMijnAdvies.verwijzing.trim() && (
               <TekstLink href="/mijn-advies" className="text-[14px]">
@@ -93,7 +91,7 @@ export default async function BedanktPage({
           </>
         )}
         <TekstLink href="/" className="text-[14px] text-ink-soft">
-          ← Terug naar de startpagina
+          {tBetaald.terugLink}
         </TekstLink>
       </KlantKaart>
     </KlantPagina>

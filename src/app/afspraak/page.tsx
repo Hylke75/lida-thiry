@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { AfspraakBlok } from "@/components/blokken/AfspraakBlok";
 import { Bovenschrift } from "@/components/site/Basis";
 import { KlantPagina } from "@/components/site/KlantPagina";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { AFSPRAKEN_BOEKEN } from "@/lib/inhoud/groepen/afspraken";
 
 // Afspraak maken. Statisch met ISR: de soorten (tag "afspraken") en teksten (tag
 // "inhoud") komen uit de datacache; opslaan in het beheer vernieuwt ze direct.
@@ -15,12 +17,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/afspraak" },
 };
 
-export default function AfspraakPagina() {
+export default async function AfspraakPagina() {
+  const t = await leesSectie(AFSPRAKEN_BOEKEN);
   return (
     <KlantPagina breedte="midden">
-      <Bovenschrift>Persoonlijk advies</Bovenschrift>
+      {t.bovenschrift && <Bovenschrift>{t.bovenschrift}</Bovenschrift>}
       {/* Het blok heeft een eigen (zichtbare) h2; de pagina zelf heeft één h1 nodig. */}
-      <h1 className="sr-only">Afspraak maken</h1>
+      <h1 className="sr-only">{t.paginakop || "Afspraak maken"}</h1>
       <AfspraakBlok />
     </KlantPagina>
   );

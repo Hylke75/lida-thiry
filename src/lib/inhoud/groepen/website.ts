@@ -301,6 +301,16 @@ export const WEBSITE_ADVIES = sectie({
         { tekst: "Een overzicht van je eigen maten om bij het winkelen te gebruiken" },
       ],
     },
+    voorbeeldLabel: {
+      soort: "tekst",
+      label: "Voorbeeld van de PDF: klein label",
+      uitleg: "De getekende voorbeeldpagina naast de opsomming (decoratie).",
+      max: 60,
+      standaard: "Persoonlijk kledingadvies",
+    },
+    voorbeeldTitel: { soort: "tekst", label: "Voorbeeld van de PDF: titel", max: 80, standaard: "Jouw persoonlijke kledingadvies" },
+    voorbeeldType: { soort: "tekst", label: "Voorbeeld van de PDF: regel onder de titel", max: 60, standaard: "Jouw figuurtype" },
+    voorbeeldOnderschrift: { soort: "tekst", label: "Voorbeeld van de PDF: onderschrift", max: 60, standaard: "Voorbeeldweergave" },
   },
 });
 
@@ -442,6 +452,7 @@ export const WEBSITE_AFSLUITING = sectie({
       max: 60,
       standaard: "Start de test",
     },
+    knopLink: { soort: "tekst", label: "Knop: link", max: 200, standaard: "/bestellen" },
   },
 });
 
@@ -490,6 +501,27 @@ export const WEBSITE_FOUT = sectie({
     },
     opnieuwKnop: { soort: "tekst", label: "Knop: opnieuw proberen", max: 40, standaard: "Opnieuw proberen" },
     homeKnop: { soort: "tekst", label: "Knop/link naar de homepage", max: 40, standaard: "Naar de homepage" },
+    bovenschrift: { soort: "tekst", label: "Pagina niet gevonden: klein label boven de titel", max: 80, standaard: "Foutcode 404" },
+    suggesties: {
+      soort: "lijst",
+      label: "Pagina niet gevonden: suggesties",
+      uitleg:
+        "De tegels onder ‘Misschien zoek je dit’. Een lege linktekst bij / gebruikt de tekst van de knop naar de homepage, bij /contact de naam van de contactpagina uit het menu. Een suggestie naar /contact verschijnt alleen als die pagina bestaat.",
+      itemNaam: "suggestie",
+      max: 8,
+      velden: {
+        label: { soort: "tekst", label: "Linktekst", max: 60, standaard: "" },
+        uitleg: { soort: "tekst", label: "Korte uitleg", max: 160, standaard: "" },
+        link: { soort: "tekst", label: "Link (bijv. /bestellen)", max: 200, standaard: "" },
+      },
+      standaard: [
+        { label: "", uitleg: "Lees wat de kledingadviestest je oplevert.", link: "/" },
+        { label: "Doe de test", uitleg: "Ontdek je figuurtype en ontvang je persoonlijke advies.", link: "/bestellen" },
+        { label: "Blog", uitleg: "Tips en inspiratie over kleding en figuur.", link: "/blog" },
+        { label: "", uitleg: "Stel je vraag rechtstreeks aan Lida.", link: "/contact" },
+      ],
+    },
+    blogLink: { soort: "tekst", label: "Pagina niet gevonden: link naar alle blogberichten", max: 60, standaard: "Alle artikelen" },
   },
 });
 

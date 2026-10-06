@@ -3,6 +3,7 @@ import type { MaatVeld } from "@/lib/test-config";
 import { maatFout, type Antwoorden } from "../wizard-regels";
 import { MaatKaart } from "./MaatKaart";
 import { klantMeldingKlassen } from "@/components/site/KlantPagina";
+import type { TestTeksten } from "@/lib/inhoud/groepen/test";
 
 /** Een meetstap: de maatkaarten van één groep, met de meettip boven de eerste meetstap. */
 export function StapMaten({
@@ -12,7 +13,7 @@ export function StapMaten({
   toonFouten,
   meetBeelden,
   tip,
-  tweeKeerHint,
+  teksten,
 }: {
   velden: MaatVeld[];
   a: Antwoorden;
@@ -21,7 +22,8 @@ export function StapMaten({
   meetBeelden: Record<string, string>;
   /** Meettip; alleen meegeven op de eerste meetstap. */
   tip: string | null;
-  tweeKeerHint: string;
+  /** Teksten van de meetstappen (hint, labels en meldingen). */
+  teksten: TestTeksten["meten"];
 }) {
   const zet = (veld: "maten" | "controle", sleutel: string, w: string) =>
     setA((s) => ({ ...s, [veld]: { ...s[veld], [sleutel]: w } }));
@@ -43,7 +45,7 @@ export function StapMaten({
           zetWaarde={(w) => zet("maten", v.sleutel, w)}
           zetControle={(w) => zet("controle", v.sleutel, w)}
           fout={toonFouten ? maatFout(v, a) : null}
-          tweeKeerHint={tweeKeerHint}
+          teksten={teksten}
         />
       ))}
     </div>

@@ -19,7 +19,7 @@ export default async function MijnAdviesPage() {
   const t = await leesSectie(MIJN_ADVIES_PAGINA);
   return (
     <KlantPagina>
-      <KlantKop bovenschrift="Mijn advies" titel={t.titel} terug={{ href: "/", tekst: "← Terug" }}>
+      <KlantKop bovenschrift={t.bovenschrift} titel={t.titel} terug={{ href: "/", tekst: t.terug }}>
         <Opmaak tekst={t.intro} />
       </KlantKop>
       <KlantKaart>

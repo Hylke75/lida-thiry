@@ -26,15 +26,23 @@ export const dynamic = "force-dynamic";
 // Persoonlijke pagina achter de testlink: nooit in zoekmachines.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-function Melding({ titel, tekst }: { titel: string; tekst: string }) {
+function Melding({
+  titel,
+  tekst,
+  teksten,
+}: {
+  titel: string;
+  tekst: string;
+  teksten: { bovenschrift: string; start_link: string };
+}) {
   return (
     <KlantPagina midden>
       <KlantKaart accent="butter" className="flex flex-col items-center gap-6">
-        <KlantKop midden bovenschrift="Online figuurtest" titel={titel} className="mb-0! tablet:mb-0!">
+        <KlantKop midden bovenschrift={teksten.bovenschrift} titel={titel} className="mb-0! tablet:mb-0!">
           <p>{tekst}</p>
         </KlantKop>
         <TekstLink href="/" className="text-[14px] text-ink-soft">
-          ← Naar de startpagina
+          {teksten.start_link}
         </TekstLink>
       </KlantKaart>
     </KlantPagina>
@@ -83,15 +91,15 @@ export default async function TestPage({
   const meldingen = await leesSectie(TEST_MELDINGEN);
   switch (b.toestand) {
     case "onbekend":
-      return <Melding titel={meldingen.onbekend_titel} tekst={meldingen.onbekend_tekst} />;
+      return <Melding titel={meldingen.onbekend_titel} tekst={meldingen.onbekend_tekst} teksten={meldingen} />;
     case "verlopen":
-      return <Melding titel={meldingen.verlopen_titel} tekst={meldingen.verlopen_tekst} />;
+      return <Melding titel={meldingen.verlopen_titel} tekst={meldingen.verlopen_tekst} teksten={meldingen} />;
     case "niet_betaald":
-      return <Melding titel={meldingen.niet_betaald_titel} tekst={meldingen.niet_betaald_tekst} />;
+      return <Melding titel={meldingen.niet_betaald_titel} tekst={meldingen.niet_betaald_tekst} teksten={meldingen} />;
     case "al_afgerond": {
       const sleutel = b.order.toegekend_type;
       if (!sleutel) {
-        return <Melding titel={meldingen.afgerond_titel} tekst={meldingen.afgerond_tekst} />;
+        return <Melding titel={meldingen.afgerond_titel} tekst={meldingen.afgerond_tekst} teksten={meldingen} />;
       }
       const [titel, silhouet, uitslag] = await Promise.all([
         haalTypeTitel(sleutel).catch(() => null),

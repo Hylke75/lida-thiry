@@ -44,6 +44,7 @@ export const REVIEWS_FORMULIER = sectie({
   titel: "Reviewformulier",
   uitleg: "De pagina die de klant opent via de link in de mail.",
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Jouw ervaring" },
     titel: { soort: "tekst", label: "Titel", standaard: "Hoe bevalt je kledingadvies?" },
     intro: {
       soort: "tekstvak",

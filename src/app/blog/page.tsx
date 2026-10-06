@@ -92,7 +92,8 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
         midden
         bovenschrift={
           <Link href="/" className="hover:underline focus-visible:underline">
-            Lida Thiry · {t.bovenschrift}
+            {t.merk.trim() ? `${t.merk.trim()} · ` : ""}
+            {t.bovenschrift}
           </Link>
         }
         titel={t.titel}
@@ -129,10 +130,10 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
             )}
             {tag && (
               <p className="m-0 flex flex-wrap items-center gap-2 text-[14px] text-ink-soft">
-                Berichten met de tag
+                {t.tag_label}
                 <span className="rounded-full bg-berry px-3 py-0.5 font-bold text-white">#{tag}</span>
                 <TekstLink href={blogHref({ categorie })} className="text-[14px] text-ink">
-                  filter wissen
+                  {t.filter_wissen}
                 </TekstLink>
               </p>
             )}
@@ -146,7 +147,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
             <h2 className={`${H3} text-[30px]`}>{gefilterd ? t.leeg_filter : t.leeg_titel}</h2>
             {gefilterd ? (
               <Knop href="/blog" variant="outline" klein>
-                Bekijk alle berichten
+                {t.alle_berichten}
               </Knop>
             ) : (
               <p className="m-0 text-ink-soft">{t.leeg_tekst}</p>
@@ -164,7 +165,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
           <nav aria-label="Paginering" className="flex flex-wrap items-center justify-center gap-2">
             {p.vorige ? (
               <Link href={href(p.vorige)} rel="prev" className={PAGINA_UIT}>
-                <span aria-hidden="true">←</span>&nbsp;Vorige
+                <span aria-hidden="true">←</span>&nbsp;{t.vorige}
               </Link>
             ) : null}
             {paginaNummers(p.pagina, p.paginas).map((n, i) =>
@@ -186,7 +187,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
             )}
             {p.volgende ? (
               <Link href={href(p.volgende)} rel="next" className={PAGINA_UIT}>
-                Volgende&nbsp;<span aria-hidden="true">→</span>
+                {t.volgende}&nbsp;<span aria-hidden="true">→</span>
               </Link>
             ) : null}
           </nav>
@@ -195,7 +196,7 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
         {tags.length > 0 && (
           <nav aria-labelledby="onderwerpen" className="border-t border-line pt-8">
             <h2 id="onderwerpen" className={`${BOVENSCHRIFT} font-sans`}>
-              Onderwerpen
+              {t.onderwerpen}
             </h2>
             <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
               {tags.slice(0, 20).map((tg) => (
@@ -214,9 +215,9 @@ export default async function BlogOverzicht({ searchParams }: { searchParams: Zo
         teksten={nieuwsbrief}
         onder={
           <p className="mt-5 mb-0 text-center text-[13px] text-ink-soft">
-            Liever een feedlezer?{" "}
+            {t.rss_vraag}{" "}
             <a href="/blog/rss.xml" className="font-bold text-ink underline underline-offset-[5px] hover:text-berry">
-              Volg de blog via RSS
+              {t.rss_link}
             </a>
           </p>
         }

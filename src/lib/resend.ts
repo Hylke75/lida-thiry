@@ -15,6 +15,7 @@ import {
 import { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
 import { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
 import { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
+import { BESTELLEN_FACTUUR } from "./inhoud/groepen/bestellen";
 import {
   adviesMail,
   betaalherinneringMail,
@@ -68,12 +69,17 @@ export async function stuurTestlinkMail(opts: {
   overzicht?: BestelOverzicht;
   factuur?: { bestandsnaam: string; pdf: Buffer };
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(EMAILS_BEVESTIGING), leesMailAlgemeen()]);
+  const [teksten, algemeen, factuur] = await Promise.all([
+    leesSectie(EMAILS_BEVESTIGING),
+    leesMailAlgemeen(),
+    leesSectie(BESTELLEN_FACTUUR),
+  ]);
   const { onderwerp, html } = bevestigingMail(teksten, algemeen, {
     naam: opts.naam,
     link: `${siteUrl()}/test/${opts.token}`,
     geldigDagen: opts.geldigDagen,
     overzicht: opts.overzicht,
+    factuurRegel: factuur.mailRegel,
   });
 
   const { error } = await resend().emails.send({
@@ -227,7 +233,11 @@ export async function stuurCadeaubonMail(opts: {
   bonPdf: Bijlage | null;
   factuur?: (Bijlage & { factuurnummer: string }) | null;
 }) {
-  const [teksten, algemeen] = await Promise.all([leesSectie(CADEAUBON_MAIL), leesMailAlgemeen()]);
+  const [teksten, algemeen, factuurTeksten] = await Promise.all([
+    leesSectie(CADEAUBON_MAIL),
+    leesMailAlgemeen(),
+    leesSectie(BESTELLEN_FACTUUR),
+  ]);
   const basisUrl = siteUrl();
   const { onderwerp, html } = cadeaubonMail(teksten, algemeen, {
     aan: opts.aan,
@@ -235,6 +245,7 @@ export async function stuurCadeaubonMail(opts: {
     bestelUrl: `${basisUrl}/bestellen`,
     basisUrl,
     factuurnummer: opts.aan === "koper" ? opts.factuur?.factuurnummer : null,
+    factuurRegel: factuurTeksten.mailRegel,
   });
   const { error } = await resend().emails.send({
     from: afzender(),

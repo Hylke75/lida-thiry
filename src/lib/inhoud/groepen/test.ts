@@ -22,10 +22,18 @@ const TITEL_UITLEG =
 export const TEST_ALGEMEEN = sectie({
   sleutel: "test.algemeen",
   titel: "Welkom",
-  uitleg: "Boven elke stap van de test.",
-  variabelen: { naam: "naam van de klant" },
+  uitleg: "Boven elke stap van de test, en de knoppen onderaan elke stap.",
+  variabelen: {
+    naam: "naam van de klant (alleen in de welkomstregel)",
+    nummer: "nummer van de huidige stap (alleen bij ‘Stap … van …’)",
+    totaal: "aantal stappen (alleen bij ‘Stap … van …’)",
+    stap: "titel van de volgende stap (alleen op de knop ‘Volgende’)",
+  },
   velden: {
     welkom: { soort: "tekst", label: "Welkomstregel", standaard: "Hoi {naam}, welkom bij je kledingadviestest." },
+    stap_van: { soort: "tekst", label: "Klein label boven de titel van de stap", max: 60, standaard: "Stap {nummer} van {totaal}" },
+    terug_knop: { soort: "tekst", label: "Knop naar de vorige stap", max: 40, standaard: "← Terug" },
+    volgende_knop: { soort: "tekst", label: "Knop naar de volgende stap", max: 80, standaard: "Volgende: {stap} →" },
   },
 });
 
@@ -41,6 +49,30 @@ export const TEST_OVER_JOU = sectie({
       standaard:
         "We beginnen eenvoudig. Met je lengte en gewicht bepalen we je categorie. Meet je lengte zonder schoenen, met je rug tegen een muur.",
     },
+    lengte_label: {
+      soort: "tekst",
+      label: "Veld: lengte",
+      uitleg: "Ook gebruikt in het overzicht van je maten in de PDF.",
+      max: 60,
+      standaard: "Lengte",
+    },
+    lengte_voorbeeld: { soort: "tekst", label: "Voorbeeld in het veld lengte", max: 40, standaard: "bijv. 168" },
+    lengte_fout: { soort: "tekst", label: "Melding als de lengte ontbreekt", max: 120, standaard: "Vul je lengte in." },
+    gewicht_label: {
+      soort: "tekst",
+      label: "Veld: gewicht",
+      uitleg: "Ook gebruikt in het overzicht van je maten in de PDF.",
+      max: 60,
+      standaard: "Gewicht",
+    },
+    gewicht_voorbeeld: { soort: "tekst", label: "Voorbeeld in het veld gewicht", max: 40, standaard: "bijv. 65" },
+    gewicht_fout: { soort: "tekst", label: "Melding als het gewicht ontbreekt", max: 120, standaard: "Vul je gewicht in." },
+    illustratie: {
+      soort: "tekst",
+      label: "Beschrijving van de tekening (voor schermlezers)",
+      max: 80,
+      standaard: "Lengte meten",
+    },
   },
 });
 
@@ -49,6 +81,7 @@ export const TEST_METEN = sectie({
   titel: "Stappen: opmeten",
   uitleg:
     "De drie stappen waarin de klant zich opmeet. Welke maten in welke stap staan, ligt vast. De namen en instructies per maat pas je aan bij “De metingen”.",
+  variabelen: { maat: "naam van de maat in kleine letters, bijv. ‘borstomvang’ (alleen bij de beschrijving van het meetbeeld)" },
   velden: {
     tip: {
       soort: "tekstvak",
@@ -69,6 +102,23 @@ export const TEST_METEN = sectie({
       soort: "tekst",
       label: "Hint bij maten met een controlemeting",
       standaard: "Meet twee keer, zo weten we zeker dat de maat klopt.",
+    },
+    meting_label: { soort: "tekst", label: "Veld: meting (maat zonder controlemeting)", max: 40, standaard: "Meting" },
+    eerste_meting: { soort: "tekst", label: "Veld: eerste meting", max: 40, standaard: "1e meting" },
+    tweede_meting: { soort: "tekst", label: "Veld: controlemeting", max: 40, standaard: "2e meting (controle)" },
+    optioneel: { soort: "tekst", label: "Label bij maten die niet verplicht zijn", max: 30, standaard: "optioneel" },
+    overeen: { soort: "tekst", label: "Melding als de twee metingen overeenkomen", max: 120, standaard: "✓ Je metingen komen overeen." },
+    verschil: {
+      soort: "tekst",
+      label: "Melding als de twee metingen te veel verschillen",
+      max: 160,
+      standaard: "Je metingen verschillen te veel. Meet nog een keer.",
+    },
+    beeld_alt: {
+      soort: "tekst",
+      label: "Beschrijving van het meetbeeld (voor schermlezers)",
+      max: 80,
+      standaard: "Zo meet je je {maat}",
     },
   },
 });
@@ -212,6 +262,7 @@ export const TEST_UITSLAG = sectie({
       max: 60,
       standaard: "Lees alles over jouw figuurtype",
     },
+    start_link: { soort: "tekst", label: "Link naar de startpagina", max: 60, standaard: "← Naar de startpagina" },
   },
 });
 
@@ -300,6 +351,8 @@ export const TEST_MELDINGEN = sectie({
   titel: "Meldingen bij de testlink",
   uitleg: "Wat de klant ziet als de testlink (nog) niet bruikbaar is.",
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Online figuurtest" },
+    start_link: { soort: "tekst", label: "Link naar de startpagina", max: 60, standaard: "← Naar de startpagina" },
     onbekend_titel: { soort: "tekst", label: "Onbekende link: titel", standaard: "Testlink onbekend" },
     onbekend_tekst: {
       soort: "tekstvak",

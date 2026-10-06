@@ -31,7 +31,7 @@ export default async function HervatPage({
   }
 
   const kop = (titel: string, tekst: string) => (
-    <KlantKop midden bovenschrift="Je bestelling" titel={titel} className="mb-0! tablet:mb-0!">
+    <KlantKop midden bovenschrift={t.bovenschrift} titel={titel} className="mb-0! tablet:mb-0!">
       <p className="whitespace-pre-line">{tekst}</p>
     </KlantKop>
   );
@@ -65,7 +65,7 @@ export default async function HervatPage({
           <>
             {kop(t.alBetaaldTitel, t.alBetaaldTekst)}
             <Knop href="/mijn-advies" pijl={false}>
-              Mijn advies
+              {t.mijnAdviesKnop}
             </Knop>
           </>
         ) : (

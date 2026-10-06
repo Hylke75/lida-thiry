@@ -8,8 +8,30 @@ import { silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { vormUitMaten } from "@/lib/lichaam-pad";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
 import { leesMerk } from "@/lib/merk";
+import { leesSectie, leesSectieVers } from "@/lib/inhoud/lees";
+import type { Sectie, SectieWaarden } from "@/lib/inhoud/schema";
+import { PDF_ADVIES_INTRO, PDF_ADVIES_SLOT, PDF_ADVIES_VOORPAGINA, type AdviesPdfTeksten } from "@/lib/inhoud/groepen/pdf-advies";
+import { maatVeldenMetTeksten, TEST_MATEN, TEST_OVER_JOU } from "@/lib/inhoud/groepen/test";
 
 const BUCKET = ADVIEZEN_PDF;
+
+/**
+ * De beheerbare teksten van de PDF (Beheer → Teksten → PDF-advies), met de namen
+ * van de maten zoals in de test. Vers voor het voorbeeld in het beheer; anders gecachet.
+ */
+async function leesPdfTeksten(vers: boolean): Promise<AdviesPdfTeksten> {
+  const lees = <S extends Sectie>(s: S): Promise<SectieWaarden<S>> => (vers ? leesSectieVers(s) : leesSectie(s));
+  const [voorpagina, intro, slot, maten, overJou] = await Promise.all([
+    lees(PDF_ADVIES_VOORPAGINA),
+    lees(PDF_ADVIES_INTRO),
+    lees(PDF_ADVIES_SLOT),
+    lees(TEST_MATEN),
+    lees(TEST_OVER_JOU),
+  ]);
+  const maatLabels: Record<string, string> = { lengte_cm: overJou.lengte_label, gewicht_kg: overJou.gewicht_label };
+  for (const v of maatVeldenMetTeksten(maten)) maatLabels[v.sleutel] = v.label.replace(" (optioneel)", "").trim();
+  return { voorpagina, intro, slot, maten: maatLabels };
+}
 
 /**
  * Downloadt een adviesbeeld en geeft het als data-URI terug (voor de PDF).
@@ -71,10 +93,11 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
   const supabase = adminClient();
   const inhoud = await haalAdviesInhoud(sleutel);
   if (!inhoud) return null;
-  const [secties, optie, merk] = await Promise.all([
+  const [secties, optie, merk, teksten] = await Promise.all([
     pdfSecties(supabase, inhoud),
     silhouetVoorSleutel(sleutel),
     leesMerk(),
+    leesPdfTeksten(true),
   ]);
   const maten: PdfMaten = {
     lengte_cm: null,
@@ -96,6 +119,7 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
       secties={secties}
       silhouet={optie ? { naam: optie.naam, uitleg: optie.uitleg, eigenMaten: false, vorm: optie.vorm } : null}
       merk={merk}
+      teksten={teksten}
     />,
   );
 }
@@ -174,6 +198,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
       secties={secties}
       silhouet={silhouet}
       merk={await leesMerk()}
+      teksten={await leesPdfTeksten(false)}
     />,
   );
 

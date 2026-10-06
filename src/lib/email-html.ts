@@ -3,7 +3,7 @@
 // in resend.ts; zo zijn de mails te testen zonder Resend of database.
 
 import { escapeHtml, opmaakNaarHtml, type HtmlOpties } from "./inhoud/opmaak";
-import { vulIn, type SectieWaarden } from "./inhoud/schema";
+import { standaardWaarden, vulIn, type SectieWaarden } from "./inhoud/schema";
 import type {
   EMAILS_ADVIES,
   EMAILS_ALGEMEEN,
@@ -13,7 +13,8 @@ import type {
   EMAILS_MIJN_ADVIES,
 } from "./inhoud/groepen/emails";
 import type { NIEUWSBRIEF_BEVESTIGMAIL } from "./inhoud/groepen/nieuwsbrief";
-import type { CADEAUBON_KOPERMAIL, CADEAUBON_MAIL } from "./inhoud/groepen/cadeaubon";
+import { CADEAUBON_MAIL, type CADEAUBON_KOPERMAIL } from "./inhoud/groepen/cadeaubon";
+import { BESTELLEN_FACTUUR } from "./inhoud/groepen/bestellen";
 import type { REVIEWS_UITNODIGING } from "./inhoud/groepen/reviews";
 import { formatteerBedrag } from "./prijs";
 import { datumLang } from "./datum";
@@ -53,7 +54,12 @@ export interface BestelOverzicht {
 
 const STIJL: HtmlOpties["stijl"] = { a: `color:${KLEUR.berry}`, ul: "padding-left:20px" };
 
-function overzichtHtml(o: BestelOverzicht): string {
+/** De regel over de factuur (Beheer → Teksten → Bestellen → Factuur), ingevuld en veilig als HTML. */
+function factuurRegelHtml(nummer: string, regel: string = BESTELLEN_FACTUUR.velden.mailRegel.standaard): string {
+  return `<p style="${KLEIN}">${escapeHtml(vulIn(regel, { nummer }))}</p>`;
+}
+
+function overzichtHtml(o: BestelOverzicht, factuurRegel?: string): string {
   const rij = (label: string, waarde: string, vet = false) =>
     `<tr><td style="padding:${vet ? "12px" : "6px"} 0 6px;${vet ? `font-weight:700;border-top:1px solid ${KLEUR.lijn}` : `color:${KLEUR.inkZacht}`}">${label}</td><td style="padding:${vet ? "12px" : "6px"} 0 6px;text-align:right;${vet ? `font-weight:700;border-top:1px solid ${KLEUR.lijn}` : ""}">${waarde}</td></tr>`;
   const regels = [rij("Persoonlijke kledingadviestest", formatteerBedrag(o.prijsCent, o.valuta))];
@@ -62,9 +68,7 @@ function overzichtHtml(o: BestelOverzicht): string {
     regels.push(rij(label, `− ${formatteerBedrag(o.kortingCent, o.valuta)}`));
   }
   regels.push(rij("Totaal (incl. btw)", formatteerBedrag(o.totaalCent, o.valuta), true));
-  const factuur = o.factuurnummer
-    ? `<p style="${KLEIN}">Factuurnummer ${escapeHtml(o.factuurnummer)} — de factuur vind je als bijlage bij deze mail.</p>`
-    : "";
+  const factuur = o.factuurnummer ? factuurRegelHtml(o.factuurnummer, factuurRegel) : "";
   return `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:24px 0;font-size:14px;background:${KLEUR.cream};border-radius:14px"><tr><td style="padding:10px 20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px;color:${KLEUR.ink}">${regels.join("")}</table></td></tr></table>
       ${factuur}`;
@@ -102,14 +106,21 @@ function reserveLink(regel: string, url: string): string {
 export function bevestigingMail(
   t: SectieWaarden<typeof EMAILS_BEVESTIGING>,
   algemeen: Algemeen,
-  opts: { naam: string; link: string; geldigDagen: number; overzicht?: BestelOverzicht },
+  opts: {
+    naam: string;
+    link: string;
+    geldigDagen: number;
+    overzicht?: BestelOverzicht;
+    /** De regel over de factuur (Beheer → Teksten → Bestellen → Factuur); standaard de standaardtekst. */
+    factuurRegel?: string;
+  },
 ): Mail {
   const w = { naam: opts.naam, geldig_dagen: opts.geldigDagen };
   const html = omhulsel(
     `
       ${kop(t.kop, w)}
       ${alineas(t.tekst, w)}
-      ${opts.overzicht ? overzichtHtml(opts.overzicht) : ""}
+      ${opts.overzicht ? overzichtHtml(opts.overzicht, opts.factuurRegel) : ""}
       ${knop(opts.link, t.knop, "primair", "28px 0")}
       ${alineas(t.na_knop, w)}
       ${klein(t.herroeping, w)}
@@ -215,11 +226,17 @@ export interface BonGegevens {
   boodschap: string | null;
 }
 
+/** De teksten op de bon in de mail (Beheer → Teksten → Cadeaubon → E-mail met de cadeaubon). */
+type BonTeksten = Pick<
+  SectieWaarden<typeof CADEAUBON_MAIL>,
+  "bonTitel" | "bonOndertitel" | "bonVoor" | "bonVan" | "bonCodeLabel" | "bonGeldig"
+>;
+
 /** De bon als kader in de mail: bedrag, code, geldigheid en de boodschap. */
-export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
+export function bonHtml(b: BonGegevens, boodschapLabel: string, t: BonTeksten = standaardWaarden(CADEAUBON_MAIL)): string {
   const voorVan = [
-    b.ontvangerNaam ? `Voor ${escapeHtml(b.ontvangerNaam)}` : "",
-    b.koperNaam ? `van ${escapeHtml(b.koperNaam)}` : "",
+    b.ontvangerNaam ? escapeHtml(vulIn(t.bonVoor, { ontvanger: b.ontvangerNaam })) : "",
+    b.koperNaam ? escapeHtml(vulIn(t.bonVan, { koper: b.koperNaam })) : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -232,13 +249,13 @@ export function bonHtml(b: BonGegevens, boodschapLabel: string): string {
   return `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;margin:24px 0;background:${KLEUR.cream};border:2px dashed ${KLEUR.berry};border-radius:20px">
         <tr><td style="padding:28px 28px 20px;text-align:center">
-          <p style="margin:0;font-family:${LETTER_SERIF};font-size:30px;line-height:1.1;color:${KLEUR.ink}">Cadeaubon</p>
-          <p style="margin:6px 0 0;font-size:13px;color:${KLEUR.inkZacht}">Persoonlijk kledingadvies · Lida Thiry</p>
+          <p style="margin:0;font-family:${LETTER_SERIF};font-size:30px;line-height:1.1;color:${KLEUR.ink}">${escapeHtml(t.bonTitel)}</p>
+          ${t.bonOndertitel ? `<p style="margin:6px 0 0;font-size:13px;color:${KLEUR.inkZacht}">${escapeHtml(t.bonOndertitel)}</p>` : ""}
           <p style="margin:16px 0 0;font-family:${LETTER_SERIF};font-size:40px;line-height:1.1;color:${KLEUR.berry}">${formatteerBedrag(b.bedragCent, b.valuta)}</p>
           ${voorVan ? `<p style="margin:6px 0 0;font-size:14px;color:${KLEUR.inkZacht}">${voorVan}</p>` : ""}
-          <p style="margin:20px 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${KLEUR.berry}">Code</p>
+          <p style="margin:20px 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${KLEUR.berry}">${escapeHtml(t.bonCodeLabel)}</p>
           <p style="margin:0;font-family:Menlo,Consolas,monospace;font-size:22px;letter-spacing:2px;font-weight:700;color:${KLEUR.ink}"><span style="display:inline-block;padding:8px 18px;background:${KLEUR.wit};border-radius:12px">${escapeHtml(b.code)}</span></p>
-          <p style="margin:12px 0 0;font-size:12px;color:${KLEUR.inkZacht}">Geldig tot en met ${escapeHtml(datumLang(b.geldigTot))}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:${KLEUR.inkZacht}">${escapeHtml(vulIn(t.bonGeldig, { geldig_tot: datumLang(b.geldigTot) }))}</p>
         </td></tr>${boodschap}
       </table>`;
 }
@@ -257,18 +274,24 @@ function bonWaarden(b: BonGegevens) {
 export function cadeaubonMail(
   t: SectieWaarden<typeof CADEAUBON_MAIL>,
   algemeen: Algemeen,
-  opts: { aan: "koper" | "ontvanger"; bon: BonGegevens; bestelUrl: string; basisUrl: string; factuurnummer?: string | null },
+  opts: {
+    aan: "koper" | "ontvanger";
+    bon: BonGegevens;
+    bestelUrl: string;
+    basisUrl: string;
+    factuurnummer?: string | null;
+    /** De regel over de factuur (Beheer → Teksten → Bestellen → Factuur); standaard de standaardtekst. */
+    factuurRegel?: string;
+  },
 ): Mail {
   const w = bonWaarden(opts.bon);
   const naarKoper = opts.aan === "koper";
-  const factuur = naarKoper && opts.factuurnummer
-    ? `<p style="${KLEIN}">Factuurnummer ${escapeHtml(opts.factuurnummer)} — de factuur vind je als bijlage bij deze mail.</p>`
-    : "";
+  const factuur = naarKoper && opts.factuurnummer ? factuurRegelHtml(opts.factuurnummer, opts.factuurRegel) : "";
   const html = omhulsel(
     `
       ${kop(naarKoper ? t.kopKoper : t.kopOntvanger, w)}
       ${alineas(absoluteLinks(naarKoper ? t.tekstKoper : t.tekstOntvanger, opts.basisUrl), w)}
-      ${bonHtml(opts.bon, t.boodschapLabel)}
+      ${bonHtml(opts.bon, t.boodschapLabel, t)}
       ${alineas(absoluteLinks(t.gebruik, opts.basisUrl), w)}
       ${knop(opts.bestelUrl, t.knop, "primair", "28px 0")}
       ${factuur}`,
@@ -305,7 +328,7 @@ export function cadeaubonKoperMail(
     `
       ${kop(t.kop, w)}
       ${alineas(absoluteLinks(opts.verzendOp ? t.tekstGepland : t.tekstVerzonden, opts.basisUrl), w)}
-      ${bonHtml(opts.bon, bon.boodschapLabel)}
+      ${bonHtml(opts.bon, bon.boodschapLabel, bon)}
       ${alineas(absoluteLinks(t.naBon, opts.basisUrl), w)}
       ${factuur}`,
     algemeen.voettekst,

@@ -82,14 +82,14 @@ export function BestelFormulier({
         aria-hidden="true"
         className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
       />
-      <Veld naam="klantnaam" label="Naam" autoComplete="name" verplicht />
-      <Veld naam="email" label="E-mailadres" type="email" autoComplete="email" verplicht />
-      <Veld naam="adres" label="Adres" autoComplete="street-address" />
+      <Veld naam="klantnaam" label={teksten.naamLabel} autoComplete="name" verplicht />
+      <Veld naam="email" label={teksten.emailLabel} type="email" autoComplete="email" verplicht />
+      <Veld naam="adres" label={teksten.adresLabel} autoComplete="street-address" />
       <div className="grid grid-cols-1 gap-5 tablet:grid-cols-[.8fr_1.2fr]">
-        <Veld naam="postcode" label="Postcode" autoComplete="postal-code" />
-        <Veld naam="plaats" label="Plaats" autoComplete="address-level2" />
+        <Veld naam="postcode" label={teksten.postcodeLabel} autoComplete="postal-code" />
+        <Veld naam="plaats" label={teksten.plaatsLabel} autoComplete="address-level2" />
       </div>
-      <Veld naam="kortingscode" label="Kortingscode of cadeaubon (optioneel)" autoComplete="off" />
+      <Veld naam="kortingscode" label={teksten.kortingscodeLabel} autoComplete="off" />
 
       <div className="mt-1 flex flex-col gap-2 border-t border-line pt-5">
       <label className={VINKJE_LABEL}>

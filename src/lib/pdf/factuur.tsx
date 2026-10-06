@@ -2,6 +2,12 @@ import "server-only";
 import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { btwSplitsing, formatteerBedrag } from "@/lib/prijs";
 import { leesMerk } from "@/lib/merk";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { vulIn, type SectieWaarden } from "@/lib/inhoud/schema";
+import { BESTELLEN_FACTUUR } from "@/lib/inhoud/groepen/bestellen";
+
+/** De beheerbare teksten op de factuur (Beheer → Teksten → Bestellen → Factuur). */
+export type FactuurTeksten = SectieWaarden<typeof BESTELLEN_FACTUUR>;
 import { EYEBROW, KLEUR, Kleurstrook, SANS, SERIF, Woordmerk, type Merk } from "./huisstijl";
 
 export interface FactuurGegevens {
@@ -96,7 +102,7 @@ const s = StyleSheet.create({
   },
 });
 
-function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
+function FactuurPdf({ f, merk, t }: { f: FactuurGegevens; merk: Merk; t: FactuurTeksten }) {
   const b = (cent: number) => formatteerBedrag(cent, f.valuta);
   const split = btwSplitsing(f.totaalCent, f.btwProcent);
   const verkoperRegels = [
@@ -113,7 +119,7 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
         <View style={s.kop}>
           <View>
             <Woordmerk merk={merk} grootte={13} />
-            <Text style={s.titel}>Factuur</Text>
+            <Text style={s.titel}>{t.titel}</Text>
           </View>
           <View style={s.verkoper}>
             <Text style={s.verkoperNaam}>{f.verkoper.naam}</Text>
@@ -125,7 +131,7 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
 
         <View style={s.blokken}>
           <View>
-            <Text style={s.label}>Factuur aan</Text>
+            <Text style={s.label}>{t.aanLabel}</Text>
             <Text>{f.koper.naam}</Text>
             {f.koper.adresregels.map((r) => (
               <Text key={r}>{r}</Text>
@@ -134,19 +140,19 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
           </View>
           <View>
             <View style={s.metaRij}>
-              <Text style={s.metaLabel}>Factuurnummer</Text>
+              <Text style={s.metaLabel}>{t.nummerLabel}</Text>
               <Text>{f.factuurnummer}</Text>
             </View>
             <View style={s.metaRij}>
-              <Text style={s.metaLabel}>Factuurdatum</Text>
+              <Text style={s.metaLabel}>{t.datumLabel}</Text>
               <Text>{f.factuurdatum}</Text>
             </View>
           </View>
         </View>
 
         <View style={s.tabelKop}>
-          <Text style={s.omschrijving}>Omschrijving</Text>
-          <Text style={s.bedrag}>Bedrag (incl. btw)</Text>
+          <Text style={s.omschrijving}>{t.omschrijvingKop}</Text>
+          <Text style={s.bedrag}>{t.bedragKop}</Text>
         </View>
         <View style={s.rij}>
           <Text style={s.omschrijving}>{f.omschrijving}</Text>
@@ -155,7 +161,7 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
         {f.kortingCent > 0 && (
           <View style={s.rij}>
             <Text style={s.omschrijving}>
-              {f.kortingscode ? `Korting (code ${f.kortingscode})` : "Korting"}
+              {f.kortingscode ? vulIn(t.kortingMetCode, { code: f.kortingscode }) : t.korting}
             </Text>
             <Text style={s.bedrag}>- {b(f.kortingCent)}</Text>
           </View>
@@ -163,27 +169,25 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
 
         <View style={s.totalen}>
           <View style={s.totaalRij}>
-            <Text style={s.totaalLabel}>Subtotaal excl. btw</Text>
+            <Text style={s.totaalLabel}>{t.subtotaal}</Text>
             <Text style={s.bedrag}>{b(split.exclCent)}</Text>
           </View>
           <View style={s.totaalRij}>
-            <Text style={s.totaalLabel}>Btw {f.btwProcent}%</Text>
+            <Text style={s.totaalLabel}>{vulIn(t.btw, { procent: f.btwProcent })}</Text>
             <Text style={s.bedrag}>{b(split.btwCent)}</Text>
           </View>
           <View style={[s.totaalRij, s.eindRij]}>
-            <Text style={[s.totaalLabel, s.eindtotaal]}>Totaal incl. btw</Text>
+            <Text style={[s.totaalLabel, s.eindtotaal]}>{t.totaal}</Text>
             <Text style={[s.bedrag, s.eindtotaal]}>{b(split.inclCent)}</Text>
           </View>
         </View>
 
         <View style={s.betaald}>
-          <Text>
-            Voldaan: betaald via Mollie op {f.betaaldOp}. Je hoeft niets meer te betalen.
-          </Text>
+          <Text>{vulIn(t.voldaan, { datum: f.betaaldOp })}</Text>
         </View>
 
         <Text style={s.voettekst} fixed>
-          {[f.verkoper.naam, f.verkoper.kvk && `KvK ${f.verkoper.kvk}`, f.verkoper.btw && `Btw ${f.verkoper.btw}`]
+          {[f.verkoper.naam, f.verkoper.kvk && `KvK ${f.verkoper.kvk}`, f.verkoper.btw && `Btw ${f.verkoper.btw}`, t.voettekst.trim()]
             .filter(Boolean)
             .join(" · ")}
         </Text>
@@ -192,7 +196,11 @@ function FactuurPdf({ f, merk }: { f: FactuurGegevens; merk: Merk }) {
   );
 }
 
-/** Rendert de factuur naar PDF-bytes (het woordmerk zoals op de site, tenzij meegegeven). */
-export async function maakFactuurPdf(f: FactuurGegevens, merk?: Merk): Promise<Buffer> {
-  return renderToBuffer(<FactuurPdf f={f} merk={merk ?? (await leesMerk())} />);
+/**
+ * Rendert de factuur naar PDF-bytes. Woordmerk en teksten zoals op de site
+ * (Beheer → Teksten → Bestellen → Factuur), tenzij meegegeven.
+ */
+export async function maakFactuurPdf(f: FactuurGegevens, merk?: Merk, teksten?: FactuurTeksten): Promise<Buffer> {
+  const [m, t] = await Promise.all([merk ?? leesMerk(), teksten ?? leesSectie(BESTELLEN_FACTUUR)]);
+  return renderToBuffer(<FactuurPdf f={f} merk={m} t={t} />);
 }

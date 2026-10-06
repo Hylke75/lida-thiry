@@ -3,19 +3,14 @@
 import { useRef, useState } from "react";
 import { VinkjeTekst } from "../bestellen/BestelFormulier";
 import { MAX_BOODSCHAP } from "@/lib/cadeaubon/regels";
+import { vulIn, type SectieWaarden } from "@/lib/inhoud/schema";
+import type { CADEAUBON_PAGINA } from "@/lib/inhoud/groepen/cadeaubon";
 import { euroNaarCent } from "@/lib/prijs";
 import { knopKlassen } from "@/components/site/Basis";
 import { HULPTEKST, INVOER, LABEL, LEGENDA, VELDFOUT, VERPLICHT, VINKJE, VINKJE_LABEL, keuzeTegel } from "@/components/site/FormulierStijl";
 import { klantMeldingKlassen } from "@/components/site/KlantPagina";
 
-interface Teksten {
-  bedragUitleg: string;
-  akkoordVoorwaarden: string;
-  knop: string;
-  knopBezig: string;
-  foutAlgemeen: string;
-  foutVerbinding: string;
-}
+type Teksten = SectieWaarden<typeof CADEAUBON_PAGINA>;
 
 const invoerKlasse = INVOER;
 
@@ -53,7 +48,7 @@ export function CadeaubonFormulier({
     const form = formRef.current;
     if (!form || !form.reportValidity()) return;
     if (teHoog) {
-      setFout(`Een cadeaubon is maximaal de prijs van de test (${maxLabel}).`);
+      setFout(vulIn(teksten.teHoog, { max: maxLabel }));
       return;
     }
     setFout(null);
@@ -103,7 +98,7 @@ export function CadeaubonFormulier({
       />
 
       <fieldset className="flex flex-col gap-3">
-        <legend className={LEGENDA}>Bedrag</legend>
+        <legend className={LEGENDA}>{teksten.bedragLegenda}</legend>
         <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3">
           {opties.map((o) => (
             <label
@@ -127,7 +122,7 @@ export function CadeaubonFormulier({
         {keuze === "anders" && (
           <label className="mt-1 flex flex-col gap-2">
             <span className={LABEL}>
-              Bedrag in euro (minimaal 5, maximaal de prijs van de test: {maxLabel})
+              {vulIn(teksten.eigenBedragLabel, { max: maxLabel })}
               <span className={VERPLICHT}> *</span>
             </span>
             <input
@@ -143,21 +138,19 @@ export function CadeaubonFormulier({
           </label>
         )}
         {teHoog && (
-          <p className={VELDFOUT}>
-            Een cadeaubon is maximaal de prijs van de test ({maxLabel}).
-          </p>
+          <p className={VELDFOUT}>{vulIn(teksten.teHoog, { max: maxLabel })}</p>
         )}
         <p className={`${HULPTEKST} whitespace-pre-line`}>{teksten.bedragUitleg}</p>
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className={LEGENDA}>Jouw gegevens</legend>
-        <Veld naam="koper_naam" label="Je naam" autoComplete="name" verplicht />
-        <Veld naam="koper_email" label="Je e-mailadres" type="email" autoComplete="email" verplicht />
+        <legend className={LEGENDA}>{teksten.gegevensLegenda}</legend>
+        <Veld naam="koper_naam" label={teksten.koperNaam} autoComplete="name" verplicht />
+        <Veld naam="koper_email" label={teksten.koperEmail} type="email" autoComplete="email" verplicht />
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className={LEGENDA}>Bezorging</legend>
+        <legend className={LEGENDA}>{teksten.bezorgingLegenda}</legend>
         <label className={VINKJE_LABEL}>
           <input
             type="radio"
@@ -166,7 +159,7 @@ export function CadeaubonFormulier({
             onChange={() => setBezorging("koper")}
             className={VINKJE}
           />
-          <span>Naar mij — ik geef de bon zelf (je krijgt hem ook als PDF om te printen)</span>
+          <span>{teksten.bezorgingKoper}</span>
         </label>
         <label className={VINKJE_LABEL}>
           <input
@@ -176,20 +169,20 @@ export function CadeaubonFormulier({
             onChange={() => setBezorging("ontvanger")}
             className={VINKJE}
           />
-          <span>Direct per e-mail naar de ontvanger</span>
+          <span>{teksten.bezorgingOntvanger}</span>
         </label>
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className={LEGENDA}>Voor wie is de bon?</legend>
+        <legend className={LEGENDA}>{teksten.ontvangerLegenda}</legend>
         <Veld
           naam="ontvanger_naam"
-          label={bezorging === "ontvanger" ? "Naam van de ontvanger" : "Naam van de ontvanger (optioneel)"}
+          label={bezorging === "ontvanger" ? teksten.ontvangerNaam : teksten.ontvangerNaamOptioneel}
           verplicht={bezorging === "ontvanger"}
         />
         {bezorging === "ontvanger" && (
           <>
-            <Veld naam="ontvanger_email" label="E-mailadres van de ontvanger" type="email" verplicht />
+            <Veld naam="ontvanger_email" label={teksten.ontvangerEmail} type="email" verplicht />
             <label className={VINKJE_LABEL}>
               <input
                 type="checkbox"
@@ -197,12 +190,13 @@ export function CadeaubonFormulier({
                 onChange={(e) => setLater(e.target.checked)}
                 className={VINKJE}
               />
-              <span>Later versturen, op een datum naar keuze</span>
+              <span>{teksten.later}</span>
             </label>
             {later && (
               <label className="flex flex-col gap-2">
                 <span className={LABEL}>
-                  Verzenddatum<span className={VERPLICHT}> *</span>
+                  {teksten.verzenddatum}
+                  <span className={VERPLICHT}> *</span>
                 </span>
                 <input
                   name="verzend_op"
@@ -217,7 +211,7 @@ export function CadeaubonFormulier({
           </>
         )}
         <label className="flex flex-col gap-2">
-          <span className={LABEL}>Persoonlijke boodschap (optioneel)</span>
+          <span className={LABEL}>{teksten.boodschap}</span>
           <textarea name="boodschap" rows={3} maxLength={MAX_BOODSCHAP} className={`${invoerKlasse} resize-y`} />
         </label>
       </fieldset>

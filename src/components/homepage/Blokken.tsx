@@ -447,9 +447,9 @@ const Advies: Blok = ({ advies }) => (
         aria-hidden="true"
         className="mx-auto w-full max-w-sm rotate-[1.2deg] border-2 border-ink bg-white p-8 shadow-[9px_9px_0_var(--ink)]"
       >
-        <p className="m-0 text-[10px] font-extrabold tracking-[0.13em] text-berry uppercase">Persoonlijk kledingadvies</p>
-        <p className="mt-4 mb-0 font-serif text-2xl leading-tight">Jouw persoonlijke kledingadvies</p>
-        <p className="m-0 mt-1 font-serif text-lg text-berry">Jouw figuurtype</p>
+        <p className="m-0 text-[10px] font-extrabold tracking-[0.13em] text-berry uppercase">{advies.voorbeeldLabel}</p>
+        <p className="mt-4 mb-0 font-serif text-2xl leading-tight">{advies.voorbeeldTitel}</p>
+        <p className="m-0 mt-1 font-serif text-lg text-berry">{advies.voorbeeldType}</p>
         <div className="mt-6 flex gap-4">
           <Lichaam armen={false} titel="" className="h-28 w-auto flex-none" />
           <div className="flex flex-1 flex-col gap-2 pt-2">
@@ -461,7 +461,7 @@ const Advies: Blok = ({ advies }) => (
             <div className="h-2 w-3/4 rounded bg-ink/10" />
           </div>
         </div>
-        <p className="mt-6 mb-0 text-center text-xs text-ink-soft">Voorbeeldweergave</p>
+        <p className="mt-6 mb-0 text-center text-xs text-ink-soft">{advies.voorbeeldOnderschrift}</p>
       </div>
     </div>
   </section>
@@ -474,7 +474,7 @@ const Afsluiting: Blok = ({ afsluiting, ctaTekst }) => (
         <KopTekst tekst={afsluiting.titel} />
       </h2>
       <p className="mt-0 mb-[30px] text-[19px] text-ink-soft">{afsluiting.tekst}</p>
-      <Knop href="/bestellen">{ctaTekst}</Knop>
+      <Knop href={veiligeLink(afsluiting.knopLink, "/bestellen")}>{ctaTekst}</Knop>
     </div>
   </section>
 );

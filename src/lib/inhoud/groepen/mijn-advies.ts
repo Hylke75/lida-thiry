@@ -9,6 +9,7 @@ export const MIJN_ADVIES_PAGINA = sectie({
   uitleg:
     "Na het versturen ziet iedereen dezelfde bevestiging, ook als het e-mailadres onbekend is. Zo kan niemand achterhalen wie er een test heeft gedaan.",
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Mijn advies" },
     titel: { soort: "tekst", label: "Titel", standaard: "Mijn advies opnieuw ontvangen" },
     intro: {
       soort: "opmaak",
@@ -36,6 +37,7 @@ export const MIJN_ADVIES_PAGINA = sectie({
       label: "Verwijzing op de bedankpagina na het bestellen",
       standaard: "Later je advies of testlink kwijt? Vraag ze opnieuw aan via ‘Mijn advies’.",
     },
+    terug: { soort: "tekst", label: "Link terug naar de homepage", max: 60, standaard: "← Terug" },
   },
 });
 

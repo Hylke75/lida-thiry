@@ -34,12 +34,12 @@ export default async function CadeaubonPage() {
     // Een bon is hooguit de prijs van de test: alleen vaste bedragen daaronder.
     ...(prijsCent ? vasteBedragenOnder(prijsCent) : []).map((c) => ({ waarde: String(c), label: formatteerBedrag(c, valuta) })),
     ...(prijsCent ? [{ waarde: "prijs", label: vulIn(t.prijsKeuze, { prijs: formatteerBedrag(prijsCent, valuta) }) }] : []),
-    { waarde: "anders", label: "Ander bedrag" },
+    { waarde: "anders", label: t.anderBedrag },
   ];
 
   return (
     <KlantPagina>
-      <KlantKop bovenschrift="Cadeaubon" titel={t.titel} terug={{ href: "/", tekst: "← Terug" }}>
+      <KlantKop bovenschrift={t.bovenschrift} titel={t.titel} terug={{ href: "/", tekst: t.terug }}>
         <Opmaak tekst={t.intro} />
       </KlantKop>
 
@@ -52,14 +52,7 @@ export default async function CadeaubonPage() {
             maxLabel={formatteerBedrag(maxBedragCent(prijsCent), valuta)}
             minDatum={plusDagen(vandaag, 1)}
             maxDatum={plusDagen(vandaag, MAX_VOORUIT_DAGEN)}
-            teksten={{
-              bedragUitleg: t.bedragUitleg,
-              akkoordVoorwaarden: t.akkoordVoorwaarden,
-              knop: t.knop,
-              knopBezig: t.knopBezig,
-              foutAlgemeen: t.foutAlgemeen,
-              foutVerbinding: t.foutVerbinding,
-            }}
+            teksten={t}
           />
         </KlantKaart>
       ) : (

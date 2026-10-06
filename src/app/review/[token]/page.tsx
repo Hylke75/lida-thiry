@@ -38,7 +38,7 @@ export default async function ReviewPagina({ params }: { params: Promise<{ token
         />
       ) : (
         <KlantKaart accent="butter">
-          <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
+          <KlantKop midden bovenschrift={teksten.bovenschrift} titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
             <p className="whitespace-pre-line">{teksten.afgesloten_tekst}</p>
           </KlantKop>
         </KlantKaart>

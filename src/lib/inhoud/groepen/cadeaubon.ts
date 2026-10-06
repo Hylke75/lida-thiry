@@ -10,8 +10,12 @@ export const CADEAUBON_PAGINA = sectie({
   sleutel: "cadeaubon.pagina",
   titel: "Cadeaubonpagina",
   uitleg: "De pagina /cadeaubon met het bestelformulier voor een cadeaubon.",
-  variabelen: { prijs: "de prijs van één test, bijv. € 49,00" },
+  variabelen: {
+    prijs: "de prijs van één test, bijv. € 49,00",
+    max: "het hoogste bedrag voor een bon (de prijs van de test), bijv. € 49,00",
+  },
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Cadeaubon" },
     titel: { soort: "tekst", label: "Titel", standaard: "Geef een cadeaubon" },
     intro: {
       soort: "opmaak",
@@ -21,7 +25,20 @@ export const CADEAUBON_PAGINA = sectie({
       standaard:
         "Ken je iemand die wel wat hulp kan gebruiken bij het kiezen van kleding die écht flatteert? Geef de online kledingadviestest cadeau. Je kiest zelf het bedrag en of wij de bon direct naar de ontvanger mailen, eventueel op een datum naar keuze.",
     },
+    terug: { soort: "tekst", label: "Link terug naar de homepage", max: 60, standaard: "← Terug" },
+    bedragLegenda: { soort: "tekst", label: "Formulier: kop boven de bedragen", max: 60, standaard: "Bedrag" },
     prijsKeuze: { soort: "tekst", label: "Keuze: bedrag van één test", standaard: "Eén complete test ({prijs})" },
+    anderBedrag: { soort: "tekst", label: "Keuze: ander bedrag", max: 60, standaard: "Ander bedrag" },
+    eigenBedragLabel: {
+      soort: "tekst",
+      label: "Veld: eigen bedrag",
+      standaard: "Bedrag in euro (minimaal 5, maximaal de prijs van de test: {max})",
+    },
+    teHoog: {
+      soort: "tekst",
+      label: "Melding als het eigen bedrag te hoog is",
+      standaard: "Een cadeaubon is maximaal de prijs van de test ({max}).",
+    },
     bedragUitleg: {
       soort: "tekstvak",
       label: "Uitleg onder de bedragen",
@@ -29,6 +46,28 @@ export const CADEAUBON_PAGINA = sectie({
       standaard:
         "De bon is één keer te gebruiken bij het bestellen van de test. Is de bon minder waard dan de test, dan betaalt de ontvanger het verschil bij.",
     },
+    gegevensLegenda: { soort: "tekst", label: "Formulier: kop boven je eigen gegevens", max: 60, standaard: "Jouw gegevens" },
+    koperNaam: { soort: "tekst", label: "Veld: je naam", max: 60, standaard: "Je naam" },
+    koperEmail: { soort: "tekst", label: "Veld: je e-mailadres", max: 60, standaard: "Je e-mailadres" },
+    bezorgingLegenda: { soort: "tekst", label: "Formulier: kop boven de bezorging", max: 60, standaard: "Bezorging" },
+    bezorgingKoper: {
+      soort: "tekst",
+      label: "Keuze: bon naar de koper",
+      standaard: "Naar mij — ik geef de bon zelf (je krijgt hem ook als PDF om te printen)",
+    },
+    bezorgingOntvanger: { soort: "tekst", label: "Keuze: bon naar de ontvanger", standaard: "Direct per e-mail naar de ontvanger" },
+    ontvangerLegenda: { soort: "tekst", label: "Formulier: kop boven de ontvanger", max: 60, standaard: "Voor wie is de bon?" },
+    ontvangerNaam: { soort: "tekst", label: "Veld: naam van de ontvanger (verplicht)", max: 80, standaard: "Naam van de ontvanger" },
+    ontvangerNaamOptioneel: {
+      soort: "tekst",
+      label: "Veld: naam van de ontvanger (als de bon naar de koper gaat)",
+      max: 80,
+      standaard: "Naam van de ontvanger (optioneel)",
+    },
+    ontvangerEmail: { soort: "tekst", label: "Veld: e-mailadres van de ontvanger", max: 80, standaard: "E-mailadres van de ontvanger" },
+    later: { soort: "tekst", label: "Vinkje: later versturen", standaard: "Later versturen, op een datum naar keuze" },
+    verzenddatum: { soort: "tekst", label: "Veld: verzenddatum", max: 60, standaard: "Verzenddatum" },
+    boodschap: { soort: "tekst", label: "Veld: persoonlijke boodschap", max: 80, standaard: "Persoonlijke boodschap (optioneel)" },
     akkoordVoorwaarden: {
       soort: "opmaak",
       label: "Vinkje: akkoord met voorwaarden en privacy",
@@ -62,6 +101,7 @@ export const CADEAUBON_BEDANKT = sectie({
     datum: "de geplande verzenddatum, bijv. 12 oktober 2026",
   },
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel (betaald)", max: 80, standaard: "Cadeaubon" },
     titel: { soort: "tekst", label: "Titel (betaald)", standaard: "Bedankt voor je cadeaubon!" },
     tekstKoper: {
       soort: "tekstvak",
@@ -81,6 +121,18 @@ export const CADEAUBON_BEDANKT = sectie({
       regels: 3,
       standaard: "Je betaling is ontvangen. We sturen de cadeaubon op {datum} naar {ontvanger}. Je krijgt zelf nu al een bevestiging met de factuur.",
     },
+    ontvangerReserve: {
+      soort: "tekst",
+      label: "In plaats van {ontvanger} als naam en e-mailadres ontbreken",
+      max: 60,
+      standaard: "de ontvanger",
+    },
+    verwerkenBovenschrift: {
+      soort: "tekst",
+      label: "Klein label boven de titel (betaling wordt verwerkt)",
+      max: 80,
+      standaard: "Even geduld",
+    },
     verwerkenTitel: { soort: "tekst", label: "Titel (betaling wordt verwerkt)", standaard: "We verwerken je betaling" },
     verwerkenTekst: {
       soort: "tekstvak",
@@ -88,6 +140,7 @@ export const CADEAUBON_BEDANKT = sectie({
       regels: 2,
       standaard: "Zodra de betaling is bevestigd, sturen we de cadeaubon. Dit duurt meestal maar een paar seconden.",
     },
+    misluktBovenschrift: { soort: "tekst", label: "Klein label boven de titel (betaling niet gelukt)", max: 80, standaard: "Betaling" },
     misluktTitel: { soort: "tekst", label: "Titel (betaling niet gelukt)", standaard: "Betaling niet gelukt" },
     misluktTekst: {
       soort: "tekstvak",
@@ -96,6 +149,7 @@ export const CADEAUBON_BEDANKT = sectie({
       standaard: "Je betaling is niet afgerond; er is niets afgeschreven. Probeer het gerust opnieuw.",
     },
     misluktKnop: { soort: "tekst", label: "Knoptekst (betaling niet gelukt)", standaard: "Opnieuw proberen" },
+    terugLink: { soort: "tekst", label: "Link terug naar de startpagina", max: 80, standaard: "← Terug naar de startpagina" },
   },
 });
 
@@ -144,7 +198,35 @@ export const CADEAUBON_MAIL = sectie({
         "**Zo gebruik je de bon:** ga naar de bestelpagina en vul de code in bij ‘Kortingscode of cadeaubon’. De bon is één keer te gebruiken en geldig tot en met {geldig_tot}.",
     },
     knop: { soort: "tekst", label: "Knoptekst", max: 60, standaard: "Bestel de test met je bon" },
-    boodschapLabel: { soort: "tekst", label: "Label boven de persoonlijke boodschap", standaard: "Persoonlijke boodschap" },
+    boodschapLabel: {
+      soort: "tekst",
+      label: "Label boven de persoonlijke boodschap",
+      uitleg: "Op de bon in de mail én op de bon als PDF.",
+      standaard: "Persoonlijke boodschap",
+    },
+    bonTitel: { soort: "tekst", label: "De bon in de mail: titel", max: 60, standaard: "Cadeaubon" },
+    bonOndertitel: {
+      soort: "tekst",
+      label: "De bon in de mail: regel onder de titel",
+      max: 120,
+      standaard: "Persoonlijk kledingadvies · Lida Thiry",
+    },
+    bonVoor: {
+      soort: "tekst",
+      label: "De bon: ‘voor’ met de naam van de ontvanger",
+      uitleg: "Op de bon in de mail en als PDF. Valt weg als de naam van de ontvanger ontbreekt.",
+      max: 80,
+      standaard: "Voor {ontvanger}",
+    },
+    bonVan: {
+      soort: "tekst",
+      label: "De bon: ‘van’ met de naam van de koper",
+      uitleg: "Op de bon in de mail en als PDF.",
+      max: 80,
+      standaard: "van {koper}",
+    },
+    bonCodeLabel: { soort: "tekst", label: "De bon: label boven de code", uitleg: "Op de bon in de mail en als PDF.", max: 40, standaard: "Code" },
+    bonGeldig: { soort: "tekst", label: "De bon in de mail: geldigheid", max: 120, standaard: "Geldig tot en met {geldig_tot}" },
   },
 });
 
@@ -183,10 +265,43 @@ export const CADEAUBON_KOPERMAIL = sectie({
   },
 });
 
+export const CADEAUBON_PDF = sectie({
+  sleutel: "cadeaubon.pdf",
+  titel: "De cadeaubon als PDF",
+  uitleg:
+    "De vaste teksten op de bon als PDF (A4 liggend) die met de mail meegaat, om te printen of door te sturen. ‘Voor’, ‘van’, het label boven de code en boven de boodschap staan bij ‘E-mail met de cadeaubon’.",
+  variabelen: {
+    geldig_tot: "laatste geldigheidsdag, bijv. 4 oktober 2027",
+    adres: "het adres van de bestelpagina, bijv. www.lidathiry.nl/bestellen",
+  },
+  velden: {
+    titel: { soort: "tekst", label: "Titel", max: 40, standaard: "Cadeaubon" },
+    ondertitel: {
+      soort: "tekst",
+      label: "Regel onder de titel",
+      max: 120,
+      standaard: "voor de online persoonlijke kledingadviestest",
+    },
+    geldig: {
+      soort: "tekst",
+      label: "Geldigheid",
+      max: 160,
+      standaard: "Geldig tot en met {geldig_tot} · eenmalig te gebruiken",
+    },
+    uitleg: {
+      soort: "tekstvak",
+      label: "Uitleg onderaan: zo gebruik je de bon",
+      regels: 2,
+      max: 400,
+      standaard: "Zo gebruik je de bon: ga naar {adres} en vul de code in bij ‘Kortingscode of cadeaubon’.",
+    },
+  },
+});
+
 export const CADEAUBON: Groep = {
   sleutel: "cadeaubon",
   titel: "Cadeaubon",
-  omschrijving: "De cadeaubonpagina, de bedankpagina en de e-mails met de cadeaubon.",
+  omschrijving: "De cadeaubonpagina, de bedankpagina, de e-mails met de cadeaubon en de bon als PDF.",
   bekijkUrl: "/cadeaubon",
-  secties: [CADEAUBON_PAGINA, CADEAUBON_BEDANKT, CADEAUBON_MAIL, CADEAUBON_KOPERMAIL],
+  secties: [CADEAUBON_PAGINA, CADEAUBON_BEDANKT, CADEAUBON_MAIL, CADEAUBON_KOPERMAIL, CADEAUBON_PDF],
 };

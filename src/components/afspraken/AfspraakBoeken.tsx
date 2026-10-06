@@ -433,14 +433,16 @@ export function AfspraakBoeken({
             <div className="grid gap-4 tablet:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <label htmlFor={veldId("naam")} className={LABEL}>
-                  Naam{ster}
+                  {teksten.naam_label}
+                  {ster}
                 </label>
                 <input name="naam" autoComplete="name" required maxLength={MAX.naam} className={invoerStijl(!!velden.naam)} {...aria("naam")} />
                 {veldFout("naam")}
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor={veldId("email")} className={LABEL}>
-                  E-mailadres{ster}
+                  {teksten.email_label}
+                  {ster}
                 </label>
                 <input
                   name="email"
@@ -455,7 +457,7 @@ export function AfspraakBoeken({
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor={veldId("telefoon")} className={LABEL}>
-                  Telefoonnummer (optioneel)
+                  {teksten.telefoon_label}
                 </label>
                 <input
                   name="telefoon"
@@ -511,7 +513,7 @@ export function AfspraakBoeken({
               disabled={bezig}
               className={`${knopKlassen()} w-full tablet:w-fit`}
             >
-              {bezig ? "Bezig…" : soort.aanbetaling_cent > 0 ? teksten.knop_betalen : teksten.knop}
+              {bezig ? teksten.knop_bezig : soort.aanbetaling_cent > 0 ? teksten.knop_betalen : teksten.knop}
             </button>
           </form>
         </Stap>

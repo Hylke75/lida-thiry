@@ -29,7 +29,7 @@ export function TypeOnthulling({
   kop: string;
   intro: string;
   /** Beheerbare teksten van het uitslagscherm. */
-  teksten: Pick<SectieWaarden<typeof TEST_UITSLAG>, "silhouet_label" | "download_knop" | "download_uitleg" | "figuurtype_link">;
+  teksten: Pick<SectieWaarden<typeof TEST_UITSLAG>, "silhouet_label" | "download_knop" | "download_uitleg" | "figuurtype_link" | "start_link">;
 }) {
   const figuurtypeHref = `/test/${encodeURIComponent(token)}/figuurtype`;
   return (
@@ -91,7 +91,7 @@ export function TypeOnthulling({
           </a>
           <p className="m-0 max-w-[420px] text-[14px] whitespace-pre-line text-ink-soft">{teksten.download_uitleg}</p>
           <TekstLink href="/" className="mt-1 text-[14px] text-ink-soft">
-            ← Naar de startpagina
+            {teksten.start_link}
           </TekstLink>
         </div>
       </div>

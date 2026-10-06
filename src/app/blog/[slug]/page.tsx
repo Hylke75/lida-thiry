@@ -21,6 +21,7 @@ import { kruimelpadJsonLd, veiligeJson } from "@/lib/seo/structuur";
 import { leesWebsite } from "@/lib/website/lees";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BLOG_ARTIKEL } from "@/lib/inhoud/groepen/blog";
+import { veiligeLink } from "@/lib/website/weergave";
 import { NIEUWSBRIEF_AANMELDEN } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { afmetingenVoorTekst } from "@/lib/media/publiek";
 import { siteUrl } from "@/lib/site";
@@ -215,7 +216,11 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
               {t.delen_label}
             </p>
             <div className="flex flex-wrap gap-2">
-              <KopieerLink url={url} className={DEEL_KNOP} />
+              <KopieerLink
+                url={url}
+                className={DEEL_KNOP}
+                teksten={{ kopieer: t.kopieer, gekopieerd: t.gekopieerd, vraag: t.kopieer_vraag }}
+              />
               {deelLinks(url, b.titel).map((d) => (
                 <a
                   key={d.id}
@@ -234,7 +239,7 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
 
       {/* Oproep tot de test */}
       <div className={`${CONTAINER} mt-[68px] max-w-[860px] tablet:mt-[92px]`}>
-        <InhoudOproep titel={t.cta_titel} tekst={t.cta_tekst} knop={t.cta_knop} />
+        <InhoudOproep titel={t.cta_titel} tekst={t.cta_tekst} knop={t.cta_knop} href={veiligeLink(t.cta_link, "/bestellen")} />
       </div>
 
       {gerelateerd.length > 0 && (
@@ -245,7 +250,7 @@ export default async function BlogBerichtPagina({ params }: { params: Params }) 
               titel={t.lees_ook}
               rechts={
                 <TekstLink href="/blog" pijl>
-                  Alle artikelen
+                  {t.alle_artikelen}
                 </TekstLink>
               }
             />

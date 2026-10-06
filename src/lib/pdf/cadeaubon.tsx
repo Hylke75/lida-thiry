@@ -5,6 +5,9 @@ import type { BonGegevens } from "@/lib/email-html";
 import { datumLang } from "@/lib/datum";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 import { leesMerk } from "@/lib/merk";
+import { leesSectie } from "@/lib/inhoud/lees";
+import { vulIn, type SectieWaarden } from "@/lib/inhoud/schema";
+import { CADEAUBON_MAIL, CADEAUBON_PDF } from "@/lib/inhoud/groepen/cadeaubon";
 import { EYEBROW, KLEUR, Kleurstrook, SANS, SERIF, Woordmerk, type Merk } from "./huisstijl";
 
 const kleur = { tekst: KLEUR.ink, grijs: KLEUR.inkZacht, accent: KLEUR.berry, zacht: KLEUR.cream };
@@ -68,11 +71,23 @@ const s = StyleSheet.create({
   uitleg: { marginTop: 14, fontSize: 9, color: kleur.grijs, textAlign: "center" },
 });
 
+/** De beheerbare teksten op de bon (Beheer → Teksten → Cadeaubon). */
+export interface CadeaubonPdfTeksten {
+  pdf: SectieWaarden<typeof CADEAUBON_PDF>;
+  /** Voor/van, het label boven de code en boven de boodschap: gedeeld met de bon in de mail. */
+  bon: Pick<SectieWaarden<typeof CADEAUBON_MAIL>, "bonVoor" | "bonVan" | "bonCodeLabel" | "boodschapLabel">;
+}
+
 /** De cadeaubon als PDF (A4 liggend), om te printen of door te sturen. */
-function CadeaubonPdf({ b, bestelUrl, merk }: { b: BonGegevens; bestelUrl: string; merk: Merk }) {
-  const voorVan = [b.ontvangerNaam ? `Voor ${b.ontvangerNaam}` : "", b.koperNaam ? `van ${b.koperNaam}` : ""]
+function CadeaubonPdf({ b, bestelUrl, merk, teksten }: { b: BonGegevens; bestelUrl: string; merk: Merk; teksten: CadeaubonPdfTeksten }) {
+  const { pdf, bon } = teksten;
+  const voorVan = [
+    b.ontvangerNaam ? vulIn(bon.bonVoor, { ontvanger: b.ontvangerNaam }) : "",
+    b.koperNaam ? vulIn(bon.bonVan, { koper: b.koperNaam }) : "",
+  ]
     .filter(Boolean)
     .join(" · ");
+  const geldigTot = datumLang(b.geldigTot);
   return (
     <Document title={`Cadeaubon ${b.code}`} author={BEDRIJFSNAAM_STANDAARD}>
       <Page size="A4" orientation="landscape" style={s.page}>
@@ -80,30 +95,46 @@ function CadeaubonPdf({ b, bestelUrl, merk }: { b: BonGegevens; bestelUrl: strin
         <Kleurstrook hoogte={10} style={s.strookOnder} />
         <View style={s.kader} wrap={false}>
           <Woordmerk merk={merk} grootte={14} midden />
-          <Text style={s.titel}>Cadeaubon</Text>
-          <Text style={s.sub}>voor de online persoonlijke kledingadviestest</Text>
+          <Text style={s.titel}>{pdf.titel}</Text>
+          {pdf.ondertitel ? <Text style={s.sub}>{pdf.ondertitel}</Text> : null}
           <Text style={s.bedrag}>{formatteerBedrag(b.bedragCent, b.valuta)}</Text>
           {voorVan ? <Text style={s.voorVan}>{voorVan}</Text> : null}
-          <Text style={s.codeLabel}>Code</Text>
+          <Text style={s.codeLabel}>{bon.bonCodeLabel}</Text>
           <Text style={s.code}>{b.code}</Text>
-          <Text style={s.geldig}>Geldig tot en met {datumLang(b.geldigTot)} · eenmalig te gebruiken</Text>
+          <Text style={s.geldig}>{vulIn(pdf.geldig, { geldig_tot: geldigTot })}</Text>
           {b.boodschap?.trim() ? (
             <View style={s.boodschap}>
-              <Text style={s.boodschapLabel}>Persoonlijke boodschap</Text>
+              <Text style={s.boodschapLabel}>{bon.boodschapLabel}</Text>
               <Text style={s.boodschapTekst}>“{b.boodschap.trim()}”</Text>
             </View>
           ) : null}
-          <Text style={s.uitleg}>
-            Zo gebruik je de bon: ga naar {bestelUrl.replace(/^https?:\/\//, "")} en vul de code in bij
-            ‘Kortingscode of cadeaubon’.
-          </Text>
+          {pdf.uitleg ? (
+            <Text style={s.uitleg}>
+              {vulIn(pdf.uitleg, { adres: bestelUrl.replace(/^https?:\/\//, ""), geldig_tot: geldigTot })}
+            </Text>
+          ) : null}
         </View>
       </Page>
     </Document>
   );
 }
 
-/** Rendert de cadeaubon naar PDF-bytes (het woordmerk zoals op de site, tenzij meegegeven). */
-export async function maakCadeaubonPdf(b: BonGegevens, bestelUrl: string, merk?: Merk): Promise<Buffer> {
-  return renderToBuffer(<CadeaubonPdf b={b} bestelUrl={bestelUrl} merk={merk ?? (await leesMerk())} />);
+/** Leest de teksten op de bon (gecachet, met de standaardtekst als terugval). */
+async function leesCadeaubonPdfTeksten(): Promise<CadeaubonPdfTeksten> {
+  const [pdf, bon] = await Promise.all([leesSectie(CADEAUBON_PDF), leesSectie(CADEAUBON_MAIL)]);
+  return { pdf, bon };
+}
+
+/**
+ * Rendert de cadeaubon naar PDF-bytes. Woordmerk en teksten zoals op de site
+ * (Beheer → Teksten → Cadeaubon), tenzij meegegeven.
+ */
+export async function maakCadeaubonPdf(
+  b: BonGegevens,
+  bestelUrl: string,
+  merk?: Merk,
+  teksten?: CadeaubonPdfTeksten,
+): Promise<Buffer> {
+  const [m, t] = await Promise.all([merk ?? leesMerk(), teksten ?? leesCadeaubonPdfTeksten()]);
+  return renderToBuffer(<CadeaubonPdf b={b} bestelUrl={bestelUrl} merk={m} teksten={t} />);
 }

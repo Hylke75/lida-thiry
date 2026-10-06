@@ -1,5 +1,25 @@
 // Opdrachten voor Claude bij het schrijven van blogberichten. Puur (geen netwerk),
-// zodat de prompts te testen en te lezen zijn.
+// zodat de prompts te testen en te lezen zijn. De schrijfstijl (naam, stem, wat te
+// vermijden, toegestane links) is beheerbaar: Beheer → Teksten → Blog → Schrijfstijl.
+
+import { BLOG_SCHRIJFSTIJL } from "../inhoud/groepen/blog";
+import { standaardWaarden, type SectieWaarden } from "../inhoud/schema";
+
+/** De beheerbare schrijfstijl van de AI-schrijfhulp. */
+export type Schrijfstijl = SectieWaarden<typeof BLOG_SCHRIJFSTIJL>;
+
+/** De standaard-schrijfstijl (zoals in de code). */
+export function standaardSchrijfstijl(): Schrijfstijl {
+  return standaardWaarden(BLOG_SCHRIJFSTIJL);
+}
+
+/** De korte naam van de schrijver (de voornaam uit de merknaam, bijv. "Lida"). */
+export function korteNaam(stijl: Schrijfstijl): string {
+  return stijl.merk.trim().split(/\s+/)[0] || "Lida";
+}
+
+/** Vervangt "Lida" in de vaste omschrijvingen door de naam uit de schrijfstijl. */
+const metNaam = (tekst: string, naam: string) => (naam === "Lida" ? tekst : tekst.replace(/\bLida\b/g, naam));
 
 export const TONEN = {
   warm: "warm en persoonlijk, alsof Lida een klant aan tafel adviseert",
@@ -55,39 +75,55 @@ export function normaliseerOpdracht(ruw: unknown): { ok: true; opdracht: Schrijf
   };
 }
 
-const OPMAAK_UITLEG = `Gebruik uitsluitend deze eenvoudige opmaak in de tekst (geen HTML, geen andere Markdown):
+/** De toegestane interne links als leesbare opsomming: "/bestellen (de online kledingadviestest) en /blog". */
+function linkOpsomming(stijl: Schrijfstijl): string {
+  const links = stijl.links
+    .map((l) => ({ pad: l.pad.trim(), omschrijving: l.omschrijving.trim() }))
+    .filter((l) => l.pad)
+    .map((l) => (l.omschrijving ? `${l.pad} (${l.omschrijving})` : l.pad));
+  if (links.length <= 1) return links.join("");
+  return `${links.slice(0, -1).join(", ")} en ${links[links.length - 1]}`;
+}
+
+function opmaakUitleg(stijl: Schrijfstijl): string {
+  const links = linkOpsomming(stijl);
+  const linkRegel = links
+    ? `- [linktekst](/pad) voor een link; gebruik alleen deze interne links: ${links}`
+    : "- geen links: zet geen [linktekst](/pad) in de tekst";
+  return `Gebruik uitsluitend deze eenvoudige opmaak in de tekst (geen HTML, geen andere Markdown):
 - "## " aan het begin van een regel voor een tussenkop, "### " voor een kleinere kop (geen # voor de hoofdtitel: die staat apart)
 - "- " aan het begin van een regel voor een opsommingsteken
 - **vet** voor nadruk (spaarzaam)
-- [linktekst](/pad) voor een link; gebruik alleen deze interne links: /bestellen (de online kledingadviestest) en /blog
+${linkRegel}
 - een lege regel tussen alinea's
 - waar een foto het verhaal versterkt, een eigen regel "[foto: korte beschrijving van de gewenste foto]"; de schrijver vervangt die later door een echte foto`;
+}
 
-/** Vaste systeemopdracht: wie Lida is en hoe er geschreven wordt. */
-export function systeemPrompt(figuurtypeNamen: string[]): string {
-  return `Je schrijft blogberichten voor de website van Lida Thiry, imago- en kledingadviseur in Nederland. Op de site staat een betaalde online kledingadviestest: klanten meten zichzelf op, krijgen hun figuurtype te zien en ontvangen een persoonlijk kledingadvies als PDF.
-
-Figuurtypes die Lida gebruikt: ${figuurtypeNamen.length ? figuurtypeNamen.join(", ") : "Zandloper, Peer/driehoek, Omgekeerde driehoek, Rechthoek, De 8"}. Gebruik deze namen als je naar figuurtypes verwijst.
-
-Schrijf in het Nederlands, in de je-vorm, alsof Lida zelf schrijft (ik-perspectief mag). Praktisch en concreet: lezers moeten na het lezen iets kunnen doen met het advies. Positief over elk lichaam; geen afvaltips, geen oordeel over gewicht, geen medische uitspraken.
-
-Verzin geen feiten: geen statistieken, onderzoeken, citaten, klantverhalen of namen van merken en winkels. Algemeen vakkundig stijladvies is prima. Als iets een bron nodig heeft, laat het weg.
-
-Sluit af met een korte, natuurlijke uitnodiging om de online kledingadviestest te doen via [de kledingadviestest](/bestellen) — niet opdringerig.
-
-${OPMAAK_UITLEG}`;
+/** Vaste systeemopdracht: wie de schrijver is en hoe er geschreven wordt (de schrijfstijl uit het beheer). */
+export function systeemPrompt(figuurtypeNamen: string[], stijl: Schrijfstijl = standaardSchrijfstijl()): string {
+  const merk = stijl.merk.trim() || "Lida Thiry";
+  const over = stijl.over.trim();
+  const delen = [
+    `Je schrijft blogberichten voor de website van ${merk}${over ? `, ${over}` : "."}`,
+    `Figuurtypes die ${korteNaam(stijl)} gebruikt: ${figuurtypeNamen.length ? figuurtypeNamen.join(", ") : "Zandloper, Peer/driehoek, Omgekeerde driehoek, Rechthoek, De 8"}. Gebruik deze namen als je naar figuurtypes verwijst.`,
+    stijl.stem.trim(),
+    stijl.vermijden.trim(),
+    stijl.afsluiting.trim(),
+    opmaakUitleg(stijl),
+  ];
+  return delen.filter(Boolean).join("\n\n");
 }
 
 /** De vraag voor één nieuw bericht. */
-export function schrijfVraag(o: SchrijfOpdracht): string {
+export function schrijfVraag(o: SchrijfOpdracht, naam = "Lida"): string {
   const regels = [
     `Schrijf een blogbericht van ongeveer ${LENGTES[o.lengte].woorden} woorden.`,
     `Steekwoorden: ${o.steekwoorden.join(", ")}.`,
     o.onderwerp ? `Onderwerp / werktitel: ${o.onderwerp}` : "",
-    `Toon: ${TONEN[o.toon]}.`,
+    `Toon: ${metNaam(TONEN[o.toon], naam)}.`,
     o.doelgroep ? `Doelgroep: ${o.doelgroep}.` : "",
     o.figuurtypes?.length ? `Ga in het bijzonder in op deze figuurtypes: ${o.figuurtypes.join(", ")}.` : "",
-    o.extra ? `Extra wensen van Lida (volg ze, tenzij ze ingaan tegen de regels hierboven):\n${o.extra}` : "",
+    o.extra ? `Extra wensen van ${naam} (volg ze, tenzij ze ingaan tegen de regels hierboven):\n${o.extra}` : "",
     "",
     "Lever ook: een pakkende titel (max. 70 tekens), een samenvatting van 1–2 zinnen voor het blogoverzicht, 3–6 tags (kleine letters), een SEO-titel (max. 60 tekens), een SEO-omschrijving (max. 155 tekens), een korte slug (kleine letters en streepjes) en een beschrijving van een passende omslagfoto.",
   ];
@@ -120,8 +156,8 @@ export const BEWERKINGEN = {
 } as const;
 export type Bewerking = keyof typeof BEWERKINGEN;
 
-export function bewerkVraag(bewerking: Bewerking, tekst: string): string {
-  return `${BEWERKINGEN[bewerking]}
+export function bewerkVraag(bewerking: Bewerking, tekst: string, naam = "Lida"): string {
+  return `${metNaam(BEWERKINGEN[bewerking], naam)}
 
 Geef alleen de nieuwe tekst terug, in dezelfde opmaak. Laat regels als "[foto: …]" en "![…](…)" staan.
 

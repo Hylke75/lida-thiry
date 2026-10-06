@@ -26,11 +26,8 @@ async function annuleer(formData: FormData) {
   const r = await annuleerDoorKlant(token);
   if (r === "onbekend") notFound();
   if (r === "ok") redirect(`/afspraak/${token}?geannuleerd=1`);
-  redirect(
-    `/afspraak/${token}?fout=${encodeURIComponent(
-      r === "te_laat" ? "Online annuleren kan niet meer." : "Annuleren is niet gelukt. Probeer het later opnieuw.",
-    )}`,
-  );
+  const t = await leesSectie(AFSPRAKEN_PAGINA);
+  redirect(`/afspraak/${token}?fout=${encodeURIComponent(r === "te_laat" ? t.fout_te_laat : t.fout_annuleren)}`);
 }
 
 export default async function AfspraakTokenPagina({ params, searchParams }: { params: Params; searchParams: Zoek }) {
@@ -54,13 +51,13 @@ export default async function AfspraakTokenPagina({ params, searchParams }: { pa
   const kanAnnuleren = magAnnuleren(a, nu, inst.minVoorafUren);
   const betalingMislukt = a.status === "geannuleerd" && a.aanbetaling_cent > 0 && !a.betaald_op && !!a.mollie_payment_id;
   const voorbij = Date.parse(a.start_op) < nu.getTime();
-  const locatie = soort?.locatie || (soort?.online ? "Online" : "");
+  const locatie = soort?.locatie || (soort?.online ? t.online : "");
 
   const doorgestreept = a.status === "geannuleerd" ? "line-through" : "";
   return (
     <KlantPagina>
-      <KlantKop bovenschrift="Persoonlijk advies" titel={t.titel}>
-        <p>Status: {STATUS_LABEL[a.status]}</p>
+      <KlantKop bovenschrift={t.bovenschrift} titel={t.titel}>
+        <p>{vulIn(t.status, { status: STATUS_LABEL[a.status] })}</p>
       </KlantKop>
 
       <KlantKaart className="flex flex-col gap-6">
@@ -71,30 +68,30 @@ export default async function AfspraakTokenPagina({ params, searchParams }: { pa
         )}
 
         <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-[15px]">
-          <dt className="font-bold text-ink-soft">Afspraak</dt>
-          <dd className="m-0 font-bold text-ink">{soort?.naam ?? "Afspraak"}</dd>
-          <dt className="font-bold text-ink-soft">Datum</dt>
+          <dt className="font-bold text-ink-soft">{t.label_afspraak}</dt>
+          <dd className="m-0 font-bold text-ink">{soort?.naam ?? t.label_afspraak}</dd>
+          <dt className="font-bold text-ink-soft">{t.label_datum}</dt>
           <dd className={`m-0 ${doorgestreept}`}>{datumLabel(a.start_op)}</dd>
-          <dt className="font-bold text-ink-soft">Tijd</dt>
+          <dt className="font-bold text-ink-soft">{t.label_tijd}</dt>
           <dd className={`m-0 ${doorgestreept}`}>
             {tijdLabel(a.start_op)} – {tijdLabel(a.eind_op)} ({duurLabel(duur)})
           </dd>
           {locatie && (
             <>
-              <dt className="font-bold text-ink-soft">Locatie</dt>
+              <dt className="font-bold text-ink-soft">{t.label_locatie}</dt>
               <dd className="m-0">{locatie}</dd>
             </>
           )}
           {a.aanbetaling_cent > 0 && (
             <>
-              <dt className="font-bold text-ink-soft">Aanbetaling</dt>
+              <dt className="font-bold text-ink-soft">{t.label_aanbetaling}</dt>
               <dd className="m-0">
                 {bedragLabel(a.aanbetaling_cent)}
-                {a.betaald_op ? " (betaald)" : ""}
+                {a.betaald_op && t.betaald ? ` (${t.betaald})` : ""}
               </dd>
             </>
           )}
-          <dt className="font-bold text-ink-soft">Naam</dt>
+          <dt className="font-bold text-ink-soft">{t.label_naam}</dt>
           <dd className="m-0">{a.naam}</dd>
         </dl>
 
@@ -115,7 +112,7 @@ export default async function AfspraakTokenPagina({ params, searchParams }: { pa
               {betalingMislukt && !zoek.geannuleerd ? t.betaling_mislukt : t.geannuleerd}
             </p>
             <Knop href="/afspraak" pijl={false}>
-              Nieuwe afspraak maken
+              {t.nieuwe_knop}
             </Knop>
           </div>
         )}
@@ -137,9 +134,9 @@ export default async function AfspraakTokenPagina({ params, searchParams }: { pa
                   </summary>
                   <form action={annuleer} className={`${klantMeldingKlassen("fout")} mt-3 flex flex-col items-start gap-3`}>
                     <input type="hidden" name="token" value={a.token} />
-                    <p className="m-0">Weet je het zeker? De afspraak wordt direct geannuleerd.</p>
+                    <p className="m-0">{t.bevestig_vraag}</p>
                     <button className="inline-flex min-h-11 items-center rounded-full bg-[#b42318] px-5 text-[14px] font-bold text-white hover:bg-[#9f2a1c]">
-                      Ja, annuleer mijn afspraak
+                      {t.bevestig_knop}
                     </button>
                   </form>
                 </details>

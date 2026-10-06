@@ -22,6 +22,19 @@ export const AFSPRAKEN_BOEKEN = sectie({
     "Het boekingsformulier op /afspraak en waar je {afspraak} op een eigen regel in een pagina zet (Beheer → Pagina's).",
   variabelen: { bedrag: "het bedrag van de aanbetaling (alleen in de uitleg bij een aanbetaling)" },
   velden: {
+    bovenschrift: {
+      soort: "tekst",
+      label: "Klein label boven het formulier (op /afspraak)",
+      max: 80,
+      standaard: "Persoonlijk advies",
+    },
+    paginakop: {
+      soort: "tekst",
+      label: "Paginatitel voor schermlezers (op /afspraak)",
+      uitleg: "Niet zichtbaar; schermlezers en zoekmachines gebruiken hem als hoofdkop van de pagina.",
+      max: 80,
+      standaard: "Afspraak maken",
+    },
     titel: { soort: "tekst", label: "Titel", standaard: "Maak een afspraak" },
     intro: {
       soort: "tekstvak",
@@ -45,6 +58,9 @@ export const AFSPRAKEN_BOEKEN = sectie({
       regels: 2,
       standaard: "Er zijn op dit moment geen tijden vrij voor deze afspraak. Probeer het later nog eens of neem contact met me op.",
     },
+    naam_label: { soort: "tekst", label: "Veld: naam", max: 60, standaard: "Naam" },
+    email_label: { soort: "tekst", label: "Veld: e-mailadres", max: 60, standaard: "E-mailadres" },
+    telefoon_label: { soort: "tekst", label: "Veld: telefoonnummer", max: 60, standaard: "Telefoonnummer (optioneel)" },
     opmerking_label: { soort: "tekst", label: "Label bij het opmerkingveld", standaard: "Wil je alvast iets kwijt? (optioneel)" },
     privacy: {
       soort: "opmaak",
@@ -64,6 +80,7 @@ export const AFSPRAKEN_BOEKEN = sectie({
     },
     knop: { soort: "tekst", label: "Knoptekst (zonder aanbetaling)", max: 60, standaard: "Afspraak bevestigen" },
     knop_betalen: { soort: "tekst", label: "Knoptekst (met aanbetaling)", max: 60, standaard: "Bevestigen en aanbetalen" },
+    knop_bezig: { soort: "tekst", label: "Knoptekst tijdens het versturen", max: 60, standaard: "Bezig…" },
     succes_titel: { soort: "tekst", label: "Titel na boeken", standaard: "Je afspraak staat!" },
     succes: {
       soort: "tekstvak",
@@ -94,9 +111,22 @@ export const AFSPRAKEN_PAGINA = sectie({
   sleutel: "afspraken.pagina",
   titel: "Pagina ‘Je afspraak’ (persoonlijke link)",
   uitleg: "De pagina achter de link in de bevestigingsmail, waar de klant de afspraak ziet en kan annuleren.",
-  variabelen: { uren: "hoeveel uur vooraf annuleren nog kan (de instelling ‘minimaal vooraf’)" },
+  variabelen: {
+    uren: "hoeveel uur vooraf annuleren nog kan (de instelling ‘minimaal vooraf’)",
+    status: "de status van de afspraak, bijv. ‘Bevestigd’ (alleen in de statusregel)",
+  },
   velden: {
+    bovenschrift: { soort: "tekst", label: "Klein label boven de titel", max: 80, standaard: "Persoonlijk advies" },
     titel: { soort: "tekst", label: "Titel", standaard: "Je afspraak" },
+    status: { soort: "tekst", label: "Statusregel onder de titel", max: 80, standaard: "Status: {status}" },
+    label_afspraak: { soort: "tekst", label: "Overzicht: soort afspraak", max: 40, standaard: "Afspraak" },
+    label_datum: { soort: "tekst", label: "Overzicht: datum", max: 40, standaard: "Datum" },
+    label_tijd: { soort: "tekst", label: "Overzicht: tijd", max: 40, standaard: "Tijd" },
+    label_locatie: { soort: "tekst", label: "Overzicht: locatie", max: 40, standaard: "Locatie" },
+    online: { soort: "tekst", label: "Locatie bij een online afspraak (zonder eigen locatie)", max: 60, standaard: "Online" },
+    label_aanbetaling: { soort: "tekst", label: "Overzicht: aanbetaling", max: 40, standaard: "Aanbetaling" },
+    betaald: { soort: "tekst", label: "Achter de aanbetaling als die betaald is (tussen haakjes)", max: 40, standaard: "betaald" },
+    label_naam: { soort: "tekst", label: "Overzicht: naam", max: 40, standaard: "Naam" },
     betaling_bezig: {
       soort: "tekstvak",
       label: "Terwijl de betaling wordt verwerkt",
@@ -135,6 +165,26 @@ export const AFSPRAKEN_PAGINA = sectie({
       standaard: "Deze afspraak is geannuleerd. Wil je een nieuwe afspraak maken? Dat kan via de knop hieronder.",
     },
     agenda_knop: { soort: "tekst", label: "Knop ‘Zet in je agenda’", max: 60, standaard: "Zet in je agenda" },
+    nieuwe_knop: { soort: "tekst", label: "Knop ‘Nieuwe afspraak maken’ (na annuleren)", max: 60, standaard: "Nieuwe afspraak maken" },
+    bevestig_vraag: {
+      soort: "tekst",
+      label: "Vraag na klikken op annuleren",
+      max: 160,
+      standaard: "Weet je het zeker? De afspraak wordt direct geannuleerd.",
+    },
+    bevestig_knop: { soort: "tekst", label: "Knop om het annuleren te bevestigen", max: 60, standaard: "Ja, annuleer mijn afspraak" },
+    fout_te_laat: {
+      soort: "tekst",
+      label: "Foutmelding: annuleren kan niet meer",
+      max: 160,
+      standaard: "Online annuleren kan niet meer.",
+    },
+    fout_annuleren: {
+      soort: "tekst",
+      label: "Foutmelding: annuleren mislukt",
+      max: 160,
+      standaard: "Annuleren is niet gelukt. Probeer het later opnieuw.",
+    },
   },
 });
 

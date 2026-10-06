@@ -116,7 +116,7 @@ export function ReviewFormulier({
   if (modus === "afgesloten") {
     return (
       <KlantKaart role="status" accent="butter">
-        <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
+        <KlantKop midden bovenschrift={teksten.bovenschrift} titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
           <p className="whitespace-pre-line">{teksten.afgesloten_tekst}</p>
         </KlantKop>
       </KlantKaart>
@@ -126,7 +126,7 @@ export function ReviewFormulier({
   if (modus === "bedankt") {
     return (
       <KlantKaart role="status" accent="sage" className="flex flex-col items-center gap-5 text-center">
-        <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.bedankt_titel} className="mb-0! tablet:mb-0!">
+        <KlantKop midden bovenschrift={teksten.bovenschrift} titel={teksten.bedankt_titel} className="mb-0! tablet:mb-0!">
           <p className="whitespace-pre-line">{teksten.bedankt_tekst}</p>
         </KlantKop>
         <p className="m-0 text-[15px] text-ink-soft">{teksten.bewerken_tekst}</p>
@@ -147,7 +147,7 @@ export function ReviewFormulier({
 
   return (
     <div className="flex flex-col">
-      <KlantKop bovenschrift="Jouw ervaring" titel={teksten.titel}>
+      <KlantKop bovenschrift={teksten.bovenschrift} titel={teksten.titel}>
         {teksten.intro && <p className="whitespace-pre-line">{teksten.intro}</p>}
       </KlantKop>
       <KlantKaart>

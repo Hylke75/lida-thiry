@@ -86,9 +86,7 @@ export function TestWizard({
         }}
       >
         <div>
-          <Bovenschrift>
-            Stap {stap + 1} van {STAPPEN.length}
-          </Bovenschrift>
+          <Bovenschrift>{vulIn(teksten.algemeen.stap_van, { nummer: stap + 1, totaal: STAPPEN.length })}</Bovenschrift>
           <h1 className={`${KLANT_H1} mb-0!`}>{huidig.titel}</h1>
         </div>
 
@@ -111,7 +109,7 @@ export function TestWizard({
         )}
 
         {huidig.soort === "jij" && (
-          <StapOverJou a={a} setA={setA} toonFouten={toonFouten} intro={teksten.overJou.intro} />
+          <StapOverJou a={a} setA={setA} toonFouten={toonFouten} teksten={teksten.overJou} />
         )}
 
         {huidig.soort === "maten" && (
@@ -122,7 +120,7 @@ export function TestWizard({
             toonFouten={toonFouten}
             meetBeelden={meetBeelden}
             tip={stap === EERSTE_MATEN_STAP ? teksten.meten.tip : null}
-            tweeKeerHint={teksten.meten.twee_keer}
+            teksten={teksten.meten}
           />
         )}
 
@@ -157,7 +155,7 @@ export function TestWizard({
             disabled={stap === 0 || bezig}
             className={`${knopKlassen({ variant: "outline" })} disabled:invisible max-tablet:disabled:hidden`}
           >
-            ← Terug
+            {teksten.algemeen.terug_knop}
           </button>
           <button
             type="submit"
@@ -168,7 +166,7 @@ export function TestWizard({
               ? bezig
                 ? teksten.afronden.bezig
                 : teksten.afronden.knop
-              : `Volgende: ${STAPPEN[stap + 1].titel} →`}
+              : vulIn(teksten.algemeen.volgende_knop, { stap: STAPPEN[stap + 1].titel })}
           </button>
         </div>
       </form>

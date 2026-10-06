@@ -11,10 +11,18 @@ import {
   Line,
   StyleSheet,
 } from "@react-pdf/renderer";
+import type { Style } from "@react-pdf/types";
 import type { Lichaamsvorm } from "@/lib/test-config";
 import { CX, HOOFD, VIEWBOX, Y, lichaamsPad } from "@/lib/lichaam-pad";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
 import { EYEBROW, KLEUR, Kleurstrook, MERK_STANDAARD, SANS, SERIF, STROOK, Woordmerk, type Merk } from "./huisstijl";
+import { standaardWaarden, vulIn } from "@/lib/inhoud/schema";
+import {
+  PDF_ADVIES_INTRO,
+  PDF_ADVIES_SLOT,
+  PDF_ADVIES_VOORPAGINA,
+  type AdviesPdfTeksten,
+} from "@/lib/inhoud/groepen/pdf-advies";
 
 export interface PdfMaten {
   lengte_cm: number | null;
@@ -58,6 +66,30 @@ export interface AdviesPdfProps {
   silhouet?: PdfSilhouet | null;
   /** Woordmerk bovenaan de voorpagina (standaard: zoals op de website). */
   merk?: Merk;
+  /** Beheerbare teksten (Beheer → Teksten → PDF-advies); standaard de standaardteksten. */
+  teksten?: AdviesPdfTeksten;
+}
+
+/** De namen van de maten zoals ze standaard in de PDF staan. */
+const MAAT_LABELS_STANDAARD: Readonly<Record<keyof PdfMaten, string>> = {
+  lengte_cm: "Lengte",
+  gewicht_kg: "Gewicht",
+  schouder: "Schouderomvang",
+  borst: "Borstomvang",
+  taille: "Tailleomvang",
+  hoge_heup: "Hoge heupomvang",
+  heup: "Heupomvang",
+  binnenbeen: "Binnenbeenlengte",
+};
+
+/** De standaardteksten van de advies-PDF (zonder database, bijv. in tests). */
+export function standaardAdviesPdfTeksten(): AdviesPdfTeksten {
+  return {
+    voorpagina: standaardWaarden(PDF_ADVIES_VOORPAGINA),
+    intro: standaardWaarden(PDF_ADVIES_INTRO),
+    slot: standaardWaarden(PDF_ADVIES_SLOT),
+    maten: MAAT_LABELS_STANDAARD,
+  };
 }
 
 // Huisstijl (docs/ontwerp/HUISSTIJL-HANDBOEK.md): DM Serif Display voor koppen,
@@ -159,7 +191,92 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   paginanummer: { fontWeight: 700, color: kleur.tekst },
+  // Optionele introductie- en slotpagina (Beheer → Teksten → PDF-advies).
+  losTitel: { fontFamily: SERIF, fontSize: 30, marginTop: 6, marginBottom: 16, lineHeight: 1.1, color: kleur.tekst },
+  losKop: { fontFamily: SERIF, fontSize: 17, marginTop: 14, marginBottom: 6, lineHeight: 1.15, color: kleur.tekst },
+  slotBlok: { marginBottom: 18 },
+  slotOproep: {
+    backgroundColor: kleur.accentZacht,
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  disclaimer: {
+    fontSize: 7.5,
+    color: kleur.grijs,
+    lineHeight: 1.5,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 0.75,
+    borderTopColor: kleur.lijn,
+  },
 });
+
+/** Een titel met één woord tussen *sterretjes* als cursief koraalrood accent. */
+function TitelMetAccent({ tekst, style }: { tekst: string; style: Style }) {
+  const delen = tekst.split(/\*([^*]+)\*/);
+  return (
+    <Text style={style}>
+      {delen.map((d, i) =>
+        i % 2 === 1 ? (
+          <Text key={i} style={styles.coverAccent}>
+            {d}
+          </Text>
+        ) : (
+          d || null
+        ),
+      )}
+    </Text>
+  );
+}
+
+/** Links uit een beheerbare tekst als leesbare tekst: "[tekst](https://x.nl)" → "tekst (x.nl)". */
+function linksAlsTekst(tekst: string): string {
+  return tekst.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t: string, url: string) => {
+    const kaal = url.replace(/^(mailto:|tel:|https?:\/\/)/i, "").replace(/\/$/, "");
+    return kaal && kaal !== t.trim() ? `${t} (${kaal})` : t;
+  });
+}
+
+/** Tekst met eenvoudige opmaak (## kop, - opsomming, **vet**) als PDF-blokken. */
+function OpmaakTekst({ tekst }: { tekst: string }) {
+  // Tussenkoppen ("## …") splitsen de tekst; de stukken ertussen gaan door blokken().
+  const stukken: { kop?: string; tekst: string }[] = [{ tekst: "" }];
+  for (const regel of linksAlsTekst(tekst).split("\n")) {
+    const kop = /^#{2,3}\s+(.+)$/.exec(regel.trim());
+    if (kop) stukken.push({ kop: kop[1], tekst: "" });
+    else stukken[stukken.length - 1].tekst += `${regel}\n`;
+  }
+  return (
+    <>
+      {stukken.map((st, i) => (
+        <View key={i}>
+          {st.kop ? (
+            <Text style={styles.losKop} minPresenceAhead={40}>
+              {zonderOpmaak(st.kop)}
+            </Text>
+          ) : null}
+          {blokken(st.tekst).map((b, j) =>
+            b.type === "bullet" ? (
+              <View key={j} style={styles.bullet} wrap={false}>
+                <Text style={styles.bulletTeken}>•</Text>
+                <Text style={{ flex: 1 }}>
+                  <Opgemaakt tekst={b.tekst} />
+                </Text>
+              </View>
+            ) : (
+              <Text key={j} style={styles.para}>
+                <Opgemaakt tekst={b.tekst} />
+              </Text>
+            ),
+          )}
+        </View>
+      ))}
+    </>
+  );
+}
 
 // Ruwe markdown-achtige opmaak opschonen naar leesbare tekst.
 /** Regel met vet/cursief als geneste react-pdf Text-delen. */
@@ -231,12 +348,12 @@ function MatenRij({ label, waarde }: { label: string; waarde: string }) {
 }
 
 /** Kleurstrook boven en voettekst onder elke pagina. */
-function Rand({ sleutel }: { sleutel: string }) {
+function Rand({ voettekst }: { voettekst: string }) {
   return (
     <>
       <Kleurstrook hoogte={6} style={styles.strookBoven} fixed />
       <View style={styles.voettekst} fixed>
-        <Text>© {BEDRIJFSNAAM_STANDAARD} · Type {sleutel}</Text>
+        <Text>{voettekst}</Text>
         <Text style={styles.paginanummer} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </View>
     </>
@@ -261,42 +378,48 @@ export function AdviesPdf({
   secties,
   silhouet,
   merk = MERK_STANDAARD,
+  teksten = standaardAdviesPdfTeksten(),
 }: AdviesPdfProps) {
+  const t = teksten.voorpagina;
+  const maatLabel = (k: keyof PdfMaten) => teksten.maten[k]?.trim() || MAAT_LABELS_STANDAARD[k];
   const cm = (v: number | null) => (v == null ? "–" : `${v} cm`);
   const matenRijen: { label: string; waarde: string }[] = [
-    { label: "Lengte", waarde: cm(maten.lengte_cm) },
-    { label: "Gewicht", waarde: maten.gewicht_kg == null ? "–" : `${maten.gewicht_kg} kg` },
-    ...(maten.schouder != null ? [{ label: "Schouderomvang", waarde: cm(maten.schouder) }] : []),
-    { label: "Borstomvang", waarde: cm(maten.borst) },
-    { label: "Tailleomvang", waarde: cm(maten.taille) },
-    { label: "Hoge heupomvang", waarde: cm(maten.hoge_heup) },
-    { label: "Heupomvang", waarde: cm(maten.heup) },
-    ...(maten.binnenbeen != null ? [{ label: "Binnenbeenlengte", waarde: cm(maten.binnenbeen) }] : []),
+    { label: maatLabel("lengte_cm"), waarde: cm(maten.lengte_cm) },
+    { label: maatLabel("gewicht_kg"), waarde: maten.gewicht_kg == null ? "–" : `${maten.gewicht_kg} kg` },
+    ...(maten.schouder != null ? [{ label: maatLabel("schouder"), waarde: cm(maten.schouder) }] : []),
+    { label: maatLabel("borst"), waarde: cm(maten.borst) },
+    { label: maatLabel("taille"), waarde: cm(maten.taille) },
+    { label: maatLabel("hoge_heup"), waarde: cm(maten.hoge_heup) },
+    { label: maatLabel("heup"), waarde: cm(maten.heup) },
+    ...(maten.binnenbeen != null ? [{ label: maatLabel("binnenbeen"), waarde: cm(maten.binnenbeen) }] : []),
   ];
   const helft = Math.ceil(matenRijen.length / 2);
   const toonMaten = matenRijen.some((r) => r.waarde !== "–");
+  const voettekst = vulIn(t.voettekst, { bedrijf: BEDRIJFSNAAM_STANDAARD, type: sleutel });
+  const metNaam = (tekst: string) => vulIn(tekst, { naam: klantnaam });
+  const intro = teksten.intro;
+  const toonIntro = intro.tekst.trim() !== "";
+  const slot = teksten.slot;
+  const slotBlokken = [slot.over, slot.contact].filter((b) => b.trim());
+  const toonSlot = Boolean(slot.titel.trim() || slotBlokken.length || slot.oproep.trim() || slot.disclaimer.trim());
 
   return (
     <Document title={`Kledingadvies ${sleutel}`} author={BEDRIJFSNAAM_STANDAARD}>
       {/* Voorpagina */}
       <Page size="A4" style={[styles.page, styles.cover]}>
-        <Rand sleutel={sleutel} />
+        <Rand voettekst={voettekst} />
         <Woordmerk merk={merk} grootte={15} />
 
-        <Text style={styles.coverTitel}>
-          Jouw persoonlijke <Text style={styles.coverAccent}>kledingadvies</Text>
-        </Text>
-        <Text style={styles.coverVoor}>
-          Voor {klantnaam} · {datum}
-        </Text>
+        <TitelMetAccent tekst={t.titel} style={styles.coverTitel} />
+        <Text style={styles.coverVoor}>{vulIn(t.voor, { naam: klantnaam, datum })}</Text>
 
         <View style={styles.coverRij}>
           <View style={styles.coverTekst}>
-            <Text style={styles.kicker}>Jouw type</Text>
+            <Text style={styles.kicker}>{t.type_label}</Text>
             <Text style={styles.coverType}>{titel}</Text>
             {silhouet && (
               <>
-                <Text style={styles.coverSilhouet}>Silhouet: {silhouet.naam}</Text>
+                <Text style={styles.coverSilhouet}>{vulIn(t.silhouet, { silhouet: silhouet.naam })}</Text>
                 <Text style={styles.coverUitleg}>{silhouet.uitleg}</Text>
               </>
             )}
@@ -305,9 +428,7 @@ export function AdviesPdf({
             <View style={styles.figuurPaneel}>
               <Figuur vorm={silhouet.vorm} hoogte={244} />
               <Text style={styles.figuurOnderschrift}>
-                {silhouet.eigenMaten
-                  ? "Jouw silhouet, getekend naar je eigen maten"
-                  : `Silhouet ${silhouet.naam}`}
+                {vulIn(silhouet.eigenMaten ? t.figuur_eigen : t.figuur_standaard, { silhouet: silhouet.naam })}
               </Text>
             </View>
           )}
@@ -315,7 +436,7 @@ export function AdviesPdf({
 
         {toonMaten && (
           <View style={styles.matenBlok} wrap={false}>
-            <Text style={styles.kicker}>Jouw maten</Text>
+            <Text style={styles.kicker}>{t.maten_label}</Text>
             <View style={styles.matenKolommen}>
               <View style={[styles.matenKolom, { marginRight: 14 }]}>
                 {matenRijen.slice(0, helft).map((r) => (
@@ -333,13 +454,23 @@ export function AdviesPdf({
 
       </Page>
 
+      {/* Optionele introductie (Beheer → Teksten → PDF-advies) */}
+      {toonIntro && (
+        <Page size="A4" style={styles.page}>
+          <Rand voettekst={voettekst} />
+          {intro.bovenschrift.trim() ? <Text style={styles.kicker}>{metNaam(intro.bovenschrift)}</Text> : null}
+          {intro.titel.trim() ? <TitelMetAccent tekst={metNaam(intro.titel)} style={styles.losTitel} /> : null}
+          <OpmaakTekst tekst={metNaam(intro.tekst)} />
+        </Page>
+      )}
+
       {/* Advies */}
       <Page size="A4" style={styles.page}>
-        <Rand sleutel={sleutel} />
+        <Rand voettekst={voettekst} />
         {secties.length > 1 && (
           <View style={styles.inhoud}>
-            <Text style={styles.kicker}>In dit advies</Text>
-            <Text style={styles.inhoudTitel}>Inhoud</Text>
+            <Text style={styles.kicker}>{t.inhoud_label}</Text>
+            <Text style={styles.inhoudTitel}>{t.inhoud_titel}</Text>
             {secties.map((s, i) => (
               <View key={i} style={styles.inhoudRij}>
                 <Text style={styles.inhoudNummer}>{i + 1}.</Text>
@@ -384,6 +515,25 @@ export function AdviesPdf({
           </View>
         ))}
       </Page>
+
+      {/* Optionele slotpagina (Beheer → Teksten → PDF-advies) */}
+      {toonSlot && (
+        <Page size="A4" style={styles.page}>
+          <Rand voettekst={voettekst} />
+          {slot.titel.trim() ? <TitelMetAccent tekst={metNaam(slot.titel)} style={styles.losTitel} /> : null}
+          {slotBlokken.map((b, i) => (
+            <View key={i} style={styles.slotBlok}>
+              <OpmaakTekst tekst={metNaam(b)} />
+            </View>
+          ))}
+          {slot.oproep.trim() ? (
+            <View style={styles.slotOproep} wrap={false}>
+              <OpmaakTekst tekst={metNaam(slot.oproep)} />
+            </View>
+          ) : null}
+          {slot.disclaimer.trim() ? <Text style={styles.disclaimer}>{metNaam(slot.disclaimer)}</Text> : null}
+        </Page>
+      )}
     </Document>
   );
 }
