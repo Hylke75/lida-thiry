@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MaatVeld } from "@/lib/test-config";
 import { maatFout, type Antwoorden } from "../wizard-regels";
 import { MaatKaart } from "./MaatKaart";
+import { klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 /** Een meetstap: de maatkaarten van één groep, met de meettip boven de eerste meetstap. */
 export function StapMaten({
@@ -28,7 +29,7 @@ export function StapMaten({
   return (
     <div className="flex flex-col gap-5">
       {tip && (
-        <p className="whitespace-pre-line rounded-lg bg-black/5 px-4 py-3 text-sm text-black/70 dark:bg-white/10 dark:text-white/70">
+        <p className={`${klantMeldingKlassen("letop")} m-0 whitespace-pre-line`}>
           💡 {tip}
         </p>
       )}

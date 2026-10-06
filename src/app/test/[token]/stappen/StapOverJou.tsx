@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { Lichaam } from "@/components/Lichaam";
 import { getal, type Antwoorden } from "../wizard-regels";
 import { Invoer } from "./Invoer";
+import { KLANT_INTRO } from "@/components/site/KlantPagina";
 
 /** Stap "Over jou": lengte en gewicht. */
 export function StapOverJou({
@@ -16,10 +17,10 @@ export function StapOverJou({
   intro: string;
 }) {
   return (
-    <div className="grid items-center gap-6 sm:grid-cols-[140px_1fr]">
-      <Lichaam meet="lengte" titel="Lengte meten" className="mx-auto h-56 sm:h-64" />
-      <div className="flex flex-col gap-4">
-        <p className="whitespace-pre-line text-sm text-black/60 dark:text-white/60">{intro}</p>
+    <div className="grid items-center gap-6 rounded-ontwerp-md border border-line bg-white p-5 tablet:grid-cols-[170px_1fr] tablet:gap-8 tablet:p-[30px]">
+      <Lichaam meet="lengte" titel="Lengte meten" className="mx-auto h-56 tablet:h-64" />
+      <div className="flex flex-col gap-5">
+        <p className={`${KLANT_INTRO} m-0 whitespace-pre-line text-[17px]`}>{intro}</p>
         <Invoer
           label="Lengte"
           eenheid="cm"

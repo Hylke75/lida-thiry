@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Knop, TekstLink } from "@/components/site/Basis";
+import { KlantKaart, KlantKop, KlantPagina } from "@/components/site/KlantPagina";
 import { adminClient } from "@/lib/supabase/admin";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { vulIn } from "@/lib/inhoud/schema";
@@ -53,35 +54,33 @@ export default async function CadeaubonBedanktPage({
     tekst = vulIn(verzendenIsAanDeBeurt(bon.verzend_op) ? t.tekstOntvanger : t.tekstGepland, w);
   }
 
-  const knop =
-    "mx-auto rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90";
+  const kop = (bovenschrift: string, titel: string, tekst: string) => (
+    <KlantKop midden bovenschrift={bovenschrift} titel={titel} className="mb-0! tablet:mb-0!">
+      <p className="whitespace-pre-line">{tekst}</p>
+    </KlantKop>
+  );
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
-      <div className="flex flex-col gap-6 rounded-2xl bg-kaart p-8 shadow-sm ring-1 ring-foreground/5">
+    <KlantPagina midden>
+      <KlantKaart accent={betaald ? "sage" : mislukt ? "coral" : "butter"} className="flex flex-col items-center gap-6">
         {betaald ? (
-          <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.titel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">{tekst}</p>
-          </>
+          kop("Cadeaubon", t.titel, tekst)
         ) : mislukt ? (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.misluktTitel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">{t.misluktTekst}</p>
-            <Link href="/cadeaubon" className={knop}>
+            {kop("Betaling", t.misluktTitel, t.misluktTekst)}
+            <Knop href="/cadeaubon" pijl={false}>
               {t.misluktKnop}
-            </Link>
+            </Knop>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t.verwerkenTitel}</h1>
-            <p className="whitespace-pre-line text-foreground/70">{t.verwerkenTekst}</p>
+            {kop("Even geduld", t.verwerkenTitel, t.verwerkenTekst)}
             {bon?.status === "aangemaakt" && <AutoVernieuwen />}
           </>
         )}
-        <Link href="/" className="mx-auto text-sm text-foreground/50 underline underline-offset-4 hover:text-accent">
+        <TekstLink href="/" className="text-[14px] text-ink-soft">
           ← Terug naar de startpagina
-        </Link>
-      </div>
-    </main>
+        </TekstLink>
+      </KlantKaart>
+    </KlantPagina>
   );
 }

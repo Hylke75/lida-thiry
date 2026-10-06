@@ -5,27 +5,24 @@ import type { SectieWaarden } from "@/lib/inhoud/schema";
 import type { REVIEWS_FORMULIER } from "@/lib/inhoud/groepen/reviews";
 import { REVIEW_MAX, REVIEW_MIN_TEKST, valideerReview, type ReviewVeld } from "@/lib/reviews/regels";
 import { bewaarReview } from "./acties";
+import { knopKlassen } from "@/components/site/Basis";
+import { HULPTEKST, invoer, LABEL, VELDFOUT, VERPLICHT, VINKJE, VINKJE_LABEL } from "@/components/site/FormulierStijl";
+import { KlantKaart, KlantKop, klantMeldingKlassen } from "@/components/site/KlantPagina";
 
 type Teksten = SectieWaarden<typeof REVIEWS_FORMULIER>;
 
 const VOLGORDE: readonly ReviewVeld[] = ["sterren", "tekst", "naam"];
 
-const invoerStijl = (fout: boolean) =>
-  `w-full rounded-lg border bg-kaart px-3 py-2 outline-none focus:ring-2 ${
-    fout
-      ? "border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
-      : "border-foreground/15 focus:border-accent focus:ring-accent/20"
-  }`;
+const invoerStijl = invoer;
 
-const hoofdknop =
-  "rounded-full bg-accent px-7 py-3 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50";
+const hoofdknop = `${knopKlassen()} w-full tablet:w-auto`;
 
 function Ster({ vol }: { vol: boolean }) {
   return (
     <svg viewBox="0 0 24 24" className="h-9 w-9" aria-hidden="true">
       <path
         d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"
-        className={vol ? "fill-accent stroke-accent" : "fill-transparent stroke-foreground/30"}
+        className={vol ? "fill-coral stroke-coral-tekst" : "fill-transparent stroke-ink-soft"}
         strokeWidth={1.5}
         strokeLinejoin="round"
       />
@@ -118,53 +115,51 @@ export function ReviewFormulier({
 
   if (modus === "afgesloten") {
     return (
-      <div role="status" className="flex flex-col gap-3 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{teksten.afgesloten_titel}</h1>
-        <p className="whitespace-pre-line text-foreground/70">{teksten.afgesloten_tekst}</p>
-      </div>
+      <KlantKaart role="status" accent="butter">
+        <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
+          <p className="whitespace-pre-line">{teksten.afgesloten_tekst}</p>
+        </KlantKop>
+      </KlantKaart>
     );
   }
 
   if (modus === "bedankt") {
     return (
-      <div role="status" className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{teksten.bedankt_titel}</h1>
-        <p className="whitespace-pre-line text-foreground/70">{teksten.bedankt_tekst}</p>
-        <p className="text-sm text-foreground/60">{teksten.bewerken_tekst}</p>
-        <button
-          type="button"
-          onClick={() => setModus("formulier")}
-          className="rounded-full border border-accent/40 px-6 py-2.5 text-sm font-medium text-accent hover:bg-accent-zacht"
-        >
+      <KlantKaart role="status" accent="sage" className="flex flex-col items-center gap-5 text-center">
+        <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.bedankt_titel} className="mb-0! tablet:mb-0!">
+          <p className="whitespace-pre-line">{teksten.bedankt_tekst}</p>
+        </KlantKop>
+        <p className="m-0 text-[15px] text-ink-soft">{teksten.bewerken_tekst}</p>
+        <button type="button" onClick={() => setModus("formulier")} className={knopKlassen({ variant: "outline" })}>
           {teksten.bewerken_knop}
         </button>
-      </div>
+      </KlantKaart>
     );
   }
 
   const getoond = zweef || sterren;
   const veldFout = (v: ReviewVeld) =>
     fouten[v] ? (
-      <span id={foutId(v)} className="text-sm text-red-700 dark:text-red-300">
+      <span id={foutId(v)} className={VELDFOUT}>
         {fouten[v]}
       </span>
     ) : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{teksten.titel}</h1>
-        {teksten.intro && <p className="whitespace-pre-line text-foreground/70">{teksten.intro}</p>}
-      </header>
+    <div className="flex flex-col">
+      <KlantKop bovenschrift="Jouw ervaring" titel={teksten.titel}>
+        {teksten.intro && <p className="whitespace-pre-line">{teksten.intro}</p>}
+      </KlantKop>
+      <KlantKaart>
       <form ref={formRef} onSubmit={verstuur} noValidate className="flex flex-col gap-6 text-left">
         <fieldset
           className="flex flex-col gap-2"
           aria-invalid={fouten.sterren ? true : undefined}
           aria-describedby={fouten.sterren ? foutId("sterren") : undefined}
         >
-          <legend className="mb-2 text-sm text-foreground/70">
+          <legend className={`${LABEL} mb-2`}>
             {teksten.sterren_label}
-            <span className="text-accent" aria-hidden="true">
+            <span className={VERPLICHT} aria-hidden="true">
               {" "}
               *
             </span>
@@ -173,7 +168,7 @@ export function ReviewFormulier({
             {[1, 2, 3, 4, 5].map((n) => (
               <label
                 key={n}
-                className="cursor-pointer rounded-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+                className="grid h-11 w-11 cursor-pointer place-items-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-berry"
                 onMouseEnter={() => setZweef(n)}
               >
                 <input
@@ -192,16 +187,16 @@ export function ReviewFormulier({
           {veldFout("sterren")}
         </fieldset>
 
-        <div className="flex flex-col gap-1 text-sm">
-          <label htmlFor={veldId("tekst")} className="text-foreground/70">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={veldId("tekst")} className={LABEL}>
             {teksten.tekst_label}
-            <span className="text-accent" aria-hidden="true">
+            <span className={VERPLICHT} aria-hidden="true">
               {" "}
               *
             </span>
           </label>
           {teksten.tekst_uitleg && (
-            <span id={`${id}-tekst-uitleg`} className="text-foreground/50">
+            <span id={`${id}-tekst-uitleg`} className={HULPTEKST}>
               {teksten.tekst_uitleg}
             </span>
           )}
@@ -218,26 +213,26 @@ export function ReviewFormulier({
             aria-describedby={[fouten.tekst ? foutId("tekst") : null, teksten.tekst_uitleg ? `${id}-tekst-uitleg` : null, `${id}-teller`]
               .filter(Boolean)
               .join(" ")}
-            className={invoerStijl(!!fouten.tekst)}
+            className={`${invoerStijl(!!fouten.tekst)} resize-y`}
           />
           <div className="flex items-start justify-between gap-3">
             {veldFout("tekst") ?? <span />}
-            <span id={`${id}-teller`} className="shrink-0 text-xs tabular-nums text-foreground/50">
+            <span id={`${id}-teller`} className={`${HULPTEKST} shrink-0 tabular-nums`}>
               {lengte.toLocaleString("nl-NL")} / {REVIEW_MAX.tekst.toLocaleString("nl-NL")}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 text-sm">
-          <label htmlFor={veldId("naam")} className="text-foreground/70">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={veldId("naam")} className={LABEL}>
             {teksten.naam_label}
-            <span className="text-accent" aria-hidden="true">
+            <span className={VERPLICHT} aria-hidden="true">
               {" "}
               *
             </span>
           </label>
           {teksten.naam_uitleg && (
-            <span id={`${id}-naam-uitleg`} className="text-foreground/50">
+            <span id={`${id}-naam-uitleg`} className={HULPTEKST}>
               {teksten.naam_uitleg}
             </span>
           )}
@@ -257,28 +252,24 @@ export function ReviewFormulier({
           {veldFout("naam")}
         </div>
 
-        <label className="flex items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            name="toestemming"
-            defaultChecked={waarden.toestemming}
-            className="mt-1 accent-accent"
-          />
+        <label className={VINKJE_LABEL}>
+          <input type="checkbox" name="toestemming" defaultChecked={waarden.toestemming} className={VINKJE} />
           <span>{teksten.toestemming}</span>
         </label>
 
         {fout && (
-          <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+          <p role="alert" className={`${klantMeldingKlassen("fout")} m-0`}>
             {fout}
           </p>
         )}
 
-        <div className="flex justify-center">
+        <div className="flex">
           <button type="submit" disabled={bezig} className={hoofdknop}>
             {bezig ? "Bezig…" : ingevuld ? teksten.knop_bijwerken : teksten.knop}
           </button>
         </div>
       </form>
+      </KlantKaart>
     </div>
   );
 }

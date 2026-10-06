@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 import { leesPubliekePrijs } from "@/lib/instellingen";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { BESTELLEN_FORMULIER, BESTELLEN_PAGINA } from "@/lib/inhoud/groepen/bestellen";
 import { NIEUWSBRIEF_BESTELLING } from "@/lib/inhoud/groepen/nieuwsbrief";
 import { gratisTestAan } from "@/lib/order-status";
+import { KlantKaart, KlantKop, KlantMelding, KlantPagina } from "@/components/site/KlantPagina";
 import { BestelFormulier } from "./BestelFormulier";
 import { formatteerBedrag } from "@/lib/prijs";
 
@@ -52,32 +52,23 @@ export default async function BestellenPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
-      <div>
-        <Link
-          href="/"
-          className="text-sm text-foreground/70 underline underline-offset-4 hover:text-accent"
-        >
-          ← Terug
-        </Link>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{pagina.titel}</h1>
+    <KlantPagina>
+      <KlantKop bovenschrift="Online figuurtest" titel={pagina.titel} terug={{ href: "/", tekst: "← Terug" }}>
         {prijsLabel && (
-          <p className="mt-2 text-foreground/70">
-            {metPrijs(pagina.prijsregel, <strong className="text-accent">{prijsLabel}</strong>)}{" "}
-            <span className="text-sm text-foreground/70">{pagina.btw}</span>
+          <p>
+            {metPrijs(pagina.prijsregel, <strong className="font-extrabold text-ink">{prijsLabel}</strong>)}{" "}
+            <span className="text-[14px]">{pagina.btw}</span>
           </p>
         )}
-      </div>
+      </KlantKop>
 
       {prijsBekend || gratisTest ? (
-        <div className="rounded-2xl bg-kaart p-6 shadow-sm ring-1 ring-foreground/5 sm:p-8">
+        <KlantKaart>
           <BestelFormulier prijsBekend={prijsBekend} gratisTest={gratisTest} teksten={formulier} nieuwsbriefVinkje={nieuwsbrief.vinkje} />
-        </div>
+        </KlantKaart>
       ) : (
-        <p className="rounded-lg border border-accent/20 bg-accent-zacht px-4 py-3 text-sm whitespace-pre-line text-foreground/70">
-          {pagina.geenPrijs}
-        </p>
+        <KlantMelding soort="letop">{pagina.geenPrijs}</KlantMelding>
       )}
-    </main>
+    </KlantPagina>
   );
 }

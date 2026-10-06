@@ -4,6 +4,7 @@ import { leesSectie } from "@/lib/inhoud/lees";
 import { REVIEWS_FORMULIER } from "@/lib/inhoud/groepen/reviews";
 import { reviewViaToken } from "@/lib/reviews/publiek";
 import { magKlantBewerken } from "@/lib/reviews/regels";
+import { KlantKaart, KlantKop, KlantPagina } from "@/components/site/KlantPagina";
 import { ReviewFormulier } from "./ReviewFormulier";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function ReviewPagina({ params }: { params: Promise<{ token
   if (!review) notFound();
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-6 py-16">
+    <KlantPagina midden={!magKlantBewerken(review.status)}>
       {magKlantBewerken(review.status) ? (
         <ReviewFormulier
           token={token}
@@ -36,11 +37,12 @@ export default async function ReviewPagina({ params }: { params: Promise<{ token
           }}
         />
       ) : (
-        <div className="flex flex-col gap-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{teksten.afgesloten_titel}</h1>
-          <p className="whitespace-pre-line text-foreground/70">{teksten.afgesloten_tekst}</p>
-        </div>
+        <KlantKaart accent="butter">
+          <KlantKop midden bovenschrift="Jouw ervaring" titel={teksten.afgesloten_titel} className="mb-0! tablet:mb-0!">
+            <p className="whitespace-pre-line">{teksten.afgesloten_tekst}</p>
+          </KlantKop>
+        </KlantKaart>
       )}
-    </main>
+    </KlantPagina>
   );
 }

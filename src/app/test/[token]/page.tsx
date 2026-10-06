@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { TekstLink } from "@/components/site/Basis";
+import { KlantKaart, KlantKop, KlantPagina } from "@/components/site/KlantPagina";
 import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { leesMeetBeelden } from "@/lib/meetbeelden";
 import { TestWizard } from "./TestWizard";
@@ -23,16 +24,16 @@ export const dynamic = "force-dynamic";
 
 function Melding({ titel, tekst }: { titel: string; tekst: string }) {
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 p-8 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">{titel}</h1>
-      <p className="text-foreground/70">{tekst}</p>
-      <Link
-        href="/"
-        className="mx-auto text-sm text-foreground/50 underline underline-offset-4 hover:text-accent"
-      >
-        ← Naar de startpagina
-      </Link>
-    </main>
+    <KlantPagina midden>
+      <KlantKaart accent="butter" className="flex flex-col items-center gap-6">
+        <KlantKop midden bovenschrift="Online figuurtest" titel={titel} className="mb-0! tablet:mb-0!">
+          <p>{tekst}</p>
+        </KlantKop>
+        <TekstLink href="/" className="text-[14px] text-ink-soft">
+          ← Naar de startpagina
+        </TekstLink>
+      </KlantKaart>
+    </KlantPagina>
   );
 }
 
