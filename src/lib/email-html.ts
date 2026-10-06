@@ -49,6 +49,8 @@ export interface BestelOverzicht {
   totaalCent: number;
   valuta: string;
   factuurnummer?: string | null;
+  /** Naam van het product (instelling product_naam). */
+  productNaam?: string;
 }
 
 const STIJL: HtmlOpties["stijl"] = { a: `color:${KLEUR.berry}`, ul: "padding-left:20px" };
@@ -56,7 +58,7 @@ const STIJL: HtmlOpties["stijl"] = { a: `color:${KLEUR.berry}`, ul: "padding-lef
 function overzichtHtml(o: BestelOverzicht): string {
   const rij = (label: string, waarde: string, vet = false) =>
     `<tr><td style="padding:${vet ? "12px" : "6px"} 0 6px;${vet ? `font-weight:700;border-top:1px solid ${KLEUR.lijn}` : `color:${KLEUR.inkZacht}`}">${label}</td><td style="padding:${vet ? "12px" : "6px"} 0 6px;text-align:right;${vet ? `font-weight:700;border-top:1px solid ${KLEUR.lijn}` : ""}">${waarde}</td></tr>`;
-  const regels = [rij("Persoonlijke kledingadviestest", formatteerBedrag(o.prijsCent, o.valuta))];
+  const regels = [rij(escapeHtml(o.productNaam || "Persoonlijke kledingadviestest"), formatteerBedrag(o.prijsCent, o.valuta))];
   if (o.kortingCent > 0) {
     const label = o.kortingscode ? `Korting (${escapeHtml(o.kortingscode)})` : "Korting";
     regels.push(rij(label, `− ${formatteerBedrag(o.kortingCent, o.valuta)}`));

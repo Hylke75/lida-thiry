@@ -46,3 +46,25 @@ export async function annuleerBetaling(id: string): Promise<void> {
     console.error("Betaling annuleren mislukt", id, e);
   }
 }
+
+/**
+ * Betaalt (een deel van) een Mollie-betaling terug. De Mollie-client herhaalt
+ * een mislukt verzoek zelf met dezelfde idempotentiesleutel (geen dubbele
+ * terugbetaling); dubbelklikken vangt de aanroeper af. Gooit bij fouten (bijv.
+ * onvoldoende saldo bij Mollie).
+ */
+export async function terugbetalen(opts: {
+  betaalId: string;
+  bedragCent: number;
+  valuta?: string | null;
+  omschrijving: string;
+  metadata?: Record<string, string>;
+}): Promise<{ id: string; status: string }> {
+  const refund = await mollie().paymentRefunds.create({
+    paymentId: opts.betaalId,
+    amount: { currency: opts.valuta || "EUR", value: centenNaarBedrag(opts.bedragCent) },
+    description: opts.omschrijving,
+    ...(opts.metadata ? { metadata: opts.metadata } : {}),
+  });
+  return { id: refund.id, status: String(refund.status) };
+}

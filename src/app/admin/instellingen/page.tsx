@@ -6,6 +6,7 @@ import { logActie } from "@/lib/beheer-log";
 import { adminClient } from "@/lib/supabase/admin";
 import {
   AFSPRAAK_INSTELLINGEN,
+  CADEAUBON_INSTELLINGEN,
   INSTELLING_VELDEN,
   VEROUDERDE_INSTELLINGEN,
   WEBSITE_INSTELLINGEN,
@@ -17,6 +18,7 @@ import {
 import { AdminNav, Melding } from "../AdminNav";
 import { invoerBreed, kaartVlak, knop } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { gratisTestAan } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,8 @@ interface Rij {
   sleutel: string;
   waarde: string | null;
   omschrijving: string | null;
+  /** Bekende sleutel die nog niet in de database staat (wordt bij opslaan aangemaakt). */
+  nieuw?: boolean;
 }
 
 async function leesRijen(): Promise<Rij[]> {
@@ -31,10 +35,19 @@ async function leesRijen(): Promise<Rij[]> {
   if (error) throw new Error(`instellingen lezen: ${error.message}`);
   const bekend = Object.keys(INSTELLING_VELDEN);
   const positie = (s: string) => (bekend.includes(s) ? bekend.indexOf(s) : bekend.length);
-  return ((data ?? []) as Rij[])
+  const rijen = (data ?? []) as Rij[];
+  // Bekende instellingen die (nog) niet in de database staan, met hun standaardwaarde.
+  const aanwezig = new Set(rijen.map((r) => r.sleutel));
+  for (const [sleutel, veld] of Object.entries(INSTELLING_VELDEN)) {
+    if (!aanwezig.has(sleutel)) rijen.push({ sleutel, waarde: veld.standaard ?? null, omschrijving: null, nieuw: true });
+  }
+  return rijen
     .filter(
       (r) =>
-        !VEROUDERDE_INSTELLINGEN.has(r.sleutel) && !WEBSITE_INSTELLINGEN.has(r.sleutel) && !AFSPRAAK_INSTELLINGEN.has(r.sleutel),
+        !VEROUDERDE_INSTELLINGEN.has(r.sleutel) &&
+        !WEBSITE_INSTELLINGEN.has(r.sleutel) &&
+        !AFSPRAAK_INSTELLINGEN.has(r.sleutel) &&
+        !CADEAUBON_INSTELLINGEN.has(r.sleutel),
     )
     .sort((a, b) => positie(a.sleutel) - positie(b.sleutel) || a.sleutel.localeCompare(b.sleutel));
 }
@@ -44,14 +57,24 @@ async function slaOp(formData: FormData) {
   const ik = await vereisBeheerder("instellingen");
   const rijen = await leesRijen();
   const fouten: string[] = [];
-  const wijzigingen: { sleutel: string; waarde: string | null; oud: string | null }[] = [];
+  const wijzigingen: { sleutel: string; waarde: string | null; oud: string | null; nieuw: boolean; uitleg: string | null }[] = [];
 
   for (const r of rijen) {
     const invoer = formData.get(`veld:${r.sleutel}`);
     if (typeof invoer !== "string") continue;
-    const uitkomst = vanInvoer(veldVoor(r.sleutel, r.omschrijving), invoer);
+    const veld = veldVoor(r.sleutel, r.omschrijving);
+    const uitkomst = vanInvoer(veld, invoer);
     if (!uitkomst.ok) fouten.push(uitkomst.fout);
-    else if (uitkomst.waarde !== r.waarde) wijzigingen.push({ sleutel: r.sleutel, waarde: uitkomst.waarde, oud: r.waarde });
+    // Een nieuwe sleutel altijd vastleggen (ook met de standaardwaarde).
+    else if (uitkomst.waarde !== r.waarde || r.nieuw) {
+      wijzigingen.push({
+        sleutel: r.sleutel,
+        waarde: uitkomst.waarde,
+        oud: r.nieuw ? null : r.waarde,
+        nieuw: Boolean(r.nieuw),
+        uitleg: veld.uitleg ?? veld.label,
+      });
+    }
   }
 
   if (fouten.length) {
@@ -60,7 +83,13 @@ async function slaOp(formData: FormData) {
 
   const supabase = adminClient();
   for (const w of wijzigingen) {
-    const { error } = await supabase.from("instellingen").update({ waarde: w.waarde }).eq("sleutel", w.sleutel);
+    // Upsert: ook bekende sleutels die nog niet in de database stonden worden opgeslagen.
+    const { error } = await supabase
+      .from("instellingen")
+      .upsert(
+        w.nieuw ? { sleutel: w.sleutel, waarde: w.waarde, omschrijving: w.uitleg } : { sleutel: w.sleutel, waarde: w.waarde },
+        { onConflict: "sleutel" },
+      );
     if (error) {
       redirect(`/admin/instellingen?fout=${encodeURIComponent(`Opslaan mislukt: ${error.message}`)}`);
     }
@@ -132,6 +161,7 @@ export default async function InstellingenPagina({
   await vereisBeheerder("instellingen");
   const { opgeslagen, fout } = await searchParams;
   const rijen = await leesRijen();
+  const gratisTest = gratisTestAan();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6 sm:p-8">
@@ -160,6 +190,19 @@ export default async function InstellingenPagina({
           ))}
         </Melding>
       )}
+
+      <section className={`${kaartVlak} flex flex-col gap-1.5`} aria-labelledby="gratis-test">
+        <h2 id="gratis-test" className="text-sm font-medium">
+          Gratis testmodus: {gratisTest ? "aan" : "uit"}
+        </h2>
+        <p className="text-xs leading-relaxed text-foreground/70">
+          {gratisTest
+            ? "Bezoekers kunnen de test nu zonder betaling doen, en in Bestellingen staan knoppen om testbestellingen te maken en te verwijderen. Zet dit vóór de livegang uit."
+            : "Iedereen betaalt via Mollie. Voor het testen kan de ontwikkelaar de gratis testmodus aanzetten."}{" "}
+          Dit staat bewust niet als instelling in het beheer: het wordt alleen op de server geregeld (omgevingsvariabele
+          GRATIS_TEST=1), zodat de test op de echte site nooit per ongeluk gratis wordt.
+        </p>
+      </section>
 
       {rijen.length === 0 ? (
         <p className="text-sm text-foreground/70">Er zijn nog geen instellingen.</p>

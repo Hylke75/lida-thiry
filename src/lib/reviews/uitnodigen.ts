@@ -1,6 +1,7 @@
 import "server-only";
 import { adminClient } from "../supabase/admin";
-import { leesInstelling } from "../instellingen";
+import { leesInstellingen } from "../instellingen";
+import { leesVerkoopTijden } from "../verkoop/regels";
 import { stuurReviewUitnodiging } from "../resend";
 import { foutTekst } from "../beheermelding";
 import {
@@ -88,9 +89,11 @@ export async function nodigUitVoorReviews(
   const mislukt: string[] = [];
   let verstuurd = 0;
   try {
-    const naDagen = leesReviewDagen(await leesInstelling("review_na_dagen"));
+    const inst = await leesInstellingen();
+    const naDagen = leesReviewDagen(inst.review_na_dagen);
+    const maxDagen = leesVerkoopTijden(inst).reviewMaxDagen;
     const nu = new Date();
-    const { van, tot } = reviewVenster(nu, naDagen);
+    const { van, tot } = reviewVenster(nu, naDagen, maxDagen);
     // Bladeren tot er genoeg kandidaten zijn: anders blijft de ronde hangen op
     // de oudste bestellingen die al een review hebben.
     const kandidaten: OrderRij[] = [];
@@ -124,7 +127,7 @@ export async function nodigUitVoorReviews(
       const bekendeEmails = new Set((perEmail ?? []).map((r) => r.email as string));
 
       const metReview = new Set((bestaand ?? []).map((r) => r.order_id as string));
-      for (const o of selecteerUitTeNodigen(lijst, metReview, nu, naDagen) as OrderRij[]) {
+      for (const o of selecteerUitTeNodigen(lijst, metReview, nu, naDagen, maxDagen) as OrderRij[]) {
         const email = o.email.trim().toLowerCase();
         // Eén uitnodiging per klant per ronde, ook als die meerdere bestellingen heeft.
         if (bekendeEmails.has(email) || gezienEmails.has(email)) continue;

@@ -15,6 +15,8 @@ import { datum } from "@/lib/datum";
 import { FACTUREN } from "@/lib/opslag";
 import { badge, tekstZacht, toon } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { heeftRecht } from "@/lib/rollen";
+import { ExportFormulier } from "../bestellingen/ExportFormulier";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +71,7 @@ export default async function CadeaubonnenPage({
 }: {
   searchParams: Promise<{ ok?: string; fout?: string; alles?: string }>;
 }) {
-  await vereisBeheerder("cadeaubonnen");
+  const ik = await vereisBeheerder("cadeaubonnen");
   const { ok, fout, alles } = await searchParams;
   const supabase = adminClient();
 
@@ -163,10 +165,10 @@ export default async function CadeaubonnenPage({
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col">
-                    <span className="font-medium">
+                    <Link href={`${PAD}/${b.id}`} className="font-medium underline-offset-4 hover:underline">
                       {formatteerBedrag(b.bedrag_cent, b.valuta || "EUR")} · {b.koper_naam}{" "}
                       <span className="font-normal text-foreground/70">({b.koper_email})</span>
-                    </span>
+                    </Link>
                     <span className="text-foreground/70">
                       {b.bezorging === "ontvanger"
                         ? `Naar ontvanger: ${b.ontvanger_naam ?? "–"} (${b.ontvanger_email ?? "–"})${b.verzend_op ? ` · gepland op ${datum(b.verzend_op)}` : ""}`
@@ -199,7 +201,10 @@ export default async function CadeaubonnenPage({
                             {code.aantal_gebruikt}
                             {code.max_gebruik !== null ? ` / ${code.max_gebruik}` : ""} gebruikt
                             {code.geldig_tot ? ` · geldig t/m ${datum(code.geldig_tot)}` : ""}
-                            {!code.actief ? " · gedeactiveerd" : ""}
+                            {!code.actief ? " · geblokkeerd" : ""}
+                            {(b.terugbetaald_cent ?? 0) > 0
+                              ? ` · ${formatteerBedrag(b.terugbetaald_cent ?? 0, b.valuta || "EUR")} terugbetaald`
+                              : ""}
                             {gebruikt.map((o) => (
                               <span key={o.id}>
                                 {" · "}
@@ -215,6 +220,9 @@ export default async function CadeaubonnenPage({
                       )}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
+                      <Link href={`${PAD}/${b.id}`} className={linkKlein}>
+                        Beheren
+                      </Link>
                       <form action={verstuurOpnieuw}>
                         <input type="hidden" name="id" value={b.id} />
                         <button className={linkKlein}>
@@ -241,6 +249,8 @@ export default async function CadeaubonnenPage({
           })}
         </ul>
       )}
+
+      {heeftRecht(ik.rol, "bestellingen") && <ExportFormulier soorten={["cadeaubonnen", "creditnotas"]} />}
     </main>
   );
 }

@@ -10,6 +10,9 @@ import { bewaarNotitie, koppelAanAdresboek, stuurBevestigingOpnieuw, verwijderAf
 import { Meldingen, NAV_AFSPRAKEN, StatusLabel } from "../onderdelen";
 import { invoer, kaart, knop, knopGevaar, knopSecundair, tekstFout, tekstZacht } from "@/components/admin/stijl";
 import { AdminKop } from "@/components/admin/AdminKop";
+import { heeftRecht } from "@/lib/rollen";
+import { ActieFormulier } from "../../types/ActieFormulier";
+import { betaalAanbetalingTerugActie } from "./terugbetalen";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +38,7 @@ export default async function AfspraakDetail({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ok?: string; fout?: string }>;
 }) {
-  await vereisBeheerder("afspraken");
+  const ik = await vereisBeheerder("afspraken");
   const { id } = await params;
   const { ok, fout } = await searchParams;
   if (!geldigeUuid(id)) notFound();
@@ -46,6 +49,10 @@ export default async function AfspraakDetail({
   const duur = Math.round((Date.parse(a.eind_op) - Date.parse(a.start_op)) / 60_000);
   const gestart = Date.parse(a.start_op) <= new Date().getTime();
   const overgangen = toegestaneOvergangen(a.status, gestart);
+  // Terugbetaald deel van de aanbetaling (kolom uit de migratie verkoop_beheer; zonder: 0).
+  const { data: terugRij } = await adminClient().from("afspraken").select("terugbetaald_cent").eq("id", id).maybeSingle();
+  const alTerug = Number((terugRij as { terugbetaald_cent?: number } | null)?.terugbetaald_cent ?? 0);
+  const restAanbetaling = a.betaald_op && a.mollie_payment_id ? Math.max(0, a.aanbetaling_cent - alTerug) : 0;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
@@ -154,7 +161,7 @@ export default async function AfspraakDetail({
                   </label>
                   {a.aanbetaling_cent > 0 && a.betaald_op && (
                     <p className={`text-xs ${tekstZacht}`}>
-                      Er is een aanbetaling gedaan. Terugbetalen doe je zelf in het Mollie-dashboard.
+                      Er is een aanbetaling gedaan. Terugbetalen kan hieronder (of in het Mollie-dashboard).
                     </p>
                   )}
                   <button className="w-fit rounded-full bg-red-700 px-5 py-2 text-sm font-medium text-white hover:opacity-90">
@@ -176,6 +183,40 @@ export default async function AfspraakDetail({
           <button className={knopSecundair}>Bevestiging opnieuw sturen</button>
           <span className={tekstZacht}>De klant kan tot {inst.minVoorafUren} uur vooraf zelf annuleren.</span>
         </form>
+      )}
+
+      {heeftRecht(ik.rol, "terugbetalen") && (restAanbetaling > 0 || alTerug > 0) && (
+        <section className={kaart}>
+          <h2 className="font-semibold">Aanbetaling terugbetalen</h2>
+          <p className={`text-sm ${tekstZacht}`}>
+            Aanbetaald {bedragLabel(a.aanbetaling_cent)}
+            {alTerug > 0 ? `, al terugbetaald ${bedragLabel(alTerug)}` : ""}. Het bedrag gaat via Mollie terug. Voor een
+            aanbetaling is er geen factuur, dus ook geen creditnota.
+          </p>
+          {restAanbetaling > 0 && (
+            <ActieFormulier
+              actie={betaalAanbetalingTerugActie}
+              bevestig="Weet je zeker dat je wilt terugbetalen? Dit kan niet ongedaan worden gemaakt."
+              className="flex flex-col gap-3 text-sm"
+            >
+              <input type="hidden" name="id" value={a.id} />
+              <label className="flex items-center gap-2">
+                <input type="radio" name="omvang" value="volledig" defaultChecked />
+                Alles ({bedragLabel(restAanbetaling)})
+              </label>
+              <label className="flex flex-wrap items-center gap-2">
+                <input type="radio" name="omvang" value="deel" />
+                Een deel: €
+                <input name="bedrag" inputMode="decimal" placeholder="10,00" aria-label="Bedrag in euro" className={`${invoer} w-28`} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={tekstZacht}>Reden (zichtbaar bij Mollie)</span>
+                <input name="reden" maxLength={200} className={invoer} />
+              </label>
+              <button className={`${knopGevaar} w-fit`}>Terugbetalen</button>
+            </ActieFormulier>
+          )}
+        </section>
       )}
 
       <section className={kaart}>

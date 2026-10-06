@@ -8,7 +8,8 @@ import { stuurCadeaubonKoperMail, stuurCadeaubonMail } from "../resend";
 import { stuurBeheerMelding, foutTekst } from "../beheermelding";
 import { siteUrl } from "../site";
 import type { BonGegevens } from "../email-html";
-import { cadeaubonGeldigTot, verzendenIsAanDeBeurt, type Bezorging } from "./regels";
+import { cadeaubonGeldigTot, leesCadeaubonInstellingen, verzendenIsAanDeBeurt, type Bezorging } from "./regels";
+import { leesInstellingen } from "../instellingen";
 import { FACTUREN } from "../opslag";
 
 export interface CadeaubonRij {
@@ -30,10 +31,11 @@ export interface CadeaubonRij {
   betaald_op: string | null;
   verzonden_op: string | null;
   aangemaakt_op: string;
+  terugbetaald_cent?: number;
 }
 
 export const CADEAUBON_KOLOMMEN =
-  "id, koper_naam, koper_email, ontvanger_naam, ontvanger_email, boodschap, bezorging, verzend_op, bedrag_cent, valuta, status, mollie_payment_id, kortingscode_id, factuur_pad, factuurnummer, betaald_op, verzonden_op, aangemaakt_op";
+  "id, koper_naam, koper_email, ontvanger_naam, ontvanger_email, boodschap, bezorging, verzend_op, bedrag_cent, valuta, status, mollie_payment_id, kortingscode_id, factuur_pad, factuurnummer, betaald_op, verzonden_op, aangemaakt_op, terugbetaald_cent";
 
 async function leesBon(id: string): Promise<CadeaubonRij | null> {
   const { data, error } = await adminClient()
@@ -63,7 +65,8 @@ async function zorgVoorCode(bon: CadeaubonRij): Promise<{ code: string; geldigTo
     return { code: data.code, geldigTot: data.geldig_tot ?? cadeaubonGeldigTot(new Date(), null) };
   }
 
-  const geldigTot = cadeaubonGeldigTot(bon.betaald_op ? new Date(bon.betaald_op) : new Date(), bon.verzend_op);
+  const maanden = leesCadeaubonInstellingen(await leesInstellingen()).geldigMaanden;
+  const geldigTot = cadeaubonGeldigTot(bon.betaald_op ? new Date(bon.betaald_op) : new Date(), bon.verzend_op, maanden);
   const voor = bon.ontvanger_naam?.trim() || bon.koper_naam;
   for (let poging = 0; poging < 4; poging++) {
     const code = cadeauboncode(randomBytes(8));

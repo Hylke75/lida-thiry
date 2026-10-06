@@ -7,6 +7,8 @@ import { BESTELLEN_BETAALD, BESTELLEN_MISLUKT, BESTELLEN_VERWERKEN } from "@/lib
 import { MIJN_ADVIES_PAGINA } from "@/lib/inhoud/groepen/mijn-advies";
 import { UUID_PATROON } from "@/lib/nieuwsbrief/links";
 import { isBetaald, testlinkNogTonen } from "@/lib/order-status";
+import { leesInstellingen } from "@/lib/instellingen";
+import { leesVerkoopTijden } from "@/lib/verkoop/regels";
 import { AutoVernieuwen } from "./AutoVernieuwen";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +37,8 @@ export default async function BedanktPage({
       status = data?.status ?? null;
       // De testlink alleen kort na betalen tonen: de bedankpagina-URL (met
       // order-id) kan in de browsergeschiedenis blijven staan. Daarna staat hij in de mail.
-      token = testlinkNogTonen(data?.betaald_op ?? null) ? (data?.testtoken ?? null) : null;
+      const uren = leesVerkoopTijden(await leesInstellingen()).testlinkZichtbaarUren;
+      token = testlinkNogTonen(data?.betaald_op ?? null, new Date(), uren) ? (data?.testtoken ?? null) : null;
     } catch {
       status = null;
     }

@@ -161,7 +161,7 @@ async function structuur(o: {
       sameAs: o.site.social.map((s) => s.url),
     }),
     testProductJsonLd({
-      naam: "Online kledingadviestest",
+      naam: echt(inst.product_naam) ?? "Online kledingadviestest",
       omschrijving: o.site.omschrijving,
       url: basis,
       prijsCent: o.prijsCent,

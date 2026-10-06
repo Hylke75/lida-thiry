@@ -1,14 +1,13 @@
 import "server-only";
 import { adminClient } from "./supabase/admin";
-import { leesInstelling } from "./instellingen";
 import { stuurBetaalherinneringMail } from "./resend";
 import { stuurBeheerMelding, foutTekst } from "./beheermelding";
 import { ondertekenLink } from "./ondertekening";
 import { siteUrl } from "./site";
+import { leesInstellingen } from "./instellingen";
+import { leesVerkoopTijden } from "./verkoop/regels";
 import {
   BETAALD_STATUSSEN,
-  LINK_GELDIG_DAGEN,
-  MAX_LEEFTIJD_DAGEN,
   OPEN_STATUSSEN,
   herinneringNaUren,
   selecteerBetaalherinneringen,
@@ -19,8 +18,8 @@ import {
 export const HERVAT_DOEL = "hervat";
 
 /** Ondertekende link naar de pagina waar de klant de betaling hervat. */
-function hervatLink(orderId: string, nu: Date = new Date()): string {
-  const verloopt = new Date(nu.getTime() + LINK_GELDIG_DAGEN * 24 * 60 * 60 * 1000);
+function hervatLink(orderId: string, nu: Date, linkDagen: number): string {
+  const verloopt = new Date(nu.getTime() + linkDagen * 24 * 60 * 60 * 1000);
   const t = ondertekenLink(HERVAT_DOEL, orderId, verloopt);
   return `${siteUrl()}/bestellen/hervat/${orderId}?t=${encodeURIComponent(t)}`;
 }
@@ -36,8 +35,10 @@ export async function stuurBetaalherinneringen(nu: Date = new Date()): Promise<{
   let verstuurd = 0;
   try {
     const supabase = adminClient();
-    const uren = herinneringNaUren(await leesInstelling("betaalherinnering_na_uren"));
-    const sinds = new Date(nu.getTime() - MAX_LEEFTIJD_DAGEN * 24 * 60 * 60 * 1000).toISOString();
+    const inst = await leesInstellingen();
+    const tijden = leesVerkoopTijden(inst);
+    const uren = herinneringNaUren(inst.betaalherinnering_na_uren, tijden.herinneringMaxDagen);
+    const sinds = new Date(nu.getTime() - tijden.herinneringMaxDagen * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: open, error } = await supabase
       .from("orders")
@@ -64,6 +65,7 @@ export async function stuurBetaalherinneringen(nu: Date = new Date()): Promise<{
       betaald ?? [],
       nu,
       uren,
+      tijden.herinneringMaxDagen,
     );
 
     if (overslaan.length) {
@@ -97,7 +99,7 @@ export async function stuurBetaalherinneringen(nu: Date = new Date()): Promise<{
           email: o.email,
           bedragCent: o.bedrag_cent,
           valuta: o.valuta || "EUR",
-          link: hervatLink(o.id, nu),
+          link: hervatLink(o.id, nu, tijden.herinneringLinkDagen),
         });
         verstuurd++;
       } catch (e) {

@@ -26,6 +26,9 @@ describe("rechtenmatrix", () => {
       "website_instellingen",
       "logboek",
       "bestellingen_verwijderen",
+      "bestellingen_aanmaken",
+      "terugbetalen",
+      "cadeaubon_instellingen",
       "kortingscodes_beheren",
       "backup",
     ];

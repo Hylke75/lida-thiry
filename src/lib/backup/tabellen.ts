@@ -47,6 +47,7 @@ export const BACKUP_TABELLEN: readonly BackupTabel[] = [
   { naam: "orders", sleutel: ID, persoonsgegevens: true },
   { naam: "testresultaten", sleutel: ID, persoonsgegevens: true },
   { naam: "cadeaubon_bestellingen", sleutel: ID, persoonsgegevens: true },
+  { naam: "creditnotas", sleutel: ID, persoonsgegevens: true },
   { naam: "beoordelingen", sleutel: ID, persoonsgegevens: true },
   // Relaties en contact ----------------------------------------------------------
   { naam: "relaties", sleutel: ID, persoonsgegevens: true },

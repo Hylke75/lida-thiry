@@ -4,8 +4,9 @@
 // - eigenaar:  mag alles, ook beheerders, instellingen en het logboek.
 // - beheerder: het dagelijkse werk (bestellingen, klanten, afspraken, advies,
 //              website, nieuwsbrief). Niet: beheerders, algemene en
-//              website-instellingen, het logboek, bestellingen verwijderen en
-//              kortingscodes maken/verwijderen (dat kost direct geld).
+//              website-instellingen, het logboek, bestellingen verwijderen,
+//              kortingscodes maken/verwijderen, handmatige bestellingen,
+//              terugbetalen en cadeaubon-instellingen (dat kost direct geld).
 // - redacteur: alleen inhoud: website (pagina's, homepage, blog, AI, teksten,
 //              media, prullenbak), nieuwsbrief (campagnes, formulieren,
 //              automatisch, afleverbaarheid; zonder contactenlijst en exports)
@@ -25,7 +26,7 @@ export const ROL_LABEL: Record<Rol, string> = {
 export const ROL_UITLEG: Record<Rol, string> = {
   eigenaar: "Mag alles, ook beheerders, instellingen en het logboek.",
   beheerder:
-    "Dagelijks werk: bestellingen, klanten, afspraken, advies, website en nieuwsbrief. Geen beheerders, instellingen of logboek; geen bestellingen verwijderen of kortingscodes maken.",
+    "Dagelijks werk: bestellingen, klanten, afspraken, advies, website en nieuwsbrief. Geen beheerders, instellingen of logboek; geen bestellingen verwijderen, terugbetalen of handmatig aanmaken, en geen kortingscodes maken.",
   redacteur: "Alleen inhoud: website (pagina's, blog, teksten, media), nieuwsbrief (zonder contacten) en reviews.",
 };
 
@@ -46,11 +47,17 @@ export const RECHTEN = {
   // Afspraken
   afspraken: { label: "Afspraken en beschikbaarheid", rollen: DAGELIJKS },
   // Verkoop
-  bestellingen: { label: "Bestellingen inzien en bijwerken", rollen: DAGELIJKS },
+  bestellingen: { label: "Bestellingen inzien en bijwerken (incl. klantgegevens en CSV-export)", rollen: DAGELIJKS },
+  bestellingen_aanmaken: { label: "Handmatige bestelling aanmaken (gratis of betaald buiten Mollie)", rollen: EIGENAAR },
+  terugbetalen: { label: "Terugbetalen (bestellingen, cadeaubonnen, aanbetalingen) met creditnota", rollen: EIGENAAR },
   bestellingen_verwijderen: { label: "Bestellingen verwijderen", rollen: EIGENAAR },
   kortingscodes: { label: "Kortingscodes inzien", rollen: DAGELIJKS },
   kortingscodes_beheren: { label: "Kortingscodes maken, wijzigen en verwijderen", rollen: EIGENAAR },
-  cadeaubonnen: { label: "Cadeaubonnen inzien en opnieuw versturen", rollen: DAGELIJKS },
+  cadeaubonnen: {
+    label: "Cadeaubonnen inzien en beheren (versturen, blokkeren, verlengen, ontvanger en planning)",
+    rollen: DAGELIJKS,
+  },
+  cadeaubon_instellingen: { label: "Cadeaubon-instellingen (bedragen en termijnen)", rollen: EIGENAAR },
   // Advies
   advies: { label: "Lichaamstypes, adviestypes, beeldbank en meetinstructies", rollen: DAGELIJKS },
   // Website
@@ -117,9 +124,11 @@ const PAD_RECHTEN: Record<string, Recht | null> = {
   "/admin/reviews": "reviews",
   "/admin/afspraken": "afspraken",
   "/admin/bestellingen": "bestellingen",
+  "/admin/bestellingen/nieuw": "bestellingen_aanmaken",
   "/admin/order": "bestellingen",
   "/admin/kortingscodes": "kortingscodes",
   "/admin/cadeaubonnen": "cadeaubonnen",
+  "/admin/cadeaubonnen/instellingen": "cadeaubon_instellingen",
   "/admin/lichaamstypes": "advies",
   "/admin/types": "advies",
   "/admin/beeldbank": "advies",

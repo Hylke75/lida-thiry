@@ -181,8 +181,11 @@ export function isTestbestelling(o: TestbestellingVelden): boolean {
 }
 
 const REVIEW_STANDAARD_DAGEN = 7;
-/** Bestellingen die langer geleden zijn afgerond, krijgen geen automatische uitnodiging meer. */
-const REVIEW_MAX_DAGEN = 60;
+/**
+ * Standaard: bestellingen die langer geleden zijn afgerond, krijgen geen
+ * automatische uitnodiging meer (instelling review_max_dagen).
+ */
+export const REVIEW_MAX_DAGEN = 60;
 
 /** Het aantal dagen uit de instelling review_na_dagen (ongeldig of leeg = 7, hooguit 180). */
 export function leesReviewDagen(waarde: string | null | undefined): number {
@@ -198,8 +201,12 @@ const DAG = 24 * 60 * 60 * 1000;
  * uitnodiging: tussen `naDagen` en 60 dagen geleden (is `naDagen` zelf al bijna
  * 60, dan twee weken erna), zodat bij de eerste keer niet alle oude klanten mail krijgen.
  */
-export function reviewVenster(nu: Date, naDagen: number): { van: Date; tot: Date } {
-  const max = Math.max(REVIEW_MAX_DAGEN, naDagen + 14);
+export function reviewVenster(
+  nu: Date,
+  naDagen: number,
+  maxDagen: number = REVIEW_MAX_DAGEN,
+): { van: Date; tot: Date } {
+  const max = Math.max(maxDagen, naDagen + 14);
   return { van: new Date(nu.getTime() - max * DAG), tot: new Date(nu.getTime() - naDagen * DAG) };
 }
 
@@ -213,8 +220,9 @@ export function selecteerUitTeNodigen(
   metReview: ReadonlySet<string>,
   nu: Date,
   naDagen: number,
+  maxDagen: number = REVIEW_MAX_DAGEN,
 ): KandidaatOrder[] {
-  const { van, tot } = reviewVenster(nu, naDagen);
+  const { van, tot } = reviewVenster(nu, naDagen, maxDagen);
   const gezien = new Set<string>();
   const uit: KandidaatOrder[] = [];
   for (const o of orders) {
