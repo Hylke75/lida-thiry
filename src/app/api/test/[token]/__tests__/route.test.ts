@@ -37,6 +37,7 @@ vi.mock("@/lib/supabase/admin", () => {
 });
 
 const beoordeelToken = vi.hoisted(() => vi.fn());
+const haalVerfijning = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/lichaamstypes", async () => {
   const { FFIT_NAAR_LETTER } = await import("@/rekenkern/config/ffit-naar-letter");
   const vorm = { schouder: 36, borst: 34, taille: 27, hogeHeup: 32, heup: 37 };
@@ -46,6 +47,7 @@ vi.mock("@/lib/lichaamstypes", async () => {
       namen.map(([letter, naam]) => ({ letter, naam, alias: null, omschrijving: "", uitleg: "", kenmerken: [], vorm, beeldUrl: null })),
     ),
     haalFfitToewijzing: vi.fn().mockResolvedValue({ ...FFIT_NAAR_LETTER }),
+    haalVerfijning,
   };
 });
 vi.mock("@/lib/test-order", () => ({
@@ -103,6 +105,7 @@ beforeEach(() => {
   db.rpc.mockReset().mockResolvedValue({ data: true, error: null });
   beoordeelToken.mockReset().mockResolvedValue({ toestand: "geldig", order: ORDER });
   leverAdvies.mockReset().mockResolvedValue(true);
+  haalVerfijning.mockReset().mockResolvedValue({ aan: false, beschikbaar: [] });
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -232,5 +235,41 @@ describe("POST /api/test/[token]", () => {
     db.rpc.mockResolvedValue({ data: null, error: { message: "db weg" } });
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
+  });
+
+  describe("bandmaat en extra figuurtypes I en O", () => {
+    // Rechthoek (H): categorie 6.
+    const recht = { borst: 84, taille: 72, hoge_heup: 82, heup: 86 };
+    const body = (extra: Record<string, unknown>) =>
+      geldigeBody({ maten: recht, controlemetingen: recht, gekozen_silhouet: "H", ...extra });
+
+    it("weigert een bandmaat buiten 60–120 met 400", async () => {
+      for (const b of [59, 121]) {
+        const res = await POST(verzoek(body({ behamaat_band: b })), ctx);
+        expect(res.status).toBe(400);
+      }
+      expect(db.calls.some((c) => c.op === "update" || c.op === "upsert")).toBe(false);
+    });
+
+    it("schakelaar uit: bandmaat telt niet mee en wordt niet bewaard", async () => {
+      const res = await POST(verzoek(body({ behamaat_band: 65 })), ctx);
+      expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6H" });
+      const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
+      expect(upsert?.args[0]).not.toHaveProperty("behamaat_band");
+    });
+
+    it("schakelaar aan en I beschikbaar: H met bandmaat 70 wordt I en de bandmaat wordt bewaard", async () => {
+      haalVerfijning.mockResolvedValue({ aan: true, beschikbaar: ["I", "O"] });
+      const res = await POST(verzoek(body({ behamaat_band: 70, hermeting: true })), ctx);
+      expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6I" });
+      const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
+      expect(upsert?.args[0]).toMatchObject({ behamaat_band: 70, letter: "I" });
+    });
+
+    it("schakelaar aan maar I niet beschikbaar: blijft H", async () => {
+      haalVerfijning.mockResolvedValue({ aan: true, beschikbaar: [] });
+      const res = await POST(verzoek(body({ behamaat_band: 70 })), ctx);
+      expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6H" });
+    });
   });
 });

@@ -3,6 +3,11 @@ import { cache } from "react";
 import { adminClient } from "./supabase/admin";
 import { beeldUrls } from "./beeldbank";
 import { FFIT_NAAR_LETTER } from "@/rekenkern/config/ffit-naar-letter";
+import { EXTRA_FIGUURTYPES } from "@/rekenkern/config/verfijning";
+import { VERFIJNING_UIT, type VerfijningInstelling } from "@/rekenkern/verfijning";
+import { leesInstelling } from "./instellingen";
+import { alles } from "./supabase/alles";
+import { EXTRA_FIGUURTYPES_SLEUTEL, extraFiguurtypesAan, verfijningInstelling } from "./extra-figuurtypes";
 import type { FfitType } from "@/rekenkern/types";
 import {
   alsSilhouet,
@@ -63,3 +68,38 @@ export const haalFfitToewijzing = cache(
     return uit;
   },
 );
+
+/**
+ * Adviestypes van de gegeven lichaamstypes met hun aantal onderdelen (secties).
+ * Voor de beschikbaarheid van de extra figuurtypes I en O.
+ */
+export async function haalAdviesInhoud(codes: readonly string[]): Promise<{ sleutel: string; secties: number }[]> {
+  const supabase = adminClient();
+  const { data, error } = await supabase.from("adviestypes").select("sleutel").in("letter", [...codes]);
+  if (error) throw new Error(`adviestypes lezen: ${error.message}`);
+  const sleutels = (data ?? []).map((r) => r.sleutel as string);
+  if (!sleutels.length) return [];
+  const secties = await alles<{ type_sleutel: string }>((van, tot) =>
+    supabase.from("adviessecties").select("type_sleutel").in("type_sleutel", sleutels).order("id").range(van, tot),
+  );
+  const per = new Map<string, number>();
+  for (const s of secties) per.set(s.type_sleutel, (per.get(s.type_sleutel) ?? 0) + 1);
+  return sleutels.map((sleutel) => ({ sleutel, secties: per.get(sleutel) ?? 0 }));
+}
+
+/**
+ * Of de berekening de extra figuurtypes I en O mag geven, en welke. Staat de
+ * schakelaar uit (standaard), dan zonder verdere databasevragen "uit".
+ */
+export async function haalVerfijning(): Promise<VerfijningInstelling> {
+  try {
+    const schakelaar = await leesInstelling(EXTRA_FIGUURTYPES_SLEUTEL);
+    if (!extraFiguurtypesAan(schakelaar)) return VERFIJNING_UIT;
+    const [types, advies] = await Promise.all([haalLichaamstypes(), haalAdviesInhoud(EXTRA_FIGUURTYPES)]);
+    return verfijningInstelling(schakelaar, types, advies);
+  } catch (e) {
+    // Bij twijfel de gewone berekening: liever geen I/O dan een mislukte test.
+    console.error("Verfijning I/O lezen mislukt; gewone berekening", e);
+    return VERFIJNING_UIT;
+  }
+}

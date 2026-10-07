@@ -42,3 +42,52 @@ describe("verwerkTest: altijd een definitief type, nooit handmatige beoordeling"
     expect(u).toMatchObject({ soort: "type", sleutel: "6A", ffit_type: "Geen type" });
   });
 });
+
+describe("verwerkTest: extra figuurtypes I en O (verfijning)", () => {
+  // Rechthoek (H): borst 84, taille 72, hoge heup 82, heup 86.
+  const recht = { borst: 84, taille: 72, hogeHeup: 82, heup: 86 };
+  // Rechthoek met volle taille en hoge balans: O.
+  const appel = { borst: 100, taille: 96, hogeHeup: 97, heup: 98 };
+  const aan = { aan: true, beschikbaar: ["I", "O"] };
+
+  it("verandert niets zonder verfijning (standaard) of als de schakelaar uit staat", () => {
+    for (const verfijning of [undefined, { aan: false, beschikbaar: ["I", "O"] }]) {
+      expect(
+        verwerkTest(invoer({ maten: recht, gekozen_silhouet: "H", behamaat_band: 65 }), "excel", undefined, verfijning),
+      ).toMatchObject({ soort: "type", sleutel: "6H", letter: "H", ffit_type: "Rechthoek" });
+      expect(verwerkTest(invoer({ maten: appel, gekozen_silhouet: "H" }), "excel", undefined, verfijning)).toMatchObject(
+        { soort: "type", letter: "H" },
+      );
+    }
+  });
+
+  it("geeft I bij H en bandmaat 70; H bij 75", () => {
+    expect(
+      verwerkTest(invoer({ maten: recht, gekozen_silhouet: "I", behamaat_band: 70 }), "excel", undefined, aan),
+    ).toMatchObject({ soort: "type", sleutel: "6I", letter: "I", ffit_type: "Rechthoek" });
+    expect(
+      verwerkTest(invoer({ maten: recht, gekozen_silhouet: "H", behamaat_band: 75 }), "excel", undefined, aan),
+    ).toMatchObject({ soort: "type", sleutel: "6H" });
+  });
+
+  it("geeft O bij volle taille en hoge balans", () => {
+    expect(verwerkTest(invoer({ maten: appel, gekozen_silhouet: "O" }), "excel", undefined, aan)).toMatchObject({
+      soort: "type",
+      sleutel: "6O",
+      letter: "O",
+    });
+  });
+
+  it("vergelijkt het gekozen silhouet met de verfijnde letter", () => {
+    expect(verwerkTest(invoer({ maten: appel, gekozen_silhouet: "H" }), "excel", undefined, aan)).toMatchObject({
+      soort: "silhouet_verschil",
+      berekendeLetter: "O",
+    });
+  });
+
+  it("houdt de gewone letter als het type niet beschikbaar is", () => {
+    expect(
+      verwerkTest(invoer({ maten: appel, gekozen_silhouet: "H" }), "excel", undefined, { aan: true, beschikbaar: [] }),
+    ).toMatchObject({ soort: "type", letter: "H" });
+  });
+});

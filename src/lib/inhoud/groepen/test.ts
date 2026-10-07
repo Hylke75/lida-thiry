@@ -73,6 +73,27 @@ export const TEST_OVER_JOU = sectie({
       max: 80,
       standaard: "Lengte meten",
     },
+    bandmaat_label: {
+      soort: "tekst",
+      label: "Veld: bandmaat bh",
+      uitleg:
+        "Alleen zichtbaar als ‘Extra figuurtypes I en O in de berekening’ aan staat (Beheer → Lichaamstypes). Het veld is niet verplicht.",
+      max: 60,
+      standaard: "Bandmaat van je bh (optioneel)",
+    },
+    bandmaat_uitleg: {
+      soort: "tekstvak",
+      label: "Uitleg bij het veld bandmaat",
+      regels: 2,
+      standaard:
+        "Het getal van je bh-maat, zonder de cup: bij 75B is dat 75. Weet je het niet zeker? Laat het veld dan leeg.",
+    },
+    bandmaat_leeg: {
+      soort: "tekst",
+      label: "Keuze ‘geen bandmaat’ in het veld bandmaat",
+      max: 60,
+      standaard: "Weet ik niet / sla over",
+    },
   },
 });
 
