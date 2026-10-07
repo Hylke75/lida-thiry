@@ -5,6 +5,8 @@ import { beoordeelToken, haalTypeTitel } from "@/lib/test-order";
 import { leesMeetBeelden } from "@/lib/meetbeelden";
 import { TestWizard } from "./TestWizard";
 import { haalSilhouetten, silhouetVoorSleutel } from "@/lib/lichaamstypes";
+import { leesInstelling } from "@/lib/instellingen";
+import { EXTRA_FIGUURTYPES_SLEUTEL, extraFiguurtypesAan } from "@/lib/extra-figuurtypes";
 import { TypeOnthulling } from "./TypeOnthulling";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { vulIn } from "@/lib/inhoud/schema";
@@ -72,10 +74,12 @@ export default async function TestPage({
   const b = await beoordeelToken(token);
 
   if (b.toestand === "geldig") {
-    const [teksten, meetBeelden, silhouetten] = await Promise.all([
+    const [teksten, meetBeelden, silhouetten, extraTypes] = await Promise.all([
       leesTestTeksten(),
       leesMeetBeelden(),
       haalSilhouetten(),
+      // Een storing bij het lezen mag de test niet breken: dan geen bandmaat-vraag.
+      leesInstelling(EXTRA_FIGUURTYPES_SLEUTEL).catch(() => null),
     ]);
     return (
       <TestWizard
@@ -84,6 +88,7 @@ export default async function TestPage({
         meetBeelden={meetBeelden}
         silhouetten={silhouetten}
         teksten={teksten}
+        vraagBandmaat={extraFiguurtypesAan(extraTypes)}
       />
     );
   }

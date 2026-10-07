@@ -15,6 +15,7 @@ export function StapAfronden({
   maatVelden,
   vragen,
   intro,
+  bandmaatLabel,
 }: {
   a: Antwoorden;
   gaNaar: (i: number) => void;
@@ -24,6 +25,8 @@ export function StapAfronden({
   vragen: PasvormVraag[];
   /** Uitleg boven het overzicht (met opmaak). */
   intro: string;
+  /** Label van de bandmaat; alleen als dat veld in de test staat. */
+  bandmaatLabel?: string;
 }) {
   const n = (v: string | undefined) => Number(v);
   const meldingen = logischeChecks({
@@ -32,7 +35,7 @@ export function StapAfronden({
     hogeHeup: n(a.maten.hoge_heup),
     heup: n(a.maten.heup),
   });
-  const rijen = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten);
+  const rijen = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten, bandmaatLabel);
 
   return (
     <div className="flex flex-col gap-5">

@@ -21,6 +21,7 @@ export function TestWizard({
   meetBeelden = {},
   silhouetten,
   teksten,
+  vraagBandmaat = false,
 }: {
   token: string;
   klantnaam: string;
@@ -30,6 +31,8 @@ export function TestWizard({
   meetBeelden?: Record<string, string>;
   /** Beheerbare teksten (Beheer → Teksten → Test), op de server gelezen. */
   teksten: TestTeksten;
+  /** Optionele bandmaat van de bh vragen (alleen als de extra figuurtypes I en O aan staan). */
+  vraagBandmaat?: boolean;
 }) {
   const {
     stappen: STAPPEN,
@@ -49,7 +52,7 @@ export function TestWizard({
     volgende,
     bereikbaar,
     verstuur,
-  } = useTestWizard({ token, silhouetten, teksten });
+  } = useTestWizard({ token, silhouetten, teksten, vraagBandmaat });
 
   if (resultaat) {
     return (
@@ -109,7 +112,13 @@ export function TestWizard({
         )}
 
         {huidig.soort === "jij" && (
-          <StapOverJou a={a} setA={setA} toonFouten={toonFouten} teksten={teksten.overJou} />
+          <StapOverJou
+            a={a}
+            setA={setA}
+            toonFouten={toonFouten}
+            teksten={teksten.overJou}
+            vraagBandmaat={vraagBandmaat}
+          />
         )}
 
         {huidig.soort === "maten" && (
@@ -139,6 +148,7 @@ export function TestWizard({
             maatVelden={maatVelden}
             vragen={vragen}
             intro={teksten.afronden.intro}
+            bandmaatLabel={vraagBandmaat ? teksten.overJou.bandmaat_label : undefined}
           />
         )}
 

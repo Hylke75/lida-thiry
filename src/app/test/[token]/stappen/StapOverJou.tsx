@@ -1,21 +1,27 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Lichaam } from "@/components/Lichaam";
-import { getal, type Antwoorden } from "../wizard-regels";
+import { BANDMATEN, getal, type Antwoorden } from "../wizard-regels";
+import { HULPTEKST, INVOER, LABEL } from "@/components/site/FormulierStijl";
 import { Invoer } from "./Invoer";
 import { KLANT_INTRO } from "@/components/site/KlantPagina";
 import type { TestTeksten } from "@/lib/inhoud/groepen/test";
 
-/** Stap "Over jou": lengte en gewicht. */
+/**
+ * Stap "Over jou": lengte en gewicht, en (alleen als de extra figuurtypes I en O
+ * in de berekening aan staan) de optionele bandmaat van de bh.
+ */
 export function StapOverJou({
   a,
   setA,
   toonFouten,
   teksten,
+  vraagBandmaat = false,
 }: {
   a: Antwoorden;
   setA: Dispatch<SetStateAction<Antwoorden>>;
   toonFouten: boolean;
   teksten: TestTeksten["overJou"];
+  vraagBandmaat?: boolean;
 }) {
   return (
     <div className="grid items-center gap-6 rounded-ontwerp-md border border-line bg-white p-5 tablet:grid-cols-[170px_1fr] tablet:gap-8 tablet:p-[30px]">
@@ -40,6 +46,24 @@ export function StapOverJou({
           zet={(w) => setA((s) => ({ ...s, gewicht: w }))}
           fout={toonFouten && Number.isNaN(getal(a.gewicht)) ? teksten.gewicht_fout : null}
         />
+        {vraagBandmaat && (
+          <label className="flex flex-col gap-2">
+            <span className={LABEL}>{teksten.bandmaat_label}</span>
+            {teksten.bandmaat_uitleg && <span className={`${HULPTEKST} whitespace-pre-line`}>{teksten.bandmaat_uitleg}</span>}
+            <select
+              value={a.bandmaat}
+              onChange={(e) => setA((s) => ({ ...s, bandmaat: e.target.value }))}
+              className={INVOER}
+            >
+              <option value="">{teksten.bandmaat_leeg}</option>
+              {BANDMATEN.map((b) => (
+                <option key={b} value={String(b)}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
     </div>
   );
