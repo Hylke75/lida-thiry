@@ -127,6 +127,34 @@ describe("PDF's in de huisstijl", () => {
     expect(paginas(metExtra)).toBe(paginas(pdf) + 2);
   }, 30_000);
 
+  it("advies: lang advies met veel secties en beelden (paginanummers 'x / y' in de voettekst)", async () => {
+    // Regressie: bij een lang advies (17 secties, ~13 pagina's) liep react-pdf vast
+    // op de voettekst met paginanummers ("unsupported number: 1.1e+21"), waardoor de
+    // klant geen PDF kreeg.
+    const alinea =
+      "Kies stoffen die soepel vallen en een model dat je taille volgt. **Let op** de lengte: eindig niet op je breedste punt, maar net daarboven of eronder. *Tip: probeer het eens met een hakje.*";
+    const tegel = await voorbeeldBeeld("#ccbbaa");
+    const secties = Array.from({ length: 17 }, (_, i) => ({
+      kop: `Onderdeel ${i + 1}`,
+      tekst: Array.from({ length: 2 + (i % 6) }, () => alinea).join("\n\n") + "\n\n- Een punt\n\n- Nog een punt",
+      beelden: i % 3 === 0 ? [] : Array.from({ length: 1 + (i % 8) }, (_, k) => ({ src: tegel, bijschrift: k % 2 ? "bijschrift" : null })),
+    }));
+    const pdf = await renderToBuffer(
+      createElement(AdviesPdf, {
+        klantnaam: "Anna",
+        datum: "7 oktober 2026",
+        sleutel: "10A",
+        titel: "Peer",
+        maten: { lengte_cm: 175, gewicht_kg: 69, borst: 87, taille: 71, hoge_heup: 87, heup: 100, binnenbeen: 80, schouder: 96 },
+        silhouet: { naam: "Peer", uitleg: "x", eigenMaten: true, vorm: vormUitMaten({ borst: 87, taille: 71, hogeHeup: 87, heup: 100, schouder: 96 }) },
+        secties,
+        merk: MERK_STANDAARD,
+        teksten: standaardAdviesPdfTeksten(),
+      }) as never,
+    );
+    expect(paginas(pdf)).toBeGreaterThan(8);
+  });
+
   it("cadeaubon (A4 liggend) met boodschap", async () => {
     const pdf = await maakCadeaubonPdf(
       {

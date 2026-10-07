@@ -3,8 +3,10 @@
 // geeft een lijst punten terug. Het ophalen gebeurt in productie-check.ts.
 
 import { bevatPlaceholder, combineer, type Groep } from "./inhoud/schema";
-import { CATEGORIEEN, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
+import { CATEGORIEEN, koppelingsDoelFouten, ontleedTypeSleutel, typeSleutel } from "./lichaamstype-regels";
 import { vapidCompleet } from "./push/regels";
+import { EXTRA_FIGUURTYPES_SLEUTEL, extraFiguurtypesAan, extraTypeFouten } from "./extra-figuurtypes";
+import { EXTRA_FIGUURTYPES } from "@/rekenkern/config/verfijning";
 import { mfaVerplicht } from "./mfa-regels";
 import { databaseStatus, HANDLEIDING_TESTOMGEVING, type DatabaseOmgeving } from "./omgeving";
 
@@ -132,35 +134,8 @@ function tekstenMetPlaceholder(
   return uit;
 }
 
-/**
- * Controleert de doelen van de koppeling uitkomst → lichaamstype: elk doel moet
- * een bestaand, actief lichaamstype zijn met alle 12 adviestypes, elk met inhoud.
- * Geeft per probleem een leesbare zin terug (leeg = in orde).
- */
-export function koppelingsDoelFouten(
-  toewijzing: Readonly<Record<string, string | null>>,
-  lichaamstypes: readonly { code: string; naam: string; actief: boolean }[],
-  adviestypes: readonly { sleutel: string; secties: number }[],
-): string[] {
-  const types = new Map(lichaamstypes.map((t) => [t.code, t]));
-  const secties = new Map(adviestypes.map((t) => [t.sleutel, t.secties]));
-  const fouten: string[] = [];
-  for (const [uitkomst, code] of Object.entries(toewijzing)) {
-    if (!code) continue; // ontbrekende koppelingen staan in een eigen punt
-    const t = types.get(code);
-    if (!t) {
-      fouten.push(`${uitkomst} → ${code}: dat lichaamstype bestaat niet`);
-      continue;
-    }
-    if (!t.actief) {
-      fouten.push(`${uitkomst} → ${t.naam}: dat lichaamstype is gearchiveerd`);
-      continue;
-    }
-    const leeg = CATEGORIEEN.map((c) => typeSleutel(c, code)).filter((s) => !secties.get(s));
-    if (leeg.length) fouten.push(`${uitkomst} → ${t.naam}: zonder (inhoud in) ${leeg.join(", ")}`);
-  }
-  return fouten;
-}
+/** Staat nu in lichaamstype-regels.ts (ook gebruikt door de test); hier her-geëxporteerd. */
+export { koppelingsDoelFouten };
 
 function beperk(links: LivegangLink[], meer: LivegangLink): LivegangLink[] {
   return links.length > MAX_LINKS ? [...links.slice(0, MAX_LINKS - 1), meer] : links;
@@ -242,6 +217,24 @@ export function evalueerLivegang(g: LivegangGegevens): LivegangItem[] {
       links: [{ href: "/admin/lichaamstypes#koppeling", label: "Naar de koppeling" }],
     });
   }
+  // Extra figuurtypes I en O: alleen een punt als de schakelaar aan staat.
+  if (extraFiguurtypesAan(g.instellingen[EXTRA_FIGUURTYPES_SLEUTEL])) {
+    const fouten = EXTRA_FIGUURTYPES.flatMap((c) => extraTypeFouten(c, g.lichaamstypes, g.adviestypes));
+    items.push({
+      id: "extra-figuurtypes",
+      label: "Extra figuurtypes I en O: actief en met volledig advies",
+      ok: fouten.length === 0,
+      niveau: "verplicht",
+      detail: fouten.length
+        ? `De berekening van I en O staat aan, maar: ${fouten.join("; ")}. Zolang dat zo is, geeft de test I of O niet en krijgt de klant de gewone uitkomst. Maak de types af of zet de berekening van I en O uit.`
+        : undefined,
+      links: [
+        { href: "/admin/lichaamstypes#koppeling", label: "Naar de schakelaar" },
+        ...EXTRA_FIGUURTYPES.map((c) => ({ href: `/admin/types?letter=${c}`, label: `Hand-outs ${c}` })),
+      ],
+    });
+  }
+
   const missendPerType = actief
     .map((t) => ({ t, missend: CATEGORIEEN.map((c) => typeSleutel(c, t.code)).filter((s) => !bestaand.has(s)) }))
     .filter((m) => m.missend.length > 0);

@@ -443,6 +443,7 @@ export default async function OrderDetail({
           <Regel label="Gewicht" waarde={r.gewicht_kg == null ? "–" : `${r.gewicht_kg} kg`} />
           <Regel label="Borst / taille" waarde={`${cm(r.borst)} / ${cm(r.taille)}`} />
           <Regel label="Hoge heup / heup" waarde={`${cm(r.hoge_heup)} / ${cm(r.heup)}`} />
+          {r.behamaat_band != null && <Regel label="Bandmaat bh" waarde={String(r.behamaat_band)} />}
           <Regel label="Categorie" waarde={String(r.categorie ?? "–")} />
           <Regel label="FFIT-type" waarde={r.ffit_type ?? "–"} />
           <Regel label="Gekozen silhouet" waarde={r.gekozen_silhouet ?? "–"} />

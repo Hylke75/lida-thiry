@@ -38,6 +38,8 @@
    */
   --sand: #f6efe7;
   --sand-deep: #ebe1d5;
+  /* Dunne rand (1px) om elke foto, zodat lichte foto's niet in de achtergrond opgaan. */
+  --beeldrand: #d6bfae;
   --shadow: 0 22px 55px rgba(64, 39, 55, 0.1);
   --radius-lg: 28px;
   --radius-md: 20px;
@@ -91,6 +93,7 @@
   --color-line: var(--line);
   --color-sand: var(--sand);
   --color-sand-deep: var(--sand-deep);
+  --color-beeldrand: var(--beeldrand);
 
   --font-sans: var(--sans);
   --font-serif: var(--serif);

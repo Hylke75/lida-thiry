@@ -15,6 +15,10 @@ import {
   type Lichaamstype,
 } from "@/lib/lichaamstype-regels";
 import { veiligeZoekterm } from "@/lib/zoeken/regels";
+import { logActie } from "@/lib/beheer-log";
+import { haalAdviesInhoud, haalLichaamstypes } from "@/lib/lichaamstypes";
+import { EXTRA_FIGUURTYPES_SLEUTEL, extraTypeFouten } from "@/lib/extra-figuurtypes";
+import { EXTRA_FIGUURTYPES } from "@/rekenkern/config/verfijning";
 
 export interface Status {
   ok: boolean;
@@ -200,6 +204,45 @@ export async function slaToewijzingOp(_vorige: Status | null, fd: FormData): Pro
   if (error) return fout(`Opslaan mislukte: ${error.message}`);
   ververs();
   return ok("De koppeling is opgeslagen. Nieuwe tests gebruiken deze indeling direct.");
+}
+
+/**
+ * Schakelaar: de extra figuurtypes I en O in de berekening (standaard uit).
+ * Aanzetten mag altijd; de berekening geeft I of O pas als dat type actief is en
+ * alle 12 hand-outs inhoud hebben. Ontbreekt er nog iets, dan zegt de melding wat.
+ */
+export async function slaExtraFiguurtypesOp(_vorige: Status | null, fd: FormData): Promise<Status> {
+  const ik = await vereisBeheerder("advies");
+  const waarde = tekst(fd, "extra_figuurtypes") === "aan" ? "aan" : "uit";
+  const supabase = adminClient();
+  const { error } = await supabase.from("instellingen").upsert({
+    sleutel: EXTRA_FIGUURTYPES_SLEUTEL,
+    waarde,
+    omschrijving: "Extra figuurtypes I en O in de berekening: aan of uit (standaard uit). VOORLOPIG.",
+    bijgewerkt_op: new Date().toISOString(),
+  });
+  if (error) return fout(`Opslaan mislukte: ${error.message}`);
+  await logActie({
+    actie: "instellingen.wijzigen",
+    onderwerpSoort: "instellingen",
+    onderwerpId: EXTRA_FIGUURTYPES_SLEUTEL,
+    omschrijving: `Extra figuurtypes I en O in de berekening: ${waarde}`,
+    details: { sleutel: EXTRA_FIGUURTYPES_SLEUTEL, naar: waarde },
+    gebruiker: ik,
+  });
+  revalidatePath("/admin/lichaamstypes");
+  revalidatePath("/admin");
+  if (waarde === "uit") {
+    return ok("Uitgezet. De test berekent weer alleen de gewone types en vraagt niet meer naar de bandmaat.");
+  }
+  const [types, advies] = await Promise.all([haalLichaamstypes(), haalAdviesInhoud(EXTRA_FIGUURTYPES)]);
+  const fouten = EXTRA_FIGUURTYPES.flatMap((c) => extraTypeFouten(c, types, advies));
+  if (fouten.length) {
+    return ok(
+      `Aangezet. Let op: ${fouten.join("; ")}. Zolang dat zo is, geeft de test I of O niet en krijgt de klant de gewone uitkomst. De test vraagt wel al (optioneel) naar de bandmaat.`,
+    );
+  }
+  return ok("Aangezet. Nieuwe tests kunnen nu I of O als uitkomst geven; de test vraagt (optioneel) naar de bandmaat.");
 }
 
 /**

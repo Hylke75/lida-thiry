@@ -32,6 +32,10 @@ function redenUitMaten(maten: Maten, berekend: Figuurletter): string {
       return a.heupMinBorst >= a.borstMinHeup
         ? `Je taille is duidelijk smaller (${cm(tailleVerschil)}) en je heupen zijn voller dan je borst (${cm(a.heupMinBorst)} verschil).`
         : `Je taille is duidelijk smaller (${cm(tailleVerschil)}) en je borst is voller dan je heupen (${cm(a.borstMinHeup)} verschil).`;
+    case "O":
+      return `Je taille is bijna even breed als je heupen (${cm(a.heupMinTaille)} verschil) en je borst is voller dan je heupen (${cm(a.borstMinHeup)} verschil).`;
+    case "I":
+      return "Je borst, taille en heupen liggen dicht bij elkaar en je bandmaat is klein: een recht, smal figuur.";
     default:
       return "De verhoudingen tussen je borst, taille en heupen wijzen op een ander silhouet.";
   }

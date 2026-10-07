@@ -422,3 +422,41 @@ describe("evalueerLivegang: niet indexeren", () => {
     expect(vind(g, "zoekmachines")).toMatchObject({ ok: false, niveau: "verplicht", links: [{ href: "/admin/website" }] });
   });
 });
+
+describe("livegang: extra figuurtypes I en O", () => {
+  const met = (aan: string | undefined, iActief: boolean, oSecties: number): LivegangGegevens => {
+    const g = compleet();
+    return {
+      ...g,
+      instellingen: { ...g.instellingen, extra_figuurtypes_berekening: aan },
+      lichaamstypes: [
+        ...g.lichaamstypes,
+        { code: "I", naam: "I-silhouet", actief: iActief, beeld_id: "b2" },
+        { code: "O", naam: "O-silhouet", actief: true, beeld_id: "b3" },
+      ],
+      adviestypes: [
+        ...g.adviestypes,
+        ...ALLE_CATEGORIEEN.map((c) => ({ sleutel: `${c}I`, secties: 2 })),
+        ...ALLE_CATEGORIEEN.map((c) => ({ sleutel: `${c}O`, secties: c === 12 ? oSecties : 2 })),
+      ],
+    };
+  };
+  const item = (g: LivegangGegevens) => evalueerLivegang(g).find((i) => i.id === "extra-figuurtypes");
+
+  it("geen punt zolang de schakelaar uit staat (ook als I en O niet klaar zijn)", () => {
+    expect(item(met(undefined, false, 0))).toBeUndefined();
+    expect(item(met("uit", false, 0))).toBeUndefined();
+    // Inactieve I/O zonder advies breken de rest van de lijst niet.
+    const g = compleet();
+    g.lichaamstypes = [...g.lichaamstypes, { code: "I", naam: "I-silhouet", actief: false, beeld_id: null }];
+    expect(livegangStatus(evalueerLivegang(g)).openVerplicht).toBe(livegangStatus(evalueerLivegang(compleet())).openVerplicht);
+  });
+
+  it("aan: verplicht dat I en O actief zijn met alle hand-outs gevuld", () => {
+    const fout = item(met("aan", false, 0))!;
+    expect(fout).toMatchObject({ ok: false, niveau: "verplicht" });
+    expect(fout.detail).toContain("I-silhouet");
+    expect(fout.detail).toContain("12O");
+    expect(item(met("aan", true, 2))).toMatchObject({ ok: true });
+  });
+});

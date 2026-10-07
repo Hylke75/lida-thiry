@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     borderTopColor: kleur.lijn,
     paddingTop: 10,
   },
-  paginanummer: { fontWeight: 700, color: kleur.tekst },
+  paginanummer: { position: "absolute", top: 802, right: MARGE, fontSize: 7.5, fontWeight: 700, color: kleur.tekst },
   // Optionele introductie- en slotpagina (Beheer → Teksten → PDF-advies).
   losTitel: { fontFamily: SERIF, fontSize: 30, marginTop: 6, marginBottom: 16, lineHeight: 1.1, color: kleur.tekst },
   losKop: { fontFamily: SERIF, fontSize: 17, marginTop: 14, marginBottom: 6, lineHeight: 1.15, color: kleur.tekst },
@@ -354,8 +354,11 @@ function Rand({ voettekst }: { voettekst: string }) {
       <Kleurstrook hoogte={6} style={styles.strookBoven} fixed />
       <View style={styles.voettekst} fixed>
         <Text>{voettekst}</Text>
-        <Text style={styles.paginanummer} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </View>
+      {/* Los van de voettekst: de nummers worden pas na de opmaak ingevuld (render).
+          Als buur van de tekst in dezelfde rij liep react-pdf bij lange adviezen vast
+          ("unsupported number"). */}
+      <Text style={styles.paginanummer} fixed render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </>
   );
 }

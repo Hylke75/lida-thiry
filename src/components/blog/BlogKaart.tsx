@@ -36,7 +36,7 @@ export function BlogBeeld({
   const beeld = berichtBeeld(bericht);
   if (beeld) {
     return (
-      <div className={`relative overflow-hidden bg-sand-deep ${className}`}>
+      <div className={`relative overflow-hidden border border-beeldrand bg-sand-deep ${className}`}>
         <Afbeelding
           vullen
           src={beeld.url}

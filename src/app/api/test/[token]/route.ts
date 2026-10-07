@@ -9,7 +9,8 @@ import {
   STANDAARD_ZANDLOPER_VARIANT,
   type ZandloperVariant,
 } from "@/rekenkern/config/ffit-regels";
-import { haalFfitToewijzing, haalSilhouetten } from "@/lib/lichaamstypes";
+import { haalFfitToewijzing, haalSilhouetten, haalVerfijning } from "@/lib/lichaamstypes";
+import { BANDMAAT_GRENZEN } from "@/rekenkern/config/verfijning";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { silhouetVerschilReden } from "@/lib/silhouet-uitleg";
@@ -82,7 +83,17 @@ export async function POST(
       { status: 400 },
     );
   }
-  const silhouetten = await haalSilhouetten();
+  // Bandmaat van de bh (optioneel; alleen gevraagd als de extra figuurtypes aan staan).
+  const behamaatBand = getal(body.behamaat_band);
+  if (behamaatBand !== undefined && (behamaatBand < BANDMAAT_GRENZEN.min || behamaatBand > BANDMAAT_GRENZEN.max)) {
+    return NextResponse.json(
+      {
+        fout: `De bandmaat van je bh (${behamaatBand}) valt buiten het bereik ${BANDMAAT_GRENZEN.min}–${BANDMAAT_GRENZEN.max}. Kies je bandmaat of laat het veld leeg.`,
+      },
+      { status: 400 },
+    );
+  }
+  const [silhouetten, verfijning] = await Promise.all([haalSilhouetten(), haalVerfijning()]);
   if (!silhouetten.some((s) => s.letter === body.gekozen_silhouet)) {
     return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
   }
@@ -108,11 +119,13 @@ export async function POST(
     // Telt niet mee in de berekening; wordt vlak voor het opslaan opgeschoond.
     pasvormantwoorden: {},
     hermeting: body.hermeting === true,
+    // Alleen bewaren en gebruiken als de schakelaar aan staat (dan wordt erom gevraagd).
+    behamaat_band: verfijning.aan ? (behamaatBand ?? null) : null,
   };
 
   const variant = ((await leesInstelling("zandloper_variant")) ||
     STANDAARD_ZANDLOPER_VARIANT) as ZandloperVariant;
-  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing());
+  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing(), verfijning);
 
   // Tussenstappen: niets opslaan.
   if (uitkomst.soort === "opnieuw_meten") {
@@ -176,6 +189,9 @@ export async function POST(
       heup: invoer.maten.heup,
       binnenbeen: invoer.maten.binnenbeen ?? null,
       schouder: invoer.maten.schouder ?? null,
+      // Alleen meesturen als er een bandmaat is: zo werkt opslaan ook zolang de
+      // kolom (migratie 20261007100000) nog niet bestaat en de schakelaar uit staat.
+      ...(invoer.behamaat_band != null ? { behamaat_band: invoer.behamaat_band } : {}),
       controlemetingen: invoer.controlemetingen,
       gekozen_silhouet: invoer.gekozen_silhouet,
       pasvormantwoorden,

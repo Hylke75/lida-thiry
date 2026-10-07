@@ -15,6 +15,7 @@ import {
   type TestTeksten,
 } from "@/lib/inhoud/groepen/test";
 import {
+  BANDMATEN,
   EERSTE_MATEN_STAP,
   LEEG,
   getal,
@@ -62,6 +63,7 @@ function compleet(): Antwoorden {
     controle: { ...maten },
     silhouet: "A",
     pasvorm: Object.fromEntries(vragen.map((q) => [q.sleutel, q.opties[0]])),
+    bandmaat: "",
   };
 }
 
@@ -199,5 +201,40 @@ describe("overzichtRijen", () => {
     expect(rij("Silhouet")).toEqual({ label: "Silhouet", waarde: "Zandloper", stap: 4 });
     expect(rij(vragen[0].vraag).stap).toBe(5);
     expect(rijen).toHaveLength(2 + maatVelden.length + 1 + vragen.length);
+  });
+});
+
+describe("bandmaat (extra figuurtypes I en O)", () => {
+  it("biedt de bandmaten 60 t/m 120 per 5", () => {
+    expect(BANDMATEN[0]).toBe(60);
+    expect(BANDMATEN.at(-1)).toBe(120);
+    expect(BANDMATEN).toContain(70);
+    expect(BANDMATEN).toContain(75);
+    expect(BANDMATEN).toHaveLength(13);
+  });
+
+  it("is optioneel en wordt alleen gecontroleerd als hij is ingevuld", () => {
+    const jij = stappen[0];
+    expect(stapFout(jij, { ...compleet(), bandmaat: "" })).toBeNull();
+    expect(stapFout(jij, { ...compleet(), bandmaat: "70" })).toBeNull();
+    expect(stapFout(jij, { ...compleet(), bandmaat: "50" })).toBe("Kies je bandmaat uit de lijst of laat het veld leeg.");
+    expect(stapFout(jij, { ...compleet(), bandmaat: "125" })).toBe("Kies je bandmaat uit de lijst of laat het veld leeg.");
+  });
+
+  it("gaat alleen mee als erom gevraagd is en hij is ingevuld", () => {
+    const a = { ...compleet(), bandmaat: "70" };
+    expect(maakPayload(a, maatVelden, vragen, false)).not.toHaveProperty("behamaat_band");
+    expect(maakPayload(a, maatVelden, vragen, false, true)).toMatchObject({ behamaat_band: 70 });
+    expect(maakPayload({ ...a, bandmaat: "" }, maatVelden, vragen, false, true)).not.toHaveProperty("behamaat_band");
+  });
+
+  it("staat alleen in het overzicht als het veld getoond wordt en is ingevuld", () => {
+    const a = { ...compleet(), bandmaat: "75" };
+    const zonder = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten);
+    expect(zonder.some((r) => r.waarde === "75")).toBe(false);
+    const met = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten, "Bandmaat van je bh (optioneel)");
+    expect(met).toContainEqual({ label: "Bandmaat van je bh", waarde: "75", stap: 0 });
+    const leeg = overzichtRijen(compleet(), stappen, maatVelden, vragen, silhouetten, "Bandmaat van je bh (optioneel)");
+    expect(leeg).toHaveLength(zonder.length);
   });
 });

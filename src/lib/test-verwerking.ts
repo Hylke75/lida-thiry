@@ -10,6 +10,7 @@ import {
   type Bevinding,
 } from "@/rekenkern/plausibiliteit";
 import type { Maten } from "@/rekenkern/types";
+import { VERFIJNING_UIT, verfijnLetter, type VerfijningInstelling } from "@/rekenkern/verfijning";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 import type { Figuurletter } from "@/rekenkern/config/ffit-naar-letter";
 
@@ -21,6 +22,8 @@ export interface TestInvoer {
   gekozen_silhouet: Figuurletter;
   pasvormantwoorden: Record<string, string>;
   hermeting: boolean;
+  /** Bandmaat van de bh (optioneel; alleen gevraagd als de extra figuurtypes aan staan). */
+  behamaat_band?: number | null;
 }
 
 export type TestUitkomst =
@@ -46,6 +49,7 @@ export function verwerkTest(
   invoer: TestInvoer,
   variant: ZandloperVariant,
   toewijzing?: FfitToewijzing,
+  verfijning: VerfijningInstelling = VERFIJNING_UIT,
 ): TestUitkomst {
   const { maten } = invoer;
 
@@ -66,7 +70,11 @@ export function verwerkTest(
   // A + B + C.
   const categorie = bepaalCategorie(invoer.lengte_cm, invoer.gewicht_kg).nummer;
   const ffit = bepaalFiguurtype(maten, variant);
-  const letter = bepaalLetter(ffit, toewijzing);
+  // E. Verfijning naar de extra types I en O (standaard uit; VOORLOPIG).
+  const letter = verfijnLetter(
+    { ffit, letter: bepaalLetter(ffit, toewijzing), maten, bandmaat: invoer.behamaat_band },
+    verfijning,
+  );
 
   // Geen passend figuurtype: het door de klant gekozen silhouet bepaalt de letter.
   if (letter === null) {

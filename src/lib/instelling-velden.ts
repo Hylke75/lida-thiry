@@ -73,6 +73,18 @@ export const INSTELLING_VELDEN: Record<string, InstellingVeld> = {
     ],
     verplicht: true,
   },
+  extra_figuurtypes_berekening: {
+    label: "Extra figuurtypes I en O in de berekening (voorlopig)",
+    uitleg:
+      "Standaard uit. Aan: de test vraagt (optioneel) naar de bandmaat van de bh en kan I-silhouet of O-silhouet als uitkomst geven, maar alleen als dat type actief is en alle 12 hand-outs inhoud hebben. Uitleg en controle staan bij Beheer → Lichaamstypes → Koppeling met de berekening.",
+    soort: "keuze",
+    opties: [
+      { waarde: "uit", label: "Uit (aanbevolen zolang I en O nog geen advies hebben)" },
+      { waarde: "aan", label: "Aan" },
+    ],
+    verplicht: true,
+    standaard: "uit",
+  },
   adviseur_email: {
     label: "E-mailadres voor foutmeldingen",
     uitleg: "Hierheen sturen we een bericht als er iets misgaat, bijvoorbeeld als een advies-PDF of e-mail niet verstuurd kon worden.",

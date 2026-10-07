@@ -23,10 +23,13 @@ export function useTestWizard({
   token,
   silhouetten,
   teksten,
+  vraagBandmaat = false,
 }: {
   token: string;
   silhouetten: Silhouet[];
   teksten: TestTeksten;
+  /** Bandmaat van de bh vragen (alleen als de extra figuurtypes I en O aan staan). */
+  vraagBandmaat?: boolean;
 }) {
   const maatVelden = useMemo(() => maatVeldenMetTeksten(teksten.maten), [teksten.maten]);
   const vragen = useMemo(() => pasvormVragen(teksten.vragen), [teksten.vragen]);
@@ -108,7 +111,7 @@ export function useTestWizard({
     setFout(null);
     setMelding(null);
     setBevindingen([]);
-    const payload = maakPayload(a, maatVelden, vragen, hermeting);
+    const payload = maakPayload(a, maatVelden, vragen, hermeting, vraagBandmaat);
 
     try {
       const res = await fetch(`/api/test/${token}`, {

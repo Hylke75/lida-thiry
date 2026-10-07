@@ -64,6 +64,36 @@ export function sorteerWaarde(sleutel: string, volgorde?: Record<string, number>
   return o.categorie * 1000 + plek;
 }
 
+/**
+ * Controleert de doelen van de koppeling uitkomst → lichaamstype: elk doel moet
+ * een bestaand, actief lichaamstype zijn met alle 12 adviestypes, elk met inhoud.
+ * Geeft per probleem een leesbare zin terug (leeg = in orde).
+ */
+export function koppelingsDoelFouten(
+  toewijzing: Readonly<Record<string, string | null>>,
+  lichaamstypes: readonly { code: string; naam: string; actief: boolean }[],
+  adviestypes: readonly { sleutel: string; secties: number }[],
+): string[] {
+  const types = new Map(lichaamstypes.map((t) => [t.code, t]));
+  const secties = new Map(adviestypes.map((t) => [t.sleutel, t.secties]));
+  const fouten: string[] = [];
+  for (const [uitkomst, code] of Object.entries(toewijzing)) {
+    if (!code) continue; // ontbrekende koppelingen staan in een eigen punt
+    const t = types.get(code);
+    if (!t) {
+      fouten.push(`${uitkomst} → ${code}: dat lichaamstype bestaat niet`);
+      continue;
+    }
+    if (!t.actief) {
+      fouten.push(`${uitkomst} → ${t.naam}: dat lichaamstype is gearchiveerd`);
+      continue;
+    }
+    const leeg = CATEGORIEEN.map((c) => typeSleutel(c, code)).filter((s) => !secties.get(s));
+    if (leeg.length) fouten.push(`${uitkomst} → ${t.naam}: zonder (inhoud in) ${leeg.join(", ")}`);
+  }
+  return fouten;
+}
+
 /** Controleert de invoer voor een lichaamstype; geeft een lijst foutmeldingen. */
 export function controleerLichaamstype(
   t: Partial<Lichaamstype>,

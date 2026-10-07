@@ -3,6 +3,7 @@
 
 import { MAAT_GROEPEN, type MaatVeld } from "@/lib/test-config";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
+import { BANDMAAT_GRENZEN } from "@/rekenkern/config/verfijning";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
 import { meetStapTitel, type PasvormVraag, type TestTeksten } from "@/lib/inhoud/groepen/test";
 
@@ -20,9 +21,25 @@ export interface Antwoorden {
   controle: Record<string, string>;
   silhouet: string;
   pasvorm: Record<string, string>;
+  /** Bandmaat van de bh (optioneel; alleen gevraagd als de extra figuurtypes aan staan). */
+  bandmaat: string;
 }
 
-export const LEEG: Antwoorden = { lengte: "", gewicht: "", maten: {}, controle: {}, silhouet: "", pasvorm: {} };
+export const LEEG: Antwoorden = {
+  lengte: "",
+  gewicht: "",
+  maten: {},
+  controle: {},
+  silhouet: "",
+  pasvorm: {},
+  bandmaat: "",
+};
+
+/** De keuzes voor de bandmaat van de bh (Europese maten, per 5). */
+export const BANDMATEN: number[] = Array.from(
+  { length: (BANDMAAT_GRENZEN.max - BANDMAAT_GRENZEN.min) / 5 + 1 },
+  (_, i) => BANDMAAT_GRENZEN.min + i * 5,
+);
 
 export type Stap =
   | { soort: "jij"; titel: string }
@@ -87,6 +104,11 @@ export function stapFout(stap: Stap, a: Antwoorden): string | null {
       if (Number.isNaN(l) || Number.isNaN(g)) return "Vul je lengte en gewicht in.";
       if (l < 120 || l > 220) return "Vul je lengte in centimeters in (bijvoorbeeld 168).";
       if (g < 30 || g > 250) return "Vul je gewicht in kilo's in (bijvoorbeeld 65).";
+      if (a.bandmaat) {
+        const b = getal(a.bandmaat);
+        if (Number.isNaN(b) || b < BANDMAAT_GRENZEN.min || b > BANDMAAT_GRENZEN.max)
+          return "Kies je bandmaat uit de lijst of laat het veld leeg.";
+      }
       return null;
     }
     case "maten":
@@ -109,7 +131,13 @@ export function isBereikbaar(i: number, bereikt: number, stappen: Stap[], a: Ant
 }
 
 /** Wat er naar POST /api/test/[token] gaat. */
-export function maakPayload(a: Antwoorden, maatVelden: MaatVeld[], vragen: PasvormVraag[], hermeting: boolean) {
+export function maakPayload(
+  a: Antwoorden,
+  maatVelden: MaatVeld[],
+  vragen: PasvormVraag[],
+  hermeting: boolean,
+  vraagBandmaat = false,
+) {
   const num = (v: string | undefined) => (v ? Number(v) : undefined);
   return {
     lengte_cm: Number(a.lengte),
@@ -124,6 +152,8 @@ export function maakPayload(a: Antwoorden, maatVelden: MaatVeld[], vragen: Pasvo
       vragen.filter((q) => a.pasvorm[q.sleutel]).map((q) => [q.sleutel, a.pasvorm[q.sleutel]]),
     ),
     hermeting,
+    // Alleen als erom gevraagd is (extra figuurtypes aan) en ingevuld.
+    ...(vraagBandmaat && a.bandmaat ? { behamaat_band: Number(a.bandmaat) } : {}),
   };
 }
 
@@ -160,6 +190,8 @@ export function overzichtRijen(
   maatVelden: MaatVeld[],
   vragen: PasvormVraag[],
   silhouetten: Silhouet[],
+  /** Label van de bandmaat; alleen meegegeven als het veld getoond wordt. */
+  bandmaatLabel?: string,
 ): OverzichtRij[] {
   const stapVan = (sleutel: string) =>
     stappen.findIndex((s) => s.soort === "maten" && s.velden.some((v) => v.sleutel === sleutel));
@@ -167,6 +199,7 @@ export function overzichtRijen(
   return [
     { label: "Lengte", waarde: `${a.lengte} cm`, stap: 0 },
     { label: "Gewicht", waarde: `${a.gewicht} kg`, stap: 0 },
+    ...(bandmaatLabel && a.bandmaat ? [{ label: kaalLabel(bandmaatLabel), waarde: a.bandmaat, stap: 0 }] : []),
     ...maatVelden.map((v) => ({
       label: kaalLabel(v.label),
       waarde: a.maten[v.sleutel] ? `${a.maten[v.sleutel]} cm` : "—",
