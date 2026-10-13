@@ -20,6 +20,13 @@ describe("tekstopmaak PDF", () => {
     ]);
   });
 
+  it("cursief binnen vet aan het eind ('**Met *bootcut***') laat geen sterretje achter", () => {
+    expect(inlineDelen("**Met *bootcut***: een taille")).toEqual([
+      { tekst: "Met bootcut", vet: true, cursief: false },
+      { tekst: ": een taille", vet: false, cursief: false },
+    ]);
+  });
+
   it("laat losse sterretjes staan", () => {
     expect(inlineDelen("maat 3 * 4")).toEqual([{ tekst: "maat 3 * 4", vet: false, cursief: false }]);
   });

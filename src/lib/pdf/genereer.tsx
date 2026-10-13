@@ -1,36 +1,30 @@
 import "server-only";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { adminClient } from "@/lib/supabase/admin";
-import { AdviesPdf, type PdfMaten, type PdfSectie, type PdfSilhouet } from "./document";
+import { AdviesPdf, type PdfSectie } from "./document";
 import { haalAdviesInhoud } from "@/lib/advies-inhoud";
 import { BEELD_BUCKET } from "@/lib/beeldbank-regels";
 import { silhouetVoorSleutel } from "@/lib/lichaamstypes";
-import { vormUitMaten } from "@/lib/lichaam-pad";
 import { ADVIEZEN_PDF } from "@/lib/opslag";
 import { leesMerk } from "@/lib/merk";
 import { leesSectie, leesSectieVers } from "@/lib/inhoud/lees";
 import type { Sectie, SectieWaarden } from "@/lib/inhoud/schema";
 import { PDF_ADVIES_INTRO, PDF_ADVIES_SLOT, PDF_ADVIES_VOORPAGINA, type AdviesPdfTeksten } from "@/lib/inhoud/groepen/pdf-advies";
-import { maatVeldenMetTeksten, TEST_MATEN, TEST_OVER_JOU } from "@/lib/inhoud/groepen/test";
 
 const BUCKET = ADVIEZEN_PDF;
 
 /**
- * De beheerbare teksten van de PDF (Beheer → Teksten → PDF-advies), met de namen
- * van de maten zoals in de test. Vers voor het voorbeeld in het beheer; anders gecachet.
+ * De beheerbare teksten van de PDF (Beheer → Teksten → PDF-advies). Vers voor
+ * het voorbeeld in het beheer; anders gecachet.
  */
 async function leesPdfTeksten(vers: boolean): Promise<AdviesPdfTeksten> {
   const lees = <S extends Sectie>(s: S): Promise<SectieWaarden<S>> => (vers ? leesSectieVers(s) : leesSectie(s));
-  const [voorpagina, intro, slot, maten, overJou] = await Promise.all([
+  const [voorpagina, intro, slot] = await Promise.all([
     lees(PDF_ADVIES_VOORPAGINA),
     lees(PDF_ADVIES_INTRO),
     lees(PDF_ADVIES_SLOT),
-    lees(TEST_MATEN),
-    lees(TEST_OVER_JOU),
   ]);
-  const maatLabels: Record<string, string> = { lengte_cm: overJou.lengte_label, gewicht_kg: overJou.gewicht_label };
-  for (const v of maatVeldenMetTeksten(maten)) maatLabels[v.sleutel] = v.label.replace(" (optioneel)", "").trim();
-  return { voorpagina, intro, slot, maten: maatLabels };
+  return { voorpagina, intro, slot };
 }
 
 /**
@@ -73,6 +67,7 @@ async function pdfSecties(
     inhoud.secties.map(async (s) => ({
       kop: s.kop,
       tekst: s.tekst,
+      soort: s.veld_sleutel,
       beelden: (
         await Promise.all(
           s.beelden.map(async (b) => {
@@ -86,8 +81,8 @@ async function pdfSecties(
 }
 
 /**
- * Voorbeeld-PDF van een adviestype voor beheer (met voorbeeldmaten en het
- * standaardsilhouet). Wordt niet opgeslagen.
+ * Voorbeeld-PDF van een adviestype voor beheer (voor een voorbeeldklant).
+ * Wordt niet opgeslagen.
  */
 export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | null> {
   const supabase = adminClient();
@@ -99,25 +94,14 @@ export async function genereerVoorbeeldPdf(sleutel: string): Promise<Buffer | nu
     leesMerk(),
     leesPdfTeksten(true),
   ]);
-  const maten: PdfMaten = {
-    lengte_cm: null,
-    gewicht_kg: null,
-    borst: null,
-    taille: null,
-    hoge_heup: null,
-    heup: null,
-    binnenbeen: null,
-    schouder: null,
-  };
   return renderToBuffer(
     <AdviesPdf
       klantnaam="Voorbeeldklant"
       datum={new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
       sleutel={inhoud.sleutel}
       titel={inhoud.titel}
-      maten={maten}
       secties={secties}
-      silhouet={optie ? { naam: optie.naam, uitleg: optie.uitleg, eigenMaten: false, vorm: optie.vorm } : null}
+      silhouet={optie ? { letter: optie.letter, naam: optie.naam } : null}
       merk={merk}
       teksten={teksten}
     />,
@@ -144,34 +128,7 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
   if (!inhoud) return null; // Adviestype bestaat (nog) niet.
   const secties = await pdfSecties(supabase, inhoud, true);
 
-  const { data: res, error: resFout } = await supabase
-    .from("testresultaten")
-    .select("lengte_cm, gewicht_kg, borst, taille, hoge_heup, heup, binnenbeen, schouder")
-    .eq("order_id", orderId)
-    .maybeSingle();
-  if (resFout) throw new Error(`Testresultaat lezen mislukt: ${resFout.message}`);
-
-  // Silhouet op de voorpagina: getekend naar de eigen maten als die er (nog)
-  // zijn; na anonimisering valt het terug op het standaardsilhouet van de letter.
   const optie = await silhouetVoorSleutel(order.toegekend_type);
-  const eigenMaten =
-    res?.borst != null && res.taille != null && res.hoge_heup != null && res.heup != null;
-  const silhouet: PdfSilhouet | null = optie
-    ? {
-        naam: optie.naam,
-        uitleg: optie.uitleg,
-        eigenMaten,
-        vorm: eigenMaten
-          ? vormUitMaten({
-              borst: res.borst,
-              taille: res.taille,
-              hogeHeup: res.hoge_heup,
-              heup: res.heup,
-              schouder: res.schouder,
-            })
-          : optie.vorm,
-      }
-    : null;
 
   const datum = new Date(order.afgerond_op ?? Date.now()).toLocaleDateString("nl-NL", {
     day: "numeric",
@@ -185,18 +142,8 @@ export async function genereerAdviesPdf(orderId: string): Promise<string | null>
       datum={datum}
       sleutel={inhoud.sleutel}
       titel={inhoud.titel}
-      maten={{
-        lengte_cm: res?.lengte_cm ?? null,
-        gewicht_kg: res?.gewicht_kg ?? null,
-        borst: res?.borst ?? null,
-        taille: res?.taille ?? null,
-        hoge_heup: res?.hoge_heup ?? null,
-        heup: res?.heup ?? null,
-        binnenbeen: res?.binnenbeen ?? null,
-        schouder: res?.schouder ?? null,
-      }}
       secties={secties}
-      silhouet={silhouet}
+      silhouet={optie ? { letter: optie.letter, naam: optie.naam } : null}
       merk={await leesMerk()}
       teksten={await leesPdfTeksten(false)}
     />,

@@ -12,7 +12,8 @@ const opslag = opslagPatroon(process.env.NEXT_PUBLIC_SUPABASE_URL);
 // dus de bestandstracering ziet ze niet vanzelf: meegeven aan elke functie die
 // een PDF of de deelafbeelding maakt. PDF's ontstaan in API-routes (testlink,
 // Mollie-webhook, onderhoud) en in serveracties en routes van het beheer.
-const LETTERTYPEN = ["./src/lib/pdf/fonts/**/*"];
+// Hetzelfde geldt voor de vaste beelden van de PDF's (src/lib/pdf/beelden).
+const LETTERTYPEN = ["./src/lib/pdf/fonts/**/*", "./src/lib/pdf/beelden/**/*"];
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {

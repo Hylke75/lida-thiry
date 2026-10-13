@@ -57,7 +57,8 @@ export function blokken(tekst: string): Blok[] {
 /** Splitst een regel in delen met vet/cursief. Losse sterretjes blijven tekst. */
 export function inlineDelen(tekst: string): Deel[] {
   const delen: Deel[] = [];
-  const re = /\*\*(.+?)\*\*|\*(\S(?:.*?\S)?)\*/g;
+  // "**Met *bootcut***": het vette deel eindigt bij de laatste twee sterretjes van een reeks.
+  const re = /\*\*(.+?)\*\*(?!\*)|\*(\S(?:.*?\S)?)\*/g;
   let pos = 0;
   for (let m = re.exec(tekst); m; m = re.exec(tekst)) {
     if (m.index > pos) delen.push({ tekst: tekst.slice(pos, m.index), vet: false, cursief: false });
