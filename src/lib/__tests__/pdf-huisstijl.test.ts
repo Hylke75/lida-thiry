@@ -9,10 +9,9 @@ import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { AdviesPdf, standaardAdviesPdfTeksten, type AdviesPdfProps } from "../pdf/document";
+import { AdviesPdf, beeldenNaastTekst, maakGroepen, standaardAdviesPdfTeksten, type AdviesPdfProps } from "../pdf/document";
 import { maakCadeaubonPdf } from "../pdf/cadeaubon";
 import { maakFactuurPdf } from "../pdf/factuur";
-import { vormUitMaten } from "../lichaam-pad";
 import { MERK_STANDAARD } from "../huisstijl";
 import { standaardWaarden } from "../inhoud/schema";
 import { CADEAUBON_MAIL, CADEAUBON_PDF } from "../inhoud/groepen/cadeaubon";
@@ -39,31 +38,58 @@ async function voorbeeldBeeld(kleur: string): Promise<string> {
   return `data:image/png;base64,${png.toString("base64")}`;
 }
 
+describe("indeling advies-PDF", () => {
+  const beeld = (bijschrift: string | null = null) => ({ src: "data:,", bijschrift });
+
+  it("beelden staan links naast de secties zonder beelden die volgen; tips gaan naar links", () => {
+    const groepen = maakGroepen(
+      [
+        { kop: "Je hebt", tekst: "- een smalle taille" },
+        { kop: "Je silhouet", soort: "silhouet", tekst: "Je hebt het A-silhouet", beelden: [beeld(), beeld()] },
+        { kop: "Je kledingplan", tekst: "Kijk uit naar …" },
+        { kop: "Je schoenen", tekst: "Passend bij de kous.", beelden: [beeld(), beeld()] },
+        { kop: "Je tassen", tekst: "Een handtas.", beelden: [beeld()] },
+        { kop: "Je broeken", tekst: "Lang genoeg.\n\n*Draag kousen in dezelfde kleur.*", beelden: [beeld("rechte pijp")] },
+      ],
+      "A-silhouet",
+    );
+    expect(groepen.map((g) => g.secties.map((s) => s.sectie.kop))).toEqual([
+      ["Je hebt", "Je silhouet", "Je kledingplan"],
+      // Schoenen en tassen: klein, dus samen.
+      ["Je schoenen", "Je tassen"],
+      ["Je broeken"],
+    ]);
+    expect(groepen[0].beelden[0].label).toBe("A-silhouet");
+    expect(groepen[0].beelden[1].label).toBeUndefined();
+    expect(groepen[2].tips).toEqual(["Draag kousen in dezelfde kleur."]);
+    expect(groepen[2].secties[0].tekst).toEqual([{ type: "para", tekst: "Lang genoeg." }]);
+  });
+
+  it("veel beelden bij weinig tekst: de rest komt in rijen onder de tekst", () => {
+    const [groep] = maakGroepen([{ kop: "Je rokken", tekst: "Kort.", beelden: Array.from({ length: 7 }, () => beeld()) }], "");
+    expect(beeldenNaastTekst(groep)).toBe(1);
+    // Eén beeld over gaat ook in de kolom.
+    const [twee] = maakGroepen([{ kop: "Je tassen", tekst: "Kort.", beelden: [beeld(), beeld()] }], "");
+    expect(beeldenNaastTekst(twee)).toBe(2);
+  });
+});
+
 describe("PDF's in de huisstijl", () => {
-  it("advies: voorpagina met silhouet en maten, daarna inhoud en secties", async () => {
+  it("advies: voorpagina in Lida's vormgeving, daarna de secties met beelden links", async () => {
     const props: AdviesPdfProps = {
       klantnaam: "Anna de Vries",
       datum: "6 oktober 2026",
       sleutel: "X2",
       titel: "Zandloper met een korte taille",
-      maten: {
-        lengte_cm: 168,
-        gewicht_kg: 64,
-        borst: 94,
-        taille: 72,
-        hoge_heup: 88,
-        heup: 100,
-        binnenbeen: 78,
-        schouder: 106,
-      },
-      silhouet: {
-        naam: "Zandloper",
-        uitleg:
-          "Je schouders en heupen zijn ongeveer even breed en je taille is duidelijk smaller. Kleding die de taille volgt, laat die mooie lijn het best zien.",
-        eigenMaten: true,
-        vorm: vormUitMaten({ borst: 94, taille: 72, hogeHeup: 88, heup: 100, schouder: 106 }),
-      },
+      silhouet: { letter: "X", naam: "Zandloper" },
       secties: [
+        { kop: "Je hebt", soort: "kenmerken", tekst: "- een duidelijke taille\n\n- schouders en heupen ongeveer even breed" },
+        {
+          kop: "Je silhouet",
+          soort: "silhouet",
+          tekst: "Je hebt het X-silhouet, ook wel de Zandloper genoemd",
+          beelden: [{ src: await voorbeeldBeeld("#F4C9C9") }],
+        },
         {
           kop: "Jouw figuur in het kort",
           tekst:
@@ -72,7 +98,7 @@ describe("PDF's in de huisstijl", () => {
         {
           kop: "Broeken",
           tekst:
-            "**Bootcut**: verlengt je benen en houdt je silhouet in balans.\n\n**Rechte pijp**: rustig en tijdloos; mooi met een korte enkellaars.\n\nVermijd broeken met veel volume rond de heup.",
+            "**Bootcut**: verlengt je benen en houdt je silhouet in balans.\n\n**Rechte pijp**: rustig en tijdloos; mooi met een korte enkellaars.\n\nVermijd broeken met veel volume rond de heup.\n\n*Draag kousen en schoenen in dezelfde kleur als je broek: dat maakt je benen langer.*",
           beelden: await Promise.all(
             [
               ["#B9D9EF", "Bootcut in donkere denim"],
@@ -96,9 +122,10 @@ describe("PDF's in de huisstijl", () => {
     bewaar("advies.pdf", pdf);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     const fonts = lettertypen(pdf).join(" ");
-    expect(fonts).toMatch(/DMSerifDisplay-Regular/);
+    // Arial-achtig (Liberation Sans) voor de tekst, Manrope voor de kop- en voetregel.
+    expect(fonts).toMatch(/LiberationSans-Bold/);
+    expect(fonts).toMatch(/LiberationSans-Italic/);
     expect(fonts).toMatch(/Manrope-Regular/);
-    expect(fonts).toMatch(/Manrope-Bold/);
     expect(fonts).not.toMatch(/Helvetica|Times/);
 
     // Met een ingevulde introductie- en slotpagina (Beheer → Teksten → PDF-advies) komen er twee pagina's bij.
@@ -127,9 +154,9 @@ describe("PDF's in de huisstijl", () => {
     expect(paginas(metExtra)).toBe(paginas(pdf) + 2);
   }, 30_000);
 
-  it("advies: lang advies met veel secties en beelden (paginanummers 'x / y' in de voettekst)", async () => {
+  it("advies: lang advies met veel secties en beelden", async () => {
     // Regressie: bij een lang advies (17 secties, ~13 pagina's) liep react-pdf vast
-    // op de voettekst met paginanummers ("unsupported number: 1.1e+21"), waardoor de
+    // op een voettekst met paginanummers ("unsupported number: 1.1e+21"), waardoor de
     // klant geen PDF kreeg.
     const alinea =
       "Kies stoffen die soepel vallen en een model dat je taille volgt. **Let op** de lengte: eindig niet op je breedste punt, maar net daarboven of eronder. *Tip: probeer het eens met een hakje.*";
@@ -145,8 +172,7 @@ describe("PDF's in de huisstijl", () => {
         datum: "7 oktober 2026",
         sleutel: "10A",
         titel: "Peer",
-        maten: { lengte_cm: 175, gewicht_kg: 69, borst: 87, taille: 71, hoge_heup: 87, heup: 100, binnenbeen: 80, schouder: 96 },
-        silhouet: { naam: "Peer", uitleg: "x", eigenMaten: true, vorm: vormUitMaten({ borst: 87, taille: 71, hogeHeup: 87, heup: 100, schouder: 96 }) },
+        silhouet: { letter: "A", naam: "Peer / driehoek" },
         secties,
         merk: MERK_STANDAARD,
         teksten: standaardAdviesPdfTeksten(),

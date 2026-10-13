@@ -15,6 +15,8 @@ interface InhoudSectie {
   volgorde: number;
   kop: string;
   tekst: string;
+  /** Vast onderdeel uit het adviesdocument (bijv. "silhouet", "broeken"); null bij een eigen onderdeel. */
+  veld_sleutel: string | null;
   beelden: InhoudBeeld[];
 }
 
@@ -43,7 +45,7 @@ export async function haalAdviesInhoud(sleutel: string): Promise<AdviesInhoud | 
   const { data: secties, error: sectieFout } = await supabase
     .from("adviessecties")
     .select(
-      "id, volgorde, kop, tekst, sectie_beelden(volgorde, beelden(id, code, pad, thumb_pad, bijschrift, naam))",
+      "id, volgorde, kop, tekst, veld_sleutel, sectie_beelden(volgorde, beelden(id, code, pad, thumb_pad, bijschrift, naam))",
     )
     .eq("type_sleutel", sleutel)
     .order("volgorde", { ascending: true });
@@ -54,6 +56,7 @@ export async function haalAdviesInhoud(sleutel: string): Promise<AdviesInhoud | 
     volgorde: number;
     kop: string;
     tekst: string;
+    veld_sleutel: string | null;
     sectie_beelden: {
       volgorde: number;
       beelden: {
@@ -74,6 +77,7 @@ export async function haalAdviesInhoud(sleutel: string): Promise<AdviesInhoud | 
       volgorde: s.volgorde,
       kop: s.kop,
       tekst: s.tekst,
+      veld_sleutel: s.veld_sleutel ?? null,
       beelden: [...s.sectie_beelden]
         .sort((a, b) => a.volgorde - b.volgorde)
         .map((sb) => ({

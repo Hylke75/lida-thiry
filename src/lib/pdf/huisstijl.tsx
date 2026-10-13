@@ -12,6 +12,11 @@ export { KLEUR, STROOK, MERK_STANDAARD, type Merk } from "@/lib/huisstijl";
 export const SERIF = "DM Serif Display";
 /** Lopende tekst en het woordmerk. */
 export const SANS = "Manrope";
+/**
+ * Tekst van de advies-PDF, in de vormgeving van Lida's eigen adviezen (Arial).
+ * Liberation Sans heeft dezelfde maten als Arial en mag mee (SIL OFL).
+ */
+export const ARIAL = "Liberation Sans";
 
 /**
  * De lettertypen staan als TTF in src/lib/pdf/fonts (SIL Open Font License, zie
@@ -39,6 +44,15 @@ export function registreerLettertypen(): void {
     fonts: [
       { src: path.join(MAP, "DMSerifDisplay-Regular.ttf"), fontWeight: 400 },
       { src: path.join(MAP, "DMSerifDisplay-Italic.ttf"), fontWeight: 400, fontStyle: "italic" },
+    ],
+  });
+  Font.register({
+    family: ARIAL,
+    fonts: [
+      { src: path.join(MAP, "LiberationSans-Regular.ttf"), fontWeight: 400 },
+      { src: path.join(MAP, "LiberationSans-Italic.ttf"), fontWeight: 400, fontStyle: "italic" },
+      { src: path.join(MAP, "LiberationSans-Bold.ttf"), fontWeight: 700 },
+      { src: path.join(MAP, "LiberationSans-BoldItalic.ttf"), fontWeight: 700, fontStyle: "italic" },
     ],
   });
   // Geen automatische woordafbreking: die volgt Engelse regels ("kledin-gadvies").

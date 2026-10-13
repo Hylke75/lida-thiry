@@ -1,21 +1,9 @@
-import { blokken, inlineDelen, zonderOpmaak } from "./opmaak";
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  Image,
-  Svg,
-  Path,
-  Circle,
-  Line,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import path from "node:path";
+import { blokken, inlineDelen, zonderOpmaak, type Blok } from "./opmaak";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
-import type { Lichaamsvorm } from "@/lib/test-config";
-import { CX, HOOFD, VIEWBOX, Y, lichaamsPad } from "@/lib/lichaam-pad";
 import { BEDRIJFSNAAM_STANDAARD } from "@/lib/site";
-import { EYEBROW, KLEUR, Kleurstrook, MERK_STANDAARD, SANS, SERIF, STROOK, Woordmerk, type Merk } from "./huisstijl";
+import { ARIAL, MERK_STANDAARD, SANS, type Merk } from "./huisstijl";
 import { standaardWaarden, vulIn } from "@/lib/inhoud/schema";
 import {
   PDF_ADVIES_INTRO,
@@ -23,17 +11,6 @@ import {
   PDF_ADVIES_VOORPAGINA,
   type AdviesPdfTeksten,
 } from "@/lib/inhoud/groepen/pdf-advies";
-
-export interface PdfMaten {
-  lengte_cm: number | null;
-  gewicht_kg: number | null;
-  borst: number | null;
-  taille: number | null;
-  hoge_heup: number | null;
-  heup: number | null;
-  binnenbeen: number | null;
-  schouder: number | null;
-}
 
 interface PdfBeeld {
   /** Data-URI van het beeld. */
@@ -44,43 +21,25 @@ interface PdfBeeld {
 export interface PdfSectie {
   kop: string;
   tekst: string;
+  /** Vast onderdeel uit het adviesdocument (bijv. "silhouet"); bepaalt kleine verschillen in de opmaak. */
+  soort?: string | null;
   beelden?: PdfBeeld[];
-}
-
-export interface PdfSilhouet {
-  naam: string;
-  uitleg: string;
-  /** Vorm voor de illustratie: bij voorkeur uit de eigen maten van de klant. */
-  vorm: Lichaamsvorm;
-  /** True als de vorm uit de eigen maten is getekend (anders het standaardsilhouet). */
-  eigenMaten: boolean;
 }
 
 export interface AdviesPdfProps {
   klantnaam: string;
+  /** Datum van het advies, bijv. "7 oktober 2026"; bovenaan de pagina's staan maand en jaar. */
   datum: string;
   sleutel: string;
   titel: string;
-  maten: PdfMaten;
   secties: PdfSectie[];
-  silhouet?: PdfSilhouet | null;
-  /** Woordmerk bovenaan de voorpagina (standaard: zoals op de website). */
+  /** Het silhouet (onder de silhouettekening), bijv. letter "A" en naam "Peer / driehoek". */
+  silhouet?: { letter: string; naam: string } | null;
+  /** Bedrijfsnaam bovenaan de pagina's (standaard: zoals op de website). */
   merk?: Merk;
   /** Beheerbare teksten (Beheer → Teksten → PDF-advies); standaard de standaardteksten. */
   teksten?: AdviesPdfTeksten;
 }
-
-/** De namen van de maten zoals ze standaard in de PDF staan. */
-const MAAT_LABELS_STANDAARD: Readonly<Record<keyof PdfMaten, string>> = {
-  lengte_cm: "Lengte",
-  gewicht_kg: "Gewicht",
-  schouder: "Schouderomvang",
-  borst: "Borstomvang",
-  taille: "Tailleomvang",
-  hoge_heup: "Hoge heupomvang",
-  heup: "Heupomvang",
-  binnenbeen: "Binnenbeenlengte",
-};
 
 /** De standaardteksten van de advies-PDF (zonder database, bijv. in tests). */
 export function standaardAdviesPdfTeksten(): AdviesPdfTeksten {
@@ -88,140 +47,116 @@ export function standaardAdviesPdfTeksten(): AdviesPdfTeksten {
     voorpagina: standaardWaarden(PDF_ADVIES_VOORPAGINA),
     intro: standaardWaarden(PDF_ADVIES_INTRO),
     slot: standaardWaarden(PDF_ADVIES_SLOT),
-    maten: MAAT_LABELS_STANDAARD,
   };
 }
 
-// Huisstijl (docs/ontwerp/HUISSTIJL-HANDBOEK.md): DM Serif Display voor koppen,
-// Manrope voor tekst, donker aubergine, berry als accent en de kleurstrook.
+// Vormgeving naar Lida's eigen online stijladvies (Pages-document): een voorpagina
+// met de groene baan, het logo en de roze krullen; daarna Arial op wit, met de
+// beelden in een smalle kolom links naast de tekst en tips in roze cursief.
 const kleur = {
-  tekst: KLEUR.ink,
-  grijs: KLEUR.inkZacht,
-  lijn: KLEUR.lijn,
-  accent: KLEUR.berry,
-  accentZacht: KLEUR.coralZacht,
-  achtergrond: KLEUR.cream,
-  papier: KLEUR.paper,
+  tekst: "#000000",
+  grijs: "#7A7A7A",
+  lime: "#B3DB18",
+  olijf: "#94AD1B",
+  magenta: "#CE026E",
+  tip: "#FF4F79",
 };
 
-/** Marge links/rechts: 483pt tekstbreedte, precies vier beeldtegels (4 × 120) naast elkaar. */
-const MARGE = 56;
+/** De voorpagina zonder titel (baan, logo en krullen), zoals in het origineel. */
+const VOORPAGINA = path.join(process.cwd(), "src", "lib", "pdf", "beelden", "advies-voorpagina.png");
+
+const A4 = { breedte: 595.28, hoogte: 841.89 };
+const LINKS = 72;
+const RECHTS = 48;
+/** Kolom met beelden links; de tekst staat ernaast. */
+const BEELDKOLOM = 124;
+const TUSSENRUIMTE = 17;
+const TEKSTKOLOM = A4.breedte - LINKS - RECHTS - BEELDKOLOM - TUSSENRUIMTE;
+/** Beelden zijn 2:3 (beeldbank-standaard). */
+const BEELD = { breedte: 112, hoogte: 168 };
+/**
+ * Beelden die niet meer naast de tekst passen: in rijen van vijf onder de tekst,
+ * over de hele breedte (zoals de lijntekeningen in het origineel). De tussenruimte
+ * is naar beneden afgerond, anders loopt een rij net te vroeg door naar de volgende.
+ */
+const BREEDTE = A4.breedte - LINKS - RECHTS;
+const PER_RIJ = 5;
+const TEGEL = { breedte: 88, hoogte: 132, tussen: Math.floor((BREEDTE - PER_RIJ * 88) / (PER_RIJ - 1)) - 1 };
+const REGEL = 12;
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 64,
-    paddingBottom: 84,
-    paddingHorizontal: MARGE,
+    paddingTop: 76,
+    paddingBottom: 72,
+    paddingLeft: LINKS,
+    paddingRight: RECHTS,
+    fontFamily: ARIAL,
     fontSize: 10,
+    lineHeight: 1.2,
     color: kleur.tekst,
-    fontFamily: SANS,
-    lineHeight: 1.65,
-    backgroundColor: kleur.papier,
+    backgroundColor: "#FFFFFF",
   },
-  cover: { backgroundColor: kleur.achtergrond, paddingTop: 58 },
-  strookBoven: { position: "absolute", top: 0, left: 0, right: 0 },
-  coverTitel: { fontFamily: SERIF, fontSize: 40, marginTop: 44, lineHeight: 1.08, color: kleur.tekst },
-  coverAccent: { fontFamily: SERIF, fontStyle: "italic", color: KLEUR.coralTekst },
-  coverVoor: { fontSize: 11, marginTop: 14, color: kleur.grijs },
-  kicker: EYEBROW,
-  coverRij: { flexDirection: "row", marginTop: 30, alignItems: "center" },
-  coverTekst: { flex: 1, paddingRight: 32 },
-  coverType: { fontFamily: SERIF, fontSize: 26, marginTop: 8, lineHeight: 1.12 },
-  coverSilhouet: { fontSize: 10.5, marginTop: 16, fontWeight: 700 },
-  coverUitleg: { fontSize: 9.5, marginTop: 4, color: kleur.grijs, lineHeight: 1.65 },
-  figuurPaneel: {
-    width: 176,
-    paddingTop: 18,
-    paddingBottom: 14,
-    alignItems: "center",
-    backgroundColor: kleur.papier,
-    borderWidth: 1,
-    borderColor: kleur.lijn,
-    borderRadius: 20,
-  },
-  figuurOnderschrift: { fontSize: 7.5, color: kleur.grijs, marginTop: 10, textAlign: "center", paddingHorizontal: 12, lineHeight: 1.4 },
-  matenBlok: { marginTop: 26, borderTopWidth: 1, borderTopColor: kleur.lijn, paddingTop: 16 },
-  matenKolommen: { flexDirection: "row", marginTop: 8 },
-  matenKolom: { flex: 1 },
-  matenRij: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-    borderBottomWidth: 0.75,
-    borderBottomColor: kleur.lijn,
-  },
-  matenLabel: { color: kleur.grijs, fontSize: 9.5 },
-  matenWaarde: { fontSize: 9.5, fontWeight: 600 },
-  inhoud: { backgroundColor: kleur.achtergrond, borderRadius: 20, paddingVertical: 22, paddingHorizontal: 24, marginBottom: 16 },
-  inhoudTitel: { fontFamily: SERIF, fontSize: 22, marginTop: 4, marginBottom: 10, lineHeight: 1.1 },
-  inhoudRij: { flexDirection: "row", marginBottom: 3 },
-  inhoudNummer: { width: 22, color: kleur.accent, fontWeight: 700 },
-  sectieKop: { flexDirection: "row", alignItems: "center", marginTop: 28, marginBottom: 10 },
-  sectieNummer: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginRight: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectieNummerTekst: { fontSize: 8.5, fontWeight: 700, color: kleur.tekst, lineHeight: 1 },
-  sectieTitel: { flex: 1, fontSize: 19, fontFamily: SERIF, color: kleur.tekst, lineHeight: 1.15 },
-  bullet: { flexDirection: "row", marginBottom: 4 },
-  bulletTeken: { width: 14, color: kleur.accent, fontWeight: 700 },
-  para: { marginBottom: 8 },
-  beeldenRij: { flexDirection: "row", flexWrap: "wrap", marginTop: 8, marginBottom: 6 },
-  // Alle beelden zijn 2:3 (beeldbank-standaard): vaste tegels, 4 per rij.
-  beeldKader: { width: 112, marginRight: 8, marginBottom: 10 },
-  beeld: { width: 112, height: 168, objectFit: "contain" },
-  bijschrift: { fontSize: 7.5, color: kleur.grijs, marginTop: 3, lineHeight: 1.35 },
-  voettekst: {
+  voorpagina: { padding: 0, backgroundColor: "#FFFFFF" },
+  voorpaginaBeeld: { position: "absolute", top: 0, left: 0, width: A4.breedte, height: A4.hoogte - 1 },
+  voorpaginaTitel: {
     position: "absolute",
-    // A4 is 841,89pt hoog; 'bottom' wordt bij doorlopende pagina's verkeerd berekend.
-    top: 792,
-    left: MARGE,
-    right: MARGE,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    fontSize: 7.5,
-    color: kleur.grijs,
-    borderTopWidth: 0.75,
-    borderTopColor: kleur.lijn,
-    paddingTop: 10,
+    top: 283,
+    left: 200,
+    right: RECHTS,
+    fontFamily: ARIAL,
+    fontWeight: 700,
+    fontStyle: "italic",
+    fontSize: 16,
+    color: kleur.olijf,
+    textTransform: "uppercase",
   },
-  paginanummer: { position: "absolute", top: 802, right: MARGE, fontSize: 7.5, fontWeight: 700, color: kleur.tekst },
+  // Kop- en voetregel: los geplaatst (geen rij met paginanummers; daar liep react-pdf op vast).
+  kopLinks: { position: "absolute", top: 38, left: LINKS, fontFamily: SANS, fontSize: 9, color: kleur.grijs },
+  kopRechts: {
+    position: "absolute",
+    top: 38,
+    left: LINKS,
+    right: RECHTS,
+    textAlign: "right",
+    fontFamily: SANS,
+    fontSize: 9,
+    color: kleur.grijs,
+  },
+  voet: { position: "absolute", top: 796, left: LINKS, right: RECHTS, fontFamily: SANS, fontSize: 9, color: kleur.grijs },
+  aanhef: { marginLeft: BEELDKOLOM + TUSSENRUIMTE, marginBottom: 12 },
+  groep: { flexDirection: "row", marginBottom: 6 },
+  beeldkolom: { width: BEELDKOLOM, marginRight: TUSSENRUIMTE, alignItems: "center" },
+  tekstkolom: { width: TEKSTKOLOM },
+  beeldKader: { width: BEELD.breedte, marginBottom: 10, alignItems: "center" },
+  beeld: { width: BEELD.breedte, height: BEELD.hoogte, objectFit: "contain" },
+  silhouetLabel: { fontWeight: 700, fontSize: 11, marginTop: 6, textAlign: "center" },
+  bijschrift: { fontStyle: "italic", fontSize: 8.5, marginTop: 4, textAlign: "center" },
+  tip: { width: BEELDKOLOM, fontStyle: "italic", color: kleur.tip, marginTop: 6, marginBottom: 10 },
+  sectie: { marginBottom: 12 },
+  sectieKop: { fontWeight: 700 },
+  para: { marginBottom: 6 },
+  bullet: { flexDirection: "row", marginBottom: 1 },
+  bulletTeken: { width: 24, paddingLeft: 10 },
+  beeldRij: { flexDirection: "row", width: BREEDTE, marginTop: 4, marginBottom: 6 },
+  tegel: { width: TEGEL.breedte, marginBottom: 12, alignItems: "center" },
+  tegelBeeld: { width: TEGEL.breedte, height: TEGEL.hoogte, objectFit: "contain" },
   // Optionele introductie- en slotpagina (Beheer → Teksten → PDF-advies).
-  losTitel: { fontFamily: SERIF, fontSize: 30, marginTop: 6, marginBottom: 16, lineHeight: 1.1, color: kleur.tekst },
-  losKop: { fontFamily: SERIF, fontSize: 17, marginTop: 14, marginBottom: 6, lineHeight: 1.15, color: kleur.tekst },
-  slotBlok: { marginBottom: 18 },
-  slotOproep: {
-    backgroundColor: kleur.accentZacht,
-    borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-    marginTop: 6,
-    marginBottom: 18,
-  },
-  disclaimer: {
-    fontSize: 7.5,
-    color: kleur.grijs,
-    lineHeight: 1.5,
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 0.75,
-    borderTopColor: kleur.lijn,
-  },
+  losTitel: { fontWeight: 700, fontSize: 16, marginBottom: 14, lineHeight: 1.2 },
+  accent: { fontStyle: "italic", color: kleur.magenta },
+  losKop: { fontWeight: 700, fontSize: 11, marginTop: 10, marginBottom: 4 },
+  slotBlok: { marginBottom: 14 },
+  slotOproep: { borderLeftWidth: 3, borderLeftColor: kleur.lime, paddingLeft: 12, marginTop: 4, marginBottom: 14 },
+  disclaimer: { fontSize: 8, color: kleur.grijs, lineHeight: 1.4, marginTop: 10 },
 });
 
-/** Een titel met één woord tussen *sterretjes* als cursief koraalrood accent. */
+/** Een titel met één woord tussen *sterretjes* als roze cursief accent. */
 function TitelMetAccent({ tekst, style }: { tekst: string; style: Style }) {
   const delen = tekst.split(/\*([^*]+)\*/);
   return (
     <Text style={style}>
       {delen.map((d, i) =>
         i % 2 === 1 ? (
-          <Text key={i} style={styles.coverAccent}>
+          <Text key={i} style={styles.accent}>
             {d}
           </Text>
         ) : (
@@ -240,7 +175,52 @@ function linksAlsTekst(tekst: string): string {
   });
 }
 
-/** Tekst met eenvoudige opmaak (## kop, - opsomming, **vet**) als PDF-blokken. */
+/**
+ * Regel met opmaak als geneste Text-delen. In het advies staat **vet** onderstreept
+ * (zoals "Met rechte pijp:" in Lida's adviezen); op de losse pagina's vet.
+ */
+function Opgemaakt({ tekst, onderstreept = false }: { tekst: string; onderstreept?: boolean }) {
+  return (
+    <>
+      {inlineDelen(tekst).map((d, i) =>
+        d.vet || d.cursief ? (
+          <Text
+            key={i}
+            style={d.vet ? (onderstreept ? { textDecoration: "underline" } : { fontWeight: 700 }) : { fontStyle: "italic" }}
+          >
+            {d.tekst}
+          </Text>
+        ) : (
+          d.tekst
+        ),
+      )}
+    </>
+  );
+}
+
+/** Tekstblokken (alinea's en opsommingen). */
+function Blokken({ items, onderstreept = false, vet = false }: { items: Blok[]; onderstreept?: boolean; vet?: boolean }) {
+  return (
+    <>
+      {items.map((b, j) =>
+        b.type === "bullet" ? (
+          <View key={j} style={styles.bullet} wrap={false}>
+            <Text style={styles.bulletTeken}>•</Text>
+            <Text style={{ flex: 1 }}>
+              <Opgemaakt tekst={b.tekst} onderstreept={onderstreept} />
+            </Text>
+          </View>
+        ) : (
+          <Text key={j} style={vet ? [styles.para, { fontWeight: 700 }] : styles.para}>
+            <Opgemaakt tekst={b.tekst} onderstreept={onderstreept} />
+          </Text>
+        ),
+      )}
+    </>
+  );
+}
+
+/** Tekst met eenvoudige opmaak (## kop, - opsomming, **vet**) voor de introductie- en slotpagina. */
 function OpmaakTekst({ tekst }: { tekst: string }) {
   // Tussenkoppen ("## …") splitsen de tekst; de stukken ertussen gaan door blokken().
   const stukken: { kop?: string; tekst: string }[] = [{ tekst: "" }];
@@ -258,117 +238,125 @@ function OpmaakTekst({ tekst }: { tekst: string }) {
               {zonderOpmaak(st.kop)}
             </Text>
           ) : null}
-          {blokken(st.tekst).map((b, j) =>
-            b.type === "bullet" ? (
-              <View key={j} style={styles.bullet} wrap={false}>
-                <Text style={styles.bulletTeken}>•</Text>
-                <Text style={{ flex: 1 }}>
-                  <Opgemaakt tekst={b.tekst} />
-                </Text>
-              </View>
-            ) : (
-              <Text key={j} style={styles.para}>
-                <Opgemaakt tekst={b.tekst} />
-              </Text>
-            ),
-          )}
+          <Blokken items={blokken(st.tekst)} />
         </View>
       ))}
     </>
   );
 }
 
-// Ruwe markdown-achtige opmaak opschonen naar leesbare tekst.
-/** Regel met vet/cursief als geneste react-pdf Text-delen. */
-function Opgemaakt({ tekst }: { tekst: string }) {
+/** Een alinea die helemaal cursief is ("*Draag kousen …*"): een tip, links in roze. */
+function isTip(b: Blok): boolean {
+  if (b.type !== "para") return false;
+  const delen = inlineDelen(b.tekst);
+  return delen.length === 1 && delen[0].cursief;
+}
+
+interface GroepBeeld extends PdfBeeld {
+  /** Vet onderschrift (het silhouet onder de silhouettekening). */
+  label?: string;
+}
+
+interface Groep {
+  secties: { sectie: PdfSectie; tekst: Blok[] }[];
+  beelden: GroepBeeld[];
+  tips: string[];
+}
+
+/**
+ * Verdeelt de secties in groepen: een sectie met beelden plus de secties zonder
+ * beelden die erop volgen. De beelden van een groep staan links naast al die
+ * teksten, zoals in het origineel (bijv. schoenen en tas naast kleuren, sjaals,
+ * riemen, schoenen en tassen). Secties vóór de eerste met beelden horen bij de eerste groep.
+ */
+export function maakGroepen(secties: PdfSectie[], silhouetLabel: string): Groep[] {
+  const groepen: Groep[] = [];
+  for (const s of secties) {
+    const beelden = s.beelden ?? [];
+    const huidig = groepen.at(-1);
+    // Kleine onderdelen met een paar beelden (schoenen, tassen) delen een groep.
+    const klein = (g: Groep) => g.beelden.length + beelden.length <= 3 && tekstHoogte(g) < 250 && s.tekst.length < 600;
+    const groep = !huidig || (beelden.length > 0 && huidig.beelden.length > 0 && !klein(huidig)) ? null : huidig;
+    const doel = groep ?? { secties: [], beelden: [], tips: [] };
+    if (!groep) groepen.push(doel);
+    const alles = blokken(linksAlsTekst(s.tekst));
+    doel.secties.push({ sectie: s, tekst: alles.filter((b) => !isTip(b)) });
+    doel.tips.push(...alles.filter(isTip).map((b) => inlineDelen(b.tekst)[0].tekst));
+    beelden.forEach((b, i) =>
+      doel.beelden.push(s.soort === "silhouet" && i === 0 && silhouetLabel ? { ...b, label: silhouetLabel } : b),
+    );
+  }
+  return groepen;
+}
+
+/** Geschatte hoogte van een stuk tekst in de tekstkolom (Arial 10pt: ~62 tekens per regel). */
+function regels(tekst: string, tekensPerRegel: number): number {
+  return Math.max(1, Math.ceil(zonderOpmaak(tekst).length / tekensPerRegel));
+}
+
+function tekstHoogte(groep: Groep): number {
+  let h = 0;
+  for (const { sectie, tekst } of groep.secties) {
+    h += REGEL + 12;
+    for (const b of tekst) h += b.type === "bullet" ? regels(b.tekst, 54) * REGEL + 1 : regels(b.tekst, 62) * REGEL + 6;
+    if (!sectie.kop) h -= REGEL;
+  }
+  return h;
+}
+
+/**
+ * Hoeveel beelden links naast de tekst komen: zolang de kolom nog niet zo lang
+ * is als de tekst. De rest komt in rijen onder de tekst.
+ */
+export function beeldenNaastTekst(groep: Groep): number {
+  const tips = groep.tips.reduce((h, t) => h + regels(t, 24) * REGEL + 16, 0);
+  const ruimte = tekstHoogte(groep) - tips;
+  let gebruikt = 0;
+  let aantal = 0;
+  for (const b of groep.beelden) {
+    const hoogte = BEELD.hoogte + 10 + (b.bijschrift ? 14 : 0) + (b.label ? 18 : 0);
+    if (aantal > 0 && gebruikt + hoogte / 2 > ruimte) break;
+    gebruikt += hoogte;
+    aantal++;
+  }
+  // Eén beeld over: dat gaat ook in de kolom (geen rij met één beeld).
+  return groep.beelden.length - aantal <= 1 ? groep.beelden.length : aantal;
+}
+
+/** Geschatte hoogte van een hele groep: tekst of beeldkolom, plus de beelden eronder. */
+function groepHoogte(groep: Groep, naast: number): number {
+  const kolom = groep.beelden.slice(0, naast).reduce((h, b) => h + BEELD.hoogte + 10 + (b.bijschrift ? 14 : 0), 0);
+  const rijen = Math.ceil((groep.beelden.length - naast) / PER_RIJ);
+  return Math.max(tekstHoogte(groep), kolom) + rijen * (TEGEL.hoogte + 26);
+}
+
+/** Beelden in rijen van PER_RIJ. */
+function rijenVan<T>(lijst: T[]): T[][] {
+  const rijen: T[][] = [];
+  for (let i = 0; i < lijst.length; i += PER_RIJ) rijen.push(lijst.slice(i, i + PER_RIJ));
+  return rijen;
+}
+
+function Beeld({ beeld, stijl }: { beeld: GroepBeeld; stijl: Style }) {
+  // react-pdf Image (geen HTML img); alt bestaat hier niet.
+  // eslint-disable-next-line jsx-a11y/alt-text
+  return <Image src={beeld.src} style={stijl} />;
+}
+
+/** Datum en bedrijfsnaam boven, de code van het type onder elke pagina. */
+function Rand({ maand, kop, voet }: { maand: string; kop: string; voet: string }) {
   return (
     <>
-      {inlineDelen(tekst).map((d, i) =>
-        d.vet || d.cursief ? (
-          // Manrope heeft geen cursief: cursief (bijv. tips) staat in de cursieve serif van de koppen.
-          <Text key={i} style={d.vet ? { fontWeight: 700 } : { fontFamily: SERIF, fontStyle: "italic", fontSize: 10.5 }}>
-            {d.tekst}
-          </Text>
-        ) : (
-          d.tekst
-        ),
-      )}
+      <Text style={styles.kopLinks} fixed>
+        {maand}
+      </Text>
+      <Text style={styles.kopRechts} fixed>
+        {kop}
+      </Text>
+      <Text style={styles.voet} fixed>
+        {voet}
+      </Text>
     </>
-  );
-}
-
-/** Het silhouet als vectortekening; dezelfde geometrie als op de website. */
-function Figuur({ vorm, hoogte }: { vorm: Lichaamsvorm; hoogte: number }) {
-  const breedte = (hoogte * VIEWBOX.breedte) / VIEWBOX.hoogte;
-  const lijn = (y: number, half: number) => (
-    <Line
-      x1={CX - half - 8}
-      y1={y}
-      x2={CX + half + 8}
-      y2={y}
-      stroke={kleur.accent}
-      strokeWidth={1.2}
-      strokeDasharray="3 3"
-    />
-  );
-  return (
-    <Svg viewBox={`0 0 ${VIEWBOX.breedte} ${VIEWBOX.hoogte}`} width={breedte} height={hoogte}>
-      <Path
-        d={lichaamsPad(vorm)}
-        fill={kleur.tekst}
-        fillOpacity={0.1}
-        stroke={kleur.tekst}
-        strokeOpacity={0.4}
-        strokeWidth={1.5}
-      />
-      <Circle
-        cx={HOOFD.cx}
-        cy={HOOFD.cy}
-        r={HOOFD.r}
-        fill={kleur.tekst}
-        fillOpacity={0.1}
-        stroke={kleur.tekst}
-        strokeOpacity={0.4}
-        strokeWidth={1.5}
-      />
-      {lijn(Y.borst, vorm.borst)}
-      {lijn(Y.taille, vorm.taille)}
-      {lijn(Y.heup, vorm.heup)}
-    </Svg>
-  );
-}
-
-function MatenRij({ label, waarde }: { label: string; waarde: string }) {
-  return (
-    <View style={styles.matenRij}>
-      <Text style={styles.matenLabel}>{label}</Text>
-      <Text style={styles.matenWaarde}>{waarde}</Text>
-    </View>
-  );
-}
-
-/** Kleurstrook boven en voettekst onder elke pagina. */
-function Rand({ voettekst }: { voettekst: string }) {
-  return (
-    <>
-      <Kleurstrook hoogte={6} style={styles.strookBoven} fixed />
-      <View style={styles.voettekst} fixed>
-        <Text>{voettekst}</Text>
-      </View>
-      {/* Los van de voettekst: de nummers worden pas na de opmaak ingevuld (render).
-          Als buur van de tekst in dezelfde rij liep react-pdf bij lange adviezen vast
-          ("unsupported number"). */}
-      <Text style={styles.paginanummer} fixed render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
-    </>
-  );
-}
-
-/** Het nummer voor een sectiekop: een rondje in een kleur uit de strook. */
-function SectieNummer({ nummer }: { nummer: number }) {
-  return (
-    <View style={[styles.sectieNummer, { backgroundColor: STROOK[(nummer - 1) % STROOK.length] }]}>
-      <Text style={styles.sectieNummerTekst}>{nummer}</Text>
-    </View>
   );
 }
 
@@ -377,30 +365,21 @@ export function AdviesPdf({
   datum,
   sleutel,
   titel,
-  maten,
   secties,
   silhouet,
   merk = MERK_STANDAARD,
   teksten = standaardAdviesPdfTeksten(),
 }: AdviesPdfProps) {
   const t = teksten.voorpagina;
-  const maatLabel = (k: keyof PdfMaten) => teksten.maten[k]?.trim() || MAAT_LABELS_STANDAARD[k];
   const bedrijfsnaam = merk.bedrijfsnaam?.trim() || BEDRIJFSNAAM_STANDAARD;
-  const cm = (v: number | null) => (v == null ? "–" : `${v} cm`);
-  const matenRijen: { label: string; waarde: string }[] = [
-    { label: maatLabel("lengte_cm"), waarde: cm(maten.lengte_cm) },
-    { label: maatLabel("gewicht_kg"), waarde: maten.gewicht_kg == null ? "–" : `${maten.gewicht_kg} kg` },
-    ...(maten.schouder != null ? [{ label: maatLabel("schouder"), waarde: cm(maten.schouder) }] : []),
-    { label: maatLabel("borst"), waarde: cm(maten.borst) },
-    { label: maatLabel("taille"), waarde: cm(maten.taille) },
-    { label: maatLabel("hoge_heup"), waarde: cm(maten.hoge_heup) },
-    { label: maatLabel("heup"), waarde: cm(maten.heup) },
-    ...(maten.binnenbeen != null ? [{ label: maatLabel("binnenbeen"), waarde: cm(maten.binnenbeen) }] : []),
-  ];
-  const helft = Math.ceil(matenRijen.length / 2);
-  const toonMaten = matenRijen.some((r) => r.waarde !== "–");
-  const voettekst = vulIn(t.voettekst, { bedrijf: bedrijfsnaam, type: sleutel });
+  const voornaam = klantnaam.trim().split(/\s+/)[0] ?? "";
+  const rand = {
+    maand: datum.replace(/^\d{1,2}\s+/, ""),
+    kop: vulIn(t.koptekst, { bedrijf: bedrijfsnaam, type: sleutel }),
+    voet: vulIn(t.voettekst, { bedrijf: bedrijfsnaam, type: sleutel }),
+  };
   const metNaam = (tekst: string) => vulIn(tekst, { naam: klantnaam });
+  const groepen = maakGroepen(secties, silhouet ? vulIn(t.silhouet, { letter: silhouet.letter, silhouet: silhouet.naam }) : "");
   const intro = teksten.intro;
   const toonIntro = intro.tekst.trim() !== "";
   const slot = teksten.slot;
@@ -408,61 +387,19 @@ export function AdviesPdf({
   const toonSlot = Boolean(slot.titel.trim() || slotBlokken.length || slot.oproep.trim() || slot.disclaimer.trim());
 
   return (
-    <Document title={`Kledingadvies ${sleutel}`} author={bedrijfsnaam}>
-      {/* Voorpagina */}
-      <Page size="A4" style={[styles.page, styles.cover]}>
-        <Rand voettekst={voettekst} />
-        <Woordmerk merk={merk} grootte={15} />
-
-        <TitelMetAccent tekst={t.titel} style={styles.coverTitel} />
-        <Text style={styles.coverVoor}>{vulIn(t.voor, { naam: klantnaam, datum })}</Text>
-
-        <View style={styles.coverRij}>
-          <View style={styles.coverTekst}>
-            <Text style={styles.kicker}>{t.type_label}</Text>
-            <Text style={styles.coverType}>{titel}</Text>
-            {silhouet && (
-              <>
-                <Text style={styles.coverSilhouet}>{vulIn(t.silhouet, { silhouet: silhouet.naam })}</Text>
-                <Text style={styles.coverUitleg}>{silhouet.uitleg}</Text>
-              </>
-            )}
-          </View>
-          {silhouet && (
-            <View style={styles.figuurPaneel}>
-              <Figuur vorm={silhouet.vorm} hoogte={244} />
-              <Text style={styles.figuurOnderschrift}>
-                {vulIn(silhouet.eigenMaten ? t.figuur_eigen : t.figuur_standaard, { silhouet: silhouet.naam })}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {toonMaten && (
-          <View style={styles.matenBlok} wrap={false}>
-            <Text style={styles.kicker}>{t.maten_label}</Text>
-            <View style={styles.matenKolommen}>
-              <View style={[styles.matenKolom, { marginRight: 14 }]}>
-                {matenRijen.slice(0, helft).map((r) => (
-                  <MatenRij key={r.label} label={r.label} waarde={r.waarde} />
-                ))}
-              </View>
-              <View style={[styles.matenKolom, { marginLeft: 14 }]}>
-                {matenRijen.slice(helft).map((r) => (
-                  <MatenRij key={r.label} label={r.label} waarde={r.waarde} />
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
-
+    <Document title={`${zonderOpmaak(t.titel)} – ${titel}`} author={bedrijfsnaam}>
+      {/* Voorpagina: groene baan, logo en krullen (beeld) met de titel erop. */}
+      <Page size="A4" style={styles.voorpagina}>
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        <Image src={VOORPAGINA} style={styles.voorpaginaBeeld} />
+        <Text style={styles.voorpaginaTitel}>{zonderOpmaak(t.titel)}</Text>
       </Page>
 
       {/* Optionele introductie (Beheer → Teksten → PDF-advies) */}
       {toonIntro && (
         <Page size="A4" style={styles.page}>
-          <Rand voettekst={voettekst} />
-          {intro.bovenschrift.trim() ? <Text style={styles.kicker}>{metNaam(intro.bovenschrift)}</Text> : null}
+          <Rand {...rand} />
+          {intro.bovenschrift.trim() ? <Text style={{ color: kleur.grijs, marginBottom: 4 }}>{metNaam(intro.bovenschrift)}</Text> : null}
           {intro.titel.trim() ? <TitelMetAccent tekst={metNaam(intro.titel)} style={styles.losTitel} /> : null}
           <OpmaakTekst tekst={metNaam(intro.tekst)} />
         </Page>
@@ -470,60 +407,67 @@ export function AdviesPdf({
 
       {/* Advies */}
       <Page size="A4" style={styles.page}>
-        <Rand voettekst={voettekst} />
-        {secties.length > 1 && (
-          <View style={styles.inhoud}>
-            <Text style={styles.kicker}>{t.inhoud_label}</Text>
-            <Text style={styles.inhoudTitel}>{t.inhoud_titel}</Text>
-            {secties.map((s, i) => (
-              <View key={i} style={styles.inhoudRij}>
-                <Text style={styles.inhoudNummer}>{i + 1}.</Text>
-                <Text style={{ flex: 1 }}>{zonderOpmaak(s.kop)}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {secties.map((s, i) => (
-          <View key={i}>
-            <View style={styles.sectieKop} minPresenceAhead={60} wrap={false}>
-              <SectieNummer nummer={i + 1} />
-              <Text style={styles.sectieTitel}>{zonderOpmaak(s.kop)}</Text>
-            </View>
-            {blokken(s.tekst).map((b, j) =>
-              b.type === "bullet" ? (
-                <View key={j} style={styles.bullet} wrap={false}>
-                  <Text style={styles.bulletTeken}>•</Text>
-                  <Text style={{ flex: 1 }}>
-                    <Opgemaakt tekst={b.tekst} />
-                  </Text>
+        <Rand {...rand} />
+        {t.aanhef.trim() ? <Text style={styles.aanhef}>{vulIn(t.aanhef, { naam: voornaam })}</Text> : null}
+        {groepen.map((g, i) => {
+          const naast = beeldenNaastTekst(g);
+          const onder = g.beelden.slice(naast);
+          // Zoals in het origineel: een groot onderdeel (broeken, rokken, tops …)
+          // begint op een nieuwe pagina; een kleine groep blijft bij elkaar.
+          const groot = groepHoogte(g, naast) > 420;
+          return (
+            <View key={i} break={i > 0 && groot} wrap={groot}>
+              <View style={styles.groep}>
+                <View style={styles.beeldkolom}>
+                  {g.beelden.slice(0, naast).map((b, k) => (
+                    <View key={k} style={styles.beeldKader} wrap={false}>
+                      <Beeld beeld={b} stijl={styles.beeld} />
+                      {b.label ? <Text style={styles.silhouetLabel}>{b.label}</Text> : null}
+                      {b.bijschrift ? <Text style={[styles.bijschrift, { width: BEELD.breedte }]}>{b.bijschrift}</Text> : null}
+                    </View>
+                  ))}
+                  {g.tips.map((tip, k) => (
+                    <Text key={k} style={styles.tip}>
+                      {tip}
+                    </Text>
+                  ))}
                 </View>
-              ) : (
-                <Text key={j} style={styles.para}>
-                  <Opgemaakt tekst={b.tekst} />
-                </Text>
-              ),
-            )}
-            {s.beelden && s.beelden.length > 0 && (
-              <View style={styles.beeldenRij}>
-                {s.beelden.map((b, k) => (
-                  <View key={k} style={styles.beeldKader} wrap={false}>
-                    {/* react-pdf Image (geen HTML img); alt bestaat hier niet. */}
-                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                    <Image src={b.src} style={styles.beeld} />
-                    {b.bijschrift ? <Text style={styles.bijschrift}>{b.bijschrift}</Text> : null}
-                  </View>
-                ))}
+                <View style={styles.tekstkolom}>
+                  {g.secties.map(({ sectie, tekst }, k) => (
+                    <View key={k} style={styles.sectie}>
+                      {sectie.kop.trim() && sectie.soort !== "silhouet" ? (
+                        <Text style={styles.sectieKop} minPresenceAhead={30}>
+                          {zonderOpmaak(sectie.kop)}
+                          {sectie.soort === "kenmerken" && !/[:.?!]$/.test(sectie.kop.trim()) ? ":" : ""}
+                        </Text>
+                      ) : null}
+                      <Blokken items={tekst} onderstreept vet={sectie.soort === "silhouet"} />
+                    </View>
+                  ))}
+                </View>
               </View>
-            )}
-          </View>
-        ))}
+              {/* Vaste rijen (geen flexWrap): een rij die naar de volgende pagina
+                  gaat, verschoof anders bij react-pdf. */}
+              {rijenVan(onder).map((rij, r) => (
+                <View key={r} style={styles.beeldRij} wrap={false}>
+                  {rij.map((b, k) => (
+                    <View key={k} style={[styles.tegel, { marginRight: k === PER_RIJ - 1 ? 0 : TEGEL.tussen }]}>
+                      <Beeld beeld={b} stijl={styles.tegelBeeld} />
+                      {b.label ? <Text style={styles.silhouetLabel}>{b.label}</Text> : null}
+                      {b.bijschrift ? <Text style={[styles.bijschrift, { width: TEGEL.breedte }]}>{b.bijschrift}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          );
+        })}
       </Page>
 
       {/* Optionele slotpagina (Beheer → Teksten → PDF-advies) */}
       {toonSlot && (
         <Page size="A4" style={styles.page}>
-          <Rand voettekst={voettekst} />
+          <Rand {...rand} />
           {slot.titel.trim() ? <TitelMetAccent tekst={metNaam(slot.titel)} style={styles.losTitel} /> : null}
           {slotBlokken.map((b, i) => (
             <View key={i} style={styles.slotBlok}>
