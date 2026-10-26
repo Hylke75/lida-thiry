@@ -444,7 +444,11 @@ export default async function OrderDetail({
           <Regel label="Borst / taille" waarde={`${cm(r.borst)} / ${cm(r.taille)}`} />
           <Regel label="Hoge heup / heup" waarde={`${cm(r.hoge_heup)} / ${cm(r.heup)}`} />
           {r.behamaat_band != null && <Regel label="Bandmaat bh" waarde={String(r.behamaat_band)} />}
+          {r.schouderbreedte != null && <Regel label="Schouderbreedte" waarde={cm(r.schouderbreedte)} />}
+          {r.breedste_punt && <Regel label="Breedste punt (spiegel)" waarde={String(r.breedste_punt)} />}
+          {r.bovenlichaam && <Regel label="Bovenlichaam (handentest)" waarde={String(r.bovenlichaam)} />}
           <Regel label="Categorie" waarde={String(r.categorie ?? "–")} />
+          <Regel label="Rekenmethode" waarde={r.rekenmodel === "lida" ? "Lida" : "FFIT"} />
           <Regel label="FFIT-type" waarde={r.ffit_type ?? "–"} />
           <Regel label="Gekozen silhouet" waarde={r.gekozen_silhouet ?? "–"} />
           {Object.entries(antwoorden).map(([k, v]) => (

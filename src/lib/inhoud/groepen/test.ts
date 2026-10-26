@@ -192,6 +192,125 @@ export const TEST_SILHOUET = sectie({
   },
 });
 
+export const TEST_PROPORTIES = sectie({
+  sleutel: "test.proporties",
+  titel: "Stap: Je proporties",
+  uitleg:
+    "Alleen in de test als de rekenmethode van Lida aan staat (Beheer → Rekentool). Drie vragen die de omtrekken niet laten zien: de schouderbreedte, het breedste punt in de spiegel en de lengte van het bovenlichaam (de handentest). De afbeelding bij de handentest is een vaste illustratie.",
+  variabelen: { silhouet: "naam van het silhouet dat de klant zelf koos (alleen bij ‘Geen duidelijk silhouet’)" },
+  velden: {
+    titel: { soort: "tekst", label: "Titel van de stap", uitleg: TITEL_UITLEG, max: 40, standaard: "Je proporties" },
+    intro: {
+      soort: "tekstvak",
+      label: "Uitleg bovenaan",
+      regels: 3,
+      standaard:
+        "Omtrekken zeggen niet alles. Met deze drie vragen zien we ook hoe breed je schouders zijn en hoe lang je bovenlichaam is. Daarmee kunnen we bijvoorbeeld de Lepel en de Peer goed uit elkaar houden.",
+    },
+    schouderbreedte_label: { soort: "tekst", label: "Veld: schouderbreedte", max: 60, standaard: "Schouderbreedte" },
+    schouderbreedte_instructie: {
+      soort: "tekstvak",
+      label: "Meetinstructie schouderbreedte",
+      regels: 4,
+      standaard:
+        "Vraag iemand je te helpen. Sta rechtop met je armen ontspannen langs je lichaam. Meet op je rug, recht van het ene schouderpunt naar het andere: van het uiterste puntje van je schouderbot tot het uiterste puntje aan de andere kant. Houd het meetlint strak en recht.",
+    },
+    schouderbreedte_voorbeeld: { soort: "tekst", label: "Voorbeeld in het veld", max: 40, standaard: "bijv. 39" },
+    breedste_vraag: {
+      soort: "tekstvak",
+      label: "Vraag: breedste punt",
+      regels: 3,
+      standaard:
+        "Trek dunne, aansluitende kleding aan (of ga in ondergoed) en ga recht voor een lange spiegel staan. Wat is het breedste punt van je lichaam?",
+    },
+    breedste_schouders: { soort: "tekst", label: "Antwoord: schouders", max: 80, standaard: "Mijn schouders" },
+    breedste_gelijk: {
+      soort: "tekst",
+      label: "Antwoord: gelijk",
+      max: 80,
+      standaard: "Mijn schouders en heupen zijn ongeveer even breed",
+    },
+    breedste_heupen: { soort: "tekst", label: "Antwoord: heupen", max: 80, standaard: "Mijn heupen" },
+    bovenlichaam_vraag: {
+      soort: "tekstvak",
+      label: "Vraag: lengte van je bovenlichaam (handentest)",
+      regels: 5,
+      standaard:
+        "Ga rechtop voor de spiegel staan. Leg één hand horizontaal direct onder je borsten. Leg je andere hand er direct onder, zodat je handen elkaar raken. Kijk waar je onderste hand uitkomt ten opzichte van je taille.",
+    },
+    bovenlichaam_kort: {
+      soort: "tekst",
+      label: "Antwoord: kort",
+      max: 120,
+      standaard: "Mijn onderste hand gaat voorbij mijn taille (kort bovenlichaam)",
+    },
+    bovenlichaam_gemiddeld: {
+      soort: "tekst",
+      label: "Antwoord: gemiddeld",
+      max: 120,
+      standaard: "Mijn onderste hand komt op mijn taille (gemiddeld bovenlichaam)",
+    },
+    bovenlichaam_lang: {
+      soort: "tekst",
+      label: "Antwoord: lang",
+      max: 120,
+      standaard: "Mijn onderste hand bereikt mijn taille niet (lang bovenlichaam)",
+    },
+    afbeelding_alt: {
+      soort: "tekst",
+      label: "Beschrijving van de afbeelding (voor schermlezers)",
+      max: 200,
+      standaard: "De handentest: drie vrouwen met hun handen onder de borst, met een kort, gemiddeld en lang bovenlichaam.",
+    },
+    fout: {
+      soort: "tekst",
+      label: "Melding als er iets ontbreekt",
+      max: 160,
+      standaard: "Vul je schouderbreedte in en beantwoord beide vragen.",
+    },
+    geen_type_titel: {
+      soort: "tekst",
+      label: "Geen duidelijk silhouet: titel",
+      max: 80,
+      standaard: "Je figuur is niet eenduidig",
+    },
+    geen_type_tekst: {
+      soort: "tekstvak",
+      label: "Geen duidelijk silhouet: uitleg",
+      uitleg: "Getoond als de berekening geen duidelijk silhouet geeft. De klant kiest dan zelf of vraagt een stijladvies op afstand aan.",
+      regels: 4,
+      standaard:
+        "Je maten en antwoorden geven geen duidelijk beeld van één silhouet. Je kunt zelf je silhouet aanwijzen, of Lida persoonlijk naar je figuur laten kijken met een stijladvies op afstand (STOA).",
+    },
+    geen_type_gevolg: {
+      soort: "tekstvak",
+      label: "Geen duidelijk silhouet: gevolg van zelf kiezen",
+      regels: 3,
+      standaard:
+        "Let op: kies je zelf, dan maken we je advies voor het silhouet dat je koos. Past dat niet bij je figuur, dan past het advies ook minder goed.",
+    },
+    geen_type_eigen_knop: {
+      soort: "tekst",
+      label: "Knop: zelf kiezen",
+      max: 80,
+      standaard: "Ik kies zelf: {silhouet}",
+    },
+    geen_type_stoa_knop: {
+      soort: "tekst",
+      label: "Knop: stijladvies op afstand",
+      max: 80,
+      standaard: "Stijladvies op afstand aanvragen",
+    },
+    geen_type_stoa_link: {
+      soort: "tekst",
+      label: "Link van de knop stijladvies op afstand",
+      uitleg: "Een pagina op deze website (bijv. /contact) of een volledig adres.",
+      max: 200,
+      standaard: "/contact",
+    },
+  },
+});
+
 export const TEST_VRAGEN = sectie({
   sleutel: "test.vragen",
   titel: "Stap: Vragen over je pasvorm",
@@ -424,6 +543,7 @@ export const TEST: Groep = {
     TEST_METEN,
     TEST_MATEN,
     TEST_SILHOUET,
+    TEST_PROPORTIES,
     TEST_VRAGEN,
     TEST_AFRONDEN,
     TEST_UITSLAG,
@@ -439,6 +559,7 @@ export interface TestTeksten {
   meten: SectieWaarden<typeof TEST_METEN>;
   maten: SectieWaarden<typeof TEST_MATEN>;
   silhouet: SectieWaarden<typeof TEST_SILHOUET>;
+  proporties: SectieWaarden<typeof TEST_PROPORTIES>;
   vragen: SectieWaarden<typeof TEST_VRAGEN>;
   afronden: SectieWaarden<typeof TEST_AFRONDEN>;
   uitslag: SectieWaarden<typeof TEST_UITSLAG>;

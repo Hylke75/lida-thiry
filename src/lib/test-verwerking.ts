@@ -13,6 +13,17 @@ import type { Maten } from "@/rekenkern/types";
 import { VERFIJNING_UIT, verfijnLetter, type VerfijningInstelling } from "@/rekenkern/verfijning";
 import type { ZandloperVariant } from "@/rekenkern/config/ffit-regels";
 import type { Figuurletter } from "@/rekenkern/config/ffit-naar-letter";
+import type { Bovenlichaam, BreedstePunt } from "@/rekenkern/config/lida-model";
+import { bepaalSilhouetLida } from "@/rekenkern/lida-model";
+import { REKENMODEL_FFIT, type Rekenmodel, type RekenmodelInstelling } from "./rekenmodel";
+
+/** De extra gegevens voor Lida's rekenmethode (alleen gevraagd als die aan staat). */
+export interface Proporties {
+  /** Schouderbreedte in cm, op de rug van schouderpunt tot schouderpunt. */
+  schouderbreedte: number | null;
+  breedste_punt: BreedstePunt | null;
+  bovenlichaam: Bovenlichaam | null;
+}
 
 export interface TestInvoer {
   lengte_cm: number;
@@ -24,17 +35,27 @@ export interface TestInvoer {
   hermeting: boolean;
   /** Bandmaat van de bh (optioneel; alleen gevraagd als de extra figuurtypes aan staan). */
   behamaat_band?: number | null;
+  /** Alleen bij Lida's rekenmethode. */
+  proporties?: Proporties | null;
+  /**
+   * Geeft de berekening geen duidelijk silhouet (Lida's methode), dan kiest de klant
+   * zelf: true = ga uit van het gekozen silhouet.
+   */
+  eigen_keuze?: boolean;
 }
 
 export type TestUitkomst =
   | { soort: "opnieuw_meten"; bevindingen: Bevinding[] }
   | { soort: "silhouet_verschil"; berekendeLetter: Figuurletter }
+  /** Lida's methode gaf geen duidelijk silhouet: de klant kiest zelf of vraagt STOA aan. */
+  | { soort: "geen_type"; uitleg: string }
   | {
       soort: "type";
       sleutel: string;
       categorie: number;
       letter: Figuurletter;
       ffit_type: string;
+      rekenmodel: Rekenmodel;
       meldingen: Bevinding[];
     };
 
@@ -50,6 +71,7 @@ export function verwerkTest(
   variant: ZandloperVariant,
   toewijzing?: FfitToewijzing,
   verfijning: VerfijningInstelling = VERFIJNING_UIT,
+  rekenmodel: RekenmodelInstelling = REKENMODEL_FFIT,
 ): TestUitkomst {
   const { maten } = invoer;
 
@@ -67,18 +89,39 @@ export function verwerkTest(
   }
   const meldingen = logischeChecks(maten);
 
-  // A + B + C.
+  // A + B + C. De FFIT-uitkomst wordt altijd bewaard (ook bij Lida's methode),
+  // zodat de twee methodes later te vergelijken zijn.
   const categorie = bepaalCategorie(invoer.lengte_cm, invoer.gewicht_kg).nummer;
   const ffit = bepaalFiguurtype(maten, variant);
-  // E. Verfijning naar de extra types I en O (standaard uit; VOORLOPIG).
-  const letter = verfijnLetter(
-    { ffit, letter: bepaalLetter(ffit, toewijzing), maten, bandmaat: invoer.behamaat_band },
-    verfijning,
-  );
+  const type = (letter: Figuurletter) =>
+    definitiefType(categorie, letter, ffit, rekenmodel.model, meldingen);
 
-  // Geen passend figuurtype: het door de klant gekozen silhouet bepaalt de letter.
-  if (letter === null) {
-    return definitiefType(categorie, invoer.gekozen_silhouet, ffit, meldingen);
+  let letter: Figuurletter | null;
+  if (rekenmodel.model === "lida") {
+    // F. Lida's methode: omtrekken in procenten, breedste punt, heupvorm, bovenlichaam.
+    const lida = bepaalSilhouetLida(
+      {
+        maten,
+        breedstePunt: invoer.proporties?.breedste_punt,
+        bovenlichaam: invoer.proporties?.bovenlichaam,
+      },
+      rekenmodel.grenzen,
+      verfijning.aan ? verfijning.beschikbaar : [],
+    );
+    if (lida.letter === null) {
+      // Geen duidelijk silhouet: de klant kiest zelf (met uitleg over het gevolg)
+      // of vraagt een stijladvies op afstand aan.
+      return invoer.eigen_keuze ? type(invoer.gekozen_silhouet) : { soort: "geen_type", uitleg: lida.uitleg };
+    }
+    letter = lida.letter;
+  } else {
+    // E. Verfijning naar de extra types I en O (standaard uit; VOORLOPIG).
+    letter = verfijnLetter(
+      { ffit, letter: bepaalLetter(ffit, toewijzing), maten, bandmaat: invoer.behamaat_band },
+      verfijning,
+    );
+    // Geen passend figuurtype: het door de klant gekozen silhouet bepaalt de letter.
+    if (letter === null) return type(invoer.gekozen_silhouet);
   }
 
   // Silhouet-vergelijking: bij verschil eerst een keer laten hermeten. Blijft
@@ -87,13 +130,14 @@ export function verwerkTest(
     return { soort: "silhouet_verschil", berekendeLetter: letter };
   }
 
-  return definitiefType(categorie, letter, ffit, meldingen);
+  return type(letter);
 }
 
 function definitiefType(
   categorie: number,
   letter: Figuurletter,
   ffit_type: string,
+  rekenmodel: Rekenmodel,
   meldingen: Bevinding[],
 ): TestUitkomst {
   return {
@@ -102,6 +146,7 @@ function definitiefType(
     categorie,
     letter,
     ffit_type,
+    rekenmodel,
     meldingen,
   };
 }

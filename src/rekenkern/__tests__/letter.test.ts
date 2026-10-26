@@ -19,9 +19,9 @@ describe("C. FFIT-type naar figuurletter", () => {
 
   it("mapt de met Lida vastgestelde FFIT-types", () => {
     expect(bepaalLetter("Rechthoek")).toBe("H");
-    expect(bepaalLetter("Lepel")).toBe("A");
-    expect(bepaalLetter("Onderste zandloper")).toBe("8");
-    expect(bepaalLetter("Bovenste zandloper")).toBe("8");
+    expect(bepaalLetter("Lepel")).toBe("8");
+    expect(bepaalLetter("Onderste zandloper")).toBe("X");
+    expect(bepaalLetter("Bovenste zandloper")).toBe("X");
   });
 
   it("is productie-gereed nu de mapping compleet is", () => {

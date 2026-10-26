@@ -7,6 +7,7 @@ import { TestWizard } from "./TestWizard";
 import { haalSilhouetten, silhouetVoorSleutel } from "@/lib/lichaamstypes";
 import { leesInstelling } from "@/lib/instellingen";
 import { EXTRA_FIGUURTYPES_SLEUTEL, extraFiguurtypesAan } from "@/lib/extra-figuurtypes";
+import { REKENMODEL_SLEUTEL, leesRekenmodel } from "@/lib/rekenmodel";
 import { TypeOnthulling } from "./TypeOnthulling";
 import { leesSectie } from "@/lib/inhoud/lees";
 import { vulIn } from "@/lib/inhoud/schema";
@@ -17,6 +18,7 @@ import {
   TEST_MELDINGEN,
   TEST_METEN,
   TEST_OVER_JOU,
+  TEST_PROPORTIES,
   TEST_SILHOUET,
   TEST_UITSLAG,
   TEST_VRAGEN,
@@ -52,17 +54,18 @@ function Melding({
 }
 
 async function leesTestTeksten(): Promise<TestTeksten> {
-  const [algemeen, overJou, meten, maten, silhouet, vragen, afronden, uitslag] = await Promise.all([
+  const [algemeen, overJou, meten, maten, silhouet, proporties, vragen, afronden, uitslag] = await Promise.all([
     leesSectie(TEST_ALGEMEEN),
     leesSectie(TEST_OVER_JOU),
     leesSectie(TEST_METEN),
     leesSectie(TEST_MATEN),
     leesSectie(TEST_SILHOUET),
+    leesSectie(TEST_PROPORTIES),
     leesSectie(TEST_VRAGEN),
     leesSectie(TEST_AFRONDEN),
     leesSectie(TEST_UITSLAG),
   ]);
-  return { algemeen, overJou, meten, maten, silhouet, vragen, afronden, uitslag };
+  return { algemeen, overJou, meten, maten, silhouet, proporties, vragen, afronden, uitslag };
 }
 
 export default async function TestPage({
@@ -74,12 +77,14 @@ export default async function TestPage({
   const b = await beoordeelToken(token);
 
   if (b.toestand === "geldig") {
-    const [teksten, meetBeelden, silhouetten, extraTypes] = await Promise.all([
+    const [teksten, meetBeelden, silhouetten, extraTypes, rekenmodel] = await Promise.all([
       leesTestTeksten(),
       leesMeetBeelden(),
       haalSilhouetten(),
       // Een storing bij het lezen mag de test niet breken: dan geen bandmaat-vraag.
       leesInstelling(EXTRA_FIGUURTYPES_SLEUTEL).catch(() => null),
+      // Idem: bij een storing de FFIT-methode, zonder de extra stap.
+      leesInstelling(REKENMODEL_SLEUTEL).catch(() => null),
     ]);
     return (
       <TestWizard
@@ -89,6 +94,7 @@ export default async function TestPage({
         silhouetten={silhouetten}
         teksten={teksten}
         vraagBandmaat={extraFiguurtypesAan(extraTypes)}
+        vraagProporties={leesRekenmodel(rekenmodel) === "lida"}
       />
     );
   }

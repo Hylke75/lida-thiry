@@ -10,6 +10,8 @@ import { Voortgang } from "./Voortgang";
 import { StapOverJou } from "./stappen/StapOverJou";
 import { StapMaten } from "./stappen/StapMaten";
 import { StapSilhouet } from "./stappen/StapSilhouet";
+import { StapProporties } from "./stappen/StapProporties";
+import { GeenDuidelijkSilhouet } from "./GeenDuidelijkSilhouet";
 import { StapVragen } from "./stappen/StapVragen";
 import { StapAfronden } from "./stappen/StapAfronden";
 import { Bovenschrift, knopKlassen } from "@/components/site/Basis";
@@ -22,6 +24,7 @@ export function TestWizard({
   silhouetten,
   teksten,
   vraagBandmaat = false,
+  vraagProporties = false,
 }: {
   token: string;
   klantnaam: string;
@@ -33,6 +36,8 @@ export function TestWizard({
   teksten: TestTeksten;
   /** Optionele bandmaat van de bh vragen (alleen als de extra figuurtypes I en O aan staan). */
   vraagBandmaat?: boolean;
+  /** Stap "Je proporties" (alleen als de rekenmethode van Lida aan staat). */
+  vraagProporties?: boolean;
 }) {
   const {
     stappen: STAPPEN,
@@ -47,12 +52,13 @@ export function TestWizard({
     melding,
     bevindingen,
     resultaat,
+    geenType,
     kop,
     gaNaar,
     volgende,
     bereikbaar,
     verstuur,
-  } = useTestWizard({ token, silhouetten, teksten, vraagBandmaat });
+  } = useTestWizard({ token, silhouetten, teksten, vraagBandmaat, vraagProporties });
 
   if (resultaat) {
     return (
@@ -133,6 +139,10 @@ export function TestWizard({
           />
         )}
 
+        {huidig.soort === "proporties" && (
+          <StapProporties a={a} setA={setA} toonFouten={toonFouten} teksten={teksten.proporties} />
+        )}
+
         {huidig.soort === "silhouet" && (
           <StapSilhouet a={a} setA={setA} silhouetten={silhouetten} intro={teksten.silhouet.intro} />
         )}
@@ -149,6 +159,16 @@ export function TestWizard({
             vragen={vragen}
             intro={teksten.afronden.intro}
             bandmaatLabel={vraagBandmaat ? teksten.overJou.bandmaat_label : undefined}
+            proporties={vraagProporties ? teksten.proporties : undefined}
+          />
+        )}
+
+        {huidig.soort === "controle" && geenType && (
+          <GeenDuidelijkSilhouet
+            teksten={teksten.proporties}
+            silhouet={silhouetten.find((s) => s.letter === a.silhouet)?.naam ?? a.silhouet}
+            bezig={bezig}
+            kiesZelf={() => verstuur(true)}
           />
         )}
 

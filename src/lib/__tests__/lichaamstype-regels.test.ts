@@ -56,7 +56,7 @@ describe("silhouet en koppeling", () => {
   });
   it("gebruikt de koppeling uit beheer voor de berekening", () => {
     expect(bepaalLetter("Lepel", { Lepel: "L" })).toBe("L");
-    expect(bepaalLetter("Lepel")).toBe("A"); // standaard
+    expect(bepaalLetter("Lepel")).toBe("8"); // standaard (sinds 26-10-2026)
     expect(isMappingCompleet({ Zandloper: "X" })).toBe(false);
   });
 });

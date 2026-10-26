@@ -4,6 +4,7 @@
 import { MAAT_GROEPEN, type MaatVeld } from "@/lib/test-config";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
 import { BANDMAAT_GRENZEN } from "@/rekenkern/config/verfijning";
+import { SCHOUDERBREEDTE_GRENZEN } from "@/rekenkern/config/lida-model";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
 import { meetStapTitel, type PasvormVraag, type TestTeksten } from "@/lib/inhoud/groepen/test";
 
@@ -23,6 +24,10 @@ export interface Antwoorden {
   pasvorm: Record<string, string>;
   /** Bandmaat van de bh (optioneel; alleen gevraagd als de extra figuurtypes aan staan). */
   bandmaat: string;
+  /** Alleen bij Lida's rekenmethode: schouderbreedte (cm), breedste punt, bovenlichaam. */
+  schouderbreedte: string;
+  breedstePunt: string;
+  bovenlichaam: string;
 }
 
 export const LEEG: Antwoorden = {
@@ -33,6 +38,9 @@ export const LEEG: Antwoorden = {
   silhouet: "",
   pasvorm: {},
   bandmaat: "",
+  schouderbreedte: "",
+  breedstePunt: "",
+  bovenlichaam: "",
 };
 
 /** De keuzes voor de bandmaat van de bh (Europese maten, per 5). */
@@ -44,19 +52,32 @@ export const BANDMATEN: number[] = Array.from(
 export type Stap =
   | { soort: "jij"; titel: string }
   | { soort: "maten"; titel: string; velden: MaatVeld[] }
+  | { soort: "proporties"; titel: string }
   | { soort: "silhouet"; titel: string }
   | { soort: "vragen"; titel: string; vragen: PasvormVraag[] }
   | { soort: "controle"; titel: string };
 
-/** De stappen van de test, met de (beheerbare) titels. */
-export function maakStappen(t: TestTeksten, maatVelden: MaatVeld[], vragen: PasvormVraag[]): Stap[] {
+/**
+ * De stappen van de test, met de (beheerbare) titels. Met `proporties` (Lida's
+ * rekenmethode) komt er een stap "Je proporties" na de metingen, en vervalt de
+ * schouderomvang: daarvoor in de plaats komt de schouderbreedte.
+ */
+export function maakStappen(
+  t: TestTeksten,
+  maatVelden: MaatVeld[],
+  vragen: PasvormVraag[],
+  proporties = false,
+): Stap[] {
   return [
     { soort: "jij", titel: t.overJou.titel },
     ...MAAT_GROEPEN.map((g) => ({
       soort: "maten" as const,
       titel: meetStapTitel(t.meten, g.sleutel),
-      velden: g.velden.map((s) => maatVelden.find((v) => v.sleutel === s)!),
+      velden: g.velden
+        .filter((s) => !(proporties && s === "schouder"))
+        .map((s) => maatVelden.find((v) => v.sleutel === s)!),
     })),
+    ...(proporties ? [{ soort: "proporties" as const, titel: t.proporties.titel }] : []),
     { soort: "silhouet", titel: t.silhouet.titel },
     { soort: "vragen", titel: t.vragen.titel, vragen },
     { soort: "controle", titel: t.afronden.titel },
@@ -113,6 +134,8 @@ export function stapFout(stap: Stap, a: Antwoorden): string | null {
     }
     case "maten":
       return stap.velden.some((v) => maatFout(v, a)) ? "Niet alle maten zijn goed ingevuld; zie hierboven." : null;
+    case "proporties":
+      return schouderbreedteFout(a) || !a.breedstePunt || !a.bovenlichaam ? "Niet alles is ingevuld." : null;
     case "silhouet":
       return a.silhouet ? null : "Kies het silhouet dat het meest op het jouwe lijkt.";
     case "vragen":
@@ -122,6 +145,15 @@ export function stapFout(stap: Stap, a: Antwoorden): string | null {
     case "controle":
       return null;
   }
+}
+
+/** Foutmelding bij de schouderbreedte, of null als die in orde is. */
+export function schouderbreedteFout(a: Antwoorden): string | null {
+  const w = getal(a.schouderbreedte);
+  if (Number.isNaN(w)) return "Vul je schouderbreedte in.";
+  if (w < SCHOUDERBREEDTE_GRENZEN.min || w > SCHOUDERBREEDTE_GRENZEN.max)
+    return `Je schouderbreedte ligt normaal tussen ${SCHOUDERBREEDTE_GRENZEN.min} en ${SCHOUDERBREEDTE_GRENZEN.max} cm. Meet nog eens.`;
+  return null;
 }
 
 /** Mag de bezoeker via de tabbladen naar stap i springen? */
@@ -137,6 +169,7 @@ export function maakPayload(
   vragen: PasvormVraag[],
   hermeting: boolean,
   vraagBandmaat = false,
+  opties: { proporties?: boolean; eigenKeuze?: boolean } = {},
 ) {
   const num = (v: string | undefined) => (v ? Number(v) : undefined);
   return {
@@ -154,6 +187,17 @@ export function maakPayload(
     hermeting,
     // Alleen als erom gevraagd is (extra figuurtypes aan) en ingevuld.
     ...(vraagBandmaat && a.bandmaat ? { behamaat_band: Number(a.bandmaat) } : {}),
+    // Alleen bij Lida's rekenmethode.
+    ...(opties.proporties
+      ? {
+          proporties: {
+            schouderbreedte: num(a.schouderbreedte),
+            breedste_punt: a.breedstePunt,
+            bovenlichaam: a.bovenlichaam,
+          },
+        }
+      : {}),
+    ...(opties.eigenKeuze ? { eigen_keuze: true } : {}),
   };
 }
 
@@ -192,6 +236,8 @@ export function overzichtRijen(
   silhouetten: Silhouet[],
   /** Label van de bandmaat; alleen meegegeven als het veld getoond wordt. */
   bandmaatLabel?: string,
+  /** Teksten van de stap "Je proporties"; alleen meegegeven als die stap er is. */
+  proporties?: TestTeksten["proporties"],
 ): OverzichtRij[] {
   const stapVan = (sleutel: string) =>
     stappen.findIndex((s) => s.soort === "maten" && s.velden.some((v) => v.sleutel === sleutel));
@@ -205,11 +251,31 @@ export function overzichtRijen(
       waarde: a.maten[v.sleutel] ? `${a.maten[v.sleutel]} cm` : "—",
       stap: stapVan(v.sleutel),
     })),
+    ...(proporties ? proportieRijen(a, proporties, stappen.findIndex((s) => s.soort === "proporties")) : []),
     { label: "Silhouet", waarde: silhouet?.naam ?? "—", stap: stappen.findIndex((s) => s.soort === "silhouet") },
     ...vragen.map((q) => ({
       label: q.vraag,
       waarde: a.pasvorm[q.sleutel] ?? "—",
       stap: stappen.findIndex((s) => s.soort === "vragen"),
     })),
+  ];
+}
+
+/** De rijen van de stap "Je proporties" in het overzicht. */
+function proportieRijen(a: Antwoorden, t: TestTeksten["proporties"], stap: number): OverzichtRij[] {
+  const breedst: Record<string, string> = {
+    schouders: t.breedste_schouders,
+    gelijk: t.breedste_gelijk,
+    heupen: t.breedste_heupen,
+  };
+  const boven: Record<string, string> = {
+    kort: t.bovenlichaam_kort,
+    gemiddeld: t.bovenlichaam_gemiddeld,
+    lang: t.bovenlichaam_lang,
+  };
+  return [
+    { label: t.schouderbreedte_label, waarde: a.schouderbreedte ? `${a.schouderbreedte} cm` : "—", stap },
+    { label: "Breedste punt", waarde: breedst[a.breedstePunt] ?? "—", stap },
+    { label: "Bovenlichaam", waarde: boven[a.bovenlichaam] ?? "—", stap },
   ];
 }

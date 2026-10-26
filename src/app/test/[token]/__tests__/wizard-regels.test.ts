@@ -7,6 +7,7 @@ import {
   TEST_MATEN,
   TEST_METEN,
   TEST_OVER_JOU,
+  TEST_PROPORTIES,
   TEST_SILHOUET,
   TEST_UITSLAG,
   TEST_VRAGEN,
@@ -38,6 +39,7 @@ const teksten: TestTeksten = {
   maten: standaardWaarden(TEST_MATEN),
   meten: standaardWaarden(TEST_METEN),
   silhouet: standaardWaarden(TEST_SILHOUET),
+  proporties: standaardWaarden(TEST_PROPORTIES),
   vragen: standaardWaarden(TEST_VRAGEN),
   afronden: standaardWaarden(TEST_AFRONDEN),
   uitslag: standaardWaarden(TEST_UITSLAG),
@@ -64,6 +66,9 @@ function compleet(): Antwoorden {
     silhouet: "A",
     pasvorm: Object.fromEntries(vragen.map((q) => [q.sleutel, q.opties[0]])),
     bandmaat: "",
+    schouderbreedte: "",
+    breedstePunt: "",
+    bovenlichaam: "",
   };
 }
 
@@ -236,5 +241,44 @@ describe("bandmaat (extra figuurtypes I en O)", () => {
     expect(met).toContainEqual({ label: "Bandmaat van je bh", waarde: "75", stap: 0 });
     const leeg = overzichtRijen(compleet(), stappen, maatVelden, vragen, silhouetten, "Bandmaat van je bh (optioneel)");
     expect(leeg).toHaveLength(zonder.length);
+  });
+});
+
+describe("stap Je proporties (rekenmethode van Lida)", () => {
+  const metProporties = maakStappen(teksten, maatVelden, vragen, true);
+  const stap = metProporties.find((s) => s.soort === "proporties")!;
+
+  it("komt na de metingen, voor het silhouet, en vervangt de schouderomvang", () => {
+    expect(metProporties.map((s) => s.soort)).toEqual([
+      "jij",
+      "maten",
+      "maten",
+      "maten",
+      "proporties",
+      "silhouet",
+      "vragen",
+      "controle",
+    ]);
+    const velden = metProporties.flatMap((s) => (s.soort === "maten" ? s.velden.map((v) => v.sleutel) : []));
+    expect(velden).not.toContain("schouder");
+    expect(stappen.some((s) => s.soort === "proporties")).toBe(false);
+  });
+
+  it("vraagt een geldige schouderbreedte, het breedste punt en het bovenlichaam", () => {
+    const a = compleet();
+    expect(stapFout(stap, a)).not.toBeNull();
+    expect(stapFout(stap, { ...a, schouderbreedte: "39", breedstePunt: "gelijk" })).not.toBeNull();
+    expect(stapFout(stap, { ...a, schouderbreedte: "120", breedstePunt: "gelijk", bovenlichaam: "kort" })).not.toBeNull();
+    expect(stapFout(stap, { ...a, schouderbreedte: "39", breedstePunt: "gelijk", bovenlichaam: "kort" })).toBeNull();
+  });
+
+  it("stuurt de proporties alleen mee als de stap er is, en de eigen keuze alleen als erom gevraagd is", () => {
+    const a = { ...compleet(), schouderbreedte: "39", breedstePunt: "heupen", bovenlichaam: "lang" };
+    expect(maakPayload(a, maatVelden, vragen, false)).not.toHaveProperty("proporties");
+    const p = maakPayload(a, maatVelden, vragen, false, false, { proporties: true, eigenKeuze: true });
+    expect(p).toMatchObject({
+      proporties: { schouderbreedte: 39, breedste_punt: "heupen", bovenlichaam: "lang" },
+      eigen_keuze: true,
+    });
   });
 });

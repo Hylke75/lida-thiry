@@ -57,6 +57,7 @@ const GROEPEN = [
     label: "Advies",
     links: [
       { href: "/admin/lichaamstypes", label: "Lichaamstypes" },
+      { href: "/admin/rekentool", label: "Rekentool" },
       { href: "/admin/types", label: "Adviestypes" },
       { href: "/admin/beeldbank", label: "Beeldbank" },
       { href: "/admin/meetinstructies", label: "Meetinstructies" },

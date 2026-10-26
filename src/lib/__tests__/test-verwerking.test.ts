@@ -5,10 +5,10 @@ function invoer(overrides: Partial<TestInvoer>): TestInvoer {
   return {
     lengte_cm: 172,
     gewicht_kg: 63,
-    // Onderste zandloper -> letter 8.
+    // Onderste zandloper -> letter X (sinds 26-10-2026; daarvoor 8).
     maten: { borst: 92, taille: 79, hogeHeup: 93, heup: 103 },
     controlemetingen: {},
-    gekozen_silhouet: "8",
+    gekozen_silhouet: "X",
     pasvormantwoorden: {},
     hermeting: false,
     ...overrides,
@@ -18,17 +18,17 @@ function invoer(overrides: Partial<TestInvoer>): TestInvoer {
 describe("verwerkTest: altijd een definitief type, nooit handmatige beoordeling", () => {
   it("geeft het berekende type als silhouet en maten overeenkomen", () => {
     const u = verwerkTest(invoer({}), "excel");
-    expect(u).toMatchObject({ soort: "type", sleutel: "68", ffit_type: "Onderste zandloper" });
+    expect(u).toMatchObject({ soort: "type", sleutel: "6X", ffit_type: "Onderste zandloper", rekenmodel: "ffit" });
   });
 
   it("vraagt bij een silhouetverschil eerst om hermeting", () => {
-    const u = verwerkTest(invoer({ gekozen_silhouet: "X" }), "excel");
-    expect(u).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "8" });
+    const u = verwerkTest(invoer({ gekozen_silhouet: "8" }), "excel");
+    expect(u).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "X" });
   });
 
   it("laat na hermeting de maten winnen bij een blijvend silhouetverschil", () => {
-    const u = verwerkTest(invoer({ gekozen_silhouet: "X", hermeting: true }), "excel");
-    expect(u).toMatchObject({ soort: "type", sleutel: "68", letter: "8" });
+    const u = verwerkTest(invoer({ gekozen_silhouet: "8", hermeting: true }), "excel");
+    expect(u).toMatchObject({ soort: "type", sleutel: "6X", letter: "X" });
   });
 
   it("gebruikt het gekozen silhouet als de maten bij geen figuurtype passen", () => {
@@ -89,5 +89,49 @@ describe("verwerkTest: extra figuurtypes I en O (verfijning)", () => {
     expect(
       verwerkTest(invoer({ maten: appel, gekozen_silhouet: "H" }), "excel", undefined, { aan: true, beschikbaar: [] }),
     ).toMatchObject({ soort: "type", letter: "H" });
+  });
+});
+
+describe("verwerkTest: rekenmethode van Lida", () => {
+  const lida = {
+    model: "lida" as const,
+    grenzen: { zandloperTailleMax: 0.75, heupBredMin: 0.08, borstBredMin: 0.08, lepelHogeHeupMin: 0.95, peerHogeHeupMax: 0.9 },
+  };
+  // Lida's voorbeeld c: borst 95, taille 81, hoge heup 103, heup 103 -> Lepel (8).
+  const lepel = { borst: 95, taille: 81, hogeHeup: 103, heup: 103 };
+  const proporties = { schouderbreedte: 38, breedste_punt: "heupen" as const, bovenlichaam: "kort" as const };
+
+  it("geeft de Lepel waar FFIT ook een Lepel zag, en bewaart de FFIT-uitkomst", () => {
+    const u = verwerkTest(
+      invoer({ maten: lepel, gekozen_silhouet: "8", proporties }),
+      "excel",
+      undefined,
+      undefined,
+      lida,
+    );
+    expect(u).toMatchObject({ soort: "type", letter: "8", rekenmodel: "lida", ffit_type: "Lepel" });
+  });
+
+  it("geen duidelijk silhouet: eerst de keuze, met eigen keuze het gekozen silhouet", () => {
+    const tegen = { borst: 85, taille: 70, hogeHeup: 90, heup: 105 };
+    const p = { ...proporties, breedste_punt: "schouders" as const };
+    expect(
+      verwerkTest(invoer({ maten: tegen, gekozen_silhouet: "A", proporties: p }), "excel", undefined, undefined, lida),
+    ).toMatchObject({ soort: "geen_type" });
+    expect(
+      verwerkTest(
+        invoer({ maten: tegen, gekozen_silhouet: "A", proporties: p, eigen_keuze: true }),
+        "excel",
+        undefined,
+        undefined,
+        lida,
+      ),
+    ).toMatchObject({ soort: "type", letter: "A", rekenmodel: "lida" });
+  });
+
+  it("vraagt ook bij Lida's methode eerst om hermeting als het gekozen silhouet afwijkt", () => {
+    expect(
+      verwerkTest(invoer({ maten: lepel, gekozen_silhouet: "A", proporties }), "excel", undefined, undefined, lida),
+    ).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "8" });
   });
 });

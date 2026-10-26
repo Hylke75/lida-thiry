@@ -9,7 +9,9 @@ import {
   STANDAARD_ZANDLOPER_VARIANT,
   type ZandloperVariant,
 } from "@/rekenkern/config/ffit-regels";
-import { haalFfitToewijzing, haalSilhouetten, haalVerfijning } from "@/lib/lichaamstypes";
+import { haalFfitToewijzing, haalRekenmodel, haalSilhouetten, haalVerfijning } from "@/lib/lichaamstypes";
+import { alsBovenlichaam, alsBreedstePunt, geldigeSchouderbreedte } from "@/lib/rekenmodel";
+import { SCHOUDERBREEDTE_GRENZEN } from "@/rekenkern/config/lida-model";
 import { BANDMAAT_GRENZEN } from "@/rekenkern/config/verfijning";
 import { magDoor, teVeelVerzoeken } from "@/lib/rate-limit";
 import { MAAT_GRENZEN } from "@/rekenkern/config/grenzen";
@@ -93,9 +95,37 @@ export async function POST(
       { status: 400 },
     );
   }
-  const [silhouetten, verfijning] = await Promise.all([haalSilhouetten(), haalVerfijning()]);
+  const [silhouetten, verfijning, rekenmodel] = await Promise.all([
+    haalSilhouetten(),
+    haalVerfijning(),
+    haalRekenmodel(),
+  ]);
   if (!silhouetten.some((s) => s.letter === body.gekozen_silhouet)) {
     return NextResponse.json({ fout: "Kies een silhouet." }, { status: 400 });
+  }
+
+  // Lida's rekenmethode: schouderbreedte, breedste punt en bovenlichaam zijn verplicht.
+  let proporties: TestInvoer["proporties"] = null;
+  if (rekenmodel.model === "lida") {
+    const p = (body.proporties ?? {}) as Record<string, unknown>;
+    const schouderbreedte = getal(p.schouderbreedte);
+    const breedstePunt = alsBreedstePunt(p.breedste_punt);
+    const bovenlichaam = alsBovenlichaam(p.bovenlichaam);
+    if (!geldigeSchouderbreedte(schouderbreedte)) {
+      return NextResponse.json(
+        {
+          fout: `Vul je schouderbreedte in (tussen ${SCHOUDERBREEDTE_GRENZEN.min} en ${SCHOUDERBREEDTE_GRENZEN.max} cm).`,
+        },
+        { status: 400 },
+      );
+    }
+    if (!breedstePunt || !bovenlichaam) {
+      return NextResponse.json(
+        { fout: "Beantwoord de vragen over je breedste punt en je bovenlichaam." },
+        { status: 400 },
+      );
+    }
+    proporties = { schouderbreedte, breedste_punt: breedstePunt, bovenlichaam };
   }
 
   const invoer: TestInvoer = {
@@ -121,11 +151,13 @@ export async function POST(
     hermeting: body.hermeting === true,
     // Alleen bewaren en gebruiken als de schakelaar aan staat (dan wordt erom gevraagd).
     behamaat_band: verfijning.aan ? (behamaatBand ?? null) : null,
+    proporties,
+    eigen_keuze: body.eigen_keuze === true,
   };
 
   const variant = ((await leesInstelling("zandloper_variant")) ||
     STANDAARD_ZANDLOPER_VARIANT) as ZandloperVariant;
-  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing(), verfijning);
+  const uitkomst = verwerkTest(invoer, variant, await haalFfitToewijzing(), verfijning, rekenmodel);
 
   // Tussenstappen: niets opslaan.
   if (uitkomst.soort === "opnieuw_meten") {
@@ -143,6 +175,10 @@ export async function POST(
         Object.fromEntries(silhouetten.map((s) => [s.letter, s.naam])),
       ),
     });
+  }
+
+  if (uitkomst.soort === "geen_type") {
+    return NextResponse.json({ soort: "geen_type", gekozenLetter: invoer.gekozen_silhouet });
   }
 
   // Dezelfde (beheerbare) pasvormvragen als in de test: alleen antwoorden op
@@ -192,6 +228,15 @@ export async function POST(
       // Alleen meesturen als er een bandmaat is: zo werkt opslaan ook zolang de
       // kolom (migratie 20261007100000) nog niet bestaat en de schakelaar uit staat.
       ...(invoer.behamaat_band != null ? { behamaat_band: invoer.behamaat_band } : {}),
+      // Alleen bij Lida's methode (kolommen uit migratie 20261026100000).
+      ...(invoer.proporties
+        ? {
+            schouderbreedte: invoer.proporties.schouderbreedte,
+            breedste_punt: invoer.proporties.breedste_punt,
+            bovenlichaam: invoer.proporties.bovenlichaam,
+            rekenmodel: uitkomst.rekenmodel,
+          }
+        : {}),
       controlemetingen: invoer.controlemetingen,
       gekozen_silhouet: invoer.gekozen_silhouet,
       pasvormantwoorden,
