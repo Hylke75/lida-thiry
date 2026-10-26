@@ -8,6 +8,14 @@ import { VERFIJNING_UIT, type VerfijningInstelling } from "@/rekenkern/verfijnin
 import { leesInstelling } from "./instellingen";
 import { alles } from "./supabase/alles";
 import { EXTRA_FIGUURTYPES_SLEUTEL, extraFiguurtypesAan, verfijningInstelling } from "./extra-figuurtypes";
+import {
+  LIDA_GRENZEN_SLEUTEL,
+  REKENMODEL_FFIT,
+  REKENMODEL_SLEUTEL,
+  leesLidaGrenzen,
+  leesRekenmodel,
+  type RekenmodelInstelling,
+} from "./rekenmodel";
 import type { FfitType } from "@/rekenkern/types";
 import {
   alsSilhouet,
@@ -101,5 +109,23 @@ export async function haalVerfijning(): Promise<VerfijningInstelling> {
     // Bij twijfel de gewone berekening: liever geen I/O dan een mislukte test.
     console.error("Verfijning I/O lezen mislukt; gewone berekening", e);
     return VERFIJNING_UIT;
+  }
+}
+
+/**
+ * Welke rekenmethode de test gebruikt (FFIT of die van Lida) met de grenzen van
+ * Lida's methode. Bij een storing de FFIT-methode: liever de vertrouwde
+ * berekening dan een mislukte test.
+ */
+export async function haalRekenmodel(): Promise<RekenmodelInstelling> {
+  try {
+    const [model, grenzen] = await Promise.all([
+      leesInstelling(REKENMODEL_SLEUTEL),
+      leesInstelling(LIDA_GRENZEN_SLEUTEL),
+    ]);
+    return { model: leesRekenmodel(model), grenzen: leesLidaGrenzen(grenzen) };
+  } catch (e) {
+    console.error("Rekenmodel lezen mislukt; FFIT-methode", e);
+    return REKENMODEL_FFIT;
   }
 }

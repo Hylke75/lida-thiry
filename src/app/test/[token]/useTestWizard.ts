@@ -24,16 +24,22 @@ export function useTestWizard({
   silhouetten,
   teksten,
   vraagBandmaat = false,
+  vraagProporties = false,
 }: {
   token: string;
   silhouetten: Silhouet[];
   teksten: TestTeksten;
   /** Bandmaat van de bh vragen (alleen als de extra figuurtypes I en O aan staan). */
   vraagBandmaat?: boolean;
+  /** Stap "Je proporties" (alleen als de rekenmethode van Lida aan staat). */
+  vraagProporties?: boolean;
 }) {
   const maatVelden = useMemo(() => maatVeldenMetTeksten(teksten.maten), [teksten.maten]);
   const vragen = useMemo(() => pasvormVragen(teksten.vragen), [teksten.vragen]);
-  const STAPPEN = useMemo(() => maakStappen(teksten, maatVelden, vragen), [teksten, maatVelden, vragen]);
+  const STAPPEN = useMemo(
+    () => maakStappen(teksten, maatVelden, vragen, vraagProporties),
+    [teksten, maatVelden, vragen, vraagProporties],
+  );
   const aantalStappen = STAPPEN.length;
   const opslagSleutel = `lida-test-${token}`;
   const [a, setA] = useState<Antwoorden>(LEEG);
@@ -49,6 +55,8 @@ export function useTestWizard({
   const [melding, setMelding] = useState<string | null>(null);
   const [bevindingen, setBevindingen] = useState<Bevinding[]>([]);
   const [resultaat, setResultaat] = useState<Resultaat | null>(null);
+  // Lida's methode gaf geen duidelijk silhouet: de klant kiest zelf of vraagt STOA aan.
+  const [geenType, setGeenType] = useState(false);
   const kop = useRef<HTMLDivElement>(null);
 
   // Voortgang bewaren in de browser, zodat je later via dezelfde link verdergaat.
@@ -77,6 +85,7 @@ export function useTestWizard({
 
   function gaNaar(i: number) {
     setFout(null);
+    setGeenType(false);
     setToonFouten(false);
     setStap(i);
     setBereikt((b) => Math.max(b, i));
@@ -99,7 +108,8 @@ export function useTestWizard({
     return isBereikbaar(i, bereikt, STAPPEN, a);
   }
 
-  async function verstuur() {
+  /** Afronden; met `eigenKeuze` gaat de klant uit van het zelf gekozen silhouet. */
+  async function verstuur(eigenKeuze = false) {
     const eersteFout = STAPPEN.findIndex((s) => stapFout(s, a) !== null);
     if (eersteFout !== -1) {
       gaNaar(eersteFout);
@@ -111,7 +121,11 @@ export function useTestWizard({
     setFout(null);
     setMelding(null);
     setBevindingen([]);
-    const payload = maakPayload(a, maatVelden, vragen, hermeting, vraagBandmaat);
+    setGeenType(false);
+    const payload = maakPayload(a, maatVelden, vragen, hermeting, vraagBandmaat, {
+      proporties: vraagProporties,
+      eigenKeuze,
+    });
 
     try {
       const res = await fetch(`/api/test/${token}`, {
@@ -125,6 +139,8 @@ export function useTestWizard({
       } else if (d.soort === "opnieuw_meten") {
         setBevindingen(d.bevindingen);
         gaNaar(EERSTE_MATEN_STAP);
+      } else if (d.soort === "geen_type") {
+        setGeenType(true);
       } else if (d.soort === "silhouet_verschil") {
         setHermeting(true);
         gaNaar(EERSTE_MATEN_STAP);
@@ -155,6 +171,7 @@ export function useTestWizard({
     melding,
     bevindingen,
     resultaat,
+    geenType,
     kop,
     gaNaar,
     volgende,

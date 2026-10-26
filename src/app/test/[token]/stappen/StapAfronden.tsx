@@ -1,6 +1,6 @@
 import type { MaatVeld } from "@/lib/test-config";
 import type { Silhouet } from "@/lib/lichaamstype-regels";
-import type { PasvormVraag } from "@/lib/inhoud/groepen/test";
+import type { PasvormVraag, TestTeksten } from "@/lib/inhoud/groepen/test";
 import { logischeChecks } from "@/rekenkern/plausibiliteit";
 import { Opmaak } from "@/components/Opmaak";
 import { overzichtRijen, type Antwoorden, type Stap } from "../wizard-regels";
@@ -16,6 +16,7 @@ export function StapAfronden({
   vragen,
   intro,
   bandmaatLabel,
+  proporties,
 }: {
   a: Antwoorden;
   gaNaar: (i: number) => void;
@@ -27,6 +28,8 @@ export function StapAfronden({
   intro: string;
   /** Label van de bandmaat; alleen als dat veld in de test staat. */
   bandmaatLabel?: string;
+  /** Teksten van de stap "Je proporties"; alleen als die stap er is. */
+  proporties?: TestTeksten["proporties"];
 }) {
   const n = (v: string | undefined) => Number(v);
   const meldingen = logischeChecks({
@@ -35,7 +38,7 @@ export function StapAfronden({
     hogeHeup: n(a.maten.hoge_heup),
     heup: n(a.maten.heup),
   });
-  const rijen = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten, bandmaatLabel);
+  const rijen = overzichtRijen(a, stappen, maatVelden, vragen, silhouetten, bandmaatLabel, proporties);
 
   return (
     <div className="flex flex-col gap-5">

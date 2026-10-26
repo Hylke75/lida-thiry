@@ -130,6 +130,7 @@ const PAD_RECHTEN: Record<string, Recht | null> = {
   "/admin/cadeaubonnen": "cadeaubonnen",
   "/admin/cadeaubonnen/instellingen": "cadeaubon_instellingen",
   "/admin/lichaamstypes": "advies",
+  "/admin/rekentool": "advies",
   "/admin/types": "advies",
   "/admin/beeldbank": "advies",
   "/admin/meetinstructies": "advies",

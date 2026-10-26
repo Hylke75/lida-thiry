@@ -38,6 +38,7 @@ vi.mock("@/lib/supabase/admin", () => {
 
 const beoordeelToken = vi.hoisted(() => vi.fn());
 const haalVerfijning = vi.hoisted(() => vi.fn());
+const haalRekenmodel = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/lichaamstypes", async () => {
   const { FFIT_NAAR_LETTER } = await import("@/rekenkern/config/ffit-naar-letter");
   const vorm = { schouder: 36, borst: 34, taille: 27, hogeHeup: 32, heup: 37 };
@@ -48,6 +49,7 @@ vi.mock("@/lib/lichaamstypes", async () => {
     ),
     haalFfitToewijzing: vi.fn().mockResolvedValue({ ...FFIT_NAAR_LETTER }),
     haalVerfijning,
+    haalRekenmodel,
   };
 });
 vi.mock("@/lib/test-order", () => ({
@@ -74,14 +76,14 @@ const ORDER = {
   toegekend_type: null,
 };
 
-// Onderste zandloper -> letter 8, categorie 6 => "68" (zie test-verwerking.test.ts).
+// Onderste zandloper -> letter X, categorie 6 => "6X" (zie test-verwerking.test.ts).
 function geldigeBody(overrides: Record<string, unknown> = {}) {
   return {
     lengte_cm: 172,
     gewicht_kg: 63,
     maten: { borst: 92, taille: 79, hoge_heup: 93, heup: 103 },
     controlemetingen: { borst: 92, taille: 79, hoge_heup: 93, heup: 103 },
-    gekozen_silhouet: "8",
+    gekozen_silhouet: "X",
     pasvormantwoorden: {},
     hermeting: false,
     ...overrides,
@@ -106,6 +108,10 @@ beforeEach(() => {
   beoordeelToken.mockReset().mockResolvedValue({ toestand: "geldig", order: ORDER });
   leverAdvies.mockReset().mockResolvedValue(true);
   haalVerfijning.mockReset().mockResolvedValue({ aan: false, beschikbaar: [] });
+  haalRekenmodel.mockReset().mockResolvedValue({
+    model: "ffit",
+    grenzen: { zandloperTailleMax: 0.75, heupBredMin: 0.08, borstBredMin: 0.08, lepelHogeHeupMin: 0.95, peerHogeHeupMax: 0.9 },
+  });
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -115,13 +121,13 @@ describe("POST /api/test/[token]", () => {
     const res = await POST(verzoek(geldigeBody()), ctx);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json).toMatchObject({ soort: "type", sleutel: "68", pdfKlaar: true });
+    expect(json).toMatchObject({ soort: "type", sleutel: "6X", pdfKlaar: true });
     expect(json).not.toHaveProperty("letter");
 
     const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
-    expect(upsert?.args[0]).toMatchObject({ order_id: "order-1", letter: "8", borst: 92 });
+    expect(upsert?.args[0]).toMatchObject({ order_id: "order-1", letter: "X", borst: 92 });
     const update = db.calls.find((c) => c.table === "orders" && c.op === "update");
-    expect(update?.args[0]).toMatchObject({ status: "test_afgerond", toegekend_type: "68" });
+    expect(update?.args[0]).toMatchObject({ status: "test_afgerond", toegekend_type: "6X" });
     // Eerst de statusovergang, dan pas het resultaat opslaan.
     expect(db.calls.indexOf(update!)).toBeLessThan(db.calls.indexOf(upsert!));
     expect(leverAdvies).toHaveBeenCalledWith("order-1");
@@ -194,21 +200,21 @@ describe("POST /api/test/[token]", () => {
   });
 
   it("vraagt bij een silhouetverschil eerst om hermeting en slaat niets op", async () => {
-    const res = await POST(verzoek(geldigeBody({ gekozen_silhouet: "X" })), ctx);
+    const res = await POST(verzoek(geldigeBody({ gekozen_silhouet: "8" })), ctx);
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "8" });
+    expect(await res.json()).toMatchObject({ soort: "silhouet_verschil", berekendeLetter: "X" });
     expect(db.calls).toHaveLength(0);
   });
 
   it("geeft na hermeting toch het berekende type", async () => {
-    const res = await POST(verzoek(geldigeBody({ gekozen_silhouet: "X", hermeting: true })), ctx);
-    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68" });
+    const res = await POST(verzoek(geldigeBody({ gekozen_silhouet: "8", hermeting: true })), ctx);
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6X" });
   });
 
   it("levert geen tweede advies bij een dubbele verzending", async () => {
     db.updateRows = [];
     const res = await POST(verzoek(geldigeBody()), ctx);
-    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68" });
+    expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6X" });
     expect(leverAdvies).not.toHaveBeenCalled();
     // Het verliezende verzoek overschrijft het opgeslagen resultaat niet.
     expect(db.calls.some((c) => c.op === "upsert")).toBe(false);
@@ -270,6 +276,70 @@ describe("POST /api/test/[token]", () => {
       haalVerfijning.mockResolvedValue({ aan: true, beschikbaar: [] });
       const res = await POST(verzoek(body({ behamaat_band: 70 })), ctx);
       expect(await res.json()).toMatchObject({ soort: "type", sleutel: "6H" });
+    });
+  });
+
+  describe("rekenmethode van Lida", () => {
+    const lida = {
+      model: "lida",
+      grenzen: { zandloperTailleMax: 0.75, heupBredMin: 0.08, borstBredMin: 0.08, lepelHogeHeupMin: 0.95, peerHogeHeupMax: 0.9 },
+    };
+    // Lida's voorbeeld c: rechte heup, heupen voller -> Lepel (8).
+    const lepel = { borst: 95, taille: 81, hoge_heup: 103, heup: 103 };
+    const proporties = { schouderbreedte: 38, breedste_punt: "heupen", bovenlichaam: "kort" };
+
+    it("weigert de test zonder schouderbreedte of antwoorden (400)", async () => {
+      haalRekenmodel.mockResolvedValue(lida);
+      const res = await POST(verzoek(geldigeBody({ maten: lepel, controlemetingen: lepel, gekozen_silhouet: "8" })), ctx);
+      expect(res.status).toBe(400);
+      const zonderAntwoord = await POST(
+        verzoek(
+          geldigeBody({
+            maten: lepel,
+            controlemetingen: lepel,
+            gekozen_silhouet: "8",
+            proporties: { schouderbreedte: 38 },
+          }),
+        ),
+        ctx,
+      );
+      expect(zonderAntwoord.status).toBe(400);
+      expect(db.calls.some((c) => c.op === "upsert")).toBe(false);
+    });
+
+    it("bepaalt het silhouet met Lida's methode en bewaart de extra gegevens", async () => {
+      haalRekenmodel.mockResolvedValue(lida);
+      const res = await POST(
+        verzoek(geldigeBody({ maten: lepel, controlemetingen: lepel, gekozen_silhouet: "8", proporties })),
+        ctx,
+      );
+      expect(await res.json()).toMatchObject({ soort: "type", sleutel: "68" });
+      const upsert = db.calls.find((c) => c.table === "testresultaten" && c.op === "upsert");
+      expect(upsert?.args[0]).toMatchObject({
+        letter: "8",
+        schouderbreedte: 38,
+        breedste_punt: "heupen",
+        bovenlichaam: "kort",
+        rekenmodel: "lida",
+      });
+    });
+
+    it("geeft 'geen_type' terug zonder iets op te slaan als het beeld niet duidelijk is", async () => {
+      haalRekenmodel.mockResolvedValue(lida);
+      const tegen = { borst: 85, taille: 70, hoge_heup: 90, heup: 105 };
+      const res = await POST(
+        verzoek(
+          geldigeBody({
+            maten: tegen,
+            controlemetingen: tegen,
+            gekozen_silhouet: "A",
+            proporties: { ...proporties, breedste_punt: "schouders" },
+          }),
+        ),
+        ctx,
+      );
+      expect(await res.json()).toMatchObject({ soort: "geen_type" });
+      expect(db.calls.some((c) => c.op === "update" || c.op === "upsert")).toBe(false);
     });
   });
 });

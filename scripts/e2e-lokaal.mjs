@@ -98,6 +98,8 @@ const INSTELLINGEN = [
   // Optioneel een eigen indeling van de homepage (JSON), bijv. om een standaard
   // verborgen blok te fotograferen: E2E_HOMEPAGE_INDELING='["hero","figuurtypes"]'.
   ...(process.env.E2E_HOMEPAGE_INDELING ? [{ sleutel: "homepage_indeling", waarde: process.env.E2E_HOMEPAGE_INDELING }] : []),
+  // Optioneel de rekenmethode van Lida (extra teststap "Je proporties"): E2E_REKENMODEL=lida.
+  ...(process.env.E2E_REKENMODEL ? [{ sleutel: "rekenmodel", waarde: process.env.E2E_REKENMODEL }] : []),
 ];
 
 // Voorbeeldgegevens (alleen met --voorbeelddata): reviews en blogberichten, zodat
